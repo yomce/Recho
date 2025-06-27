@@ -6,10 +6,16 @@ yarn-error.log*
 
 # Environment variables
 .env
+.env.*
 .env.local
-.env.development.local
+* .env.development.local
 .env.test.local
 .env.production.local
+*.env
+.env.development
+.env.staging
+.env.production
+.env.example
 
 # Build outputs
 dist/
@@ -40,3 +46,17 @@ pids/
 coverage/
 
 # VideoEditorApp (separate repository)
+
+# API Keys and Secrets
+config/secrets.yml
+config/database.yml
+secrets.json
+credentials.json
+**/secrets/
+**/config/secrets/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+database.yml

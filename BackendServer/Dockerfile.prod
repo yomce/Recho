@@ -1,0 +1,29 @@
+FROM node:20-alpine
+
+# 보안을 위한 non-root 사용자 생성
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nestjs -u 1001
+
+WORKDIR /app
+
+# package.json 복사 및 의존성 설치
+COPY package*.json ./
+RUN npm ci --only=production
+
+# 소스 코드 복사
+COPY . .
+
+# 빌드
+RUN npm run build
+
+# 권한 설정
+RUN chown -R nestjs:nodejs /app
+USER nestjs
+
+# 헬스체크 추가
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node healthcheck.js
+
+EXPOSE 3000
+
+CMD ["npm", "run", "start:prod"] 

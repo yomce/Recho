@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,15 +9,23 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import DocumentPicker, {
-  DocumentPickerResponse,
-} from 'react-native-document-picker';
+import DocumentPicker from 'react-native-document-picker';
 import { StackNavigationProp } from '@react-navigation/stack';
+
+// MediaItem 인터페이스를 다른 파일에서도 사용할 수 있도록 export 합니다.
+export interface MediaItem {
+  id: string;
+  filename: string;
+  uri: string;
+  type: string;
+  size: number;
+}
 
 type RootStackParamList = {
   Home: undefined;
   Camera: undefined;
-  VideoEdit: { videoUri: string; videoName: string };
+  // videoUri, videoName 대신 videos 배열을 받도록 수정합니다.
+  VideoEdit: { videos: MediaItem[] };
   MediaLibrary: undefined;
 };
 
@@ -30,17 +38,13 @@ interface Props {
   navigation: MediaLibraryScreenNavigationProp;
 }
 
-interface MediaItem {
-  id: string;
-  filename: string;
-  uri: string;
-  type: string;
-  size: number;
-}
-
 const MediaLibraryScreen: React.FC<Props> = ({ navigation }) => {
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    console.log("hello world");
+  }, []);
 
   const pickVideo = async () => {
     try {
@@ -64,11 +68,8 @@ const MediaLibraryScreen: React.FC<Props> = ({ navigation }) => {
           size: file.size || 0,
         };
 
-        // 선택된 비디오를 VideoEdit 화면으로 전달
-        navigation.navigate('VideoEdit', {
-          videoUri: file.uri,
-          videoName: file.name || 'unknown_video',
-        });
+        // ❗️ 변경점: 선택된 비디오를 배열에 담아 VideoEdit 화면으로 전달
+        navigation.navigate('VideoEdit', { videos: [mediaItem] });
       }
     } catch (error) {
       if (DocumentPicker.isCancel(error)) {
@@ -102,8 +103,9 @@ const MediaLibraryScreen: React.FC<Props> = ({ navigation }) => {
           type: 'video',
           size: file.size || 0,
         }));
-
-        setMediaItems(items);
+        
+        // ❗️ 변경점: setMediaItems 대신, 선택된 비디오 배열 전체를 전달
+        navigation.navigate('VideoEdit', { videos: items });
       }
     } catch (error) {
       if (DocumentPicker.isCancel(error)) {
@@ -129,10 +131,9 @@ const MediaLibraryScreen: React.FC<Props> = ({ navigation }) => {
     <TouchableOpacity
       style={styles.mediaItem}
       onPress={() => {
-        // 비디오 편집 화면으로 이동
+        // 이 부분도 배열로 전달하도록 수정
         navigation.navigate('VideoEdit', {
-          videoUri: item.uri,
-          videoName: item.filename,
+          videos: [item],
         });
       }}
     >
@@ -150,9 +151,8 @@ const MediaLibraryScreen: React.FC<Props> = ({ navigation }) => {
       <TouchableOpacity
         style={styles.editButton}
         onPress={() => {
-          navigation.navigate('VideoEdit', {
-            videoUri: item.uri,
-            videoName: item.filename,
+            navigation.navigate('VideoEdit', {
+            videos: [item],
           });
         }}
       >

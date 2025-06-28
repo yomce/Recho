@@ -1,17 +1,76 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
-  View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   SafeAreaView,
   ScrollView,
+  Alert,
+  Platform,
+  View,
+  TouchableOpacity,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { useCameraPermission, useMicrophonePermission } from 'react-native-vision-camera';
+import { request, PERMISSIONS, RESULTS, PermissionStatus } from 'react-native-permissions';
+import StyledButton from '../components/StyledButton';
+
+// React-Native-Video와 Android Compiler간 충돌 => Node_modules
+// https://github.com/r0b0t3d/react-native-video/blob/master/android/src/main/java/com/brentvatne/common/react/VideoEventEmitter.kt
+// 참고하여 해결하기
 
 const HomeScreen: React.FC = () => {
+  //For Camera, Microphone Permission Hook
+  const {
+    hasPermission: hasCameraPermission,
+    requestPermission: requestCameraPermission,
+  } = useCameraPermission();
+  const {
+    hasPermission: hasMicrophonePermission,
+    requestPermission: requestMicrophonePermission,
+  } = useMicrophonePermission();
+
+  const checkAndRequestPermissions = async (): Promise<boolean> => {
+    //Camera
+    const resultCameraPermission = await requestCameraPermission();
+    // Microphone Permission
+    const resultMicrophonePermission = await requestMicrophonePermission();
+    //Storage Permission
+    let storagePermissionResult: PermissionStatus = 'granted';
+
+    if (Platform.OS === 'android') {
+      if (Platform.Version >= 33) {
+        storagePermissionResult = await request(
+          PERMISSIONS.ANDROID.READ_MEDIA_VIDEO,
+        );
+      } else {
+        storagePermissionResult = await request(
+          PERMISSIONS.ANDROID.WRITE_EXTERNAL_STORAGE,
+        );
+      }
+    } else if (Platform.OS === 'ios') {
+      storagePermissionResult = await request(PERMISSIONS.IOS.PHOTO_LIBRARY);
+    }
+
+    // Check Permission
+    if (resultCameraPermission === false || resultMicrophonePermission === false || storagePermissionResult !== RESULTS.GRANTED ) {
+      Alert.alert(
+        '권한 필요',
+      );
+      return false;
+    }
+
+    return true;
+  };
+
+  useEffect(() => {
+    const initialize = async() => {
+      await checkAndRequestPermissions();
+    }
+    initialize();
+  }, [])
+
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   return (
     <SafeAreaView style={styles.container}>
@@ -29,64 +88,50 @@ const HomeScreen: React.FC = () => {
             <Text style={styles.buttonText}>📷 카메라 촬영</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.button}
+          <StyledButton
+            contents='파일에서 비디오 선택'
             onPress={() => navigation.navigate('MediaLibrary')}
-          >
-            <Text style={styles.buttonText}>📁 파일에서 비디오 선택</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() =>
-              navigation.navigate('VideoEdit', {
-                videoUri: 'dummy',
-                videoName: '샘플 비디오',
-              })
-            }
-          >
-            <Text style={styles.buttonText}>✂️ 비디오 편집</Text>
-          </TouchableOpacity>
+          />
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🧪 iOSTestApp 기능</Text>
+          {/* <Text style={styles.sectionTitle}>🧪 iOSTestApp 기능</Text>
 
           <TouchableOpacity
             style={styles.button}
             onPress={() => navigation.navigate('FFmpegTest')}
           >
             <Text style={styles.buttonText}>🔧 FFmpeg 테스트</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.button}
             onPress={() => navigation.navigate('SideBySide')}
           >
             <Text style={styles.buttonText}>
               🔄 비디오 합치기 (Side by Side)
             </Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.button}
             onPress={() => navigation.navigate('VideoPreview')}
           >
             <Text style={styles.buttonText}>👁️ 비디오 미리보기</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>🎵 new_video_test 기능</Text>
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.button}
             onPress={() => navigation.navigate('NewVideoTest')}
           >
             <Text style={styles.buttonText}>
               🎤 합주 녹화 (카메라 + 비디오)
             </Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         <View style={styles.infoSection}>

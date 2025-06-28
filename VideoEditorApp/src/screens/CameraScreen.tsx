@@ -11,7 +11,7 @@ import {
   NativeModules,
   PermissionsAndroid,
 } from 'react-native';
-import Video, { VideoRef } from 'react-native-video';
+import { VideoRef } from 'react-native-video';
 import {
   Camera,
   useCameraDevice,

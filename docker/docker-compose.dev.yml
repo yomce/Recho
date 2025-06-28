@@ -40,24 +40,24 @@ services:
     networks:
       - app-network
 
-  video-editor-app:
-    build:
-      context: ../VideoEditorApp
-      dockerfile: Dockerfile
-    ports:
-      - "8081:8081"
-    volumes:
-      - ../VideoEditorApp:/app
-      - /app/node_modules
-    environment:
-      - NODE_ENV=development
-      - REACT_NATIVE_PACKAGER_HOSTNAME=localhost
-      - API_URL=http://localhost:3000
-      - API_BASE_URL=http://localhost:3000/api
-    env_file:
-      - ../VideoEditorApp/.env
-    networks:
-      - app-network
+  # video-editor-app:
+  #   build:
+  #     context: ../VideoEditorApp
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "8081:8081"
+  #   volumes:
+  #     - ../VideoEditorApp:/app
+  #     - /app/node_modules
+  #   environment:
+  #     - NODE_ENV=development
+  #     - REACT_NATIVE_PACKAGER_HOSTNAME=localhost
+  #     - API_URL=http://localhost:3000
+  #     - API_BASE_URL=http://localhost:3000/api
+  #   env_file:
+  #     - ../VideoEditorApp/.env
+  #   networks:
+  #     - app-network
 
 networks:
   app-network:

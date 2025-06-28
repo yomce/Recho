@@ -24,7 +24,6 @@ import {
   SingleEditorHandles,
   EQBand,
   EditData,
-  TrimmerDataForFilter,
 } from '../types';
 
 // 기본 EQ 밴드 설정 (웹 버전과 동일)

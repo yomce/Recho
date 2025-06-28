@@ -7,7 +7,6 @@ import CameraScreen from '../screens/CameraScreen';
 import VideoEditScreen from '../screens/VideoEditScreen';
 import MediaLibraryScreen from '../screens/MediaLibraryScreen';
 import FFmpegTestScreen from '../screens/FFmpegTestScreen';
-import SideBySideScreen from '../screens/SideBySideScreen';
 import VideoPreviewScreen from '../screens/VideoPreviewScreen';
 import NewVideoTestScreen from '../screens/NewVideoTestScreen';
 
@@ -73,13 +72,6 @@ const AppNavigator = () => {
           component={FFmpegTestScreen}
           options={{
             title: '🔧 FFmpeg 테스트',
-          }}
-        />
-        <Stack.Screen
-          name="SideBySide"
-          component={SideBySideScreen}
-          options={{
-            title: '🔄 비디오 합치기',
           }}
         />
         <Stack.Screen

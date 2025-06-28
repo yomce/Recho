@@ -81,57 +81,26 @@ const HomeScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>📱 메인 기능</Text>
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.button}
             onPress={() => navigation.navigate('Camera')}
           >
             <Text style={styles.buttonText}>📷 카메라 촬영</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <StyledButton
             contents='파일에서 비디오 선택'
             onPress={() => navigation.navigate('MediaLibrary')}
           />
-        </View>
-
-        <View style={styles.section}>
-          {/* <Text style={styles.sectionTitle}>🧪 iOSTestApp 기능</Text>
 
           <TouchableOpacity
-            style={styles.button}
-            onPress={() => navigation.navigate('FFmpegTest')}
-          >
-            <Text style={styles.buttonText}>🔧 FFmpeg 테스트</Text>
-          </TouchableOpacity> */}
-
-          {/* <TouchableOpacity
-            style={styles.button}
-            onPress={() => navigation.navigate('SideBySide')}
-          >
-            <Text style={styles.buttonText}>
-              🔄 비디오 합치기 (Side by Side)
-            </Text>
-          </TouchableOpacity> */}
-
-          {/* <TouchableOpacity
-            style={styles.button}
-            onPress={() => navigation.navigate('VideoPreview')}
-          >
-            <Text style={styles.buttonText}>👁️ 비디오 미리보기</Text>
-          </TouchableOpacity> */}
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🎵 new_video_test 기능</Text>
-
-          {/* <TouchableOpacity
             style={styles.button}
             onPress={() => navigation.navigate('NewVideoTest')}
           >
             <Text style={styles.buttonText}>
               🎤 합주 녹화 (카메라 + 비디오)
             </Text>
-          </TouchableOpacity> */}
+          </TouchableOpacity>
         </View>
 
         <View style={styles.infoSection}>

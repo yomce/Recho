@@ -9,7 +9,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import DocumentPicker from 'react-native-document-picker';
+import DocumentPicker from '@react-native-documents/picker';
 import { StackNavigationProp } from '@react-navigation/stack';
 
 // MediaItem 인터페이스를 다른 파일에서도 사용할 수 있도록 export 합니다.
@@ -72,7 +72,7 @@ const MediaLibraryScreen: React.FC<Props> = ({ navigation }) => {
         navigation.navigate('VideoEdit', { videos: [mediaItem] });
       }
     } catch (error) {
-      if (DocumentPicker.isCancel(error)) {
+      if (DocumentPicker.isErrorWithCode(error)) {
         console.log('사용자가 파일 선택을 취소했습니다.');
       } else {
         console.error('❌ 파일 선택 오류:', error);
@@ -108,7 +108,7 @@ const MediaLibraryScreen: React.FC<Props> = ({ navigation }) => {
         navigation.navigate('VideoEdit', { videos: items });
       }
     } catch (error) {
-      if (DocumentPicker.isCancel(error)) {
+      if (DocumentPicker.isErrorWithCode(error)) {
         console.log('사용자가 파일 선택을 취소했습니다.');
       } else {
         console.error('❌ 파일 선택 오류:', error);

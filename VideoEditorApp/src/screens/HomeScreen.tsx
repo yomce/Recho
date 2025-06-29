@@ -20,6 +20,10 @@ import StyledButton from '../components/StyledButton';
 // https://github.com/r0b0t3d/react-native-video/blob/master/android/src/main/java/com/brentvatne/common/react/VideoEventEmitter.kt
 // 참고하여 해결하기
 
+// Android FFmpeg 오류
+// https://medium.com/@nooruddinlakhani/resolved-ffmpegkit-retirement-issue-in-react-native-a-complete-guide-0f54b113b390
+// 참고하여 해결하기
+
 const HomeScreen: React.FC = () => {
   //For Camera, Microphone Permission Hook
   const {
@@ -37,24 +41,39 @@ const HomeScreen: React.FC = () => {
     // Microphone Permission
     const resultMicrophonePermission = await requestMicrophonePermission();
     //Storage Permission
-    let storagePermissionResult: PermissionStatus = 'granted';
+    let storagePermissionResultOne: PermissionStatus = 'granted';
+    let storagePermissionResultTwo: PermissionStatus = 'granted';
+    let storagePermissionResultThird: PermissionStatus = 'granted';
 
     if (Platform.OS === 'android') {
       if (Platform.Version >= 33) {
-        storagePermissionResult = await request(
+        storagePermissionResultOne = await request(
           PERMISSIONS.ANDROID.READ_MEDIA_VIDEO,
         );
+        storagePermissionResultTwo = await request(
+          PERMISSIONS.ANDROID.READ_MEDIA_IMAGES,
+        );
+        storagePermissionResultThird = await request(
+          PERMISSIONS.ANDROID.READ_MEDIA_AUDIO,
+        );
       } else {
-        storagePermissionResult = await request(
+        storagePermissionResultOne = await request(
+          PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE,
+        );
+        storagePermissionResultTwo = await request(
           PERMISSIONS.ANDROID.WRITE_EXTERNAL_STORAGE,
         );
       }
     } else if (Platform.OS === 'ios') {
-      storagePermissionResult = await request(PERMISSIONS.IOS.PHOTO_LIBRARY);
+      storagePermissionResultOne = await request(PERMISSIONS.IOS.PHOTO_LIBRARY);
     }
 
     // Check Permission
-    if (resultCameraPermission === false || resultMicrophonePermission === false || storagePermissionResult !== RESULTS.GRANTED ) {
+    if (resultCameraPermission === false 
+      || resultMicrophonePermission === false 
+      || storagePermissionResultOne !== RESULTS.GRANTED 
+      || storagePermissionResultTwo !== RESULTS.GRANTED
+      || storagePermissionResultThird !== RESULTS.GRANTED) {
       Alert.alert(
         '권한 필요',
       );
@@ -80,13 +99,6 @@ const HomeScreen: React.FC = () => {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>📱 메인 기능</Text>
-
-          {/* <TouchableOpacity
-            style={styles.button}
-            onPress={() => navigation.navigate('Camera')}
-          >
-            <Text style={styles.buttonText}>📷 카메라 촬영</Text>
-          </TouchableOpacity> */}
 
           <StyledButton
             contents='파일에서 비디오 선택'

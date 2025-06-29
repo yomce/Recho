@@ -9,7 +9,6 @@ import {
   View,
   Button,
   Alert,
-  Platform,
 } from 'react-native';
 
 const Colors = {

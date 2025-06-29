@@ -3,13 +3,11 @@ import {
   StyleSheet,
   View,
   Text,
-  TouchableOpacity,
   SafeAreaView,
   Alert,
   Platform,
   ActivityIndicator,
   NativeModules,
-  PermissionsAndroid, // 안드로이드 권한 요청을 위해 다시 추가합니다.
 } from 'react-native';
 import Video, { VideoRef } from 'react-native-video';
 import {
@@ -17,26 +15,32 @@ import {
   useCameraDevice,
   useCameraPermission,
   useMicrophonePermission,
+  CameraDevice, // CameraDevice 타입을 명시적으로 import
 } from 'react-native-vision-camera';
-import DocumentPicker from 'react-native-document-picker';
-// --- NEW, MODERN, AND STANDARD LIBRARY FOR GALLERY ACCESS ---
-// 1. Install this library: npm install @react-native-camera-roll/camera-roll
-// 2. Link it: cd ios && npx pod-install
-// 3. For iOS, add NSPhotoLibraryAddUsageDescription to your Info.plist
+import { pick, types, isErrorWithCode } from '@react-native-documents/picker';
 import { CameraRoll } from '@react-native-camera-roll/camera-roll';
 import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList, MediaItem } from '../types';
+
+// Util 함수와 분리된 컴포넌트들을 import
+import { downscaleVideoIfRequired } from '../utils/ffmpegFilters';
+import VideoPlaceholder from '../components/VideoPlaceholder';
+import CameraView from '../components/CameraView';
+import RecordButton from '../components/RecordButton';
 
 const { AudioSessionModule } = NativeModules;
 
-const NewVideoTestScreen = () => {
-  const {
-    hasPermission: hasCameraPermission,
-    requestPermission: requestCameraPermission,
-  } = useCameraPermission();
-  const {
-    hasPermission: hasMicrophonePermission,
-    requestPermission: requestMicrophonePermission,
-  } = useMicrophonePermission();
+type NewVideoTestScreenNavigationProp = StackNavigationProp<RootStackParamList, 'NewVideoTest'>;
+
+interface Props {
+  navigation: NewVideoTestScreenNavigationProp;
+}
+
+const NewVideoTestScreen: React.FC<Props> = ({ navigation }) => {
+  // --- 상태와 로직 ---
+  const { hasPermission: hasCameraPermission, requestPermission: requestCameraPermission } = useCameraPermission();
+  const { hasPermission: hasMicrophonePermission, requestPermission: requestMicrophonePermission } = useMicrophonePermission();
 
   const device = useCameraDevice('front');
   const camera = useRef<Camera>(null);
@@ -47,54 +51,29 @@ const NewVideoTestScreen = () => {
   const [selectedVideoUri, setSelectedVideoUri] = useState<string | null>(null);
   const [isCheckingPermissions, setIsCheckingPermissions] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [isEncoding, setIsEncoding] = useState(false);
 
-  // --- 안드로이드 저장소 권한 요청 로직 (다시 필요) ---
-  // 기존 함수를 아래와 같이 수정합니다.
+  // --- 핸들러 함수와 useEffect ---
   const checkAndRequestStoragePermission = async (): Promise<boolean> => {
     if (Platform.OS === 'ios') {
-      // iOS용 권한 요청 로직
-      const resultOne = await request(PERMISSIONS.IOS.PHOTO_LIBRARY);
-      const resultTwo = await request(PERMISSIONS.IOS.PHOTO_LIBRARY_ADD_ONLY);
-      if (resultOne === RESULTS.GRANTED && resultTwo === RESULTS.GRANTED) {
-        return true;
-      } else {
-        Alert.alert(
-          '권한 필요',
-          '영상을 저장하려면 사진첩 접근 권한이 필요합니다.',
-        );
-        return false;
-      }
-    } else {
-      // 안드로이드 로직은 그대로 유지
-      if (Platform.Version >= 33) {
-        return true;
-      }
-      try {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-          {
-            title: '저장 공간 권한 필요',
-            message: '녹화된 영상을 갤러리에 저장하기 위해 권한이 필요합니다.',
-            buttonPositive: '확인',
-          },
-        );
-        return granted === PermissionsAndroid.RESULTS.GRANTED;
-      } catch (err) {
-        console.warn(err);
-        return false;
-      }
+        const result = await request(PERMISSIONS.IOS.PHOTO_LIBRARY);
+        return result === RESULTS.GRANTED;
     }
+    if (Platform.Version >= 33) {
+        const result = await request(PERMISSIONS.ANDROID.READ_MEDIA_VIDEO);
+        return result === RESULTS.GRANTED;
+    }
+    const result = await request(PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE);
+    return result === RESULTS.GRANTED;
   };
 
   useEffect(() => {
     const checkPermissions = async () => {
       await requestCameraPermission();
       await requestMicrophonePermission();
-      await checkAndRequestStoragePermission();
       setIsCheckingPermissions(false);
     };
     checkPermissions();
-
     return () => {
       if (AudioSessionModule && AudioSessionModule.deactivateAudioSession) {
         AudioSessionModule.deactivateAudioSession();
@@ -104,16 +83,31 @@ const NewVideoTestScreen = () => {
 
   const handleSelectVideo = async () => {
     try {
-      const result = await DocumentPicker.pick({
-        type: [DocumentPicker.types.video],
+      const result = await pick({
+        type: [types.video],
+        allowMultiSelection: false,
       });
-      setSelectedVideoUri(result[0].uri);
-    } catch (err) {
-      if (DocumentPicker.isCancel(err)) {
-        console.log('사용자가 비디오 선택을 취소했습니다.');
+      const pickedUri = result[0].uri;
+      if (!pickedUri) return;
+      
+      setIsEncoding(true);
+      const finalVideoUri = await downscaleVideoIfRequired(pickedUri);
+      
+      if (finalVideoUri) {
+        setSelectedVideoUri(finalVideoUri);
       } else {
-        console.error('Document Picker 에러:', err);
+        setSelectedVideoUri(null); 
+        console.log("비디오 처리가 취소되었거나 실패하여 선택이 해제되었습니다.");
       }
+    } catch (err) {
+      if (isErrorWithCode(err, 'DOCUMENT_PICKER_CANCELED')) {
+        console.log('사용자가 파일 선택 자체를 취소했습니다.');
+      } else {
+        console.error('동영상 선택 또는 처리 중 에러:', err);
+        Alert.alert('오류', '동영상을 불러오는 중 문제가 발생했습니다.');
+      }
+    } finally {
+      setIsEncoding(false);
     }
   };
 
@@ -123,48 +117,55 @@ const NewVideoTestScreen = () => {
     if (isRecording) {
       try {
         await camera.current.stopRecording();
-        if (AudioSessionModule && AudioSessionModule.deactivateAudioSession) {
-          AudioSessionModule.deactivateAudioSession();
-        }
       } catch (e) {
         console.error('녹화 중지 실패: ', e);
       }
-      setIsRecording(false);
-      setIsVideoPaused(true);
-      videoPlayer.current?.seek(0);
       return;
     }
 
-    // --- 녹화 시작 전 저장소 권한 확인 ---
     const hasStoragePermission = await checkAndRequestStoragePermission();
     if (!hasStoragePermission) {
-      Alert.alert(
-        '권한 거부됨',
-        '갤러리 접근 권한 없이는 영상을 저장할 수 없습니다.',
-      );
-      return;
+        Alert.alert('권한 필요', '영상을 저장하려면 저장 공간 접근 권한이 필요합니다.');
+        return;
     }
 
     try {
       setIsLoading(true);
-      await AudioSessionModule.activateAudioSession();
-      console.log('JS: 네이티브 오디오 세션 활성화 성공.');
+      if (Platform.OS === 'ios' && AudioSessionModule && AudioSessionModule.activateAudioSession) {
+        await AudioSessionModule.activateAudioSession();
+      }
 
+      videoPlayer.current?.seek(0);
       setIsVideoPaused(false);
-
       setIsRecording(true);
+
       camera.current.startRecording({
         onRecordingFinished: async video => {
-          console.log('녹화 완료:', video);
-          if (AudioSessionModule && AudioSessionModule.deactivateAudioSession) {
+          setIsRecording(false);
+          if (Platform.OS === 'ios' && AudioSessionModule && AudioSessionModule.deactivateAudioSession) {
             AudioSessionModule.deactivateAudioSession();
           }
 
-          // --- NEW: @react-native-camera-roll/camera-roll을 사용하여 갤러리에 저장 ---
           try {
-            // video.path는 'file://'로 시작하는 올바른 경로입니다.
-            await CameraRoll.saveAsset(video.path, { type: 'video' });
-            Alert.alert('녹화 완료', '영상이 갤러리에 저장되었습니다!');
+            await CameraRoll.save(video.path, { type: 'video' });
+            Alert.alert('녹화 완료', '영상이 갤러리에 저장되었습니다! 편집 화면으로 이동합니다.');
+            
+            if (selectedVideoUri) {
+              const backgroundVideo: MediaItem = {
+                id: selectedVideoUri,
+                uri: selectedVideoUri,
+                filename: 'background_video.mp4',
+              };
+              const recordedVideo: MediaItem = {
+                id: video.path,
+                uri: video.path,
+                filename: 'recorded_video.mp4',
+              };
+
+              navigation.replace('VideoEdit', {
+                videos: [backgroundVideo, recordedVideo],
+              });
+            }
           } catch (saveError) {
             console.error('영상 저장 실패:', saveError);
             Alert.alert('오류', '영상을 갤러리에 저장하는 데 실패했습니다.');
@@ -172,25 +173,24 @@ const NewVideoTestScreen = () => {
         },
         onRecordingError: error => {
           console.error('녹화 중 에러 발생:', error);
+          setIsRecording(false);
           Alert.alert('오류', '녹화 중 문제가 발생했습니다.');
-          if (AudioSessionModule && AudioSessionModule.deactivateAudioSession) {
+          if (Platform.OS === 'ios' && AudioSessionModule && AudioSessionModule.deactivateAudioSession) {
             AudioSessionModule.deactivateAudioSession();
           }
         },
       });
     } catch (error) {
       console.error('오디오 세션 활성화 또는 녹화 시작 에러:', error);
-      Alert.alert(
-        '오류',
-        '녹화를 시작하거나 오디오를 준비하는 중 문제가 발생했습니다.',
-      );
+      Alert.alert('오류', '녹화를 시작하는 중 문제가 발생했습니다.');
+      setIsRecording(false);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const isPermissionsReady = hasCameraPermission && hasMicrophonePermission;
 
+  // --- 권한 확인 UI ---
   if (isCheckingPermissions) {
     return (
       <SafeAreaView style={styles.container}>
@@ -199,19 +199,22 @@ const NewVideoTestScreen = () => {
       </SafeAreaView>
     );
   }
-
-  if (!isPermissionsReady) {
+  if (!hasCameraPermission || !hasMicrophonePermission) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.permissionContainer}>
-          <Text style={styles.infoText}>
-            합주 녹화를 위해 카메라와 마이크 권한이 필요합니다.
-          </Text>
+          <Text style={styles.infoText}>합주 녹화를 위해 카메라와 마이크 권한이 필요합니다.</Text>
         </View>
       </SafeAreaView>
     );
   }
 
+  const videoProps = Platform.select({
+    ios: { mixWithOthers: 'mix' as const, disableAudioSessionManagement: true },
+    android: {},
+  });
+
+  // --- 최종 렌더링 ---
   return (
     <SafeAreaView style={styles.container}>
       {isLoading && (
@@ -220,6 +223,7 @@ const NewVideoTestScreen = () => {
           <Text style={styles.infoText}>녹화를 준비 중입니다...</Text>
         </View>
       )}
+
       <View style={styles.topContainer}>
         {selectedVideoUri ? (
           <Video
@@ -229,58 +233,33 @@ const NewVideoTestScreen = () => {
             paused={isVideoPaused}
             resizeMode="contain"
             repeat={true}
-            mixWithOthers="mix"
             muted={false}
-            disableAudioSessionManagement={true}
+            {...videoProps}
           />
         ) : (
-          <View style={styles.placeholderContainer}>
-            <Text style={styles.placeholderText}>
-              합주할 동영상을 불러와주세요.
-            </Text>
-            <TouchableOpacity
-              style={styles.selectButton}
-              onPress={handleSelectVideo}
-            >
-              <Text style={styles.buttonText}>내 휴대폰에서 동영상 찾기</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-      <View style={styles.bottomContainer}>
-        {device ? (
-          <Camera
-            ref={camera}
-            style={StyleSheet.absoluteFill}
-            device={device}
-            isActive={true}
-            video={true}
-            audio={true}
+          <VideoPlaceholder 
+            isEncoding={isEncoding}
+            onSelectVideo={handleSelectVideo}
           />
-        ) : (
-          <Text style={styles.infoText}>사용 가능한 카메라가 없습니다.</Text>
         )}
       </View>
+
+      <CameraView cameraRef={camera} device={device} />
+
       {selectedVideoUri && (
-        <View style={styles.controlsContainer}>
-          <TouchableOpacity
-            style={styles.recordButton}
-            onPress={handleRecordButtonPress}
-          >
-            <View
-              style={
-                isRecording ? styles.recordIconStop : styles.recordIconStart
-              }
-            />
-          </TouchableOpacity>
-        </View>
+        <RecordButton
+          isRecording={isRecording}
+          onPress={handleRecordButtonPress}
+          disabled={isLoading || isEncoding}
+        />
       )}
     </SafeAreaView>
   );
 };
 
+// --- 메인 스크린에 필요한 최소한의 스타일 ---
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'black', justifyContent: 'center' },
+  container: { flex: 1, backgroundColor: 'black' },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.7)',
@@ -288,68 +267,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  permissionContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
   topContainer: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: 'black',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  bottomContainer: { flex: 1, backgroundColor: '#111' },
   videoPlayer: { ...StyleSheet.absoluteFillObject },
-  placeholderContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  placeholderText: { color: 'white', fontSize: 16, marginBottom: 20 },
-  selectButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 25,
-    backgroundColor: '#007AFF',
-  },
   infoText: {
     color: 'white',
     fontSize: 18,
     textAlign: 'center',
     marginTop: 20,
   },
-  controlsContainer: {
-    position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 40 : 20,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-  },
-  recordButton: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+  permissionContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 3,
-    borderColor: 'white',
+    padding: 20,
   },
-  recordIconStart: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#E53935',
-  },
-  recordIconStop: {
-    width: 28,
-    height: 28,
-    borderRadius: 4,
-    backgroundColor: '#E53935',
-  },
-  buttonText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
 });
 
 export default NewVideoTestScreen;

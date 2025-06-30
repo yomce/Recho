@@ -43,7 +43,7 @@ import { VideoInsertModule } from './video-insert/video-insert.module';
     UserModule,
     VideosModule,
     VideoInsertModule,
-    // ChatModule, 
+    // ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components/native';
 import { View, Text, TouchableOpacity, SafeAreaView, FlatList, Alert, ActivityIndicator } from 'react-native';
-import DocumentPicker from '@react-native-documents/picker';
 import { StackNavigationProp } from '@react-navigation/stack';
 
 import { RootStackParamList, MediaItem, formatFileSize } from '../types'; // RootStackParamList, MediaItem, formatFileSize 임포트
@@ -10,6 +9,7 @@ import SectionHeader from '../components/Common/SectionHeader'; // SectionHeader
 import InfoDisplay from '../components/Common/InfoDisplay'; // InfoDisplay 임포트
 import MediaListItem from '../components/Common/MediaListItem'; // MediaListItem 임포트 (Styled-components 버전이 아님, 스타일은 MediaListItem 내부에서 처리)
 import EmptyState from '../components/Common/EmptyState'; // EmptyState 임포트 (Styled-components 버전)
+import { isErrorWithCode, pick, types } from '@react-native-documents/picker';
 
 type MediaLibraryScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -84,8 +84,8 @@ const MediaLibraryScreen: React.FC<Props> = ({ navigation }) => {
       setIsLoading(true); // 로딩 시작
       console.log(`📁 ${allowMultiSelection ? '여러' : '단일'} 비디오 파일 선택 시작...`);
 
-      const result = await DocumentPicker.pick({
-        type: [DocumentPicker.types.video], // 비디오 파일만 선택
+      const result = await pick({
+        type: [types.video], // 비디오 파일만 선택
         allowMultiSelection: allowMultiSelection, // 여러 파일 선택 허용 여부 설정
       });
 
@@ -105,7 +105,7 @@ const MediaLibraryScreen: React.FC<Props> = ({ navigation }) => {
         navigation.navigate('VideoEdit', { videos: items });
       }
     } catch (error) {
-      if (DocumentPicker.isErrorWithCode(error, 'DOCUMENT_PICKER_CANCELED')) {
+      if (isErrorWithCode(error)) {
         console.log('사용자가 파일 선택을 취소했습니다.');
       } else {
         console.error('❌ 파일 선택 오류:', error);

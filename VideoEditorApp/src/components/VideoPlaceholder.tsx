@@ -1,49 +1,71 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import styled from 'styled-components/native';
+import InfoDisplay from './Common/InfoDisplay'; // 리팩터링된 InfoDisplay 임포트
 
 interface Props {
-  isEncoding: boolean;
-  onSelectVideo: () => void;
+  isEncoding: boolean; // 인코딩 중인지 여부
+  onSelectVideo: () => void; // 비디오 선택 버튼 클릭 시 호출될 함수
 }
 
+// Styled Components 정의
+
+// 전체 컨테이너
+const Container = styled.View`
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  padding-horizontal: 20px;
+`;
+
+// 플레이스홀더 텍스트
+const PlaceholderText = styled.Text`
+  color: white;
+  font-size: 16px;
+  margin-bottom: 20px;
+`;
+
+// 선택 버튼
+const SelectButton = styled.TouchableOpacity`
+  padding-horizontal: 20px;
+  padding-vertical: 12px;
+  border-radius: 25px;
+  background-color: #007AFF; /* 버튼 배경색 */
+`;
+
+// 버튼 텍스트
+const ButtonText = styled.Text`
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+`;
+
+/**
+ * VideoPlaceholder 컴포넌트는 비디오가 로드되지 않았거나 인코딩 중일 때 표시되는
+ * 플레이스홀더 UI를 제공합니다. 사용자에게 비디오 선택을 안내하거나 인코딩 진행 상황을 보여줍니다.
+ * `InfoDisplay` 컴포넌트를 활용하여 로딩 및 정보 메시지를 일관성 있게 처리합니다.
+ * 모든 스타일은 styled-components로 정의되었습니다.
+ */
 const VideoPlaceholder: React.FC<Props> = ({ isEncoding, onSelectVideo }) => {
   if (isEncoding) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#fff" />
-        <Text style={styles.infoText}>인코딩 중입니다...</Text>
-        <Text style={styles.infoTextSub}>고해상도 영상은 다소 시간이 걸릴 수 있습니다.</Text>
-      </View>
+      // 인코딩 중일 때 InfoDisplay 컴포넌트 사용
+      <InfoDisplay
+        showIndicator={true} // ActivityIndicator 표시
+        message="인코딩 중입니다..."
+        subMessage="고해상도 영상은 다소 시간이 걸릴 수 있습니다."
+      />
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.placeholderText}>합주할 동영상을 불러와주세요.</Text>
-      <TouchableOpacity style={styles.selectButton} onPress={onSelectVideo}>
-        <Text style={styles.buttonText}>내 휴대폰에서 동영상 찾기</Text>
-      </TouchableOpacity>
-    </View>
+    // 비디오 선택을 위한 플레이스홀더 UI
+    <Container>
+      <PlaceholderText>합주할 동영상을 불러와주세요.</PlaceholderText>
+      <SelectButton onPress={onSelectVideo} activeOpacity={0.7}>
+        <ButtonText>내 휴대폰에서 동영상 찾기</ButtonText>
+      </SelectButton>
+    </Container>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  placeholderText: { color: 'white', fontSize: 16, marginBottom: 20 },
-  selectButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 25,
-    backgroundColor: '#007AFF',
-  },
-  buttonText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
-  infoText: { color: 'white', fontSize: 18, textAlign: 'center', marginTop: 20 },
-  infoTextSub: { color: '#aaa', fontSize: 14, textAlign: 'center', marginTop: 10 },
-});
 
 export default VideoPlaceholder;

@@ -10,8 +10,11 @@ import RegisterPage from "../pages/auth/RegisterPage";
 import MainPage from "../pages/main/MainPage";
 import ChatListPage from "../pages/chat/ChatListPage";
 import ChatRoomPage from '../pages/chat/ChatRoomPage'; 
-import UserPage from '../pages/user/UserPage'; 
-
+import UserPage from '../pages/user/UserPage';
+import UsedProductPage from '../pages/usedProduct/UsedProductPage';
+import CreateUsedProductPage from '../pages/usedProduct/CreateUsedProductPage';
+import UsedProductDetailPage from '../pages/usedProduct/UsedProductDetailPage';
+import UpdateUsedProductPage from '../pages/usedProduct/UpdateUsedProductPage';
 
 const AppRouter: React.FC = () => {
   return (
@@ -25,6 +28,10 @@ const AppRouter: React.FC = () => {
         <Route path="/chat/:roomId" element={<ChatRoomPage />} /> {/* <-- 새로운 동적 경로 추가 */}
         <Route path="/users/:userId" element={<UserPage />} />
         <Route path="/main" element={<MainPage />} />
+        <Route path="/used-products" element={<UsedProductPage/>} />
+        <Route path="/used-products/create" element={<CreateUsedProductPage/>} />
+        <Route path="/used-products/:id" element={<UsedProductDetailPage />} /> 
+        <Route path="/used-products/edit/:id" element={<UpdateUsedProductPage />} /> 
       </Routes>
     </Router>
   );

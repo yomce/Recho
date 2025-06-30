@@ -11,7 +11,7 @@ import { VideosModule } from './videos/videos.module';
 import { AuthModule } from './auth/auth.module'; // <-- AuthModule 임포트
 import { UserModule } from './auth/user/user.module'; // <-- UserModule 임포트
 import { VideoInsertModule } from './video-insert/video-insert.module';
-import { ChatModule } from './chat/chat.module'; // <-- ChatModule도 필요할 것이므로 추가
+// import { ChatModule } from './chat/chat.module'; // <-- ChatModule도 필요할 것이므로 추가
 
 @Module({
   imports: [
@@ -43,7 +43,7 @@ import { ChatModule } from './chat/chat.module'; // <-- ChatModule도 필요할 
     UserModule,
     VideosModule,
     VideoInsertModule,
-    ChatModule, 
+    // ChatModule, 
   ],
   controllers: [AppController],
   providers: [AppService],

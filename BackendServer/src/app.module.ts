@@ -8,10 +8,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { VideosModule } from './videos/videos.module';
-import { AuthModule } from './auth/auth.module'; // <-- AuthModule 임포트
-import { UserModule } from './auth/user/user.module'; // <-- UserModule 임포트
+import { AuthModule } from './auth/auth.module'; 
+import { UserModule } from './auth/user/user.module'; 
 import { VideoInsertModule } from './video-insert/video-insert.module';
-// import { ChatModule } from './chat/chat.module'; // <-- ChatModule도 필요할 것이므로 추가
+import { ChatModule } from './chat/chat.module'; 
 
 @Module({
   imports: [
@@ -43,7 +43,7 @@ import { VideoInsertModule } from './video-insert/video-insert.module';
     UserModule,
     VideosModule,
     VideoInsertModule,
-    // ChatModule, 
+    ChatModule, 
   ],
   controllers: [AppController],
   providers: [AppService],

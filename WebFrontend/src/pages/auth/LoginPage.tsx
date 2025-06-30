@@ -1,6 +1,7 @@
 // src/pages/LoginPage.tsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // React Router 사용을 가정
+import PrimaryButton from '@/components/atoms/button/PrimaryButton';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -51,42 +52,40 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div style={{ width: '300px', margin: '100px auto', padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
-      <h1>로그인</h1>
+    <div className="app-container flex flex-col justify-center w-full px-4">
+      <h1 className='w-full text-center text-title'>로그인</h1>
       <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="id" style={{ display: 'block', marginBottom: '5px' }}>아이디</label>
+        <div className="mb-4">
+          <label htmlFor="id" className="block mb-1 text-body">아이디</label>
           <input
             type="text"
             id="id"
             value={id}
             onChange={(e) => setId(e.target.value)}
             required
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
+            className="w-full p-2 rounded border border-brand-frame text-body"
           />
         </div>
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="password" style={{ display: 'block', marginBottom: '5px' }}>비밀번호</label>
+        <div className="mb-4">
+          <label htmlFor="password" className="block mb-1 text-body">비밀번호</label>
           <input
             type="password"
             id="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
+            className="w-full p-2 rounded border border-brand-frame text-body"
           />
         </div>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        <button type="submit" style={{ width: '100%', padding: '10px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-          로그인
-        </button>
+        {error && <p className="text-error mb-2">{error}</p>}
+          <PrimaryButton>로그인</PrimaryButton>
       </form>
       {/* 회원가입 버튼 추가 */}
-      <div style={{ marginTop: '15px', textAlign: 'center' }}>
-        <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#666' }}>계정이 없으신가요?</p>
+      <div className="mt-4 text-center">
+        <p className="mb-2 text-caption text-brand-text-secondary">계정이 없으신가요?</p>
         <button 
           onClick={handleRegisterClick} 
-          style={{ width: '100%', padding: '10px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+          className="w-full py-2 bg-brand-gray text-white rounded-button text-button cursor-pointer"
         >
           회원가입
         </button>
@@ -94,5 +93,4 @@ const LoginPage: React.FC = () => {
     </div>
   );
 };
-
 export default LoginPage;

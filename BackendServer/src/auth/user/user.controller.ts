@@ -45,16 +45,27 @@ export class UserController {
 
 
   @Get(':id')
-  async findUserById(@Param('id') id: string): Promise<User> {
-    const user = await this.userService.findById(id);
+  async findUserById(@Param('id') id: string): Promise<Omit<User, 'password' | 'hashedRefreshToken'>> {
+    // 1. 디버깅을 위해 어떤 ID로 요청이 들어왔는지 서버 콘솔에 로그를 남깁니다.
+    //    trim()을 사용하여 파라미터의 양쪽 공백을 제거합니다.
+    const trimmedId = id.trim();
+    console.log(`[UserController] findUserById가 호출되었습니다. ID: ${trimmedId}`);
 
-    // 만약 유저를 찾지 못했다면(결과가 null 또는 undefined),
-    // NestJS의 내장 NotFoundException을 발생시켜 404 에러를 응답합니다.
+    const user = await this.userService.findById(trimmedId);
+
+    // 2. 서비스에서 유저를 찾지 못하면(null 반환), 404 에러를 발생시킵니다.
     if (!user) {
-      throw new NotFoundException(`User with ID "${id}" not found`);
+      console.log(`[UserController] 데이터베이스에서 ID '${trimmedId}'를 가진 유저를 찾지 못했습니다.`);
+      throw new NotFoundException(`User with ID "${trimmedId}" not found`);
     }
 
-    return user;
+    // 3. 보안을 위해, 찾은 user 객체에서 password와 hashedRefreshToken을 제거합니다.
+    const { password, hashedRefreshToken, ...result } = user;
+    
+    console.log(`[UserController] 유저를 찾았습니다:`, result);
+    
+    // 4. 안전한 정보만 담긴 result 객체를 반환합니다.
+    return result;
   }
 
   

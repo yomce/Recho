@@ -10,7 +10,7 @@ import { AppService } from './app.service';
 import { VideosModule } from './videos/videos.module';
 import { AuthModule } from './auth/auth.module'; // <-- AuthModule 임포트
 import { UserModule } from './auth/user/user.module'; // <-- UserModule 임포트
-// import { ChatModule } from './chat/chat.module'; // <-- ChatModule도 필요할 것이므로 추가
+import { ChatModule } from './chat/chat.module'; // <-- ChatModule도 필요할 것이므로 추가
 
 @Module({
   imports: [
@@ -41,7 +41,7 @@ import { UserModule } from './auth/user/user.module'; // <-- UserModule 임포�
     AuthModule,
     UserModule,
     VideosModule,
-    // ChatModule, // 채팅 기능이 있다면 ChatModule도 등록해야 합니다.
+    ChatModule, // 채팅 기능이 있다면 ChatModule도 등록해야 합니다.
   ],
   controllers: [AppController],
   providers: [AppService],

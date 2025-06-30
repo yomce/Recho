@@ -28,7 +28,6 @@ export class VideoInsertService {
       Key: key,
       ContentType: fileType,
     });
-    //5분안에 인코딩 후 s3에 저장해야함
     const url = await getSignedUrl(this.s3, command, { expiresIn: 60 * 5 });
     return { url, key };
   }

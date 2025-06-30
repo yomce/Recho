@@ -17,6 +17,18 @@ interface RequestWithUser extends Request {
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
+  @Post('dm')
+  @UseGuards(AuthGuard('jwt')) // 로그인이 필요한 API
+  async createOrGetDmRoom(
+    @Req() req: RequestWithUser, // 요청을 보낸 사용자(나)의 정보
+    @Body('partnerId') partnerId: string, // DM을 보낼 상대방의 ID
+  ) {
+    const myId = req.user.id;
+    if (!partnerId) {
+      throw new Error('상대방의 ID가 필요합니다.');
+    }
+    return this.chatService.getOrCreatePrivateRoom(myId, partnerId);
+  }
   // 1) 방 목록 조회
   @Get('rooms')
   async getRooms(): Promise<Room[]> {

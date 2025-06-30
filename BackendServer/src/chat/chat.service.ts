@@ -86,4 +86,31 @@ export class ChatService {
     // 3. UserRoom 엔티티 배열에서 Room 엔티티만 추출하여 반환합니다.
     return userRooms.map(userRoom => userRoom.room);
   }
+
+  async getOrCreatePrivateRoom(user1Id: string, user2Id: string): Promise<Room> {
+    // 두 사용자의 ID를 정렬하여 항상 동일한 순서를 보장합니다.
+    const sortedUserIds = [user1Id, user2Id].sort();
+    // 정렬된 ID를 기반으로 고유한 방 ID를 생성합니다.
+    const privateRoomId = `private-${sortedUserIds[0]}-${sortedUserIds[1]}`;
+
+    // 1. 해당 ID를 가진 방이 이미 존재하는지 확인합니다.
+    let room = await this.roomRepo.findOneBy({ id: privateRoomId });
+
+    // 2. 방이 존재하지 않으면 새로 생성합니다.
+    if (!room) {
+      // 새로운 PRIVATE 타입의 방을 생성합니다. (이름은 없음)
+      room = this.roomRepo.create({
+        id: privateRoomId,
+        type: 'PRIVATE',
+      });
+      await this.roomRepo.save(room);
+
+      // 두 사용자를 모두 이 방에 참여시킵니다.
+      await this.joinRoom(user1Id, privateRoomId);
+      await this.joinRoom(user2Id, privateRoomId);
+    }
+
+    // 3. 기존 방 또는 새로 생성된 방을 반환합니다.
+    return room;
+  }
 }

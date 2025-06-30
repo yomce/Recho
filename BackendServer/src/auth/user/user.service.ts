@@ -13,15 +13,19 @@ export class UserService {
     @InjectRepository(User) private readonly userRepo: Repository<User>,
   ) {}
 
-  async createUser(dto: CreateUserDto): Promise<Omit<User, 'password' | 'hashedRefreshToken'>> {
+  async createUser(
+    dto: CreateUserDto,
+  ): Promise<Omit<User, 'password' | 'hashedRefreshToken'>> {
     // 1. 아이디 중복 확인
     const existingUserById = await this.userRepo.findOneBy({ id: dto.id });
     if (existingUserById) {
       throw new ConflictException('이미 존재하는 아이디입니다.');
     }
-    
+
     // 2. 이메일 중복 확인 (엔티티에 unique:true 속성이 있으므로 추가하는 것이 좋습니다)
-    const existingUserByEmail = await this.userRepo.findOneBy({ email: dto.email });
+    const existingUserByEmail = await this.userRepo.findOneBy({
+      email: dto.email,
+    });
     if (existingUserByEmail) {
       throw new ConflictException('이미 사용 중인 이메일입니다.');
     }
@@ -34,10 +38,10 @@ export class UserService {
     const user = this.userRepo.create({
       id: dto.id,
       username: dto.username, // 'dto.name'에서 'dto.username'으로 수정
-      email: dto.email,       // 누락되었던 email 필드 추가
+      email: dto.email, // 누락되었던 email 필드 추가
       password: hashedPassword,
     });
-    
+
     await this.userRepo.save(user);
 
     // 보안을 위해 반환되는 객체에서 민감한 정보를 제거합니다.

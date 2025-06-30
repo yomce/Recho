@@ -13,13 +13,18 @@ import { VideoInsertModule } from './video-insert/video-insert.module';
 import { ChatModule } from './chat/chat.module';
 import { UsedProductModule } from './used_product/used-product.module';
 import { UsedProduct } from './used_product/entities/used-product.entity';
+import { User } from './auth/user/user.entity';
+import { Room } from './chat/entities/room.entity';
+import { Message } from './chat/entities/message.entity';
+import { UserRoom } from './chat/entities/user-room.entity';
+import { Video } from './entities/video.entity';
+import { VideoComment } from './entities/video-comments.entity';
+import { VideoLike } from './entities/video-likes.entity';
 
 @Module({
   imports: [
-
     ConfigModule.forRoot({ isGlobal: true }),
     MulterModule,
-
 
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -31,14 +36,21 @@ import { UsedProduct } from './used_product/entities/used-product.entity';
         username: cs.get<string>('DB_USERNAME'),
         password: cs.get<string>('DB_PASSWORD'),
         database: cs.get<string>('DB_NAME'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}', UsedProduct],
+        entities: [
+          User,
+          Room,
+          Message,
+          UserRoom,
+          Video,
+          VideoComment,
+          VideoLike,
+          UsedProduct,
+        ],
         synchronize: true,
         logging: true,
-        dropSchema: false,
+        dropSchema: true,
       }),
     }),
-
-
 
     AuthModule,
     UserModule,

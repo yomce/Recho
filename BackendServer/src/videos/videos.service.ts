@@ -1,5 +1,9 @@
 // src/videos/videos.service.ts
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import * as ffmpeg from 'fluent-ffmpeg';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -146,25 +150,30 @@ export class VideosService {
     if (layout === 'row') {
       const collage_h = 1080;
       bg_height = collage_h;
-      const frame_h_common = ensureEven(collage_h - (PADDING * 2));
+      const frame_h_common = ensureEven(collage_h - PADDING * 2);
       frame1_h = frame_h_common;
       frame2_h = frame_h_common;
       frame1_w = ensureEven(frame1_h * ar_val1);
       frame2_w = ensureEven(frame2_h * ar_val2);
       bg_width = PADDING + frame1_w + PADDING + frame2_w + PADDING;
-      x1 = PADDING; y1 = PADDING;
-      x2 = PADDING + frame1_w + PADDING; y2 = PADDING;
-    } else { // 'column'
+      x1 = PADDING;
+      y1 = PADDING;
+      x2 = PADDING + frame1_w + PADDING;
+      y2 = PADDING;
+    } else {
+      // 'column'
       const collage_w = 1080;
       bg_width = collage_w;
-      const frame_w_common = ensureEven(collage_w - (PADDING * 2));
+      const frame_w_common = ensureEven(collage_w - PADDING * 2);
       frame1_w = frame_w_common;
       frame2_w = frame_w_common;
       frame1_h = ensureEven(frame1_w / ar_val1);
       frame2_h = ensureEven(frame2_w / ar_val2);
       bg_height = PADDING + frame1_h + PADDING + frame2_h + PADDING;
-      x1 = PADDING; y1 = PADDING;
-      x2 = PADDING; y2 = PADDING + frame1_h + PADDING;
+      x1 = PADDING;
+      y1 = PADDING;
+      x2 = PADDING;
+      y2 = PADDING + frame1_h + PADDING;
     }
 
     bg_width = ensureEven(bg_width);
@@ -175,26 +184,42 @@ export class VideosService {
     // --- 2b. 각 비디오 처리 ---
 
     // -- 첫 번째 비디오 --
-    filterComplex.push(`[0:v]trim=start=${trimmer1.startTime}:end=${trimmer1.endTime},setpts=PTS-STARTPTS[v0_trimmed]`);
-    filterComplex.push(`[v0_trimmed]crop=w='min(iw,ih*(${ar_val1}))':h='min(ih,iw/(${ar_val1}))',setsar=1[v0_cropped]`);
-    filterComplex.push(`[v0_cropped]scale=w=${frame1_w}:h=${frame1_h}[v0_final]`);
+    filterComplex.push(
+      `[0:v]trim=start=${trimmer1.startTime}:end=${trimmer1.endTime},setpts=PTS-STARTPTS[v0_trimmed]`,
+    );
+    filterComplex.push(
+      `[v0_trimmed]crop=w='min(iw,ih*(${ar_val1}))':h='min(ih,iw/(${ar_val1}))',setsar=1[v0_cropped]`,
+    );
+    filterComplex.push(
+      `[v0_cropped]scale=w=${frame1_w}:h=${frame1_h}[v0_final]`,
+    );
 
     // ✨ 첫 번째 비디오에 둥근 모서리 적용
     if (cornerRadius > 0) {
       filterComplex.push(`color=c=black:s=${frame1_w}x${frame1_h}[mask0_base]`);
-      filterComplex.push(`[mask0_base]geq=lum='if(gt(hypot(X-max(${cornerRadius},min(W-${cornerRadius},X)),Y-max(${cornerRadius},min(H-${cornerRadius},Y))),${cornerRadius}),0,255)':a=255[mask0]`);
+      filterComplex.push(
+        `[mask0_base]geq=lum='if(gt(hypot(X-max(${cornerRadius},min(W-${cornerRadius},X)),Y-max(${cornerRadius},min(H-${cornerRadius},Y))),${cornerRadius}),0,255)':a=255[mask0]`,
+      );
       filterComplex.push(`[v0_final][mask0]alphamerge[v0_rounded]`);
     }
 
     // -- 두 번째 비디오 --
-    filterComplex.push(`[1:v]trim=start=${trimmer2.startTime}:end=${trimmer2.endTime},setpts=PTS-STARTPTS[v1_trimmed]`);
-    filterComplex.push(`[v1_trimmed]crop=w='min(iw,ih*(${ar_val2}))':h='min(ih,iw/(${ar_val2}))',setsar=1[v1_cropped]`);
-    filterComplex.push(`[v1_cropped]scale=w=${frame2_w}:h=${frame2_h}[v1_final]`);
+    filterComplex.push(
+      `[1:v]trim=start=${trimmer2.startTime}:end=${trimmer2.endTime},setpts=PTS-STARTPTS[v1_trimmed]`,
+    );
+    filterComplex.push(
+      `[v1_trimmed]crop=w='min(iw,ih*(${ar_val2}))':h='min(ih,iw/(${ar_val2}))',setsar=1[v1_cropped]`,
+    );
+    filterComplex.push(
+      `[v1_cropped]scale=w=${frame2_w}:h=${frame2_h}[v1_final]`,
+    );
 
     // ✨ 두 번째 비디오에 둥근 모서리 적용
     if (cornerRadius > 0) {
       filterComplex.push(`color=c=black:s=${frame2_w}x${frame2_h}[mask1_base]`);
-      filterComplex.push(`[mask1_base]geq=lum='if(gt(hypot(X-max(${cornerRadius},min(W-${cornerRadius},X)),Y-max(${cornerRadius},min(H-${cornerRadius},Y))),${cornerRadius}),0,255)':a=255[mask1]`);
+      filterComplex.push(
+        `[mask1_base]geq=lum='if(gt(hypot(X-max(${cornerRadius},min(W-${cornerRadius},X)),Y-max(${cornerRadius},min(H-${cornerRadius},Y))),${cornerRadius}),0,255)':a=255[mask1]`,
+      );
       filterComplex.push(`[v1_final][mask1]alphamerge[v1_rounded]`);
     }
 

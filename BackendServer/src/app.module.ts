@@ -11,11 +11,16 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './auth/user/user.module';
 import { VideoInsertModule } from './video-insert/video-insert.module';
 import { ChatModule } from './chat/chat.module';
+import { UsedProductModule } from './used_product/used-product.module';
+import { UsedProduct } from './used_product/entities/used-product.entity';
 
 @Module({
   imports: [
+
     ConfigModule.forRoot({ isGlobal: true }),
     MulterModule,
+
+
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -26,17 +31,21 @@ import { ChatModule } from './chat/chat.module';
         username: cs.get<string>('DB_USERNAME'),
         password: cs.get<string>('DB_PASSWORD'),
         database: cs.get<string>('DB_NAME'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        entities: [__dirname + '/**/*.entity{.ts,.js}', UsedProduct],
         synchronize: true,
         logging: true,
         dropSchema: false,
       }),
     }),
+
+
+
     AuthModule,
     UserModule,
     VideosModule,
     VideoInsertModule,
     ChatModule,
+    UsedProductModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -10,7 +10,8 @@ import { AppService } from './app.service';
 import { VideosModule } from './videos/videos.module';
 import { AuthModule } from './auth/auth.module'; // <-- AuthModule 임포트
 import { UserModule } from './auth/user/user.module'; // <-- UserModule 임포트
-// import { ChatModule } from './chat/chat.module'; // <-- ChatModule도 필요할 것이므로 추가
+import { UsedProductModule } from './used_product/used-product.module';
+import { UsedProduct } from './used_product/entities/used-product.entity';
 
 @Module({
   imports: [
@@ -29,7 +30,7 @@ import { UserModule } from './auth/user/user.module'; // <-- UserModule 임포�
         username: cs.get<string>('DB_USERNAME'),
         password: cs.get<string>('DB_PASSWORD'),
         database: cs.get<string>('DB_NAME'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        entities: [__dirname + '/**/*.entity{.ts,.js}', UsedProduct],
         synchronize: true,
         logging: true,
         dropSchema: false,
@@ -41,6 +42,7 @@ import { UserModule } from './auth/user/user.module'; // <-- UserModule 임포�
     AuthModule,
     UserModule,
     VideosModule,
+    UsedProductModule,
     // ChatModule, // 채팅 기능이 있다면 ChatModule도 등록해야 합니다.
   ],
   controllers: [AppController],

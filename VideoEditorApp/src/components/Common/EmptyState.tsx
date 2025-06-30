@@ -60,8 +60,10 @@ const EmptyState: React.FC<Props> = ({
 }) => {
   return (
     <EmptyStateContainer style={containerStyle}>
-      {icon && <IconText>{icon}</IconText>} {/* Display icon if provided */}
-      <MessageText style={messageStyle}>{message}</MessageText> {/* Main message */}
+      {/* Display icon if provided */}
+      {icon && <IconText>{icon}</IconText>}
+      {/* Main message */}
+      <MessageText style={messageStyle}>{message}</MessageText>
       {/* Iterate and display sub-messages if provided */}
       {subMessages && subMessages.map((sub, index) => (
         <SubMessageText key={index} style={subMessageStyle}>{sub}</SubMessageText>

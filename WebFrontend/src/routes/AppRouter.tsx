@@ -1,17 +1,17 @@
 import React from "react";
 import {
+  BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
-  BrowserRouter as Router,
 } from "react-router-dom";
 import LoginPage from "../pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
 import MainPage from "../pages/main/MainPage";
-import UsedProductPage from '../pages/usedProduct/UsedProductPage';
-import CreateUsedProductPage from '../pages/usedProduct/CreateUsedProductPage';
-import UsedProductDetailPage from '../pages/usedProduct/UsedProductDetailPage';
-import UpdateUsedProductPage from '../pages/usedProduct/UpdateUsedProductPage';
+import ChatListPage from "../pages/chat/ChatListPage";
+import ChatRoomPage from '../pages/chat/ChatRoomPage'; 
+import UserPage from '../pages/user/UserPage'; 
+
 
 const AppRouter: React.FC = () => {
   return (
@@ -21,11 +21,10 @@ const AppRouter: React.FC = () => {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/chat" element={<ChatListPage />} />
+        <Route path="/chat/:roomId" element={<ChatRoomPage />} /> {/* <-- 새로운 동적 경로 추가 */}
+        <Route path="/users/:userId" element={<UserPage />} />
         <Route path="/main" element={<MainPage />} />
-        <Route path="/used-products" element={<UsedProductPage/>} />
-        <Route path="/used-products/create" element={<CreateUsedProductPage/>} />
-        <Route path="/used-products/:id" element={<UsedProductDetailPage />} /> 
-        <Route path="/used-products/edit/:id" element={<UpdateUsedProductPage />} /> 
       </Routes>
     </Router>
   );

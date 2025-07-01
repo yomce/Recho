@@ -2,9 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { type UsedProduct, type PaginatedUsedProductResponse } from '../../types/product';
-import './UsedProductPage.css'; // 목록 및 로딩 스타일 CSS
 
-// 커서의 타입을 명확하게 정의합니다.
+// `UsedProductPage.css`를 import하던 줄은 삭제합니다.
+
 interface Cursor {
   lastProductId: number;
   lastCreatedAt: string;
@@ -14,45 +14,30 @@ const UsedProductPage: React.FC = () => {
   const [items, setItems] = useState<UsedProduct[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // --- 커서 기반 페이지네이션 상태 관리 ---
   const [nextCursor, setNextCursor] = useState<Cursor | null>(null);
   const [hasNextPage, setHasNextPage] = useState(true);
 
-  // 데이터를 불러오는 함수
   const fetchItems = useCallback(async (isInitialFetch: boolean) => {
-    // 로딩 중이거나 다음 페이지가 없으면 요청하지 않음
     if (loading || !hasNextPage) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const params = new URLSearchParams({
-        limit: '12', // 한 번에 불러올 개수
-      });
-
-      // 첫 로드가 아닐 경우(더보기 클릭 시) 커서 파라미터를 추가
+      const params = new URLSearchParams({ limit: '12' });
       if (!isInitialFetch && nextCursor) {
         params.append('lastProductId', String(nextCursor.lastProductId));
         params.append('lastCreatedAt', nextCursor.lastCreatedAt);
       }
 
       const response = await axios.get<PaginatedUsedProductResponse>(
-        // 백엔드 주소를 정확하게 입력해주세요.
-        `http://localhost:3000/used-products`, 
+        `http://localhost:3000/used-products`,
         { params }
       );
-      
+
       const { data, nextCursor: newCursor, hasNextPage: newHasNextPage } = response.data;
 
-      // 첫 로드일 경우 데이터를 교체, 아닐 경우 기존 데이터에 새로운 데이터를 추가
-      if (isInitialFetch) {
-        setItems(data);
-      } else {
-        setItems(prevItems => [...prevItems, ...data]);
-      }
-      
+      setItems(prev => (isInitialFetch ? data : [...prev, ...data]));
       setNextCursor(newCursor ?? null);
       setHasNextPage(newHasNextPage);
 
@@ -62,65 +47,92 @@ const UsedProductPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [loading, hasNextPage, nextCursor]); // useCallback 의존성 배열
+  }, [loading, hasNextPage, nextCursor]);
 
-  // 첫 마운트 시에만 데이터를 불러옵니다.
   useEffect(() => {
-    fetchItems(true); // isInitialFetch = true
-  }, []); // 의존성 배열이 비어있어 최초 1회만 실행됩니다.
+    fetchItems(true);
+  }, [fetchItems]);
 
-  // '더보기' 버튼 클릭 핸들러
   const handleLoadMore = () => {
-    fetchItems(false); // isInitialFetch = false
+    fetchItems(false);
   };
 
-  // --- UI 렌더링 ---
   return (
-    <div className="page-container">
-      <h2>상품 목록</h2>
-      <Link to="/used-products/create" className="create-product-btn">
-        상품 등록하기
-      </Link>
-      {error && <div className="message-container"><p className="error">{error}</p></div>}
-      
-      {items.length > 0 ? (
-        <div className="item-list">
+    <div className="max-w-6xl mx-auto my-8 px-4">
+      {/* --- 페이지 헤더 --- */}
+      <header className="flex justify-between items-center mb-8">
+        <h2 className="m-0 text-3xl font-bold text-left">상품 목록</h2>
+        <Link 
+          to="/used-products/create" 
+          className="inline-block py-2.5 px-5 text-base font-semibold text-white bg-blue-500 rounded-md no-underline text-center transition-colors hover:bg-blue-700"
+        >
+          상품 등록하기
+        </Link>
+      </header>
+
+      {/* --- 에러 메시지 --- */}
+      {error && (
+        <div className="flex justify-center items-center py-16 px-4 text-center">
+          <p className="text-lg text-red-600 font-medium">{error}</p>
+        </div>
+      )}
+
+      {/* --- 상품 목록 그리드 --- */}
+      {items.length > 0 && (
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-6">
           {items.map((item) => (
-            <div key={`${item.productId}-${item.createdAt}`}> {/* 중복 방지를 위한 더 안정적인 key */}
-              <Link to={`/used-products/${item.productId}`} className="item-card">
-                <div className="item-image-container">
-                  <img src={item.imageUrl || 'https://placehold.co/600x400'} alt={item.title} />
-                </div>
-                <div className="item-info">
-                  <h3>{item.title}</h3>
-                  <p className="price">{item.price.toLocaleString()}원</p>
-                </div>
-              </Link>
-            </div>
+            <Link
+              key={`${item.productId}-${item.createdAt}`}
+              to={`/used-products/${item.productId}`}
+              className="block bg-white border border-gray-200 rounded-lg overflow-hidden no-underline text-slate-800 shadow-md transition-all duration-200 ease-in-out hover:-translate-y-1 hover:shadow-lg"
+            >
+              <div className="aspect-square overflow-hidden">
+                <img 
+                  src={item.imageUrl || 'https://placehold.co/600x400'} 
+                  alt={item.title}
+                  className="w-full h-full object-cover" 
+                />
+              </div>
+              <div className="p-4">
+                <h3 className="text-lg font-bold mb-2 whitespace-nowrap overflow-hidden text-ellipsis">
+                  {item.title}
+                </h3>
+                <p className="text-xl font-semibold m-0">
+                  {item.price.toLocaleString()}원
+                </p>
+              </div>
+            </Link>
           ))}
         </div>
-      ) : (
-        // 로딩 중이 아닐 때만 "상품 없음" 메시지 표시
-        !loading && <div className="message-container"><p>등록된 상품이 없습니다.</p></div>
       )}
 
-      {/* 로딩 스피너는 로딩 중일 때 항상 표시 */}
-      {loading && (
-        <div className="message-container">
-          <div className="spinner"></div>
+      {/* --- 상품 없음 메시지 --- */}
+      {!loading && items.length === 0 && !error && (
+        <div className="flex justify-center items-center py-16 px-4 text-center text-lg text-gray-600">
+          <p>등록된 상품이 없습니다.</p>
         </div>
       )}
 
-      {/* 로딩 중이 아니고, 다음 페이지가 있을 때만 '더보기' 버튼 표시 */}
+      {/* --- 로딩 스피너 --- */}
+      {loading && (
+        <div className="flex justify-center items-center py-16">
+          <div className="w-9 h-9 border-4 border-gray-200 border-l-blue-500 rounded-full animate-spin"></div>
+        </div>
+      )}
+
+      {/* --- 더보기 버튼 --- */}
       {!loading && hasNextPage && (
-        <div className="load-more-container">
-          <button onClick={handleLoadMore} className="load-more-button">
+        <div className="text-center mt-12">
+          <button
+            onClick={handleLoadMore}
+            className="py-3 px-8 text-lg font-semibold text-white bg-blue-500 rounded-md cursor-pointer transition-colors hover:bg-blue-700 disabled:bg-gray-500 disabled:cursor-not-allowed"
+          >
             더보기
           </button>
         </div>
       )}
     </div>
   );
-}
+};
 
 export default UsedProductPage;

@@ -57,6 +57,13 @@ const MainPage: React.FC = () => {
     navigate('/chat');
   };
 
+  /**
+   * 중고거래 페이지로 이동하는 함수
+   */
+  const handleGoToUsedProducts = () => {
+    navigate('/used-products');
+  };
+
   return (
     <div style={{ padding: '20px' }}>
       {/* username이 있으면 환영 메시지를, 없으면 기본 메시지를 보여줍니다. */}
@@ -73,6 +80,12 @@ const MainPage: React.FC = () => {
           style={{ padding: '10px 20px', fontSize: '16px', cursor: 'pointer', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '5px' }}
         >
           채팅하기
+        </button>
+        <button
+          onClick={handleGoToUsedProducts}
+          style={{ padding: '10px 20px', fontSize: '16px', cursor: 'pointer', backgroundColor: '#479c56', color: 'white', border: 'none', borderRadius: '5px' }}
+        >
+          중고거래하기
         </button>
         <button
           onClick={handleLogout}

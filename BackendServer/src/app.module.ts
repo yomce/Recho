@@ -43,6 +43,7 @@ import { ApplyEnsemble } from './ensemble/entities/apply-ensemble.entity';
         synchronize: true,
         logging: true,
         dropSchema: false,
+        timezone: 'UTC',
       }),
     }),
 
@@ -53,6 +54,8 @@ import { ApplyEnsemble } from './ensemble/entities/apply-ensemble.entity';
     ChatModule,
     UsedProductModule,
     EnsembleModule,
+
+   
   ],
   controllers: [AppController],
   providers: [AppService],

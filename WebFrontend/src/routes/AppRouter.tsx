@@ -15,6 +15,7 @@ import UsedProductPage from '../pages/usedProduct/UsedProductPage';
 import CreateUsedProductPage from '../pages/usedProduct/CreateUsedProductPage';
 import UsedProductDetailPage from '../pages/usedProduct/UsedProductDetailPage';
 import UpdateUsedProductPage from '../pages/usedProduct/UpdateUsedProductPage';
+import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage'; 
 
 const AppRouter: React.FC = () => {
   return (
@@ -24,6 +25,7 @@ const AppRouter: React.FC = () => {
         <Route path="/" element={<Navigate to="/main" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/chat" element={<ChatListPage />} />
         <Route path="/chat/:roomId" element={<ChatRoomPage />} />
         <Route path="/users/:userId" element={<UserPage />} />

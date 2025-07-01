@@ -1,19 +1,20 @@
-// src/pages/LoginPage.tsx (수정 완료)
+// src/pages/LoginPage.tsx
+
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '@/stores/authStore'; // Zustand 스토어 import
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuthStore } from '@/stores/authStore';
 import PrimaryButton from '@/components/atoms/button/PrimaryButton';
+import TextInput from '@/components/atoms/input/TextInput';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  // Zustand 스토어에서 login 함수를 가져옵니다.
-  // 컴포넌트의 리렌더링과 관련 없는 함수는 getState()로 가져오는 것이 효율적입니다.
   const { login } = useAuthStore.getState();
 
   const [id, setId] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false); // 로딩 상태 추가
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -21,71 +22,170 @@ const LoginPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // 스토어의 login 함수를 호출합니다.
-      await login({ id, password });
-      
+      await login({ id: id, password });
       alert('로그인 성공!');
-      navigate('/main'); // 로그인 성공 시 메인 페이지로 이동
-
+      navigate('/main');
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('알 수 없는 에러가 발생했습니다.');
+        setError('An unknown error occurred.');
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleRegisterClick = () => {
-    navigate('/register');
-  };
+  // handleRegisterClick 함수는 이제 Link 컴포넌트로 대체되므로 삭제합니다.
 
   return (
-    <div className="flex flex-col justify-center items-center min-h-screen bg-brand-frame p-4">
-      <div className="w-full max-w-sm bg-white p-8 rounded-card shadow-md">
-        <h1 className='w-full text-center text-title mb-8'>로그인</h1>
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label htmlFor="id" className="block mb-2 font-semibold text-brand-text-secondary">아이디</label>
-            <input
-              type="text"
-              id="id"
-              value={id}
-              onChange={(e) => setId(e.target.value)}
-              required
-              className="w-full p-3 rounded-button border border-brand-frame text-body focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none"
-            />
-          </div>
-          <div className="mb-6">
-            <label htmlFor="password" className="block mb-2 font-semibold text-brand-text-secondary">비밀번호</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full p-3 rounded-button border border-brand-frame text-body focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none"
-            />
-          </div>
-          
-          {error && <p className="text-error text-center mb-4">{error}</p>}
-          
-          <PrimaryButton type="submit" disabled={isLoading}>
-            {isLoading ? '로그인 중...' : '로그인'}
-          </PrimaryButton>
-        </form>
-
-        <div className="mt-6 text-center">
-          <p className="mb-2 text-caption text-brand-text-secondary">계정이 없으신가요?</p>
-          <button 
-            onClick={handleRegisterClick} 
-            className="w-full py-3 bg-brand-gray text-white rounded-button text-button cursor-pointer transition-colors hover:bg-opacity-80"
-          >
-            회원가입
-          </button>
+    // 커스텀 클래스 .centered-card-container 적용
+    <div className="centered-card-container px-4">
+      <div className="w-full max-w-md">
+        <div className="sm:mx-auto sm:w-full">
+          <img
+            className="mx-auto h-12 w-auto"
+            src="/RechoLogo.png"  
+            alt="Recho Logo"
+          />
+          {/* 커스텀 클래스 .text-title 적용 */}
+          <h2 className="mt-6 text-center text-body text-[var(--color-brand-text-primary)]">
+            음악으로 나를 알리는 플랫폼
+          </h2>
+          <h3 className="mt-4 text-center text-subheadline text-[var(--color-brand-text-primary)]">
+            RECHO
+          </h3>
         </div>
+
+        {/* 커스텀 변수 --color-brand-default, --radius-card 적용 */}
+        <div >
+          <form className="space-y-4 mt-4" onSubmit={handleSubmit}>
+            <div>
+              {/* 1. 아이콘과 input을 감싸는 div에 relative 추가 */}
+              <div className="relative mt-1">
+                {/* 2. 아이콘을 담는 div (절대 위치로 배치) */}
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                  {/* User 아이콘 SVG */}
+                  <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                {/* 3. input에 왼쪽 패딩(pl-10) 추가 */}
+                <div>
+                  <TextInput
+                    id="id"
+                    type="text" 
+                    required
+                    value={id}
+                    onChange={(e) => setId(e.target.value)}
+                    placeholder="아이디를 입력해주세요."
+                    icon={
+                      <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                      </svg>
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              {/* 1. 아이콘과 input을 감싸는 div에 relative 추가 */}
+              <div className="relative mt-1">
+                {/* 2. 아이콘을 담는 div (절대 위치로 배치) */}
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                  {/* Lock 아이콘 SVG */}
+                  <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                {/* 3. input에 왼쪽 패딩(pl-10) 추가 */}
+                <div>
+                  <TextInput
+                    id="password"
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="비밀번호를 입력해주세요."
+                    icon={
+                      <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" />
+                      </svg>
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <input
+                  id="remember-me"
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 rounded border-brand-disabled text-[var(--color-brand-primary)] focus:ring-[var(--color-brand-primary)]"
+                />
+                <label htmlFor="remember-me" className="ml-2 block text-caption text-[var(--color-brand-gray)]">
+                  Remember me
+                </label>
+              </div>
+
+              <div className="text-sm">
+                <Link to="/forgot-password" className="text-navigation font-medium text-[var(--color-brand-blue)] hover:opacity-80">
+                  Forgot password?
+                </Link>
+              </div>
+            </div>
+
+            {error && <p className="text-center text-error">{error}</p>}
+
+            <div>
+              <PrimaryButton type="submit" disabled={isLoading}>
+                {isLoading ? '로그인 중...' : '로그인'}
+              </PrimaryButton>
+            </div>
+          </form>
+
+           {/* 소셜 로그인 UI (커스텀 스타일 적용) */}
+           <div className="mt-6">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="bg-[var(--color-brand-frame)] px-2 text-caption text-[var(--color-brand-gray)]">소셜 계정으로 로그인하기</span>
+                </div>
+              </div>
+
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                <a
+                  href="#"
+                  className="inline-flex w-full justify-center rounded-[var(--radius-button)] border border-gray-300 bg-[var(--color-brand-default)] py-2 px-4 text-navigation font-medium text-[var(--color-brand-gray)] hover:bg-gray-50"
+                >
+                  <svg className="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 24 24">...</svg>
+                  Google
+                </a>
+                <a
+                  href="#"
+                  className="inline-flex w-full justify-center rounded-[var(--radius-button)] border border-gray-300 bg-[var(--color-brand-default)] py-2 px-4 text-navigation font-medium text-[var(--color-brand-gray)] hover:bg-gray-50"
+                >
+                  <svg className="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 24 24">...</svg>
+                  GitHub
+                </a>
+              </div>
+            </div>
+        </div>
+        <p className="mt-10 text-center text-caption text-[var(--color-brand-gray)]">
+          회원이 아니신가요?{' '}
+          <Link
+            to="/register"
+            className="text-navigation font-semibold text-[var(--color-brand-blue)] hover:opacity-80"
+          >
+            회원가입 하기
+          </Link>
+        </p>
       </div>
     </div>
   );

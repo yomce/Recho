@@ -4,6 +4,10 @@
 */
 @import "tailwindcss";
 
+body {
+  background-color: var(--color-brand-frame);
+}
+
 /* ========================================
   프로젝트 커스텀 테마 정의 (@theme)
 ======================================== */
@@ -15,9 +19,9 @@
   --color-brand-blue: #4397FD;            /* 링크/ 포인트 블루 색상 */
   --color-brand-gray: #61646B;            /* 설명/서브 텍스트 색상 */
   --color-brand-text-primary: #000000;    /* 기본 텍스트 색상 */
-  --color-brand-text-inverse: #FFFFFF;    /* 반전 텍스트 색상 */
+  --color-brand-inverse: #FFFFFF;    /* 반전 텍스트 색상 */
   --color-brand-text-secondary: #333333;  /* 보조 텍스트 색상 */
-  --color-brand-text-disabled: #AAAAAA;   /* 비활성화/ 설명 텍스트 색상 */
+  --color-brand-disabled: #AAAAAA;   /* 비활성화/ 설명 텍스트 색상 */
   --color-brand-error-text: #EF4444;      /* 에러 텍스트 색상 */
 
   /* Spacing & Sizing (간격 및 크기) */

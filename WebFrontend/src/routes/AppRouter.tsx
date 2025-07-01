@@ -15,6 +15,9 @@ import UsedProductPage from '../pages/usedProduct/UsedProductPage';
 import CreateUsedProductPage from '../pages/usedProduct/CreateUsedProductPage';
 import UsedProductDetailPage from '../pages/usedProduct/UsedProductDetailPage';
 import UpdateUsedProductPage from '../pages/usedProduct/UpdateUsedProductPage';
+import RecruitEnsembleListPage from '@/pages/ensemble/RecruitEnsemblePage';
+import CreateRecruitEnsemblePage from '@/pages/ensemble/CreateRecruitEnsemblePage';
+import RecruitEnsembleDetailPage from '@/pages/ensemble/RecruitEnsembleDetailPage';
 
 const AppRouter: React.FC = () => {
   return (
@@ -32,6 +35,9 @@ const AppRouter: React.FC = () => {
         <Route path="/used-products/create" element={<CreateUsedProductPage/>} />
         <Route path="/used-products/:id" element={<UsedProductDetailPage />} /> 
         <Route path="/used-products/edit/:id" element={<UpdateUsedProductPage />} /> 
+        <Route path="/ensembles" element={<RecruitEnsembleListPage/>} />
+        <Route path="/ensembles/create" element={<CreateRecruitEnsemblePage/>} />
+        <Route path="/ensembles/:id" element={<RecruitEnsembleDetailPage />} /> 
       </Routes>
     </Router>
   );

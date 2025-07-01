@@ -16,10 +16,9 @@ import {
 } from '@nestjs/common';
 import { UsedProductService } from './used-product.service';
 import { CreateUsedProductDto } from './dto/create-used-product.dto';
-import { PaginationQueryDto } from './dto/pagination-query.dto';
+import { PaginationQueryUsedProductDto } from './dto/pagination-query-used-product.dto';
 import { UpdateUsedProductDto } from './dto/update-used-product.dto';
 import { UsedProduct } from './entities/used-product.entity';
-// <<< 신규 DTO import
 import { PaginatedUsedProductResponse } from './dto/paginated-used-product.response.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
@@ -31,7 +30,7 @@ export class UsedProductController {
 
   @Get()
   async getUsedProducts(
-    @Query() paginationQuery: PaginationQueryDto,
+    @Query() paginationQuery: PaginationQueryUsedProductDto,
   ): Promise<PaginatedUsedProductResponse> {
     this.logger.log('Fetching used products with pagination');
 
@@ -49,10 +48,20 @@ export class UsedProductController {
   @UseGuards(AuthGuard('jwt'))
   async enrollUsedProduct(
     @Body() createUsedProductDto: CreateUsedProductDto,
+    @Req() req: Request,
   ): Promise<UsedProduct> {
+    if (!req.user || !req.user.id) {
+      this.logger.error(
+        'Authentication information missing from request user object.',
+      );
+      throw new ForbiddenException('사용자 인증 정보가 없습니다.');
+    }
+    const userId = req.user.id;
+
     this.logger.log(`Enrolling a new product: ${createUsedProductDto.title}`);
     return await this.usedProductService.enrollUsedProduct(
       createUsedProductDto,
+      userId,
     );
   }
 

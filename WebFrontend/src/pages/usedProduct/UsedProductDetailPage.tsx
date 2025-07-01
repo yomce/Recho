@@ -48,7 +48,7 @@ const UsedProductDetailPage: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await axios.get<UsedProduct>(`http://localhost:3000/used-products/${id}`);
+        const response = await axiosInstance.get<UsedProduct>(`used-products/${id}`);
         setProduct(response.data);
       } catch (err) {
         if (axios.isAxiosError(err) && err.response?.status === 404) {
@@ -79,7 +79,7 @@ const UsedProductDetailPage: React.FC = () => {
         return;
       }
       try {
-        await axiosInstance.delete(`http://localhost:3000/used-products/${id}`);
+        await axiosInstance.delete(`used-products/${id}`);
         alert('상품이 성공적으로 삭제되었습니다.');
         navigate('/used-products');
       } catch (err) {

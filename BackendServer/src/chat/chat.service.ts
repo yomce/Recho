@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
 import { nanoid } from 'nanoid';
@@ -13,6 +13,9 @@ import { RoomType } from './dto/create-room.dto';
 // src/chat/chat.service.ts
 @Injectable()
 export class ChatService {
+  private readonly logger = new Logger(ChatService.name);
+
+
   constructor(
     @InjectRepository(Room) private roomRepo: Repository<Room>,
     @InjectRepository(Message) private msgRepo: Repository<Message>,
@@ -78,7 +81,21 @@ export class ChatService {
 
   // 5) 방 나가기
   async leaveRoom(userId: string, roomId: string): Promise<void> {
+    // 1. 사용자를 방에서 내보냅니다 (UserRoom 레코드 삭제).
     await this.urRepo.delete({ userId, roomId });
+    this.logger.log(`User ${userId} left room ${roomId}`);
+
+    // 2. 방에 남은 인원 수를 확인합니다.
+    const remainingCount = await this.urRepo.count({ where: { roomId } });
+    this.logger.log(`Room ${roomId} has ${remainingCount} users remaining.`);
+
+    // 3. 남은 인원이 0명이라면 방과 관련된 모든 데이터를 삭제합니다.
+    if (remainingCount === 0) {
+      this.logger.log(`Room ${roomId} is empty. Deleting room and all related data...`);
+      // Room을 삭제하면 CASCADE 옵션에 의해 Message, UserRoom 데이터도 함께 삭제됩니다.
+      await this.roomRepo.delete(roomId);
+      this.logger.log(`Room ${roomId} has been successfully deleted.`);
+    }
   }
 
   async getAllRooms(): Promise<Room[]> {

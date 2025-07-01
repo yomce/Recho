@@ -67,13 +67,21 @@ export class ChatGateway {
     this.server.to(payload.roomId).emit('newMessage', messageWithSenderName);
   }
 
-  @SubscribeMessage('getHistory')
+ @SubscribeMessage('getHistory')
   async handleGetHistory(
-    @MessageBody() payload: { roomId: string; page?: number; limit?: number },
+    // [수정] payload에 userId를 추가로 받도록 타입을 수정합니다.
+    @MessageBody() payload: { 
+      roomId: string; 
+      userId: string; // userId를 필수로 받습니다.
+      page?: number; 
+      limit?: number 
+    },
     @ConnectedSocket() client: Socket,
   ) {
+    // [수정] chatService.getHistory 호출 시 payload에서 받은 userId를 전달합니다.
     const history = await this.chatService.getHistory(
       payload.roomId,
+      payload.userId, // userId 전달
       payload.page,
       payload.limit,
     );

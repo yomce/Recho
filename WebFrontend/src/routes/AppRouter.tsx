@@ -21,11 +21,11 @@ const AppRouter: React.FC = () => {
     <Router>
       <Routes>
         {/* 기본 경로를 로그인 페이지로 설정 */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<Navigate to="/main" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/chat" element={<ChatListPage />} />
-        <Route path="/chat/:roomId" element={<ChatRoomPage />} /> {/* <-- 새로운 동적 경로 추가 */}
+        <Route path="/chat/:roomId" element={<ChatRoomPage />} />
         <Route path="/users/:userId" element={<UserPage />} />
         <Route path="/main" element={<MainPage />} />
         <Route path="/used-products" element={<UsedProductPage/>} />

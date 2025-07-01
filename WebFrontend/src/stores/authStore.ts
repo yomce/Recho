@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import { jwtDecode } from 'jwt-decode';
 import axiosInstance from '../services/axiosInstance'; // 설정된 Axios 인스턴스
+import axios from 'axios';
 
 /**
  * JWT 토큰 payload에 포함된 사용자 정보 타입
@@ -61,32 +62,40 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   login: async ({ id, password }) => {
-    // API 호출 로직: 에러는 호출한 컴포넌트에서 처리하도록 던져줍니다.
-    const response = await fetch('http://localhost:3000/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, password }),
-    });
+    try {
+      // 1. axios.post로 API를 호출합니다.
+      const response = await axiosInstance.post('auth/login', { id, password });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || '로그인에 실패했습니다.');
+      // 2. 성공 시 response.data에서 바로 accessToken을 가져옵니다.
+      // .json()을 호출할 필요가 전혀 없습니다.
+      const { accessToken } = response.data;
+
+      if (!accessToken) {
+        // accessToken이 없는 경우를 대비한 방어 코드
+        throw new Error('토큰 정보가 없습니다.');
+      }
+
+      // 3. 토큰 저장 및 상태 업데이트 로직을 실행합니다.
+      localStorage.setItem('accessToken', accessToken);
+      get().setUserFromToken();
+
+    } catch (error) {
+      console.error('로그인 실패:', error); // 디버깅을 위해 에러를 로그에 남깁니다.
+
+      // 4. 컴포넌트에서 에러를 인지할 수 있도록 다시 throw 해줍니다.
+      if (axios.isAxiosError(error) && error.response) {
+        // 서버가 보낸 에러 메시지를 사용합니다.
+        throw new Error(error.response.data.message || '로그인에 실패했습니다.');
+      }
+      // 그 외의 경우 일반적인 에러 메시지를 던집니다.
+      throw new Error('알 수 없는 오류가 발생했습니다.');
     }
-
-    const data = await response.json();
-    const { accessToken } = data;
-
-    // 1. 토큰을 로컬 스토리지에 저장합니다.
-    localStorage.setItem('accessToken', accessToken);
-
-    // 2. 저장된 토큰을 기반으로 전역 상태를 업데이트합니다.
-    get().setUserFromToken();
   },
 
   logout: async () => {
     try {
       // 서버에 로그아웃 요청을 보냅니다. (선택적)
-      await axiosInstance.post('/auth/logout');
+      await axiosInstance.post('auth/logout');
     } catch (error) {
       console.error('로그아웃 API 호출에 실패했지만, 클라이언트에서는 로그아웃을 진행합니다.', error);
     } finally {

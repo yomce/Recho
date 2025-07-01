@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { type UsedProduct, STATUS, TRADE_TYPE } from '../../types/product';
+import { useAuthStore } from '@/stores/authStore';
+import axiosInstance from '@/services/axiosInstance';
 
 // CSS 파일을 import 하던 코드는 삭제합니다.
 
@@ -25,12 +27,15 @@ const TRADE_TYPE_TEXT = {
 };
 
 const UsedProductDetailPage: React.FC = () => {
+  const { user } = useAuthStore();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
   const [product, setProduct] = useState<UsedProduct | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const isOwner = (product && user && product.userId === user.username)
 
   useEffect(() => {
     if (!id) {
@@ -43,7 +48,7 @@ const UsedProductDetailPage: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await axios.get<UsedProduct>(`http://localhost:3000/used-products/${id}`);
+        const response = await axiosInstance.get<UsedProduct>(`used-products/${id}`);
         setProduct(response.data);
       } catch (err) {
         if (axios.isAxiosError(err) && err.response?.status === 404) {
@@ -59,12 +64,22 @@ const UsedProductDetailPage: React.FC = () => {
     fetchProductDetail();
   }, [id]);
 
-  const handleEdit = () => navigate(`/used-products/edit/${id}`);
+  const handleEdit = () => {
+    if (!isOwner) {
+      alert('상품 게시자가 아닙니다.');
+      return;
+    }
+    navigate(`/used-products/edit/${id}`);
+  }
 
   const handleDelete = async () => {
     if (window.confirm('정말로 이 상품을 삭제하시겠습니까?')) {
+      if (!isOwner) {
+        alert('상품 게시자가 아닙니다.');
+        return;
+      }
       try {
-        await axios.delete(`http://localhost:3000/used-products/${id}`);
+        await axiosInstance.delete(`used-products/${id}`);
         alert('상품이 성공적으로 삭제되었습니다.');
         navigate('/used-products');
       } catch (err) {
@@ -141,18 +156,19 @@ const UsedProductDetailPage: React.FC = () => {
             
             {/* TODO: 현재 로그인한 사용자가 판매자일 경우에만 보이도록 처리 */}
             <div className="flex gap-2">
-              <button
+              
+              {isOwner && <button
                 onClick={handleEdit}
                 className="py-3 px-6 rounded-md font-semibold text-white bg-blue-500 cursor-pointer transition-colors hover:bg-blue-700"
               >
                 수정
-              </button>
-              <button
+              </button> }
+              {isOwner && <button
                 onClick={handleDelete}
                 className="py-3 px-6 rounded-md font-semibold text-white bg-red-600 cursor-pointer transition-colors hover:bg-red-700"
               >
                 삭제
-              </button>
+              </button> }
             </div>
           </div>
         </div>

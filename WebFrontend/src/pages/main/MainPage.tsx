@@ -23,6 +23,7 @@ const MainPage: React.FC = () => {
   const handleGoToLogin = () => navigate('/login');
   const handleGoToChat = () => navigate('/chat');
   const handleGoToUsedProducts = () => navigate('/used-products');
+  const handleGoToEnsemble = () => navigate('/ensembles');
   
   // 공통 버튼 스타일
   const buttonBaseStyle = "py-2 px-5 text-lg font-semibold text-white rounded-md cursor-pointer transition-colors";
@@ -48,6 +49,12 @@ const MainPage: React.FC = () => {
               className={`${buttonBaseStyle} bg-green-600 hover:bg-green-700`}
             >
               중고거래하기
+            </button>
+            <button
+              onClick={handleGoToEnsemble}
+              className={`${buttonBaseStyle} bg-yellow-600 hover:bg-yellow-700`}
+            >
+              합주인원 모집하기
             </button>
             <button
               onClick={handleLogout}

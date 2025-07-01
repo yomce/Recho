@@ -61,7 +61,7 @@ const CreateUsedProductPage: React.FC = () => {
         locationId: form.locationId,
       };
 
-      const response = await axiosInstance.post('http://localhost:3000/used-products', payload);
+      const response = await axiosInstance.post('used-products', payload);
       alert('상품이 성공적으로 등록되었습니다!');
       navigate(`/used-products/${response.data.productId}`);
     } catch (err) {

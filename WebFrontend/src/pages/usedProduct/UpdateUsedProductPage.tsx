@@ -30,7 +30,7 @@ const UpdateUsedProductPage: React.FC = () => {
     const fetchProduct = async () => {
       setLoading(true);
       try {
-        const response = await axiosInstance.get<UsedProduct>(`http://localhost:3000/used-products/${id}`);
+        const response = await axiosInstance.get<UsedProduct>(`used-products/${id}`);
         const product = response.data;
         setForm({
           userId: product.userId,
@@ -68,7 +68,7 @@ const UpdateUsedProductPage: React.FC = () => {
       if (isNaN(priceAsNumber) || priceAsNumber < 0) throw new Error('가격은 0 이상의 숫자로 입력해야 합니다.');
 
       const payload = { ...form, price: priceAsNumber, categoryId: parseInt(form.categoryId, 10) };
-      await axiosInstance.patch(`http://localhost:3000/used-products/${id}`, payload);
+      await axiosInstance.patch(`used-products/${id}`, payload);
       alert('상품이 성공적으로 수정되었습니다!');
       navigate(`/used-products/${id}`);
     } catch (err) {

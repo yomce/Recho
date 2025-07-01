@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { type UsedProduct, type PaginatedUsedProductResponse } from '../../types/product';
 import { useAuthStore } from '@/stores/authStore';
+import axiosInstance from '@/services/axiosInstance';
 
 interface Cursor {
   lastProductId: number;
@@ -30,8 +31,8 @@ const UsedProductPage: React.FC = () => {
         params.append('lastCreatedAt', nextCursor.lastCreatedAt);
       }
 
-      const response = await axios.get<PaginatedUsedProductResponse>(
-        `http://localhost:3000/used-products`,
+      const response = await axiosInstance.get<PaginatedUsedProductResponse>(
+        `used-products`,
         { params }
       );
 

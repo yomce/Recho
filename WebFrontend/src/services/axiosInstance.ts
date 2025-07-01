@@ -2,10 +2,10 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
 // 백엔드 서버의 기본 URL을 설정합니다.
-// const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = 'http://localhost:3000';
 
 const axiosInstance = axios.create({
-  // baseURL: API_BASE_URL,
+  baseURL: API_BASE_URL,
   // HttpOnly 쿠키를 주고받기 위해 반드시 필요합니다.
   withCredentials: true, 
 });

@@ -34,7 +34,6 @@ interface RecruitEnsembleForm {
 
 // 서버에 전송할 데이터 타입을 정의합니다 (DTO와 유사)
 interface CreateRecruitEnsemblePayload {
-  userId: string;
   title: string;
   content: string;
   eventDate: Date;
@@ -98,9 +97,9 @@ const CreateRecruitEnsemblePage: React.FC = () => {
         throw new Error('연주 일자를 선택해주세요.');
       }
 
+      console.log(user);
       // 서버로 보낼 payload 생성
       const payload: CreateRecruitEnsemblePayload = {
-        userId: user.username, // 또는 user.username 등 스토어의 user 객체에 맞게 사용
         title: form.title,
         content: form.content,
         eventDate: new Date(form.eventDate),
@@ -114,7 +113,7 @@ const CreateRecruitEnsemblePage: React.FC = () => {
       const response = await axiosInstance.post('ensembles', payload);
       alert('모집 공고가 성공적으로 등록되었습니다!');
       // 성공 시 생성된 게시글 상세 페이지로 이동
-      navigate(`/recruit-ensembles/${response.data.id}`);
+      // navigate(`/recruit-ensembles/${response.data.id}`);
 
     } catch (err) {
       if (axios.isAxiosError(err)) {

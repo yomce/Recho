@@ -7,19 +7,25 @@ import axiosInstance from '@/services/axiosInstance';
 
 // 모집 공고 데이터 타입 (서버 응답 기준, 필요에 따라 수정)
 interface RecruitEnsemble {
-  id: number;
+  // 기본 정보
+  postId: number;
   title: string;
-  skillLevel: string;
-  location: {
-    regionLevel1: string;
-    regionLevel2: string;
-  };
-  instrumentCategory: {
-    name: string;
-  };
-  eventDate: string;
+  content: string;
+  userId: string;
+
+  // 날짜 정보 (API에서 문자열로 전달)
   createdAt: string;
-  // ... 기타 필요한 필드
+  eventDate: string;
+
+  // 상태 및 숫자 정보
+  skillLevel: number;         // 0 (BEGINNER), 1 (INTERMEDIATE) 등
+  recruit_status: number;   // 0 (모집중) 등
+  total_recruit_cnt: number;
+  viewCount: number;
+  
+  // 다른 테이블과의 관계 ID
+  locationId: number;
+  instrument_category_id: number;
 }
 
 // 페이지네이션 커서 타입
@@ -59,9 +65,11 @@ const RecruitEnsembleListPage: React.FC = () => {
 
       // API 엔드포인트를 모집 공고 목록으로 변경
       const response = await axiosInstance.get<PaginatedEnsembleResponse>(
-        `recruit-ensembles`,
+        `ensembles`,
         { params }
       );
+
+      console.log(response);
 
       const { data, nextCursor: newCursor, hasNextPage: newHasNextPage } = response.data;
 
@@ -111,16 +119,18 @@ const RecruitEnsembleListPage: React.FC = () => {
         <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6">
           {items.map((item) => (
             <Link
-              key={`${item.id}-${item.createdAt}`}
-              to={`/recruit-ensembles/${item.id}`} // 상세 페이지 경로 변경
+              // --- 수정: id를 postId로 변경 ---
+              key={`${item.postId}-${item.createdAt}`}
+              to={`/ensembles/${item.postId}`}
               className="block bg-white border border-gray-200 rounded-lg p-5 no-underline text-slate-800 shadow-md transition-all duration-200 ease-in-out hover:-translate-y-1 hover:shadow-lg"
             >
               <div className="flex flex-col h-full">
                 <h3 className="text-lg font-bold mb-2 text-blue-700 truncate">{item.title}</h3>
                 <div className="text-sm text-gray-600 space-y-1 mt-2">
-                  <p><strong>악기:</strong> {item.instrumentCategory.name}</p>
-                  <p><strong>지역:</strong> {item.location.regionLevel1} {item.location.regionLevel2}</p>
-                  <p><strong>요구 실력:</strong> {item.skillLevel}</p>
+                  {/* --- 수정: ID를 텍스트로 변환하여 표시 --- */}
+                  <p><strong>악기:</strong> {item.instrument_category_id || '정보 없음'}</p>
+                  <p><strong>지역:</strong> {item.locationId || '정보 없음'}</p>
+                  <p><strong>요구 실력:</strong> {item.skillLevel || '정보 없음'}</p>
                   <p><strong>연주 일자:</strong> {new Date(item.eventDate).toLocaleDateString()}</p>
                 </div>
                 <div className="mt-auto pt-3 text-xs text-right text-gray-400">

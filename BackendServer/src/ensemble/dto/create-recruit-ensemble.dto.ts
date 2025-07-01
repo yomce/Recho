@@ -11,10 +11,6 @@ import { SKILL_LEVEL } from '../entities/recruit-ensemble.entity';
 export class CreateRecruitEnsembleDto {
   @IsString()
   @IsNotEmpty()
-  userId: string;
-
-  @IsString()
-  @IsNotEmpty()
   title: string;
 
   @IsString()

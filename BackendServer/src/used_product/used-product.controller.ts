@@ -48,10 +48,20 @@ export class UsedProductController {
   @UseGuards(AuthGuard('jwt'))
   async enrollUsedProduct(
     @Body() createUsedProductDto: CreateUsedProductDto,
+    @Req() req: Request,
   ): Promise<UsedProduct> {
+    if (!req.user || !req.user.id) {
+      this.logger.error(
+        'Authentication information missing from request user object.',
+      );
+      throw new ForbiddenException('사용자 인증 정보가 없습니다.');
+    }
+    const userId = req.user.id;
+
     this.logger.log(`Enrolling a new product: ${createUsedProductDto.title}`);
     return await this.usedProductService.enrollUsedProduct(
       createUsedProductDto,
+      userId,
     );
   }
 

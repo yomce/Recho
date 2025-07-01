@@ -13,7 +13,7 @@ const UpdateUsedProductPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
 
   const [form, setForm] = useState<UsedProductForm>({
-    userId: '', title: '', description: '', price: '', categoryId: '',
+    title: '', description: '', price: '', categoryId: '',
     tradeType: TRADE_TYPE.IN_PERSON, locationId: '',
   });
 
@@ -33,7 +33,6 @@ const UpdateUsedProductPage: React.FC = () => {
         const response = await axiosInstance.get<UsedProduct>(`used-products/${id}`);
         const product = response.data;
         setForm({
-          userId: product.userId,
           title: product.title,
           description: product.description,
           price: String(product.price),

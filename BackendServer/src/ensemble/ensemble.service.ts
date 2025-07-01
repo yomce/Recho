@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RECRUIT_STATUS, RecruitEnsemble } from './entities/recruit-ensemble.entity';
 import { Repository } from 'typeorm';
@@ -54,7 +54,6 @@ export class EnsembleService {
             lastCreateAt: lastItem.createdAt.toISOString(),
           }
         : undefined;
-
     return {
       data,
       nextCursor,
@@ -64,14 +63,24 @@ export class EnsembleService {
 
   async enrollEnsemble(
     createDto: CreateRecruitEnsembleDto,
+    userId: string,
   ): Promise<RecruitEnsemble> {
     const recruitEnsembleDto = createDto;
 
     const newEnsemble = this.recruitEnsembleRepo.create({
       ...recruitEnsembleDto,
+      userId: userId,
       recruit_status: RECRUIT_STATUS.RECRUITING,
       viewCount: 0,
     });
     return await this.recruitEnsembleRepo.save(newEnsemble);
+  }
+
+  async detailProduct(id: number): Promise<RecruitEnsemble> {
+    const product = await this.recruitEnsembleRepo.findOneBy({ postId: id });
+    if (!product) {
+      throw new NotFoundException(`Product with ID #${id} not found.`);
+    }
+    return product;
   }
 }

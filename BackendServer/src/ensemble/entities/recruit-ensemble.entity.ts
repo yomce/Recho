@@ -20,7 +20,7 @@ export enum RECRUIT_STATUS {
   CANCEL,
 }
 
-@Entity({ name: 'recruit-ensemble' })
+@Entity({ name: 'recruit_ensemble' })
 export class RecruitEnsemble {
   @PrimaryGeneratedColumn()
   postId: number;

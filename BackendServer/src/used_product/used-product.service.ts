@@ -63,6 +63,7 @@ export class UsedProductService {
 
   async enrollUsedProduct(
     createDto: CreateUsedProductDto,
+    userId: string,
   ): Promise<UsedProduct> {
     const { locationId, ...restOfDto } = createDto;
 
@@ -82,7 +83,7 @@ export class UsedProductService {
     const newProduct = this.usedProductRepo.create({
       ...restOfDto,
       location: locationDataForDb, // DB에 저장할 객체
-      userId: createDto.userId, //
+      userId: userId, //
       status: Status.FOR_SALE,
       viewCount: 0,
     });

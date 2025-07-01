@@ -10,7 +10,6 @@ const CreateUsedProductPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore(); // 스토어에서 user 정보 가져오기
   const [form, setForm] = useState<UsedProductForm>({
-    userId: '',
     title: '',
     description: '',
     price: '',
@@ -52,7 +51,6 @@ const CreateUsedProductPage: React.FC = () => {
       if (isNaN(priceAsNumber) || priceAsNumber < 0) throw new Error('가격은 0 이상의 숫자로 입력해야 합니다.');
 
       const payload: CreateUsedProductPayload = {
-        userId: user.username,
         title: form.title,
         description: form.description,
         price: priceAsNumber,

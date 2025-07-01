@@ -12,7 +12,7 @@ export enum APPLICATION_STATUS {
   CANCEL,
 }
 
-@Entity({ name: 'apply-ensemble' })
+@Entity({ name: 'apply_ensemble' })
 export class ApplyEnsemble {
   @PrimaryGeneratedColumn()
   applicationId: number;

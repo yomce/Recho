@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
 import { type UsedProduct, type PaginatedUsedProductResponse } from '../../types/product';
 import { useAuthStore } from '@/stores/authStore';
 import axiosInstance from '@/services/axiosInstance';

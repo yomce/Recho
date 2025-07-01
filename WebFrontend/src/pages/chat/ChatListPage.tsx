@@ -1,15 +1,8 @@
 // src/pages/ChatListPage.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode'; // + 추가: JWT 토큰을 디코딩하기 위해 import
 import axiosInstance from '../../services/axiosInstance';
 import { socket } from '../../services/socket';
-
-// + 추가: JWT 페이로드 타입 정의
-interface JwtPayload {
-  userId: string;
-  username: string;
-}
 
 interface ChatRoom {
   id: string;
@@ -21,14 +14,13 @@ const ChatListPage: React.FC = () => {
   const navigate = useNavigate();
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [newRoomName, setNewRoomName] = useState('');
-  const [inviteeIds, setInviteeIds] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchChatRooms = async () => {
       try {
-        const response = await axiosInstance.get<ChatRoom[]>('/chat/my-rooms'); //
+        const response = await axiosInstance.get<ChatRoom[]>('/chat/my-rooms');
         setRooms(response.data);
       } catch (err) {
         console.error('채팅방 목록을 불러오는 데 실패했습니다.', err);
@@ -39,8 +31,8 @@ const ChatListPage: React.FC = () => {
     };
     fetchChatRooms();
 
+    // 웹소켓 연결은 다른 페이지와의 실시간 동기화를 위해 유지할 수 있습니다.
     socket.connect();
-
     return () => {
       socket.disconnect();
     };
@@ -51,9 +43,9 @@ const ChatListPage: React.FC = () => {
     if (!newRoomName.trim()) return alert('채팅방 이름을 입력해주세요.');
 
     try {
-      const response = await axiosInstance.post<ChatRoom>('/chat/rooms', { //
+      const response = await axiosInstance.post<ChatRoom>('/chat/rooms', {
         name: newRoomName,
-        type: 'GROUP', //
+        type: 'GROUP',
       });
       setRooms((prevRooms) => [response.data, ...prevRooms]);
       setNewRoomName('');
@@ -62,52 +54,6 @@ const ChatListPage: React.FC = () => {
       console.error('채팅방 생성에 실패했습니다.', err);
       alert('채팅방 생성에 실패했습니다.');
     }
-  };
-
-  const handleInviteUser = (roomId: string) => {
-    const inviteeId = inviteeIds[roomId];
-    if (!inviteeId || !inviteeId.trim()) {
-      return alert('초대할 유저의 ID를 입력해주세요.');
-    }
-
-    socket.emit('inviteUser', { roomId, inviteeId }); //
-
-    alert(`${inviteeId}님을 초대했습니다.`);
-    setInviteeIds(prev => ({ ...prev, [roomId]: '' }));
-  };
-  
-  // + 추가: 채팅방 나가기 함수
-  const handleLeaveRoom = (roomId: string, roomName: string | undefined) => {
-    if (!window.confirm(`'${roomName || '이 채팅방'}'에서 정말로 나가시겠습니까?`)) {
-      return;
-    }
-
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      alert('로그인이 필요합니다.');
-      navigate('/login');
-      return;
-    }
-
-    try {
-      const decoded = jwtDecode<JwtPayload>(token);
-      const userId = decoded.userId;
-
-      // 백엔드로 'leaveRoom' 이벤트 전송
-      socket.emit('leaveRoom', { userId, roomId });
-
-      // 화면에서 즉시 채팅방 제거
-      setRooms(prevRooms => prevRooms.filter(room => room.id !== roomId));
-
-      alert('채팅방에서 나갔습니다.');
-    } catch (error) {
-      console.error('토큰 디코딩 또는 방 나가기 요청에 실패했습니다.', error);
-      alert('오류가 발생하여 방을 나갈 수 없습니다.');
-    }
-  };
-
-  const handleInviteInputChange = (roomId: string, value: string) => {
-    setInviteeIds(prev => ({ ...prev, [roomId]: value }));
   };
 
   const handleEnterRoom = (roomId: string) => {
@@ -138,43 +84,10 @@ const ChatListPage: React.FC = () => {
       <div style={styles.roomList}>
         {rooms.length > 0 ? (
           rooms.map((room) => (
-            <div key={room.id} style={styles.roomContainer}>
-              <div style={styles.roomItem} onClick={() => handleEnterRoom(room.id)}>
+            // 이제 roomContainer는 클릭 이벤트만 가집니다.
+            <div key={room.id} style={styles.roomItem} onClick={() => handleEnterRoom(room.id)}>
                 <p style={styles.roomName}>{room.name || `개인 채팅`}</p>
                 <span style={styles.roomType}>{room.type}</span>
-              </div>
-              <div style={styles.actionsContainer}> {/* + 추가: 버튼들을 감싸는 컨테이너 */}
-                {room.type === 'GROUP' && (
-                  <form
-                    style={styles.inviteForm}
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleInviteUser(room.id);
-                    }}
-                  >
-                    <input
-                      type="text"
-                      placeholder="초대할 유저 ID"
-                      value={inviteeIds[room.id] || ''}
-                      onChange={(e) => handleInviteInputChange(room.id, e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
-                      style={styles.inviteInput}
-                    />
-                    <button type="submit" style={styles.inviteButton}>초대</button>
-                  </form>
-                )}
-                {/* + 추가: 나가기 버튼 */}
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleLeaveRoom(room.id, room.name);
-                  }} 
-                  style={styles.leaveButton}
-                >
-                  나가기
-                </button>
-              </div>
             </div>
           ))
         ) : (
@@ -186,7 +99,7 @@ const ChatListPage: React.FC = () => {
   );
 };
 
-// + 수정: 스타일 객체에 actionsContainer, leaveButton 추가 및 inviteForm 스타일 조정
+// 스타일 객체 (간소화)
 const styles: { [key: string]: React.CSSProperties } = {
   container: { maxWidth: '600px', margin: '40px auto', padding: '20px', fontFamily: 'sans-serif', border: '1px solid #eee', borderRadius: '10px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' },
   header: { textAlign: 'center', marginBottom: '20px', color: '#333' },
@@ -194,16 +107,10 @@ const styles: { [key: string]: React.CSSProperties } = {
   createForm: { display: 'flex', gap: '10px', marginBottom: '20px' },
   input: { flexGrow: 1, padding: '12px', border: '1px solid #ccc', borderRadius: '5px', fontSize: '16px' },
   createButton: { padding: '0 20px', border: 'none', borderRadius: '5px', backgroundColor: '#007bff', color: 'white', cursor: 'pointer', fontSize: '16px' },
-  roomList: { display: 'flex', flexDirection: 'column', gap: '15px' },
-  roomContainer: { backgroundColor: '#f8f9fa', borderRadius: '8px', overflow: 'hidden', border: '1px solid #dee2e6' },
-  roomItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 20px', cursor: 'pointer', transition: 'background-color 0.2s' },
+  roomList: { display: 'flex', flexDirection: 'column', gap: '10px' },
+  roomItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px', cursor: 'pointer', transition: 'background-color 0.2s', backgroundColor: '#f8f9fa', borderRadius: '8px' },
   roomName: { margin: 0, fontWeight: 'bold', color: '#495057' },
   roomType: { padding: '4px 8px', borderRadius: '12px', backgroundColor: '#e9ecef', fontSize: '12px', color: '#868e96' },
-  actionsContainer: { display: 'flex', alignItems: 'center', padding: '10px 20px', borderTop: '1px solid #e9ecef', gap: '10px' },
-  inviteForm: { display: 'flex', flexGrow: 1, gap: '10px' },
-  inviteInput: { flexGrow: 1, padding: '8px', border: '1px solid #ccc', borderRadius: '5px' },
-  inviteButton: { padding: '0 15px', border: 'none', borderRadius: '5px', backgroundColor: '#28a745', color: 'white', cursor: 'pointer' },
-  leaveButton: { padding: '8px 15px', border: 'none', borderRadius: '5px', backgroundColor: '#dc3545', color: 'white', cursor: 'pointer', whiteSpace: 'nowrap' },
   backButton: { marginTop: '30px', padding: '10px 15px', border: 'none', borderRadius: '5px', backgroundColor: '#6c757d', color: 'white', cursor: 'pointer', fontSize: '14px' }
 };
 

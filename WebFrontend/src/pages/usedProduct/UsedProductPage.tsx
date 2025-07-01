@@ -2,8 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { type UsedProduct, type PaginatedUsedProductResponse } from '../../types/product';
-
-// `UsedProductPage.css`를 import하던 줄은 삭제합니다.
+import { useAuthStore } from '@/stores/authStore';
 
 interface Cursor {
   lastProductId: number;
@@ -16,6 +15,7 @@ const UsedProductPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [nextCursor, setNextCursor] = useState<Cursor | null>(null);
   const [hasNextPage, setHasNextPage] = useState(true);
+  const { user } = useAuthStore();
 
   const fetchItems = useCallback(async (isInitialFetch: boolean) => {
     if (loading || !hasNextPage) return;
@@ -62,12 +62,12 @@ const UsedProductPage: React.FC = () => {
       {/* --- 페이지 헤더 --- */}
       <header className="flex justify-between items-center mb-8">
         <h2 className="m-0 text-3xl font-bold text-left">상품 목록</h2>
-        <Link 
+        { user && <Link 
           to="/used-products/create" 
           className="inline-block py-2.5 px-5 text-base font-semibold text-white bg-blue-500 rounded-md no-underline text-center transition-colors hover:bg-blue-700"
         >
           상품 등록하기
-        </Link>
+        </Link>}
       </header>
 
       {/* --- 에러 메시지 --- */}

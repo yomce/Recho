@@ -12,6 +12,10 @@ import { TRADE_TYPE } from '../entities/used-product.entity';
 export class CreateUsedProductDto {
   @IsString()
   @IsNotEmpty()
+  userId: string;
+
+  @IsString()
+  @IsNotEmpty()
   title: string;
 
   @IsString()

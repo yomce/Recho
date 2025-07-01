@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UsedProduct, STATUS as Status } from './entities/used-product.entity';
@@ -59,6 +63,7 @@ export class UsedProductService {
 
   async enrollUsedProduct(
     createDto: CreateUsedProductDto,
+    userId: string,
   ): Promise<UsedProduct> {
     const { locationId, ...restOfDto } = createDto;
 
@@ -78,7 +83,7 @@ export class UsedProductService {
     const newProduct = this.usedProductRepo.create({
       ...restOfDto,
       location: locationDataForDb, // DB에 저장할 객체
-      userId: 1, // 실제로는 인증 미들웨어에서 가져온 유저 ID를 사용해야 합니다.
+      userId: userId, //
       status: Status.FOR_SALE,
       viewCount: 0,
     });
@@ -93,7 +98,12 @@ export class UsedProductService {
     return product;
   }
 
-  async deleteProduct(id: number): Promise<void> {
+  async deleteProduct(id: number, username: string): Promise<void> {
+    const product = await this.detailProduct(id);
+    if (username !== product?.userId) {
+      throw new ForbiddenException(`Unauthorized`);
+    }
+
     const result = await this.usedProductRepo.delete({ productId: id });
     if (result.affected === 0) {
       throw new NotFoundException(`Product with ID #${id} not found.`);
@@ -103,8 +113,13 @@ export class UsedProductService {
   async pathProduct(
     id: number,
     updateDto: UpdateUsedProductDto,
+    username: string,
   ): Promise<UsedProduct> {
     const product = await this.detailProduct(id);
+    if (username !== product.userId) {
+      throw new ForbiddenException(`Unauthorized`);
+    }
+
     const updatedProduct = this.usedProductRepo.merge(product, updateDto);
     return this.usedProductRepo.save(updatedProduct);
   }

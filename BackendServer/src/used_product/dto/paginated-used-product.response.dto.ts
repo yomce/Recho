@@ -1,4 +1,3 @@
-// 이 파일을 새로 생성합니다.
 import { UsedProduct } from '../entities/used-product.entity';
 
 // 커서 기반 페이지네이션의 응답 형식을 정의하는 DTO

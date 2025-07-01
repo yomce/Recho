@@ -15,6 +15,10 @@ import UsedProductPage from '../pages/usedProduct/UsedProductPage';
 import CreateUsedProductPage from '../pages/usedProduct/CreateUsedProductPage';
 import UsedProductDetailPage from '../pages/usedProduct/UsedProductDetailPage';
 import UpdateUsedProductPage from '../pages/usedProduct/UpdateUsedProductPage';
+import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage'; 
+import RecruitEnsembleListPage from '@/pages/ensemble/RecruitEnsemblePage';
+import CreateRecruitEnsemblePage from '@/pages/ensemble/CreateRecruitEnsemblePage';
+import RecruitEnsembleDetailPage from '@/pages/ensemble/RecruitEnsembleDetailPage';
 
 const AppRouter: React.FC = () => {
   return (
@@ -24,6 +28,7 @@ const AppRouter: React.FC = () => {
         <Route path="/" element={<Navigate to="/main" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/chat" element={<ChatListPage />} />
         <Route path="/chat/:roomId" element={<ChatRoomPage />} />
         <Route path="/users/:userId" element={<UserPage />} />
@@ -32,6 +37,9 @@ const AppRouter: React.FC = () => {
         <Route path="/used-products/create" element={<CreateUsedProductPage/>} />
         <Route path="/used-products/:id" element={<UsedProductDetailPage />} /> 
         <Route path="/used-products/edit/:id" element={<UpdateUsedProductPage />} /> 
+        <Route path="/ensembles" element={<RecruitEnsembleListPage/>} />
+        <Route path="/ensembles/create" element={<CreateRecruitEnsemblePage/>} />
+        <Route path="/ensembles/:id" element={<RecruitEnsembleDetailPage />} /> 
       </Routes>
     </Router>
   );

@@ -6,6 +6,7 @@ import * as cookieParser from 'cookie-parser'; // cookie-parser 임포트 추가
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  process.env.TZ = 'UTC';
 
   app.use(cookieParser()); // cookie-parser를 전역 미들웨어로 설정
 

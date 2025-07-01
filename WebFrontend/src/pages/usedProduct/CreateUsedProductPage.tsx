@@ -1,22 +1,35 @@
-// src/pages/CreateUsedProductPage.tsx (수정)
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { TRADE_TYPE, type UsedProductForm, type CreateUsedProductPayload } from '../../types/product';
-import { ProductForm } from '../../components/ProductForm'; // 재사용 폼 컴포넌트 import
+import { ProductForm } from '../../components/ProductForm';
+import { useAuthStore } from '../../stores/authStore'; // Zustand 스토어 import
+import axiosInstance from '@/services/axiosInstance';
 
 const CreateUsedProductPage: React.FC = () => {
   const navigate = useNavigate();
-
+  const { user } = useAuthStore(); // 스토어에서 user 정보 가져오기
   const [form, setForm] = useState<UsedProductForm>({
     title: '',
     description: '',
     price: '',
-    categoryId: '1', // 기본 카테고리 ID
+    categoryId: '1',
     tradeType: TRADE_TYPE.IN_PERSON,
-    locationId: '1001', // 기본 지역 ID
+    locationId: '1001',
   });
+
+  useEffect(() => {
+    if (!user) {
+      alert('로그인이 필요합니다.');
+      navigate('/login');
+      return
+    }
+    setForm(prev => ({
+      ...prev,
+      userId: user?.username as string,
+    }))
+  }, [user, navigate]);
+
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,6 +40,10 @@ const CreateUsedProductPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!user) {
+      setError('인증 정보가 없습니다. 다시 로그인해주세요.');
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -42,11 +59,11 @@ const CreateUsedProductPage: React.FC = () => {
         locationId: form.locationId,
       };
 
-      const response = await axios.post('http://localhost:3000/used-products', payload);
+      const response = await axiosInstance.post('used-products', payload);
       alert('상품이 성공적으로 등록되었습니다!');
       navigate(`/used-products/${response.data.productId}`);
     } catch (err) {
-      if (axios.isAxiosError(err)) { // err가 Axios 에러인지 확인하면 더 안전합니다.
+      if (axios.isAxiosError(err)) {
         const messages = err.response?.data?.message;
         setError(Array.isArray(messages) ? messages.join('\n') : messages || err.message || '상품 등록 중 오류 발생');
       } else {
@@ -56,6 +73,10 @@ const CreateUsedProductPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  if (!user) {
+    return <div className="text-center mt-10">로그인 페이지로 이동 중...</div>;
+  }
 
   return (
     <div className="max-w-3xl mx-auto my-8 p-10 bg-white rounded-lg shadow-xl">

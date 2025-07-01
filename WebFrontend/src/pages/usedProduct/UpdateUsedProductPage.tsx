@@ -5,6 +5,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { TRADE_TYPE, type UsedProductForm, type UsedProduct } from '../../types/product';
 import { ProductForm } from '../../components/ProductForm'; // 재사용 폼 컴포넌트 import
+import { useAuthStore } from '@/stores/authStore';
+import axiosInstance from '@/services/axiosInstance';
 
 const UpdateUsedProductPage: React.FC = () => {
   const navigate = useNavigate();
@@ -17,12 +19,18 @@ const UpdateUsedProductPage: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuthStore();
 
   useEffect(() => {
+    if (!user) {
+      alert('로그인이 필요합니다.');
+      navigate('/login');
+      return
+    }
     const fetchProduct = async () => {
       setLoading(true);
       try {
-        const response = await axios.get<UsedProduct>(`http://localhost:3000/used-products/${id}`);
+        const response = await axiosInstance.get<UsedProduct>(`used-products/${id}`);
         const product = response.data;
         setForm({
           title: product.title,
@@ -59,7 +67,7 @@ const UpdateUsedProductPage: React.FC = () => {
       if (isNaN(priceAsNumber) || priceAsNumber < 0) throw new Error('가격은 0 이상의 숫자로 입력해야 합니다.');
 
       const payload = { ...form, price: priceAsNumber, categoryId: parseInt(form.categoryId, 10) };
-      await axios.patch(`http://localhost:3000/used-products/${id}`, payload);
+      await axiosInstance.patch(`used-products/${id}`, payload);
       alert('상품이 성공적으로 수정되었습니다!');
       navigate(`/used-products/${id}`);
     } catch (err) {

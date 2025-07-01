@@ -1,5 +1,14 @@
 // src/chat/chat.controller.ts
-import { Controller, Get, Post, Param, Body, Query, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  Query,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { CreateRoomDto, RoomType } from './dto/create-room.dto';
 import { HistoryQueryDto } from './dto/history-query.dto';
@@ -38,7 +47,10 @@ export class ChatController {
   // 2) 방 생성
   @Post('rooms')
   @UseGuards(AuthGuard('jwt')) // 1. JWT 인증 가드로 이 API를 보호합니다.
-  async createRoom(@Body() dto: CreateRoomDto, @Req() req: RequestWithUser): Promise<Room> {
+  async createRoom(
+    @Body() dto: CreateRoomDto,
+    @Req() req: RequestWithUser,
+  ): Promise<Room> {
     // 2. 인증된 사용자 정보를 req.user에서 가져옵니다.
     const user = req.user;
     // 3. 서비스에 사용자 ID를 함께 넘겨줍니다.
@@ -53,7 +65,6 @@ export class ChatController {
   ): Promise<Message[]> {
     return this.chatService.getHistory(roomId, query.page, query.limit);
   }
-
 
   @Get('my-rooms')
   @UseGuards(AuthGuard('jwt')) // JWT 인증 가드로 보호

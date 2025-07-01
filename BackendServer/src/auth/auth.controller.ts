@@ -1,4 +1,14 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Res, Req, UseGuards, Get } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  Res,
+  Req,
+  UseGuards,
+  Get,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { Response, Request } from 'express';
@@ -19,7 +29,8 @@ export class AuthController {
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { accessToken, refreshToken } = await this.authService.login(loginDto);
+    const { accessToken, refreshToken } =
+      await this.authService.login(loginDto);
 
     // 리프레시 토큰을 HttpOnly 쿠키로 설정
     res.cookie('refreshToken', refreshToken, {
@@ -33,7 +44,7 @@ export class AuthController {
     return { accessToken };
   }
 
-   @UseGuards(AuthGuard('jwt-refresh'))
+  @UseGuards(AuthGuard('jwt-refresh'))
   @Post('refresh')
   // ↓↓↓↓↓↓ req: Request를 req: RequestWithUser로 변경합니다. ↓↓↓↓↓↓
   async refresh(@Req() req: RequestWithUser) {
@@ -45,10 +56,13 @@ export class AuthController {
   @UseGuards(AuthGuard('jwt')) // 액세스 토큰으로 사용자를 식별해야 하므로 'jwt' 가드 사용
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  async logout(@Req() req: RequestWithUser, @Res({ passthrough: true }) res: Response) {
+  async logout(
+    @Req() req: RequestWithUser,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     // 1. DB에서 리프레시 토큰을 무효화합니다.
     await this.authService.logout(req.user.id);
-    
+
     // 2. 클라이언트의 쿠키를 삭제합니다.
     res.clearCookie('refreshToken');
 

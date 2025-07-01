@@ -19,20 +19,23 @@ export class VideoInsertService {
     private readonly videoRepository: Repository<Video>,
   ) {}
 
-  async getPresignedUrl(
-    fileType: string,
-  ): Promise<{ url: string; key: string }> {
-    const key = `videos/${uuidv4()}`;
-    const command = new PutObjectCommand({
-      Bucket: process.env.AWS_S3_BUCKET,
-      Key: key,
-      ContentType: fileType,
+  async getUploadUrls(
+    files: { fileType: string }[],
+  ): Promise<{ key: string; url: string }[]> {
+    const promises = files.map(async (file) => {
+      const key = `videos/${uuidv4()}`;
+      const command = new PutObjectCommand({
+        Bucket: process.env.AWS_S3_BUCKET,
+        Key: key,
+        ContentType: file.fileType,
+      });
+      const url = await getSignedUrl(this.s3, command, { expiresIn: 60 * 5 });
+      return { key, url };
     });
-    const url = await getSignedUrl(this.s3, command, { expiresIn: 60 * 5 });
-    return { url, key };
+    return Promise.all(promises);
   }
 
-  async saveVideoMeta(dto: SaveVideoMetaDto) {
+  async saveFinalVideoMeta(dto: SaveVideoMetaDto): Promise<Video> {
     const video = this.videoRepository.create(dto);
     return this.videoRepository.save(video);
   }

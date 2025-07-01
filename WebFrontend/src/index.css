@@ -9,16 +9,16 @@
 ======================================== */
 @theme {
   /* Colors (색상) */
-  --color-brand-default: #FFFFFF;         /* 카드/섹션/기본 배경 */
-  --color-brand-frame: #F3F4F6;           /* 전체 프레임 배경 */
-  --color-brand-primary: #8E4DF6;         /* 주요 버튼 포인트 색상 */
-  --color-brand-blue: #4397FD;            /* 링크/ 포인트 블루 색상 */
-  --color-brand-gray: #61646B;            /* 설명/서브 텍스트 색상 */
-  --color-brand-text-primary: #000000;    /* 기본 텍스트 색상 */
-  --color-brand-text-inverse: #FFFFFF;    /* 반전 텍스트 색상 */
-  --color-brand-text-secondary: #333333;  /* 보조 텍스트 색상 */
-  --color-brand-text-disabled: #AAAAAA;   /* 비활성화/ 설명 텍스트 색상 */
-  --color-brand-error-text: #EF4444;      /* 에러 텍스트 색상 */
+  --color-brand-default: #ffffff; /* 카드/섹션/기본 배경 */
+  --color-brand-frame: #f3f4f6; /* 전체 프레임 배경 */
+  --color-brand-primary: #8e4df6; /* 주요 버튼 포인트 색상 */
+  --color-brand-blue: #4397fd; /* 링크/ 포인트 블루 색상 */
+  --color-brand-gray: #61646b; /* 설명/서브 텍스트 색상 */
+  --color-brand-text-primary: #000000; /* 기본 텍스트 색상 */
+  --color-brand-text-inverse: #ffffff; /* 반전 텍스트 색상 */
+  --color-brand-text-secondary: #333333; /* 보조 텍스트 색상 */
+  --color-brand-text-disabled: #aaaaaa; /* 비활성화/ 설명 텍스트 색상 */
+  --color-brand-error-text: #ef4444; /* 에러 텍스트 색상 */
 
   /* Spacing & Sizing (간격 및 크기) */
   --spacing-8: 8px;
@@ -41,11 +41,9 @@
     @apply w-full min-h-screen bg-brand-default bg-brand-frame justify-center flex;
   }
 
-
   .centered-card-container {
     @apply min-h-screen w-full flex justify-center items-center bg-brand-frame;
   }
-
 
   .text-title {
     font-size: 32px;
@@ -113,6 +111,30 @@
     font-weight: 400;
     color: var(--color-brand-error-text);
   }
+}
+
+/* vinyl 관련 설정 */
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+/* 스크롤바 숨기기 */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: none;
+}
+
+/* 부드러운 스크롤 */
+.smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ========================================

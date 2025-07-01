@@ -1,4 +1,12 @@
-import { PrimaryColumn, Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  PrimaryColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { Message } from './message.entity';
 import { UserRoom } from './user-room.entity';
 
@@ -19,9 +27,9 @@ export class Room {
   @UpdateDateColumn({ name: 'last_message_at' })
   lastMessageAt: Date;
 
-  @OneToMany(() => Message, m => m.room)
+  @OneToMany(() => Message, (m) => m.room)
   messages: Message[];
 
-  @OneToMany(() => UserRoom, ur => ur.room)
+  @OneToMany(() => UserRoom, (ur) => ur.room)
   userRooms: UserRoom[];
 }

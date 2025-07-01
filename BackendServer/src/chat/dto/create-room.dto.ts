@@ -3,7 +3,7 @@ import { IsString, IsNotEmpty, IsEnum } from 'class-validator';
 
 export enum RoomType {
   PRIVATE = 'PRIVATE',
-  GROUP   = 'GROUP',
+  GROUP = 'GROUP',
 }
 
 export class CreateRoomDto {

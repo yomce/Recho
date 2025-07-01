@@ -20,13 +20,10 @@ export class Video {
   depth: number;
 
   @Column({ length: 255 })
-  source_video_url: string;
+  video_key: string;
 
   @Column({ length: 255 })
-  results_video_url: string;
-
-  @Column({ length: 255 })
-  thumbnail_url: string;
+  thumbnail_key: string;
 
   @Column({ type: 'int', default: 0 })
   like_count: number;

@@ -20,11 +20,15 @@ export class UserRoom {
   @CreateDateColumn({ name: 'joined_at' })
   joinedAt: Date;
 
-  @ManyToOne(() => User, (user: User) => user.userRooms, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user: User) => user.userRooms, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @ManyToOne(() => Room, (room: Room) => room.userRooms, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Room, (room: Room) => room.userRooms, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'room_id' })
   room: Room;
 }

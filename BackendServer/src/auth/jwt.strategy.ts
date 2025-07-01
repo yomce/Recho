@@ -25,6 +25,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
     // 여기서 반환된 값은 요청(request) 객체의 user 속성에 저장됩니다. (예: req.user)
     console.log('[1. JwtStrategy] DB에서 조회한 user:', user);
-    
-    return { id: user.id, name: user.username };  }
+
+    return { id: user.id, name: user.username };
+  }
 }

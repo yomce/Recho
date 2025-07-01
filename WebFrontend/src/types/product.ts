@@ -20,7 +20,7 @@ export interface Location {
  */
 export interface UsedProduct {
   readonly productId: number;
-  readonly userId: number;
+  readonly userId: string;
   title: string;
   description: string;
   price: number;
@@ -37,6 +37,7 @@ export interface UsedProduct {
  * 상품 등록/수정 폼에서 사용되는 데이터의 형태
  */
 export interface UsedProductForm {
+  userId: string;
   title: string;
   description: string;
   price: string; // 폼 입력값은 보통 문자열
@@ -49,6 +50,7 @@ export interface UsedProductForm {
  * 상품 생성을 위해 API로 전송하는 데이터의 형태 (Payload/DTO)
  */
 export interface CreateUsedProductPayload {
+  userId: string;
   title: string;
   description:string;
   price: number; // 전송 전 숫자로 변환

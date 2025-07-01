@@ -86,7 +86,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   logout: async () => {
     try {
       // 서버에 로그아웃 요청을 보냅니다. (선택적)
-      await axiosInstance.post('/auth/logout');
+      await axiosInstance.post('http://localhost:3000/auth/logout');
     } catch (error) {
       console.error('로그아웃 API 호출에 실패했지만, 클라이언트에서는 로그아웃을 진행합니다.', error);
     } finally {

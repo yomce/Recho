@@ -85,9 +85,18 @@ export class ChatGateway {
     @MessageBody() payload: { roomId: string; userId: string },
     @ConnectedSocket() client: Socket,
   ) {
+    // 1. DB에서 사용자 정보를 조회하여 이름을 가져옵니다.
+    const user = await this.userService.findById(payload.userId); 
+
+    // 2. ChatService를 통해 사용자를 방에서 내보냅니다.
     await this.chatService.leaveRoom(payload.userId, payload.roomId);
     client.leave(payload.roomId);
-    this.server.to(payload.roomId).emit('userLeft', payload.userId);
+
+    // 3. 방에 남아있는 다른 사용자들에게 'username'을 포함하여 이벤트를 전송합니다.
+    this.server.to(payload.roomId).emit('userLeft', {
+      userId: payload.userId,
+      username: user ? user.username : '알 수 없는 사용자', // 유저가 존재하면 username, 없으면 기본값
+    });
   }
 
   @SubscribeMessage('createUser')
@@ -114,4 +123,6 @@ export class ChatGateway {
     this.server.to(payload.roomId).emit('userJoined', payload.inviteeId);
   }
 
+
+   
 }

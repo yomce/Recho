@@ -8,9 +8,10 @@ import VideoEditScreen from '../screens/VideoEditScreen';
 import MediaLibraryScreen from '../screens/MediaLibraryScreen';
 import VideoPreviewScreen from '../screens/VideoPreviewScreen';
 import NewVideoTestScreen from '../screens/NewVideoTestScreen';
-import FFmpegTestScreen from '../screens/FFmpegTestScreen'; // FFmpegTestScreen 임포트
+import FFmpegTestScreen from '../screens/FFmpegTestScreen';
+import WebScreen from '../screens/WebScreen'; // WebScreen 임포트
 
-import { RootStackParamList } from '../types'; // RootStackParamList를 types에서 임포트
+import { RootStackParamList } from '../types';
 
 const Stack = createStackNavigator<RootStackParamList>();
 
@@ -23,7 +24,7 @@ const AppNavigator = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Home"
+        initialRouteName="Web" // WebScreen을 초기 화면으로 설정
         screenOptions={{
           // headerStyle은 View 컴포넌트에 직접 적용되므로 styled-components로 감싸서 사용
           headerStyle: {
@@ -36,10 +37,18 @@ const AppNavigator = () => {
         }}
       >
         <Stack.Screen
+          name="Web"
+          component={WebScreen}
+          options={{
+            title: 'Recho Web',
+            headerShown: false, // 웹뷰 화면에서는 헤더 숨김
+          }}
+        />
+        <Stack.Screen
           name="Home"
           component={HomeScreen}
           options={{
-            title: '🎬 비디오 편집 앱',
+            title: 'RECHO 앱기능 테스트',
             headerShown: false, // 홈 화면에서는 헤더 숨김
           }}
         />

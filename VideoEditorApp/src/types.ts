@@ -1,6 +1,7 @@
 // types.ts (코어 타입 및 유틸리티 함수 정의)
 
 import { RouteProp } from '@react-navigation/native';
+import { type StackNavigationProp } from '@react-navigation/stack';
 
 // EQ 밴드 인터페이스
 export interface EQBand {
@@ -38,6 +39,7 @@ export interface TrimmerDataForFilter {
   endTime: number;
   volume: number;
   aspectRatio: string;
+  originalAspectRatioValue: string;
   equalizer: Omit<EQBand, 'id'>[]; // EQ 밴드에서 'id'는 제외
 }
 
@@ -60,16 +62,24 @@ export interface SingleEditorHandles {
 export type RootStackParamList = {
   Home: undefined; // 파라미터 없음
   Camera: undefined;
-  VideoEdit: { videos: MediaItem[] }; // MediaItem 배열을 파라미터로 받음
+  VideoEdit: {
+    videos?: MediaItem[];
+    parentVideoId?: number; // 문자열에서 숫자로 변경
+    depth?: number;
+  };
   MediaLibrary: undefined;
   FFmpegTest: undefined;
   SideBySide: undefined; // 향후 사용될 수 있는 라우트
-  VideoPreview: undefined;
+  VideoPreview: { videoUri: string };
   NewVideoTest: undefined;
+  Web: undefined; // WebScreen 추가
 };
 
 // VideoEditScreen의 라우트 prop 타입
-export type VideoEditScreenRouteProp = RouteProp<RootStackParamList, 'VideoEdit'>;
+export type VideoEditScreenRouteProp = RouteProp<
+  RootStackParamList,
+  'VideoEdit'
+>;
 
 // --- 유틸리티 함수 (여기서 직접 정의하거나 별도 파일로 분리 가능) ---
 
@@ -83,7 +93,9 @@ export const formatFrequency = (freq: number): string => {
 export const formatTime = (seconds: number): string => {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
-  return `${minutes.toFixed(0).padStart(2, '0')}:${remainingSeconds.toFixed(1).padStart(4, '0')}`;
+  return `${minutes.toFixed(0).padStart(2, '0')}:${remainingSeconds
+    .toFixed(1)
+    .padStart(4, '0')}`;
 };
 
 // 파일 크기 포매팅 함수 (바이트를 "KB", "MB", "GB" 등으로)

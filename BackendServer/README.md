@@ -1,98 +1,154 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Video Collage Backend Server
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## API Documentation
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+### Presigned URL API
 
-## Description
+#### 1. 영상 업로드를 위한 Presigned URL 발급
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+**엔드포인트:** `POST /video-insert/upload-url`
 
-## Project setup
+**설명:** S3에 영상을 직접 업로드하기 위한 presigned URL을 발급받습니다.
 
-```bash
-$ npm install
+**Request Body:**
+
+```json
+{
+  "filename": "test-video.mp4",
+  "fileType": "video/mp4"
+}
 ```
 
-## Compile and run the project
+**Response:**
 
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+```json
+{
+  "url": "presigned URL 주소",
+  "key": "videos/2eee8707-024e-445b-bbbf-607a20c2ebdb"
+}
 ```
 
-## Run tests
+**사용 예시:**
 
-```bash
-# unit tests
-$ npm run test
+```javascript
+// 1. Presigned URL 발급 요청
+const response = await fetch('http://localhost:3000/video-insert/upload-url', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    filename: 'my-video.mp4',
+    fileType: 'video/mp4',
+  }),
+});
 
-# e2e tests
-$ npm run test:e2e
+const { url, key } = await response.json();
 
-# test coverage
-$ npm run test:cov
+// 2. S3에 직접 업로드 (5분 이내에 완료해야 함)
+const uploadResponse = await fetch(url, {
+  method: 'PUT',
+  headers: {
+    'Content-Type': 'video/mp4',
+  },
+  body: videoBlob, // 또는 File 객체
+});
+
+if (uploadResponse.ok) {
+  console.log('업로드 성공! S3 key:', key);
+}
 ```
 
-## Deployment
+**주의사항:**
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+- Presigned URL은 5분(300초) 동안만 유효합니다
+- 업로드 완료 후 `key` 값을 저장하여 나중에 영상 메타데이터 저장 시 사용하세요
+- Content-Type은 실제 파일 타입과 일치해야 합니다
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+---
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+## 숏폼 영상 편집/생성 로직 정리
+
+### 1. 초기 생성(부모 없음)
+
+- 편집 진입 시 별도의 GET 요청 필요 없음
+- 클라이언트에서 바로 새 영상 편집 화면으로 진입
+- depth는 1로 설정
+
+### 2. 부모가 있는 경우(리믹스/편집)
+
+- 편집 진입 시, parent_video_id를 기준으로 부모의 소스 영상을 찾아야 함
+- depth가 1이라는 것은 부모가 한 명 있다는 뜻
+- 반복문(혹은 재귀)으로 parent_video_id를 따라가며 부모의 소스 영상을 계속 조회
+- 최상위 조상(부모가 없는 영상)까지의 모든 소스 영상을 찾아서 편집에 사용
+- 이때 GET 요청을 통해 서버에서 parent_video_id로 소스 영상을 조회
+- 스트리밍이 아니라 실제 소스 영상 파일(데이터)를 받아야 하며, S3 링크만 보여주는 것이 아님
+
+### 3. 필요한 DTO
+
+- GetSourceVideoDto
+  ```typescript
+  import { IsNumber } from 'class-validator';
+  export class GetSourceVideoDto {
+    @IsNumber()
+    parent_video_id: number;
+  }
+  ```
+- 이 DTO를 사용해 클라이언트가 서버에 GET/POST 요청을 보내고, 서버는 parent_video_id를 따라가며 최상위 소스 영상을 찾아 응답
+
+### 4. API 예시
+
+- 요청:
+  ```
+  GET /videos/source?parent_video_id=123
+  ```
+  또는
+  ```
+  POST /videos/source
+  {
+    "parent_video_id": 123
+  }
+  ```
+- 응답:
+  - 최상위 소스 영상의 실제 파일(혹은 파일 데이터)
+
+# 정리
+
+- 초기 생성: GET 필요 없음, depth=1
+- 부모가 있는 경우: parent_video_id로 반복적으로 부모를 따라가며 소스 영상을 조회
+- 편집용 소스: S3 링크만 보여주는 것이 아니라, 실제 소스 영상 파일을 클라이언트에 제공해야 함
+
+## 프론트엔드에서 S3 Presigned URL과 Blob을 활용한 영상 편집 구조
+
+- S3 Presigned URL로 영상 파일을 불러올 때, 브라우저(클라이언트)는 파일을 **blob(임시 메모리 객체)**으로 받습니다.
+- 이 blob은 디바이스(로컬 저장소)에 저장되는 것이 아니라, **브라우저 메모리에서만 임시로 존재**합니다.
+- blob을 활용해 영상 미리보기, 편집, 인코딩 등 다양한 작업을 할 수 있습니다.
+- 편집/인코딩이 끝난 후, 결과물도 blob 형태로 만들어서 S3 Presigned URL로 바로 업로드(PUT)할 수 있습니다.
+- 이 과정에서 사용자의 디바이스에는 파일이 저장되지 않으며, 모든 처리는 메모리상에서 이루어집니다.
+
+### 예시 코드
+
+```javascript
+// Presigned URL로 영상 다운로드
+const response = await fetch(presignedUrl);
+const blob = await response.blob(); // 메모리상의 임시 데이터
+
+// Blob을 <video> 태그에서 재생
+const url = URL.createObjectURL(blob);
+videoElement.src = url;
+
+// 편집/인코딩 후 결과물을 다시 S3에 업로드
+await fetch(uploadPresignedUrl, {
+  method: 'PUT',
+  headers: { 'Content-Type': 'video/mp4' },
+  body: resultBlob,
+});
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 정리
 
-## Resources
+- blob은 "임시 메모리 객체"로, 디바이스에 저장되지 않음
+- S3 Presigned URL로 다운로드/업로드 모두 blob을 활용
+- 프론트엔드에서 안전하게 영상 편집/업로드가 가능
 
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+---

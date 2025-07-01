@@ -1,0 +1,76 @@
+// src/pages/CreateUsedProductPage.tsx (수정)
+
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { TRADE_TYPE, type UsedProductForm, type CreateUsedProductPayload } from '../../types/product';
+import { ProductForm } from '../../components/ProductForm'; // 재사용 폼 컴포넌트 import
+
+const CreateUsedProductPage: React.FC = () => {
+  const navigate = useNavigate();
+
+  const [form, setForm] = useState<UsedProductForm>({
+    title: '',
+    description: '',
+    price: '',
+    categoryId: '1', // 기본 카테고리 ID
+    tradeType: TRADE_TYPE.IN_PERSON,
+    locationId: '1001', // 기본 지역 ID
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+      const priceAsNumber = parseInt(form.price, 10);
+      if (isNaN(priceAsNumber) || priceAsNumber < 0) throw new Error('가격은 0 이상의 숫자로 입력해야 합니다.');
+
+      const payload: CreateUsedProductPayload = {
+        title: form.title,
+        description: form.description,
+        price: priceAsNumber,
+        categoryId: parseInt(form.categoryId, 10),
+        tradeType: form.tradeType,
+        locationId: form.locationId,
+      };
+
+      const response = await axios.post('http://localhost:3000/used-products', payload);
+      alert('상품이 성공적으로 등록되었습니다!');
+      navigate(`/used-products/${response.data.productId}`);
+    } catch (err) {
+      if (axios.isAxiosError(err)) { // err가 Axios 에러인지 확인하면 더 안전합니다.
+        const messages = err.response?.data?.message;
+        setError(Array.isArray(messages) ? messages.join('\n') : messages || err.message || '상품 등록 중 오류 발생');
+      } else {
+        setError('예상치 못한 오류가 발생했습니다.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto my-8 p-10 bg-white rounded-lg shadow-xl">
+      <h2 className="text-center mt-0 mb-8 text-2xl font-bold text-gray-800">중고 상품 등록</h2>
+      <ProductForm
+        formState={form}
+        onFormChange={handleChange}
+        onFormSubmit={handleSubmit}
+        isLoading={loading}
+        errorMessage={error}
+        submitButtonText="상품 등록하기"
+        loadingButtonText="등록 중..."
+      />
+    </div>
+  );
+};
+
+export default CreateUsedProductPage;

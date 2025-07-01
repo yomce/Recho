@@ -1,201 +1,189 @@
 import React, { useEffect } from 'react';
-import {
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-  Alert,
-  Platform,
-  View,
-  TouchableOpacity,
-} from 'react-native';
+import styled from 'styled-components/native';
+import { SafeAreaView, Alert, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../navigation/AppNavigator';
-import { useCameraPermission, useMicrophonePermission } from 'react-native-vision-camera';
-import { request, PERMISSIONS, RESULTS, PermissionStatus } from 'react-native-permissions';
-import StyledButton from '../components/StyledButton';
+import {
+  useCameraPermission,
+  useMicrophonePermission,
+} from 'react-native-vision-camera';
+import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 
-// React-Native-Video와 Android Compiler간 충돌 => Node_modules
-// https://github.com/r0b0t3d/react-native-video/blob/master/android/src/main/java/com/brentvatne/common/react/VideoEventEmitter.kt
-// 참고하여 해결하기
+import { RootStackParamList } from '../types'; // RootStackParamList 임포트
+import CommonButton from '../components/Common/CommonButton'; // CommonButton 임포트 (수정됨)
+import SectionHeader from '../components/Common/SectionHeader'; // SectionHeader 임포트
 
-// Android FFmpeg 오류
-// https://medium.com/@nooruddinlakhani/resolved-ffmpegkit-retirement-issue-in-react-native-a-complete-guide-0f54b113b390
-// 참고하여 해결하기
+// Styled Components 정의
+const ScreenContainer = styled(SafeAreaView)`
+  flex: 1;
+  background-color: #34495e;
+`;
 
+const ContentScrollView = styled.ScrollView`
+  padding: 20px;
+  padding-bottom: 50px; /* Ensures content is not hidden by bottom controls */
+`;
+
+const TitleText = styled.Text`
+  font-size: 28px;
+  font-weight: bold;
+  color: #ecf0f1;
+  text-align: center;
+  margin-bottom: 10px;
+`;
+
+const SubtitleText = styled.Text`
+  font-size: 16px;
+  color: #bdc3c7;
+  text-align: center;
+  margin-bottom: 30px;
+`;
+
+const SectionContainer = styled.View`
+  margin-bottom: 30px;
+`;
+
+// CommonButton을 확장하여 MainFeatureButton 정의
+const MainFeatureButton = styled(CommonButton)`
+  background-color: #2c3e50; /* Darker background */
+  border-width: 1px;
+  border-color: #34495e;
+`;
+
+// CommonButton을 확장하여 DevFeatureButton 정의
+const DevFeatureButton = styled(CommonButton)`
+  background-color: #8e44ad; /* A distinct color for dev features */
+`;
+
+// 버튼 텍스트 스타일 (CommonButton의 children으로 사용될 styled.Text)
+const ButtonTextStyled = styled.Text`
+  color: #ecf0f1;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+`;
+
+const InfoSectionContainer = styled.View`
+  background-color: #2c3e50;
+  padding: 20px;
+  border-radius: 10px;
+  margin-top: 20px;
+  margin-horizontal: 20px; /* Consistent horizontal padding */
+`;
+
+const InfoTitle = styled.Text`
+  font-size: 18px;
+  font-weight: bold;
+  color: #f39c12;
+  margin-bottom: 10px;
+  text-align: center;
+`;
+
+const InfoText = styled.Text`
+  color: #bdc3c7;
+  font-size: 14px;
+  line-height: 20px;
+  margin-bottom: 8px;
+  text-align: center;
+`;
+
+
+/**
+ * HomeScreen 컴포넌트는 앱의 시작 화면으로, 주요 기능 및 정보 섹션을 표시합니다.
+ * 카메라, 마이크, 저장 공간 권한을 확인하고 요청하는 로직을 포함합니다.
+ * 모든 스타일은 styled-components로 정의되었으며, CommonButton과 SectionHeader를 활용합니다.
+ */
 const HomeScreen: React.FC = () => {
-  //For Camera, Microphone Permission Hook
-  const {
-    hasPermission: hasCameraPermission,
-    requestPermission: requestCameraPermission,
-  } = useCameraPermission();
-  const {
-    hasPermission: hasMicrophonePermission,
-    requestPermission: requestMicrophonePermission,
-  } = useMicrophonePermission();
+  // 카메라 및 마이크 권한 상태와 요청 훅
+  const { hasPermission: hasCameraPermission, requestPermission: requestCameraPermission } = useCameraPermission();
+  const { hasPermission: hasMicrophonePermission, requestPermission: requestMicrophonePermission } = useMicrophonePermission();
 
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+
+  /**
+   * 카메라, 마이크, 저장 공간 권한을 확인하고 요청합니다.
+   * @returns 모든 권한이 부여되었는지 여부
+   */
   const checkAndRequestPermissions = async (): Promise<boolean> => {
-    //Camera
-    const resultCameraPermission = await requestCameraPermission();
-    // Microphone Permission
-    const resultMicrophonePermission = await requestMicrophonePermission();
-    //Storage Permission
-    let storagePermissionResultOne: PermissionStatus = 'granted';
-    let storagePermissionResultTwo: PermissionStatus = 'granted';
-    let storagePermissionResultThird: PermissionStatus = 'granted';
+    const results = await Promise.all([
+      requestCameraPermission(),
+      requestMicrophonePermission(),
+      // Android 13+ (API 33) 이상에서는 READ_MEDIA_* 권한을 사용합니다.
+      // Android 12 (API 32) 이하에서는 READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE를 사용합니다.
+      // iOS에서는 PHOTO_LIBRARY 권한을 사용합니다.
+      Platform.OS === 'android' && Platform.Version >= 33
+        ? Promise.all([
+            request(PERMISSIONS.ANDROID.READ_MEDIA_VIDEO),
+            request(PERMISSIONS.ANDROID.READ_MEDIA_IMAGES),
+            request(PERMISSIONS.ANDROID.READ_MEDIA_AUDIO),
+          ])
+        : Platform.OS === 'android'
+        ? Promise.all([
+            request(PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE),
+            request(PERMISSIONS.ANDROID.WRITE_EXTERNAL_STORAGE),
+          ])
+        : request(PERMISSIONS.IOS.PHOTO_LIBRARY),
+    ]);
 
-    if (Platform.OS === 'android') {
-      if (Platform.Version >= 33) {
-        storagePermissionResultOne = await request(
-          PERMISSIONS.ANDROID.READ_MEDIA_VIDEO,
-        );
-        storagePermissionResultTwo = await request(
-          PERMISSIONS.ANDROID.READ_MEDIA_IMAGES,
-        );
-        storagePermissionResultThird = await request(
-          PERMISSIONS.ANDROID.READ_MEDIA_AUDIO,
-        );
-      } else {
-        storagePermissionResultOne = await request(
-          PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE,
-        );
-        storagePermissionResultTwo = await request(
-          PERMISSIONS.ANDROID.WRITE_EXTERNAL_STORAGE,
-        );
-      }
-    } else if (Platform.OS === 'ios') {
-      storagePermissionResultOne = await request(PERMISSIONS.IOS.PHOTO_LIBRARY);
-    }
+    // Promise.all의 결과를 평탄화하고 모든 권한이 'granted'인지 확인
+    const allGranted = results.flat().every(result => result === RESULTS.GRANTED || typeof result === 'boolean' && result);
 
-    // Check Permission
-    if (resultCameraPermission === false 
-      || resultMicrophonePermission === false 
-      || storagePermissionResultOne !== RESULTS.GRANTED 
-      || storagePermissionResultTwo !== RESULTS.GRANTED
-      || storagePermissionResultThird !== RESULTS.GRANTED) {
+    if (!allGranted) {
       Alert.alert(
         '권한 필요',
+        '앱 사용을 위해 카메라, 마이크, 저장 공간 권한이 모두 필요합니다. 앱 설정에서 권한을 허용해주세요.',
       );
       return false;
     }
-
     return true;
   };
 
+  // 컴포넌트 마운트 시 권한 확인 및 요청
   useEffect(() => {
-    const initialize = async() => {
+    const initialize = async () => {
       await checkAndRequestPermissions();
-    }
+    };
     initialize();
-  }, [])
+  }, []); // 빈 배열은 컴포넌트가 마운트될 때 한 번만 실행
 
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <Text style={styles.title}>🎬 비디오 편집 앱</Text>
-        <Text style={styles.subtitle}>통합된 비디오 편집 솔루션</Text>
+    <ScreenContainer>
+      <ContentScrollView contentInsetAdjustmentBehavior="automatic">
+        <TitleText>🎬 비디오 편집 앱</TitleText>
+        <SubtitleText>통합된 비디오 편집 솔루션</SubtitleText>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📱 메인 기능</Text>
+        <SectionContainer>
+          <SectionHeader title="📱 메인 기능" />
 
-          <StyledButton
-            contents='파일에서 비디오 선택'
-            onPress={() => navigation.navigate('MediaLibrary')}
-          />
+          <MainFeatureButton onPress={() => navigation.navigate('MediaLibrary')}>
+            <ButtonTextStyled>파일에서 비디오 선택</ButtonTextStyled> {/* children으로 텍스트 전달 */}
+          </MainFeatureButton>
 
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => navigation.navigate('NewVideoTest')}
-          >
-            <Text style={styles.buttonText}>
-              🎤 합주 녹화 (카메라 + 비디오)
-            </Text>
-          </TouchableOpacity>
-        </View>
+          <MainFeatureButton onPress={() => navigation.navigate('NewVideoTest')}>
+            <ButtonTextStyled>🎤 합주 녹화 (카메라 + 비디오)</ButtonTextStyled> {/* children으로 텍스트 전달 */}
+          </MainFeatureButton>
+        </SectionContainer>
 
-        <View style={styles.infoSection}>
-          <Text style={styles.infoTitle}>ℹ️ 앱 정보</Text>
-          <Text style={styles.infoText}>
+        <SectionContainer>
+          <SectionHeader title="🛠️ 개발 및 테스트" />
+          <DevFeatureButton onPress={() => navigation.navigate('FFmpegTest')}>
+            <ButtonTextStyled>FFmpeg 테스트</ButtonTextStyled> {/* children으로 텍스트 전달 */}
+          </DevFeatureButton>
+        </SectionContainer>
+
+        <InfoSectionContainer>
+          <InfoTitle>ℹ️ 앱 정보</InfoTitle>
+          <InfoText>
             이 앱은 기존의 iOSTestApp과 new_video_test 프로젝트를 통합한
             것입니다.
-          </Text>
-          <Text style={styles.infoText}>
+          </InfoText>
+          <InfoText>
             각 버튼을 눌러서 원하는 기능을 테스트해보세요.
-          </Text>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          </InfoText>
+        </InfoSectionContainer>
+      </ContentScrollView>
+    </ScreenContainer>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#34495e',
-  },
-  scrollContainer: {
-    padding: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#ecf0f1',
-    textAlign: 'center',
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#bdc3c7',
-    textAlign: 'center',
-    marginBottom: 30,
-  },
-  section: {
-    marginBottom: 30,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#3498db',
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  button: {
-    backgroundColor: '#2c3e50',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#34495e',
-  },
-  buttonText: {
-    color: '#ecf0f1',
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  infoSection: {
-    backgroundColor: '#2c3e50',
-    padding: 20,
-    borderRadius: 10,
-    marginTop: 20,
-  },
-  infoTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#f39c12',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  infoText: {
-    color: '#bdc3c7',
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-});
 
 export default HomeScreen;

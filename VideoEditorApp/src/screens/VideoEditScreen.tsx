@@ -1,32 +1,32 @@
+// React-Native-Video와 Android Compiler간 충돌 => Node_modules
+// https://github.com/r0b0t3d/react-native-video/blob/master/android/src/main/java/com/brentvatne/common/react/VideoEventEmitter.kt
+// 참고하여 해결하기
+
+// Android FFmpeg 오류
+// https://medium.com/@nooruddinlakhani/resolved-ffmpegkit-retirement-issue-in-react-native-a-complete-guide-0f54b113b390
+// 참고하여 해결하기
+
 import React, { useState, useRef, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
-  Platform,
-} from 'react-native';
+import styled from 'styled-components/native';
+import { SafeAreaView, Alert, Platform, TextStyle } from 'react-native';
 import { CameraRoll } from '@react-native-camera-roll/camera-roll';
 import RNFS from 'react-native-fs';
 import { FFmpegKit, ReturnCode } from 'ffmpeg-kit-react-native';
 import Video, { OnLoadData } from 'react-native-video';
 
-// --- 분리된 모듈 Import ---
-import SingleVideoEditor from '../components/SingleVideoEditor';
-import { generateCollageFilterComplex } from '../utils/ffmpegFilters';
+import SingleVideoEditor from '../components/SingleVideoEditor'; // 리팩터링된 SingleVideoEditor 임포트
+import { generateCollageFilterComplex } from '../utils/ffmpegFilters'; // ffmpegFilters 유틸리티 임포트
 import {
   VideoEditScreenRouteProp,
   TrimmerState,
   SingleEditorHandles,
   EQBand,
   EditData,
-} from '../types';
+} from '../types'; // 업데이트된 타입 임포트
+import CommonButton from '../components/Common/CommonButton'; // CommonButton 임포트 (수정됨)
+import SectionHeader from '../components/Common/SectionHeader'; // SectionHeader 임포트
 
-// 기본 EQ 밴드 설정 (웹 버전과 동일)
+// 기본 EQ 밴드 설정
 const defaultEQBands: EQBand[] = [
   { id: 'band1', frequency: 60, gain: 0 },
   { id: 'band2', frequency: 250, gain: 0 },
@@ -38,7 +38,97 @@ const defaultEQBands: EQBand[] = [
 // 총 비디오 슬롯 개수
 const TOTAL_SLOTS = 6;
 
-// --- 메인 화면 컴포넌트 ---
+// [추가] URI를 FFmpeg가 인식 가능한 순수 파일 경로로 변환하는 헬퍼 함수
+const cleanUri = (uri: string): string => {
+  if (!uri) return '';
+  let path = uri;
+  // URL 인코딩된 문자(예: %20 -> 공백)를 디코딩
+  path = decodeURIComponent(path);
+  // 'file://' 접두사 제거
+  if (path.startsWith('file://')) {
+    path = path.substring(7);
+  }
+  return path;
+};
+
+// Styled Components 정의 (이전과 동일)
+const ScreenContainer = styled(SafeAreaView)`
+  flex: 1;
+  background-color: #2c3e50;
+`;
+
+const ContentScrollView = styled.ScrollView`
+  padding-bottom: 50px;
+`;
+
+const GlobalActionsContainer = styled.View`
+  flex-direction: row;
+  justify-content: space-around;
+  margin-horizontal: 15px;
+  margin-bottom: 20px;
+  background-color: #34495e;
+  padding: 10px;
+  border-radius: 10px;
+`;
+
+const GlobalActionButton = styled(CommonButton)`
+  background-color: #3498db;
+  padding-vertical: 10px;
+  padding-horizontal: 12px;
+  border-radius: 8px;
+  margin-bottom: 0; /* CommonButton의 기본 마진 오버라이드 */
+  flex: 1; /* 공간을 균등하게 분배 */
+  margin-horizontal: 5px; /* 버튼 간 작은 간격 */
+`;
+
+const GlobalButtonText = styled.Text`
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+`;
+
+const CreateCollageSection = styled.View`
+  margin-horizontal: 15px;
+  margin-top: 20px;
+  margin-bottom: 40px;
+`;
+
+const CreateCollageButton = styled(CommonButton)`
+  background-color: #27ae60; /* 녹색으로 콜라주 생성 버튼 강조 */
+`;
+
+const ResultSection = styled.View`
+  margin-horizontal: 15px;
+  margin-vertical: 20px;
+  padding: 15px;
+  background-color: #34495e;
+  border-radius: 15px;
+  border-width: 2px;
+  border-color: #27ae60; /* 녹색 테두리로 결과 섹션 강조 */
+`;
+
+const ResultSectionTitle : TextStyle = {
+  color: '#27ae60', /* 녹색 제목 */
+  marginBottom: 15,
+  textAlign: 'center',
+  fontSize: 18,
+  fontWeight: 'bold',
+};
+
+const ResultVideoPlayer = styled(Video)`
+  width: 100%;
+  height: 250px;
+  background-color: #000;
+  border-radius: 10px;
+  margin-bottom: 15px;
+`;
+
+const SaveResultButton = styled(CommonButton)`
+  background-color: #f39c12; /* 주황색으로 저장 버튼 강조 */
+  margin-bottom: 0; /* CommonButton의 기본 마진 오버라이드 */
+`;
+
 const VideoEditScreen: React.FC<{ route: VideoEditScreenRouteProp }> = ({ route }) => {
   const { videos = [] } = route.params ?? {};
   const [trimmers, setTrimmers] = useState<TrimmerState[]>([]);
@@ -61,14 +151,12 @@ const VideoEditScreen: React.FC<{ route: VideoEditScreenRouteProp }> = ({ route 
         originalAspectRatioValue: '1.777',
       };
     });
-    // ✨ [로그] 화면이 처음 로드될 때 슬롯들의 초기 상태를 확인합니다.
-    console.log('[Parent-INIT] Trimmer 슬롯 초기화 완료:', initialTrimmers.map(t => ({ id: t.id, hasVideo: !!t.sourceVideo })));
+    console.log('[VideoEditScreen] Trimmer slots initialized:', initialTrimmers.map(t => ({ id: t.id, hasVideo: !!t.sourceVideo })));
     setTrimmers(initialTrimmers);
   }, [videos]);
 
   const handleTrimmerUpdate = (id: string, newState: Partial<Omit<TrimmerState, 'id'>>) => {
-    // ✨ [로그] 자식으로부터 업데이트 요청이 올 때마다 확인합니다.
-    console.log(`[Parent-UPDATE] '${id}'로부터 상태 업데이트 받음:`, newState);
+    console.log(`[VideoEditScreen] '${id}' state update received:`, newState);
     setTrimmers(prevTrimmers =>
       prevTrimmers.map(trimmer =>
         trimmer.id === id ? { ...trimmer, ...newState } : trimmer
@@ -77,8 +165,7 @@ const VideoEditScreen: React.FC<{ route: VideoEditScreenRouteProp }> = ({ route 
   };
 
   const handleVideoLoad = (id: string, data: OnLoadData, aspectRatio: string) => {
-    // ✨ [로그] 자식에서 비디오 로드가 완료되었을 때 확인합니다.
-    console.log(`[Parent-LOAD] '${id}' 비디오 로드 완료. DURATION: ${data.duration}, AR: ${aspectRatio}`);
+    console.log(`[VideoEditScreen] Video '${id}' loaded. DURATION: ${data.duration}, AR: ${aspectRatio}`);
     handleTrimmerUpdate(id, {
       duration: data.duration,
       endTime: data.duration,
@@ -87,29 +174,28 @@ const VideoEditScreen: React.FC<{ route: VideoEditScreenRouteProp }> = ({ route 
   };
 
   const handleGlobalPlay = () => {
-    // ✨ [로그] 전역 컨트롤 버튼 클릭 확인
-    console.log('[Parent-ACTION] 동시 재생(Play) 버튼 클릭');
+    console.log('[VideoEditScreen] Global Play button clicked');
     Object.values(editorRefs.current).forEach(ref => ref?.playVideo());
   };
+
   const handleGlobalPause = () => {
-    // ✨ [로그] 전역 컨트롤 버튼 클릭 확인
-    console.log('[Parent-ACTION] 동시 정지(Pause) 버튼 클릭');
+    console.log('[VideoEditScreen] Global Pause button clicked');
     Object.values(editorRefs.current).forEach(ref => ref?.pauseVideo());
   };
+
   const handleGlobalSeekToStart = () => {
-    // ✨ [로그] 전역 컨트롤 버튼 클릭 확인
-    console.log('[Parent-ACTION] 위치 초기화(Seek) 버튼 클릭');
+    console.log('[VideoEditScreen] Global Seek to Start button clicked');
     Object.values(editorRefs.current).forEach(ref => ref?.seekToStart());
   };
 
   const createCollage = async () => {
-    const activeTrimmers = trimmers.filter(t => t.sourceVideo);
+    const activeTrimmers = trimmers.filter(t => t.sourceVideo && t.duration > 0);
     if (activeTrimmers.length === 0) {
       Alert.alert('오류', '콜라주를 만들려면 하나 이상의 비디오가 필요합니다.');
       return;
     }
 
-    console.log('[Parent-COLLAGE] 콜라주 생성 시작...');
+    console.log('[VideoEditScreen] Starting collage creation...');
     setIsCreatingCollage(true);
     setCollagePath(null);
 
@@ -119,28 +205,33 @@ const VideoEditScreen: React.FC<{ route: VideoEditScreenRouteProp }> = ({ route 
           startTime: t.startTime,
           endTime: t.endTime,
           volume: t.volume,
-          aspectRatio: t.aspectRatio === 'original' ? t.originalAspectRatioValue : t.aspectRatio,
+          aspectRatio: t.aspectRatio === 'original' && t.originalAspectRatioValue
+            ? t.originalAspectRatioValue
+            : t.aspectRatio,
           equalizer: t.equalizer.map(({ frequency, gain }) => ({ frequency, gain })),
         })),
       };
 
-      // ✨ [로그] FFmpeg 필터 생성 함수에 전달될 최종 데이터 객체를 확인합니다.
-      console.log('[Parent-COLLAGE] 필터 생성을 위한 데이터:', JSON.stringify(editData, null, 2));
-      
+      console.log('[VideoEditScreen] Data for filter generation:', JSON.stringify(editData, null, 2));
+
       const filterComplexArray = generateCollageFilterComplex(editData);
       const filterComplexString = filterComplexArray.join('; ');
-      const inputVideos = activeTrimmers.map(t => t.sourceVideo!);
-      const inputCommands = inputVideos.map(v => `-i "${v.uri}"`).join(' ');
-      const outputPath = `${RNFS.DocumentDirectoryPath}/collage_${Date.now()}.mp4`;
-      const audioMapCommand = editData.trimmers.length > 0 ? '-map "[a]"' : '';
 
-      const encoder = Platform.OS === 'ios' 
-    ? '-c:v h264_videotoolbox -b:v 2M' // iOS는 비트레이트 지정이 필요할 수 있습니다.
-    : '-c:v h264_mediacodec';
+      // [수정] cleanUri를 사용하여 각 비디오의 경로를 정제
+      const inputVideos = activeTrimmers.map(t => t.sourceVideo!);
+      const inputCommands = inputVideos.map(v => `-i "${cleanUri(v.uri)}"`).join(' ');
+
+      const outputPath = `${RNFS.DocumentDirectoryPath}/collage_${Date.now()}.mp4`;
+      const hasAudio = activeTrimmers.some(t => t.volume > 0);
+      const audioMapCommand = hasAudio ? '-map "[a]"' : '';
+
+      // [수정] 안드로이드 인코더를 하드웨어 가속(h264_mediacodec)으로 변경하여 성능 향상
+      const encoder = Platform.OS === 'ios'
+        ? '-c:v h264_videotoolbox -b:v 2M'
+        : '-c:v h264_mediacodec';
 
       const command = `${inputCommands} -filter_complex "${filterComplexString}" -map "[v]" ${audioMapCommand} ${encoder} -preset fast -crf 28 -shortest "${outputPath}"`;
-      // ✨ [로그] FFmpeg에 실제로 실행될 최종 명령어를 확인합니다. (가장 중요!)
-      console.log('[Parent-FFMPEG] 최종 실행 명령어:', command);
+      console.log('[VideoEditScreen] Final command to execute:', command);
 
       const session = await FFmpegKit.execute(command);
       const returnCode = await session.getReturnCode();
@@ -149,49 +240,56 @@ const VideoEditScreen: React.FC<{ route: VideoEditScreenRouteProp }> = ({ route 
         setCollagePath(outputPath);
         Alert.alert('성공!', '비디오 콜라주가 성공적으로 생성되었습니다.');
       } else {
+        const errorLogs = await session.getLogsAsString();
         Alert.alert('오류', '콜라주 생성 중 오류가 발생했습니다. 콘솔 로그를 확인하세요.');
-        // ✨ [로그] FFmpeg 실패 시 상세 로그를 확인하여 원인을 파악합니다.
-        console.error('[Parent-FFMPEG_ERROR] FFmpeg 실행 실패! 상세 로그:', await session.getLogsAsString());
+        console.error('[VideoEditScreen] FFmpeg execution failed! Detailed logs:', errorLogs);
       }
     } catch (error) {
       Alert.alert('오류', '콜라주 생성 중 예외가 발생했습니다.');
-      console.error(error);
+      console.error('Collage creation exception:', error);
     } finally {
       setIsCreatingCollage(false);
     }
   };
 
   const saveCollageToGallery = async () => {
-    if (!collagePath) return;
+    if (!collagePath) {
+      Alert.alert('알림', '저장할 콜라주가 없습니다. 먼저 콜라주를 생성해주세요.');
+      return;
+    }
     try {
-      await CameraRoll.save(collagePath, { type: 'video', album: 'VideoEditorApp' });
+      // [수정] 저장 경로를 file:// 접두사와 함께 전달해야 CameraRoll이 인식
+      await CameraRoll.save(`file://${collagePath}`, { type: 'video', album: 'VideoEditorApp' });
       Alert.alert('성공', '콜라주가 사진첩에 저장되었습니다!');
     } catch (error) {
       Alert.alert('오류', '사진첩 저장 중 오류가 발생했습니다.');
-      console.error(error);
+      console.error('Saving to gallery failed:', error);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <Text style={styles.title}>6-Video Collage Editor</Text>
-        <View style={styles.globalActions}>
-          <TouchableOpacity style={styles.globalButton} onPress={handleGlobalSeekToStart}>
-            <Text style={styles.buttonText}>위치 초기화</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.globalButton} onPress={handleGlobalPlay}>
-            <Text style={styles.buttonText}>동시 재생</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.globalButton} onPress={handleGlobalPause}>
-            <Text style={styles.buttonText}>동시 정지</Text>
-          </TouchableOpacity>
-        </View>
+    <ScreenContainer>
+      <ContentScrollView contentInsetAdjustmentBehavior="automatic">
+        <SectionHeader title="6-Video Collage Editor" />
+
+        <GlobalActionsContainer>
+          <GlobalActionButton onPress={handleGlobalSeekToStart}>
+            <GlobalButtonText>위치 초기화</GlobalButtonText>
+          </GlobalActionButton>
+          <GlobalActionButton onPress={handleGlobalPlay}>
+            <GlobalButtonText>동시 재생</GlobalButtonText>
+          </GlobalActionButton>
+          <GlobalActionButton onPress={handleGlobalPause}>
+            <GlobalButtonText>동시 정지</GlobalButtonText>
+          </GlobalActionButton>
+        </GlobalActionsContainer>
 
         {trimmers.map(trimmerState => (
           <SingleVideoEditor
             key={trimmerState.id}
-            ref={el => (editorRefs.current[trimmerState.id] = el)}
+            ref={el => {
+              editorRefs.current[trimmerState.id] = el;
+            }}
             trimmerState={trimmerState}
             onUpdate={handleTrimmerUpdate}
             onVideoLoad={handleVideoLoad}
@@ -199,106 +297,28 @@ const VideoEditScreen: React.FC<{ route: VideoEditScreenRouteProp }> = ({ route 
         ))}
 
         {collagePath && (
-          <View style={styles.resultSection}>
-            <Text style={styles.sectionTitle}>✨ 콜라주 결과</Text>
-            <Video source={{ uri: collagePath }} style={styles.resultVideo} controls={true} resizeMode="contain" />
-            <TouchableOpacity style={styles.saveButton} onPress={saveCollageToGallery}>
-              <Text style={styles.buttonText}>결과물 사진첩에 저장</Text>
-            </TouchableOpacity>
-          </View>
+          <ResultSection>
+            <SectionHeader title="✨ 콜라주 결과" titleStyle={ResultSectionTitle} />
+            {/* [수정] file:// 접두사를 붙여 Video 컴포넌트가 인식하도록 함 */}
+            <ResultVideoPlayer source={{ uri: `file://${collagePath}` }} controls={true} resizeMode="contain" />
+            <SaveResultButton onPress={saveCollageToGallery}>
+              <GlobalButtonText>결과물 사진첩에 저장</GlobalButtonText>
+            </SaveResultButton>
+          </ResultSection>
         )}
 
-        <View style={styles.saveSection}>
-          <TouchableOpacity 
-            style={[styles.saveButton, isCreatingCollage && styles.buttonDisabled]} 
+        <CreateCollageSection>
+          <CreateCollageButton
             onPress={createCollage}
+            isLoading={isCreatingCollage}
             disabled={isCreatingCollage}
           >
-            {isCreatingCollage ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <Text style={styles.buttonText}>콜라주 생성</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+            <GlobalButtonText>콜라주 생성</GlobalButtonText>
+          </CreateCollageButton>
+        </CreateCollageSection>
+      </ContentScrollView>
+    </ScreenContainer>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#2c3e50',
-  },
-  scrollContainer: {
-    paddingBottom: 50,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#ecf0f1',
-    textAlign: 'center',
-    marginVertical: 20,
-  },
-  globalActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginHorizontal: 15,
-    marginBottom: 20,
-    backgroundColor: '#34495e',
-    padding: 10,
-    borderRadius: 10,
-  },
-  globalButton: {
-    backgroundColor: '#3498db',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: 'bold',
-    textAlign: 'center'
-  },
-  saveSection: {
-    marginHorizontal: 15,
-    marginTop: 20,
-    marginBottom: 40
-  },
-  saveButton: {
-    backgroundColor: '#27ae60',
-    paddingVertical: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  buttonDisabled: {
-    backgroundColor: '#95a5a6',
-  },
-  resultSection: {
-    marginHorizontal: 15,
-    marginVertical: 20,
-    padding: 15,
-    backgroundColor: '#34495e',
-    borderRadius: 15,
-    borderWidth: 2,
-    borderColor: '#27ae60'
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#27ae60',
-    marginBottom: 15,
-    textAlign: 'center'
-  },
-  resultVideo: {
-    width: '100%',
-    height: 250,
-    backgroundColor: '#000',
-    borderRadius: 10,
-    marginBottom: 15,
-  },
-});
 
 export default VideoEditScreen;

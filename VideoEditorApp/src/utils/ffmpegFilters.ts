@@ -1,9 +1,28 @@
 import { Platform, Alert } from 'react-native';
 import { FFmpegKit, FFprobeKit, ReturnCode } from 'ffmpeg-kit-react-native';
 import RNFS from 'react-native-fs';
-import { EditData } from '../types';
+import { EditData } from '../types'; // types.ts에서 EditData를 임포트
 
+// [추가] URI를 FFmpeg가 인식 가능한 순수 파일 경로로 변환하는 헬퍼 함수
+const cleanUri = (uri: string): string => {
+  if (!uri) return '';
+  let path = uri;
+  // URL 인코딩된 문자(예: %20 -> 공백)를 디코딩
+  path = decodeURIComponent(path);
+  // 'file://' 접두사 제거
+  if (path.startsWith('file://')) {
+    path = path.substring(7);
+  }
+  return path;
+};
+
+
+/**
+ * 주어진 편집 데이터(비디오 트리밍, 볼륨, 이퀄라이저, 화면 비율 등)를 기반으로 FFmpeg filter_complex 문자열 배열을 생성합니다.
+ * (이 함수 내부 로직은 변경되지 않았습니다.)
+ */
 export const generateCollageFilterComplex = (editData: EditData): string[] => {
+  // ... (이전과 동일한 코드)
   const { trimmers } = editData;
   const filterComplex: string[] = [];
   const videoCount = trimmers.length;
@@ -11,8 +30,6 @@ export const generateCollageFilterComplex = (editData: EditData): string[] => {
   if (videoCount === 0) {
     return [];
   }
-
-  // --- 오디오 필터 체인 ---
   const audioOutputs: string[] = [];
   trimmers.forEach((trimmer, i) => {
     filterComplex.push(
@@ -36,9 +53,8 @@ export const generateCollageFilterComplex = (editData: EditData): string[] => {
     filterComplex.push(`${audioOutputs.join('')}amix=inputs=${videoCount}:duration=shortest[a]`);
   }
 
-  // --- 비디오 필터 체인 ---
   const shortestDuration = Math.min(...trimmers.map(t => t.endTime - t.startTime));
-  console.log(`[FilterGen-Fix] 계산된 가장 짧은 길이: ${shortestDuration}초`);
+  console.log(`[FFmpegFilters] Calculated shortest duration for collage: ${shortestDuration} seconds`);
 
   const ensureEven = (num: number) => 2 * Math.round(num / 2);
   const NUM_COLS = 2;
@@ -46,46 +62,37 @@ export const generateCollageFilterComplex = (editData: EditData): string[] => {
   const PADDING = 20;
   const cornerRadius = 15;
   const FRAME_WIDTH = ensureEven((COLLAGE_WIDTH - (NUM_COLS + 1) * PADDING) / NUM_COLS);
-
   const frameHeights = trimmers.map(trimmer => {
-    const ar_val = parseFloat(trimmer.aspectRatio) || 16 / 9;
+    const ar_val = parseFloat(trimmer.aspectRatio) || (16 / 9);
     return ensureEven(FRAME_WIDTH / ar_val);
   });
-
   const numRows = Math.ceil(trimmers.length / NUM_COLS);
   const rowHeights: number[] = [];
   for (let i = 0; i < numRows; i++) {
     const start = i * NUM_COLS;
-    const end = start + NUM_COLS;
+    const end = Math.min(start + NUM_COLS, trimmers.length);
     const heightsInRow = frameHeights.slice(start, end);
     rowHeights.push(heightsInRow.length > 0 ? Math.max(...heightsInRow) : 0);
   }
-
   const totalRowHeights = rowHeights.reduce((sum, height) => sum + height, 0);
   const bg_height = ensureEven((numRows + 1) * PADDING + totalRowHeights);
   const bg_width = ensureEven(COLLAGE_WIDTH);
-
   filterComplex.push(`color=c=black:s=${bg_width}x${bg_height}:d=${shortestDuration}[bg]`);
-
   let lastOverlayNode = '[bg]';
-  let currentOverlayOutput = '[tmp0]';
-
+  let currentOverlayOutput: string;
   trimmers.forEach((trimmer, i) => {
     const frame_h = frameHeights[i];
     const col = i % NUM_COLS;
     const row = Math.floor(i / NUM_COLS);
-
     let y_offset = 0;
     for (let j = 0; j < row; j++) {
       y_offset += rowHeights[j] + PADDING;
     }
     const x = PADDING + col * (FRAME_WIDTH + PADDING);
     const y = PADDING + y_offset;
-
     filterComplex.push(
       `[${i}:v]trim=start=${trimmer.startTime}:end=${trimmer.endTime},setpts=PTS-STARTPTS,scale=${FRAME_WIDTH}:-2,crop=${FRAME_WIDTH}:${frame_h}[v${i}_processed]`
     );
-
     let videoStream = `[v${i}_processed]`;
     if (cornerRadius > 0) {
       filterComplex.push(`color=c=black:s=${FRAME_WIDTH}x${frame_h}[mask${i}_base]`);
@@ -93,22 +100,16 @@ export const generateCollageFilterComplex = (editData: EditData): string[] => {
       filterComplex.push(`[v${i}_processed][mask${i}]alphamerge[v${i}_rounded]`);
       videoStream = `[v${i}_rounded]`;
     }
-
     currentOverlayOutput = (i === videoCount - 1) ? '[v]' : `[tmp${i}]`;
-    
     filterComplex.push(`${lastOverlayNode}${videoStream}overlay=x=${x}:y=${y}:shortest=1${currentOverlayOutput}`);
-    
     lastOverlayNode = currentOverlayOutput;
   });
-
   return filterComplex;
 };
 
 /**
- * 영상의 해상도를 확인하여 1080p를 초과하는 경우 다운스케일링합니다.
- * 안드로이드의 content:// URI를 처리하기 위해 파일을 내부 캐시로 복사하는 로직을 포함합니다.
- * @param originalUri 원본 영상의 URI (content:// 또는 file://)
- * @returns 다음 화면에서 사용할 수 있는 실제 파일 경로 URI
+ * 영상의 해상도를 확인하여 1080p를 초과하는 경우 사용자에게 확인 후 다운스케일링합니다.
+ * (이 함수 내부 로직도 안정성을 위해 일부 수정되었습니다.)
  */
 export const downscaleVideoIfRequired = async (originalUri: string): Promise<string | null> => {
   let accessibleUri = originalUri;
@@ -116,79 +117,111 @@ export const downscaleVideoIfRequired = async (originalUri: string): Promise<str
   let wasFileCopied = false;
 
   try {
-    // 1. 안드로이드 content:// URI 처리
     if (Platform.OS === 'android' && originalUri.startsWith('content://')) {
-      tempFilePath = `${RNFS.CachesDirectoryPath}/${new Date().getTime()}_temp_video.mp4`;
+      tempFilePath = `${RNFS.CachesDirectoryPath}/temp_video_${new Date().getTime()}.mp4`;
+      console.log(`[VideoUtils] Copying content URI to local cache: ${tempFilePath}`);
       await RNFS.copyFile(originalUri, tempFilePath);
-      accessibleUri = tempFilePath;
+      accessibleUri = tempFilePath; // 이제 accessibleUri는 순수 파일 경로
       wasFileCopied = true;
-      console.log(`[VideoUtils] Content URI를 로컬 파일로 복사 완료: ${accessibleUri}`);
-    }
-
-    // 2. FFprobe로 해상도 확인
-    const session = await FFprobeKit.execute(`-v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 "${accessibleUri}"`);
-    const output = await session.getOutput();
-
-    if (!output) {
-      console.error("[VideoUtils] FFprobe: 영상 정보를 가져오지 못했습니다.");
-      return null;
+      console.log(`[VideoUtils] Content URI successfully copied to: ${accessibleUri}`);
+    } else {
+        // [추가] content://가 아닌 다른 URI도 cleanUri로 경로 정제
+        accessibleUri = cleanUri(originalUri);
     }
     
-    const [width, height] = output.trim().split('x').map(Number);
-    if (isNaN(width) || isNaN(height)) {
-        console.error(`[VideoUtils] FFprobe: 해상도 파싱 실패.`);
-        return null;
+    // [수정] 정제된 경로(accessibleUri)를 FFprobe에 전달
+    const ffprobeCommand = `-v quiet -hide_banner -print_format json -show_streams "${accessibleUri}"`;
+    const session = await FFprobeKit.execute(ffprobeCommand);
+    // ... (이후 로직은 이전과 대부분 동일)
+
+    const returnCode = await session.getReturnCode();
+    const output = await session.getOutput();
+
+    let width: number = 0, height: number = 0;
+    let videoCodec: string | undefined, audioCodec: string | undefined;
+
+    if (!ReturnCode.isSuccess(returnCode) || !output) {
+      console.error("[VideoUtils] FFprobe: Failed to execute or no output.", "Returning original/copied URI.");
+      // [수정] 실패 시에도 file:// 접두사를 붙여서 반환해야 할 수 있음 (호출하는 곳에 따라 다름)
+      // 여기서는 원본 URI를 반환하여 호출 측에서 처리하도록 함.
+      return wasFileCopied ? `file://${accessibleUri}` : originalUri;
     }
-    console.log(`[VideoUtils] 인식된 영상 해상도: ${width}x${height}`);
+
+    // ... (JSON 파싱 및 해상도/코덱 확인 로직은 이전과 동일)
+    try {
+      const ffprobeData = JSON.parse(output);
+      const videoStream = ffprobeData.streams?.find((s: any) => s.codec_type === 'video');
+      const audioStream = ffprobeData.streams?.find((s: any) => s.codec_type === 'audio');
+      if (videoStream) { width = videoStream.width || 0; height = videoStream.height || 0; videoCodec = videoStream.codec_name; }
+      if (audioStream) { audioCodec = audioStream.codec_name; }
+    } catch (parseError) {
+      console.error("[VideoUtils] FFprobe: Failed to parse JSON output.", "Returning original/copied URI.");
+      return wasFileCopied ? `file://${accessibleUri}` : originalUri;
+    }
+
+    if ((!width || !height) && audioCodec && !videoCodec) {
+      console.log(`[VideoUtils] Audio-only file detected. Skipping optimization.`);
+      return wasFileCopied ? `file://${accessibleUri}` : originalUri;
+    }
+    
+    if (!width || !height) {
+      console.warn(`[VideoUtils] FFprobe: Could not parse resolution. Skipping optimization.`);
+      return wasFileCopied ? `file://${accessibleUri}` : originalUri;
+    }
+    
+    console.log(`[VideoUtils] Detected: ${width}x${height}, Video: ${videoCodec || 'N/A'}, Audio: ${audioCodec || 'N/A'}`);
 
     const needsDownscaling = width > 1080 || height > 1080;
+    const needsAudioReencode = Platform.OS === 'ios' && audioCodec === 'pcm_s16le';
+    const needsVideoCodecConversion = Platform.OS === 'ios' && (videoCodec === 'hevc' || videoCodec === 'hvc1');
 
-    if (needsDownscaling) {
-      // 3. ✨ 사용자에게 다운스케일링 여부 확인
-      const userConfirmed = await new Promise<boolean>((resolve) => {
-        Alert.alert(
-          "고해상도 영상 최적화",
-          "선택한 영상의 해상도가 높습니다. 원활한 편집을 위해 1080p로 최적화하는 것을 권장합니다.\n\n진행하시겠습니까?",
-          [
-            { text: "아니요 (취소)", onPress: () => resolve(false), style: 'cancel' },
-            { text: "네, 진행합니다", onPress: () => resolve(true) }
-          ],
-          { cancelable: false }
-        );
-      });
+    if (needsDownscaling || needsAudioReencode || needsVideoCodecConversion) {
+        // ... (사용자 확인 Alert 로직은 이전과 동일)
+        const userConfirmed = await new Promise<boolean>((resolve) => {
+            Alert.alert("영상 최적화 필요", "영상 품질 및 호환성 최적화를 진행하시겠습니까?", [
+                { text: "아니요", onPress: () => resolve(false), style: 'cancel' },
+                { text: "네", onPress: () => resolve(true) }
+            ]);
+        });
 
-      // 사용자가 '아니요'를 선택하면 null을 반환하여 과정 중단
-      if (!userConfirmed) {
-        console.log('[VideoUtils] 사용자가 최적화를 취소했습니다.');
-        return null;
-      }
+        if (!userConfirmed) {
+            if (wasFileCopied && tempFilePath) await RNFS.unlink(tempFilePath).catch(console.error);
+            return null;
+        }
 
-      // 4. ✨ 사용자가 동의했으므로 인코딩 진행
-      const outputPath = `${RNFS.DocumentDirectoryPath}/optimized_${Date.now()}.mp4`;
-      const encoder = Platform.OS === 'ios' ? 'h264_videotoolbox' : 'h264_mediacodec';
-      const command = `-i "${accessibleUri}" -vf "scale=-2:1080" -c:v ${encoder} -c:a copy -preset fast "${outputPath}"`;
+        // [수정] 최종 반환 경로도 file:// 접두사를 붙여 일관성 유지
+        const outputPath = `${RNFS.DocumentDirectoryPath}/optimized_video_${new Date().getTime()}.mp4`;
+        const videoEncoder = Platform.OS === 'ios' ? 'h264_videotoolbox' : 'h264_mediacodec';
+        const audioEncoder = 'aac';
+        const videoFilters = `scale=-2:1080`;
+        const preset = Platform.OS === 'ios' ? '' : '-preset fast';
+        // [수정] 입력 경로(accessibleUri)가 이미 정제되었으므로 그대로 사용
+        const command = `-i "${accessibleUri}" -vf "${videoFilters}" -c:v ${videoEncoder} -c:a ${audioEncoder} -b:a 192k ${preset} -movflags +faststart "${outputPath}"`;
       
-      console.log('[VideoUtils] FFmpeg 인코딩 시작.');
-      const encodeSession = await FFmpegKit.execute(command);
-      const returnCode = await encodeSession.getReturnCode();
+        console.log(`[VideoUtils] FFmpeg encoding started with command: ${command}`);
+        const encodeSession = await FFmpegKit.execute(command);
+        const encodeReturnCode = await encodeSession.getReturnCode();
 
-      if (ReturnCode.isSuccess(returnCode)) {
-        // 5. ✨ 성공 알림 후 경로 반환
-        Alert.alert("최적화 완료", "영상이 성공적으로 최적화되었습니다.");
-        console.log('[VideoUtils] FFmpeg: 인코딩 성공! 경로:', outputPath);
-        return outputPath;
-      } else {
-        Alert.alert('오류', '영상 최적화 중 오류가 발생했습니다.');
-        console.error('[VideoUtils] FFmpeg: 인코딩 실패.');
-        return null;
-      }
+        if (ReturnCode.isSuccess(encodeReturnCode)) {
+            Alert.alert("최적화 완료", "영상이 성공적으로 최적화되었습니다.");
+            if (wasFileCopied && tempFilePath) await RNFS.unlink(tempFilePath).catch(console.error);
+            return `file://${outputPath}`; // 최종 경로 반환
+        } else {
+            const errorLogs = await encodeSession.getLogsAsString();
+            Alert.alert('오류', '영상 최적화 중 오류가 발생했습니다.');
+            console.error('[VideoUtils] FFmpeg encoding failed. Logs:', errorLogs);
+            if (wasFileCopied && tempFilePath) await RNFS.unlink(tempFilePath).catch(console.error);
+            return null;
+        }
     } else {
-      console.log('[VideoUtils] 영상이 1080p 이하이므로 최적화가 필요 없습니다.');
-      return wasFileCopied ? accessibleUri : originalUri;
+        console.log('[VideoUtils] No optimization required.');
+        // [수정] 최적화가 필요 없더라도 일관된 형식으로 반환
+        return wasFileCopied ? `file://${accessibleUri}` : originalUri;
     }
   } catch (error) {
-    console.error('[VideoUtils] 영상 처리 중 예외 발생:', error);
+    console.error('[VideoUtils] An exception occurred during video processing:', error);
     Alert.alert('오류', '영상 처리 중 문제가 발생했습니다.');
+    if (wasFileCopied && tempFilePath) await RNFS.unlink(tempFilePath).catch(console.error);
     return null;
   }
 };

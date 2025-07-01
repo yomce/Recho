@@ -1,68 +1,121 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+/*
+  src/index.css
+  프로젝트의 모든 전역 스타일과 Tailwind 설정을 여기서 관리합니다.
+*/
+@import "tailwindcss";
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+/* ========================================
+  프로젝트 커스텀 테마 정의 (@theme)
+======================================== */
+@theme {
+  /* Colors (색상) */
+  --color-brand-default: #FFFFFF;         /* 카드/섹션/기본 배경 */
+  --color-brand-frame: #F3F4F6;           /* 전체 프레임 배경 */
+  --color-brand-primary: #8E4DF6;         /* 주요 버튼 포인트 색상 */
+  --color-brand-blue: #4397FD;            /* 링크/ 포인트 블루 색상 */
+  --color-brand-gray: #61646B;            /* 설명/서브 텍스트 색상 */
+  --color-brand-text-primary: #000000;    /* 기본 텍스트 색상 */
+  --color-brand-text-inverse: #FFFFFF;    /* 반전 텍스트 색상 */
+  --color-brand-text-secondary: #333333;  /* 보조 텍스트 색상 */
+  --color-brand-text-disabled: #AAAAAA;   /* 비활성화/ 설명 텍스트 색상 */
+  --color-brand-error-text: #EF4444;      /* 에러 텍스트 색상 */
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+  /* Spacing & Sizing (간격 및 크기) */
+  --spacing-8: 8px;
+  --spacing-16: 16px;
+  --spacing-24: 24px;
+  --spacing-32: 32px;
+  --spacing-40: 40px;
+  --spacing-48: 48px;
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+  /* Border Radius (모서리 둥글기) */
+  --radius-button: 10px;
+  --radius-card: 20px;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+/* ========================================
+  커스텀 유틸리티 클래스 정의 (@layer)
+======================================== */
+@layer utilities {
+  .app-container {
+    @apply w-full min-h-screen bg-brand-default bg-brand-frame justify-center flex;
   }
-  a:hover {
-    color: #747bff;
+
+
+  .centered-card-container {
+    @apply min-h-screen w-full flex justify-center items-center bg-brand-frame;
   }
-  button {
-    background-color: #f9f9f9;
+
+
+  .text-title {
+    font-size: 32px;
+    line-height: 1.2;
+    font-weight: 700;
+  }
+  .text-headline {
+    font-size: 24px;
+    line-height: 1.2;
+    font-weight: 700;
+  }
+  .text-subheadline {
+    font-size: 20px;
+    line-height: 1.2;
+    font-weight: 600;
+  }
+  .text-body {
+    font-size: 16px;
+    line-height: 1.5;
+    font-weight: 400;
+  }
+  .text-caption {
+    font-size: 14px;
+    line-height: 1.4;
+    font-weight: 400;
+  }
+  .text-footnote {
+    font-size: 12px;
+    line-height: 1.4;
+    font-weight: 400;
+  }
+  .text-caption-bold {
+    font-size: 14px;
+    line-height: 1.4;
+    font-weight: 700;
+  }
+  .text-button {
+    font-size: 16px;
+    line-height: 1.5;
+    font-weight: 700;
+  }
+  .text-overline {
+    font-size: 12px;
+    line-height: 1.4;
+    font-weight: 500;
+  }
+  .text-input {
+    font-size: 16px;
+    line-height: 1.5;
+    font-weight: 400;
+  }
+  .text-tag {
+    font-size: 14px;
+    line-height: 1.4;
+    font-weight: 600;
+  }
+  .text-navigation {
+    font-size: 14px;
+    line-height: 1.4;
+    font-weight: 500;
+  }
+  .text-error {
+    font-size: 12px;
+    line-height: 1.4;
+    font-weight: 400;
+    color: var(--color-brand-error-text);
   }
 }
+
+/* ========================================
+  Tailwind 기본 스타일 불러오기 (가장 마지막)
+======================================== */
+@import "tailwindcss";

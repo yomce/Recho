@@ -19,6 +19,7 @@ import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage';
 import RecruitEnsembleListPage from '@/pages/ensemble/RecruitEnsemblePage';
 import CreateRecruitEnsemblePage from '@/pages/ensemble/CreateRecruitEnsemblePage';
 import RecruitEnsembleDetailPage from '@/pages/ensemble/RecruitEnsembleDetailPage';
+import AuthCallbackPage from '../pages/auth/AuthCallbackPage'; // 
 
 const AppRouter: React.FC = () => {
   return (
@@ -40,6 +41,8 @@ const AppRouter: React.FC = () => {
         <Route path="/ensembles" element={<RecruitEnsembleListPage/>} />
         <Route path="/ensembles/create" element={<CreateRecruitEnsemblePage/>} />
         <Route path="/ensembles/:id" element={<RecruitEnsembleDetailPage />} /> 
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
+
       </Routes>
     </Router>
   );

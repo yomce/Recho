@@ -87,7 +87,6 @@ const InfoText = styled.Text`
   text-align: center;
 `;
 
-
 /**
  * HomeScreen 컴포넌트는 앱의 시작 화면으로, 주요 기능 및 정보 섹션을 표시합니다.
  * 카메라, 마이크, 저장 공간 권한을 확인하고 요청하는 로직을 포함합니다.
@@ -149,7 +148,7 @@ const HomeScreen: React.FC = () => {
   return (
     <ScreenContainer>
       <ContentScrollView contentInsetAdjustmentBehavior="automatic">
-        <TitleText>🎬 비디오 편집 앱</TitleText>
+        <TitleText>Recho</TitleText>
         <SubtitleText>통합된 비디오 편집 솔루션</SubtitleText>
 
         <SectionContainer>
@@ -168,6 +167,9 @@ const HomeScreen: React.FC = () => {
           <SectionHeader title="🛠️ 개발 및 테스트" />
           <DevFeatureButton onPress={() => navigation.navigate('FFmpegTest')}>
             <ButtonTextStyled>FFmpeg 테스트</ButtonTextStyled> {/* children으로 텍스트 전달 */}
+          </DevFeatureButton>
+          <DevFeatureButton onPress={() => navigation.navigate('Web', { url: 'https://www.google.com' })}>
+            <ButtonTextStyled>웹뷰 테스트</ButtonTextStyled>
           </DevFeatureButton>
         </SectionContainer>
 

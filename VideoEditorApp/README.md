@@ -1,97 +1,15 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Recho 비디오 편집기 앱
 
-# Getting Started
+이것은 Recho를 위한 React Native 모바일 애플리케이션입니다.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## 후임 에이전트를 위한 중요 사항
 
-## Step 1: Start Metro
+-   **FFmpeg는 이제 클라이언트 측에 있습니다.** 모든 비디오 처리 로직이 백엔드에서 제거되었습니다. `ffmpeg-kit-react-native`와 같은 라이브러리를 사용하여 여기에서 구현해야 합니다.
+-   **새로운 업로드 흐름:** 새로운 업로드 워크플로를 구현해야 합니다. 자세한 계획은 루트 디렉토리의 `PROMPT_FOR_SUCCESSOR.md` 파일을 참조하세요.
+-   **새로운 편집 화면:** 새로운 파일 `src/screens/VideoEditScreen.arm.tsx`가 추가되었습니다. 이것은 새로운 클라이언트 측 편집 로직을 위한 의도된 위치입니다.
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## 잠재적인 빌드 문제 및 해결책
 
-To start the Metro dev server, run the following command from the root of your React Native project:
-
-```sh
-# Using npm
-npm start
-
-# OR using Yarn
-yarn start
-```
-
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
-```
-
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+-   **Android `bundle exec pod install` 오류:** `Could not find gem 'cocoapods'`와 같은 오류 메시지가 발생하면, 이는 종종 Ruby 환경이 올바르게 설정되지 않았거나 `rbenv` 또는 `rvm`과 같은 버전 관리자가 아닌 시스템 Ruby를 사용하고 있음을 의미합니다. 안정적인 Ruby 버전이 설치되고 활성화되어 있는지 확인하세요.
+-   **iOS 빌드 오류 - `std::filesystem`:** iOS 빌드 중 `std::filesystem`을 찾을 수 없다는 오류가 발생하면 (특히 `ffmpeg-kit`과 같은 라이브러리를 추가한 후), 이는 C++ 표준이 올바르게 설정되지 않았음을 의미합니다.
+    -   **해결책:** `VideoEditorApp/ios/Podfile`에서 모든 포드가 올바른 C++ 표준으로 컴파일되도록 하기 위해 다음 포스트 설치 후크를 추가해야 할 수 있습니다:

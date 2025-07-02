@@ -41,7 +41,7 @@ export class User {
    * 비밀번호 (해시됨)
    * @description VARCHAR(255), NOT NULL
    */
-  @Column({ name: 'user_pw', type: 'varchar', length: 255 })
+  @Column({ name: 'user_pw', type: 'varchar', length: 255, nullable: true })
   @Exclude()
   password: string;
 
@@ -65,6 +65,13 @@ export class User {
    */
   @Column({ name: 'user_intro', type: 'varchar', length: 255, nullable: true })
   intro: string | null;
+
+  // 소셜로그인 용
+  @Column({ name: 'provider', type: 'varchar', length: 50, nullable: true })
+  provider?: string; // 예: 'kakao', 'google'
+
+  @Column({ name: 'provider_id', type: 'varchar', length: 255, nullable: true })
+  providerId?: string; // 소셜 로그인 플랫폼에서 제공하는 고유 ID
 
   /**
    * 리프레시 토큰 (해시됨)

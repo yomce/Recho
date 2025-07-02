@@ -167,12 +167,16 @@ const LoginPage: React.FC = () => {
                   <svg className="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 24 24">...</svg>
                   Google
                 </a>
+                {/* [수정] GitHub -> Kakao 로그인 버튼 */}
                 <a
-                  href="#"
-                  className="inline-flex w-full justify-center rounded-[var(--radius-button)] border border-gray-300 bg-[var(--color-brand-default)] py-2 px-4 text-navigation font-medium text-[var(--color-brand-gray)] hover:bg-gray-50"
+                  href="http://localhost:3000/auth/kakao" // 백엔드의 카카오 로그인 시작 API 주소
+                  className="inline-flex w-full justify-center rounded-[var(--radius-button)] bg-[#FEE500] py-2 px-4 text-navigation font-medium text-black hover:opacity-90"
                 >
-                  <svg className="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 24 24">...</svg>
-                  GitHub
+                <svg className="mr-3 h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                  {/* 카카오 로고 SVG Path */}
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.11 14.23l-.01.01-2.43-1.2-1.2 2.43c-.02.04-.06.07-.1.08-.04.02-.09.01-1.3-.7l-1.12-1.12c-.05-.05-.06-.12-.01-.17l2.43-4.21-4.21 2.43c-.05.04-.12.04-.17-.01l-1.12-1.12c-.71-1.2-.68-1.26-.7-1.3-.01-.04.01-.09.08-.1l2.43-1.2-1.2-2.43c-.04-.05-.04-.12.01-.17l1.12-1.12c1.2-.71 1.26-.68 1.3-.7.04-.01.09-.01.1.08l1.2 2.43 2.43-1.2c.05-.04.12-.04.17.01l1.12 1.12c.71 1.2.68 1.26.7 1.3.01.04-.01.09-.08.1l-2.43 1.2 1.2 2.43c.04.05.04.12-.01.17l-1.12 1.12c-.52.31-1.27.76-1.27.76z"/>
+                </svg>
+                  Kakao
                 </a>
               </div>
             </div>

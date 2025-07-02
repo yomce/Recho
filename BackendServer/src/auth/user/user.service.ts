@@ -20,8 +20,10 @@ export class UserService {
       throw new ConflictException('이미 존재하는 아이디입니다.');
     }
     
-    // 2. 이메일 중복 확인 (엔티티에 unique:true 속성이 있으므로 추가하는 것이 좋습니다)
-    const existingUserByEmail = await this.userRepo.findOneBy({ email: dto.email });
+    // 2. 이메일 중복 확인
+    const existingUserByEmail = await this.userRepo.findOne({
+      where: { email: dto.email },
+    });
     if (existingUserByEmail) {
       throw new ConflictException('이미 사용 중인 이메일입니다.');
     }

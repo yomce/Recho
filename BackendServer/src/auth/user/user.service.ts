@@ -13,9 +13,25 @@ export class UserService {
     private readonly userRepository: Repository<User>,
   ) {}
 
+
+  async createUser(dto: CreateUserDto): Promise<Omit<User, 'password' | 'hashedRefreshToken'>> {
+    // 1. 아이디 중복 확인 추가 👍 
+    const existingUserById = await this.userRepo.findOneBy({ id: dto.id });
+    if (existingUserById) {
+      throw new ConflictException('이미 존재하는 아이디입니다.');
+    }
+    
+    // 2. 이메일 중복 확인도 추가 👍 to동주님
+    const existingUserByEmail = await this.userRepo.findOne({
+      where: { email: dto.email },
+    });
+    if (existingUserByEmail) {
+      throw new ConflictException('이미 사용 중인 이메일입니다.');
+    }
   async findById(id: string): Promise<User | null> {
     return this.userRepository.findOneBy({ id });
   }
+
 
   async findByUsername(username: string): Promise<User | null> {
     return this.userRepository.findOneBy({ username });

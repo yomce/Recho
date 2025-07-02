@@ -10,27 +10,26 @@ import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { CreateUserDto } from '../auth/user/dto/create-user.dto';
-import { UserService } from '../auth/user/user.service';  // 경로 확인
-
+import { UserService } from '../auth/user/user.service'; // 경로 확인
 
 @WebSocketGateway({ cors: true })
 export class ChatGateway {
   @WebSocketServer()
   server: Server;
 
-  constructor(private readonly chatService: ChatService, 
-              private readonly userService: UserService,    // ← 추가
-
+  constructor(
+    private readonly chatService: ChatService,
+    private readonly userService: UserService, // ← 추가
   ) {}
 
   @SubscribeMessage('createRoom')
   async handleCreateRoom(
     @MessageBody() dto: CreateRoomDto,
     @ConnectedSocket() client: Socket,
-) {
-  const room = await this.chatService.createRoom(dto.name, dto.type);
-  client.emit('roomCreated', room);
-}
+  ) {
+    const room = await this.chatService.createRoom(dto.name, dto.type);
+    client.emit('roomCreated', room);
+  }
 
   @SubscribeMessage('joinRoom')
   async handleJoinRoom(
@@ -45,9 +44,10 @@ export class ChatGateway {
   @SubscribeMessage('sendMessage')
   async handleSendMessage(
     // 클라이언트가 보낸 payload. senderName을 추가로 받습니다.
-    @MessageBody() payload: { 
-      roomId: string; 
-      senderId: string; 
+    @MessageBody()
+    payload: {
+      roomId: string;
+      senderId: string;
       senderName: string; // 보낸 사람의 이름을 함께 받습니다.
       content: string;
     },
@@ -67,14 +67,15 @@ export class ChatGateway {
     this.server.to(payload.roomId).emit('newMessage', messageWithSenderName);
   }
 
- @SubscribeMessage('getHistory')
+  @SubscribeMessage('getHistory')
   async handleGetHistory(
     // [수정] payload에 userId를 추가로 받도록 타입을 수정합니다.
-    @MessageBody() payload: { 
-      roomId: string; 
+    @MessageBody()
+    payload: {
+      roomId: string;
       userId: string; // userId를 필수로 받습니다.
-      page?: number; 
-      limit?: number 
+      page?: number;
+      limit?: number;
     },
     @ConnectedSocket() client: Socket,
   ) {
@@ -94,7 +95,7 @@ export class ChatGateway {
     @ConnectedSocket() client: Socket,
   ) {
     // 1. DB에서 사용자 정보를 조회하여 이름을 가져옵니다.
-    const user = await this.userService.findById(payload.userId); 
+    const user = await this.userService.findById(payload.userId);
 
     // 2. ChatService를 통해 사용자를 방에서 내보냅니다.
     await this.chatService.leaveRoom(payload.userId, payload.roomId);
@@ -112,15 +113,16 @@ export class ChatGateway {
     @MessageBody() dto: CreateUserDto,
     @ConnectedSocket() client: Socket,
   ) {
-  // userService 를 주입해 두셨다고 가정
-  const user = await this.userService.createUser(dto);
-  client.emit('userCreated', { id: user.id, name: user.username });
- }
+    // userService 를 주입해 두셨다고 가정
+    const user = await this.userService.createUser(dto);
+    client.emit('userCreated', { id: user.id, name: user.username });
+  }
 
- @SubscribeMessage('inviteUser')
+  @SubscribeMessage('inviteUser')
   async handleInviteUser(
-    @MessageBody() payload: { 
-      roomId: string; 
+    @MessageBody()
+    payload: {
+      roomId: string;
       inviteeId: string; // 초대받는 사람의 ID
     },
   ) {
@@ -130,7 +132,4 @@ export class ChatGateway {
     // 2. 해당 방에 있는 모든 사람에게 새로운 유저가 참여했음을 알립니다.
     this.server.to(payload.roomId).emit('userJoined', payload.inviteeId);
   }
-
-
-   
 }

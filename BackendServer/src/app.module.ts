@@ -12,12 +12,12 @@ import { UserModule } from './auth/user/user.module';
 import { VideoInsertModule } from './video-insert/video-insert.module';
 import { ChatModule } from './chat/chat.module';
 import { UsedProductModule } from './used_product/used-product.module';
-import { UsedProduct } from './used_product/entities/used-product.entity';
 import { EnsembleModule } from './ensemble/ensemble.module';
 import { RecruitEnsemble } from './ensemble/entities/recruit-ensemble.entity';
 import { SessionEnsemble } from './ensemble/entities/session-ensemble.entity';
 import { ApplyEnsemble } from './ensemble/entities/apply-ensemble.entity';
 import { MailerModule } from '@nestjs-modules/mailer';
+
 
 @Module({
   imports: [
@@ -34,16 +34,10 @@ import { MailerModule } from '@nestjs-modules/mailer';
         username: cs.get<string>('DB_USERNAME'),
         password: cs.get<string>('DB_PASSWORD'),
         database: cs.get<string>('DB_NAME'),
-        entities: [
-          __dirname + '/**/*.entity{.ts,.js}',
-          UsedProduct,
-          RecruitEnsemble,
-          SessionEnsemble,
-          ApplyEnsemble,
-        ],
+        entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: true,
         logging: true,
-        dropSchema: false,
+        dropSchema: true,
         timezone: 'UTC',
       }),
     }),
@@ -74,8 +68,6 @@ import { MailerModule } from '@nestjs-modules/mailer';
     ChatModule,
     UsedProductModule,
     EnsembleModule,
-
-   
   ],
   controllers: [AppController],
   providers: [AppService],

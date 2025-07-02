@@ -1,20 +1,14 @@
 import { IsNumber, IsString, IsOptional } from 'class-validator';
 
 export class SaveVideoMetaDto {
-  @IsOptional()
   @IsNumber()
-  user_id?: number;
+  user_id: number;
 
   @IsString()
-  source_video_url: string;
+  video_key: string;
 
-  @IsOptional()
   @IsString()
-  results_video_url?: string;
-
-  @IsOptional()
-  @IsString()
-  thumbnail_url?: string;
+  thumbnail_key: string;
 
   @IsOptional()
   @IsNumber()

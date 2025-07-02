@@ -1948,6 +1948,35 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
+  - react-native-webview (13.15.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - SocketRocket
+    - Yoga
   - React-NativeModulesApple (0.80.0):
     - boost
     - DoubleConversion
@@ -2603,6 +2632,7 @@ DEPENDENCIES:
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - "react-native-slider (from `../node_modules/@react-native-community/slider`)"
   - react-native-video (from `../node_modules/react-native-video`)
+  - react-native-webview (from `../node_modules/react-native-webview`)
   - React-NativeModulesApple (from `../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)
   - React-oscompat (from `../node_modules/react-native/ReactCommon/oscompat`)
   - React-perflogger (from `../node_modules/react-native/ReactCommon/reactperflogger`)
@@ -2743,6 +2773,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@react-native-community/slider"
   react-native-video:
     :path: "../node_modules/react-native-video"
+  react-native-webview:
+    :path: "../node_modules/react-native-webview"
   React-NativeModulesApple:
     :path: "../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios"
   React-oscompat:
@@ -2868,6 +2900,7 @@ SPEC CHECKSUMS:
   react-native-safe-area-context: 3bae4f8474c13ab141c40ed6c5c33f6177778d71
   react-native-slider: c434f7094c9500dfa1176931f48e5957872818f8
   react-native-video: c8be7ee93776e1b827fd281a8495707259ff9e59
+  react-native-webview: 9a8ea59197aa76145b8ce72aa3eea69f1e89dd38
   React-NativeModulesApple: e16d5c133019987285f001fbf1461a861e40426f
   React-oscompat: 7c0a341cc31e350da71ddf2e46de0a845d1d1626
   React-perflogger: c91e01612298b74f70d846ae3666d2b078c547e0
@@ -2910,4 +2943,4 @@ SPEC CHECKSUMS:
 
 PODFILE CHECKSUM: 69079e92406083a874e0169d2796a173d021aef4
 
-COCOAPODS: 1.16.2
+COCOAPODS: 1.15.2

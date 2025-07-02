@@ -82,14 +82,14 @@ const MediaLibraryScreen: React.FC<Props> = ({ navigation }) => {
   const pickVideos = async (allowMultiSelection: boolean) => {
     try {
       setIsLoading(true); // 로딩 시작
-      console.log(`📁 ${allowMultiSelection ? '여러' : '단일'} 비디오 파일 선택 시작...`);
+      console.log(`[MediaLibraryScreen] ${allowMultiSelection ? '여러' : '단일'} 비디오 파일 선택 시작...`);
 
       const result = await pick({
         type: [types.video], // 비디오 파일만 선택
         allowMultiSelection: allowMultiSelection, // 여러 파일 선택 허용 여부 설정
       });
 
-      console.log('✅ 선택된 파일:', result);
+      console.log('[MediaLibraryScreen] 선택된 파일:', result);
 
       if (result && result.length > 0) {
         // 선택된 파일들을 MediaItem 배열로 변환
@@ -106,9 +106,9 @@ const MediaLibraryScreen: React.FC<Props> = ({ navigation }) => {
       }
     } catch (error) {
       if (isErrorWithCode(error)) {
-        console.log('사용자가 파일 선택을 취소했습니다.');
+        console.log('[MediaLibraryScreen] 사용자가 파일 선택을 취소했습니다.');
       } else {
-        console.error('❌ 파일 선택 오류:', error);
+        console.error('[MediaLibraryScreen] 파일 선택 오류:', error);
         Alert.alert('오류', '비디오 파일을 선택하는 중 오류가 발생했습니다.');
       }
     } finally {

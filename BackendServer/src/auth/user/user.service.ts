@@ -64,4 +64,30 @@ export class UserService {
       hashedRefreshToken: null,
     });
   }
+
+   async findByProviderId(provider: string, providerId: string): Promise<User | null> {
+    return this.userRepo.findOne({
+      where: { provider, providerId },
+    });
+  }
+
+  // --- [추가] 소셜 로그인 사용자를 위한 회원가입 메소드 ---
+  async createWithProvider(details: {
+    provider: string;
+    providerId: string;
+    email: string;
+    username: string;
+  }): Promise<User> {
+    // 소셜 로그인 사용자는 고유 ID를 직접 생성하거나 providerId를 사용할 수 있습니다.
+    // 여기서는 간단하게 providerId를 id로 사용하겠습니다.
+    const newUser = this.userRepo.create({
+      id: details.providerId, // 또는 nanoid() 등으로 생성
+      username: details.username,
+      email: details.email,
+      provider: details.provider,
+      providerId: details.providerId,
+      // password 필드는 비워둡니다 (nullable 이므로 가능)
+    });
+    return this.userRepo.save(newUser);
+  }
 }

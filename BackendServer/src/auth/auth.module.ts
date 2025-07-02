@@ -8,6 +8,7 @@ import { PassportModule } from '@nestjs/passport'; // PassportModule import
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './jwt.strategy';
 import { RefreshTokenStrategy } from './refresh-token.strategy'; // RefreshTokenStrategy import
+import { KakaoStrategy } from './kakao.strategy';
 
 @Module({
   imports: [UserModule,
@@ -22,6 +23,6 @@ import { RefreshTokenStrategy } from './refresh-token.strategy'; // RefreshToken
             }),
   ], // UserService를 AuthService에서 주입받아 사용하므로 UserModule을 imports 해야함
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, RefreshTokenStrategy],
+  providers: [AuthService, JwtStrategy, RefreshTokenStrategy, KakaoStrategy],
 })
 export class AuthModule {}

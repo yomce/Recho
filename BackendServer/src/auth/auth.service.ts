@@ -43,6 +43,16 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
+  async socialLogin(user: User): Promise<{ accessToken: string }> {
+    // 이미 KakaoStrategy에서 사용자를 검증/생성했으므로, 여기서는 토큰만 발급합니다.
+    const payload = { userId: user.id, username: user.username };
+    
+    return {
+      accessToken: this.jwtService.sign(payload),
+    };
+  }
+  
+
   async refreshAccessToken(user: User): Promise<{ accessToken: string }> {
     // validate 메소드를 통과한 user 객체를 받습니다.
     // 새로운 액세스 토큰을 생성합니다.

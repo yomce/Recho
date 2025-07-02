@@ -3,7 +3,7 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { Response, Request } from 'express';
 import { AuthGuard } from '@nestjs/passport'; // AuthGuard import
-import { User } from './user/user.entity'; // <-- 이 줄을 추가하세요!
+import { User } from './user/user.entity';
 
 interface RequestWithUser extends Request {
   user: User;
@@ -53,5 +53,27 @@ export class AuthController {
     res.clearCookie('refreshToken');
 
     return { message: '로그아웃 성공' };
+  }
+
+   // [추가] 1. 카카오 로그인 시작 API
+  @Get('kakao')
+  @UseGuards(AuthGuard('kakao'))
+  async kakaoLogin() {
+    // 이 함수는 실행되지 않습니다. Guard가 사용자를 카카오 로그인 페이지로 리디렉션합니다.
+  }
+
+  // [추가] 2. 카카오 로그인 콜백 API
+  @Get('kakao/callback')
+  @UseGuards(AuthGuard('kakao'))
+  async kakaoLoginCallback(@Req() req: Request, @Res() res: Response) {
+    // Guard에서 user 정보를 req에 담아줍니다. (passport-kakao-token 전략 사용 시)
+    // 혹은 여기에서 직접 authService.kakaoLogin(req.user) 등을 호출합니다.
+    const user = req.user; // Passport strategy가 처리한 사용자 정보
+
+    // 여기서 JWT 토큰 생성 및 프론트엔드로 리디렉션
+    const jwtToken = await this.authService.socialLogin(req.user as User);
+    
+    // JWT 토큰을 쿼리 파라미터로 담아 프론트엔드의 특정 페이지로 리디렉션
+    res.redirect(`http://localhost:5173/auth/callback?token=${jwtToken.accessToken}`);
   }
 }

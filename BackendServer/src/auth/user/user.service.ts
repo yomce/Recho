@@ -1,82 +1,76 @@
-// src/auth/user/user.service.ts
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import * as bcrypt from 'bcryptjs';
-
-import { User } from './user.entity';
-import { CreateUserDto } from './dto/create-user.dto';
+import { User } from './user.entity'; // 경로 수정
+import { CreateUserDto } from './dto/create-user.dto'; // 경로 수정
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
   constructor(
-    @InjectRepository(User) private readonly userRepo: Repository<User>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
 
-  async createUser(dto: CreateUserDto): Promise<Omit<User, 'password' | 'hashedRefreshToken'>> {
-    // 1. 아이디 중복 확인
-    const existingUserById = await this.userRepo.findOneBy({ id: dto.id });
-    if (existingUserById) {
-      throw new ConflictException('이미 존재하는 아이디입니다.');
-    }
-    
-    // 2. 이메일 중복 확인 (엔티티에 unique:true 속성이 있으므로 추가하는 것이 좋습니다)
-    const existingUserByEmail = await this.userRepo.findOneBy({ email: dto.email });
-    if (existingUserByEmail) {
-      throw new ConflictException('이미 사용 중인 이메일입니다.');
-    }
+  async findById(id: string): Promise<User | null> {
+    return this.userRepository.findOneBy({ id });
+  }
 
-    // 3. 비밀번호 암호화
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(dto.password, saltRounds);
+  async findByUsername(username: string): Promise<User | null> {
+    return this.userRepository.findOneBy({ username });
+  }
+  
+  async findByEmail(email: string): Promise<User | null> {
+    return this.userRepository.findOneBy({ email });
+  }
 
-    // 4. 유저 생성 및 저장 (★★★★★ 여기가 수정된 부분입니다 ★★★★★)
-    const user = this.userRepo.create({
-      id: dto.id,
-      username: dto.username, // 'dto.name'에서 'dto.username'으로 수정
-      email: dto.email,       // 누락되었던 email 필드 추가
+  async createUser(createUserDto: CreateUserDto): Promise<Omit<User, 'password' | 'hashedRefreshToken'>> {
+    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+    const newUser = this.userRepository.create({
+      ...createUserDto,
       password: hashedPassword,
     });
-    
-    await this.userRepo.save(user);
-
-    // 보안을 위해 반환되는 객체에서 민감한 정보를 제거합니다.
-    const { password, hashedRefreshToken, ...result } = user;
+    const savedUser = await this.userRepository.save(newUser);
+    // 보안을 위해 비밀번호 관련 필드는 제외하고 반환
+    const { password, hashedRefreshToken, ...result } = savedUser;
     return result;
   }
 
-  async findById(id: string): Promise<User | null> {
-    return this.userRepo.findOneBy({ id });
-  }
-
-  async findByEmail(email: string): Promise<User | null> {
-    return this.userRepo.findOneBy({ email });
-  }
-
-  async setCurrentRefreshToken(userId: string, refreshToken: string) {
-    const saltRounds = 10;
-    const hashedRefreshToken = await bcrypt.hash(refreshToken, saltRounds);
-    await this.userRepo.update(userId, { hashedRefreshToken });
-  }
-
-  async removeRefreshToken(userId: string): Promise<any> {
-    return this.userRepo.update(userId, {
-      hashedRefreshToken: null,
+  async findByProviderId(provider: string, providerId: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { provider, providerId },
     });
   }
 
+  async createWithProvider(details: {
+    provider: string;
+    providerId: string;
+    email: string;
+    username: string;
+  }): Promise<User> {
+    const newUser = this.userRepository.create({
+      id: details.providerId,
+      username: details.username,
+      email: details.email,
+      provider: details.provider,
+      providerId: details.providerId,
+    });
+    return this.userRepository.save(newUser);
+  }
+
   async updatePassword(userId: string, newHashedPassword: string): Promise<void> {
-    // 1. ID로 사용자를 찾습니다.
-    const user = await this.userRepo.findOneBy({ id: userId });
+    const user = await this.userRepository.findOneBy({ id: userId });
     if (!user) {
       throw new NotFoundException('사용자를 찾을 수 없습니다.');
     }
-    
-    // 2. 새로운 해시된 비밀번호로 교체합니다.
-    //    (비밀번호 해싱은 이 메소드를 호출하는 PasswordService에서 이미 처리했습니다)
     user.password = newHashedPassword;
+    await this.userRepository.save(user);
+  }
 
-    // 3. 변경된 사용자 정보를 데이터베이스에 저장합니다.
-    await this.userRepo.save(user);
+  async setCurrentRefreshToken(userId: string, refreshToken: string | null): Promise<void> {
+    await this.userRepository.update(userId, {
+      hashedRefreshToken: refreshToken,
+    });
   }
 }

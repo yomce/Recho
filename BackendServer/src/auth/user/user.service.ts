@@ -1,5 +1,5 @@
 // src/auth/user/user.service.ts
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
@@ -63,5 +63,20 @@ export class UserService {
     return this.userRepo.update(userId, {
       hashedRefreshToken: null,
     });
+  }
+
+  async updatePassword(userId: string, newHashedPassword: string): Promise<void> {
+    // 1. ID로 사용자를 찾습니다.
+    const user = await this.userRepo.findOneBy({ id: userId });
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
+    
+    // 2. 새로운 해시된 비밀번호로 교체합니다.
+    //    (비밀번호 해싱은 이 메소드를 호출하는 PasswordService에서 이미 처리했습니다)
+    user.password = newHashedPassword;
+
+    // 3. 변경된 사용자 정보를 데이터베이스에 저장합니다.
+    await this.userRepo.save(user);
   }
 }

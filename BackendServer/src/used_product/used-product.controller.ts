@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   Logger,
@@ -10,14 +11,17 @@ import {
   Patch,
   Post,
   Query,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { UsedProductService } from './used-product.service';
 import { CreateUsedProductDto } from './dto/create-used-product.dto';
-import { PaginationQueryDto } from './dto/pagination-query.dto';
+import { PaginationQueryUsedProductDto } from './dto/pagination-query-used-product.dto';
 import { UpdateUsedProductDto } from './dto/update-used-product.dto';
 import { UsedProduct } from './entities/used-product.entity';
-// <<< 신규 DTO import
 import { PaginatedUsedProductResponse } from './dto/paginated-used-product.response.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { Request } from 'express';
 
 @Controller('used-products')
 export class UsedProductController {
@@ -26,7 +30,7 @@ export class UsedProductController {
 
   @Get()
   async getUsedProducts(
-    @Query() paginationQuery: PaginationQueryDto,
+    @Query() paginationQuery: PaginationQueryUsedProductDto,
   ): Promise<PaginatedUsedProductResponse> {
     this.logger.log('Fetching used products with pagination');
 
@@ -41,12 +45,23 @@ export class UsedProductController {
   }
 
   @Post()
+  @UseGuards(AuthGuard('jwt'))
   async enrollUsedProduct(
     @Body() createUsedProductDto: CreateUsedProductDto,
+    @Req() req: Request,
   ): Promise<UsedProduct> {
+    if (!req.user || !req.user.id) {
+      this.logger.error(
+        'Authentication information missing from request user object.',
+      );
+      throw new ForbiddenException('사용자 인증 정보가 없습니다.');
+    }
+    const userId = req.user.id;
+
     this.logger.log(`Enrolling a new product: ${createUsedProductDto.title}`);
     return await this.usedProductService.enrollUsedProduct(
       createUsedProductDto,
+      userId,
     );
   }
 
@@ -59,19 +74,48 @@ export class UsedProductController {
   }
 
   @Delete(':id')
+  @UseGuards(AuthGuard('jwt'))
   @HttpCode(204)
-  async deleteProduct(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    this.logger.log(`Deleting product ID: ${id}`);
-    await this.usedProductService.deleteProduct(id);
+  async deleteProduct(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: Request,
+  ): Promise<void> {
+    if (!req.user || !req.user.id) {
+      this.logger.error(
+        'Authentication information missing from request user object.',
+      );
+      throw new ForbiddenException('사용자 인증 정보가 없습니다.');
+    }
+    const userId = req.user.id; // JwtStrategy에서 반환된 user.id 사용 가능
+    this.logger.log(
+      `Received delete request for product ID: ${id} from user ID: ${userId}`,
+    );
+
+    await this.usedProductService.deleteProduct(id, userId);
   }
 
   @Patch(':id')
-  // <<< 개선: 수정된 전체 상품 정보를 반환하도록 변경 (boolean -> UsedProduct)
+  @UseGuards(AuthGuard('jwt'))
   async pathProduct(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateUsedProductDto: UpdateUsedProductDto,
+    @Req() req: Request,
   ): Promise<UsedProduct> {
-    this.logger.log(`Patching product ID: ${id}`);
-    return this.usedProductService.pathProduct(id, updateUsedProductDto);
+    if (!req.user || !req.user.id) {
+      this.logger.error(
+        'Authentication information missing from request user object.',
+      );
+      throw new ForbiddenException('사용자 인증 정보가 없습니다.');
+    }
+    const userId = req.user.id; // JwtStrategy에서 반환된 user.id 사용 가능
+    this.logger.log(
+      `Received patch request for product ID: ${id} from user ID: ${userId}`,
+    );
+
+    return this.usedProductService.pathProduct(
+      id,
+      updateUsedProductDto,
+      userId,
+    );
   }
 }

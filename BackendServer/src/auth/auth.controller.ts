@@ -19,6 +19,7 @@ export class AuthController {
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
+    console.log('login attempt');
     const { accessToken, refreshToken } = await this.authService.login(loginDto);
 
     // 리프레시 토큰을 HttpOnly 쿠키로 설정
@@ -45,7 +46,12 @@ export class AuthController {
   @UseGuards(AuthGuard('jwt')) // 액세스 토큰으로 사용자를 식별해야 하므로 'jwt' 가드 사용
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  async logout(@Req() req: RequestWithUser, @Res({ passthrough: true }) res: Response) {
+  async logout(
+    @Req()
+    req: RequestWithUser,
+    @Res({ passthrough: true })
+    res: Response,
+  ) {
     // 1. DB에서 리프레시 토큰을 무효화합니다.
     await this.authService.logout(req.user.id);
     

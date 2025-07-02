@@ -49,7 +49,12 @@ export class User {
    * 프로필 사진 URL
    * @description VARCHAR(255), NULL
    */
-  @Column({ name: 'user_profile_url', type: 'varchar', length: 255, nullable: true })
+  @Column({
+    name: 'user_profile_url',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
   profileUrl: string | null;
 
   /**
@@ -70,7 +75,12 @@ export class User {
    * 리프레시 토큰 (해시됨)
    * @description 리프레시 토큰을 해시하여 저장합니다. 로그아웃 시 NULL로 만들어 토큰을 무효화합니다.
    */
-  @Column({ name: 'hashed_refresh_token', type: 'varchar', length: 255, nullable: true })
+  @Column({
+    name: 'hashed_refresh_token',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
   @Exclude()
   hashedRefreshToken?: string | null;
 

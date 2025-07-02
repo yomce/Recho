@@ -69,8 +69,6 @@ const RecruitEnsembleListPage: React.FC = () => {
         { params }
       );
 
-      console.log(response);
-
       const { data, nextCursor: newCursor, hasNextPage: newHasNextPage } = response.data;
 
       setItems(prev => (isInitialFetch ? data : [...prev, ...data]));
@@ -100,7 +98,7 @@ const RecruitEnsembleListPage: React.FC = () => {
       <header className="flex justify-between items-center mb-8">
         <h2 className="m-0 text-3xl font-bold text-left">합주단원 모집</h2>
         { user && <Link 
-          to="/ensemble/create" // 등록 페이지 경로 변경
+          to="/ensembles/create" // 등록 페이지 경로 변경
           className="inline-block py-2.5 px-5 text-base font-semibold text-white bg-blue-500 rounded-md no-underline text-center transition-colors hover:bg-blue-700"
         >
           모집 공고 등록하기

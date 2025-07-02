@@ -54,8 +54,6 @@ import { ApplyEnsemble } from './ensemble/entities/apply-ensemble.entity';
     ChatModule,
     UsedProductModule,
     EnsembleModule,
-
-   
   ],
   controllers: [AppController],
   providers: [AppService],

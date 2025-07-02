@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RECRUIT_STATUS, RecruitEnsemble } from './entities/recruit-ensemble.entity';
 import { Repository } from 'typeorm';
@@ -6,6 +6,7 @@ import { SessionEnsemble } from './entities/session-ensemble.entity';
 import { ApplyEnsemble } from './entities/apply-ensemble.entity';
 import { PaginatedEnsembleResponse } from './dto/paginated-ensemble.response.dto';
 import { CreateRecruitEnsembleDto } from './dto/create-recruit-ensemble.dto';
+import { UpdateRecruitEnsembleDto } from './dto/update-recruit-ensemble.dto';
 
 @Injectable()
 export class EnsembleService {
@@ -76,11 +77,37 @@ export class EnsembleService {
     return await this.recruitEnsembleRepo.save(newEnsemble);
   }
 
-  async detailProduct(id: number): Promise<RecruitEnsemble> {
-    const product = await this.recruitEnsembleRepo.findOneBy({ postId: id });
-    if (!product) {
-      throw new NotFoundException(`Product with ID #${id} not found.`);
+  async detailEnsemble(id: number): Promise<RecruitEnsemble> {
+    const ensemble = await this.recruitEnsembleRepo.findOneBy({ postId: id });
+    if (!ensemble) {
+      throw new NotFoundException(`Ensemble with ID #${id} not found.`);
     }
-    return product;
+    return ensemble;
+  }
+
+  async deleteEnsemble(id: number, username: string): Promise<void> {
+    const ensemble = await this.detailEnsemble(id);
+    if (username !== ensemble?.userId) {
+      throw new ForbiddenException(`Unauthorized`);
+    }
+
+    const result = await this.recruitEnsembleRepo.delete({ postId: id });
+    if (result.affected === 0) {
+      throw new NotFoundException(`Ensemble with ID #${id} not found.`);
+    }
+  }
+
+  async patchEnsemble(
+    id: number,
+    updateDto: UpdateRecruitEnsembleDto,
+    username: string,
+  ): Promise<RecruitEnsemble> {
+    const ensemble = await this.detailEnsemble(id);
+    if (username !== ensemble.userId) {
+      throw new ForbiddenException(`Unauthorized`);
+    }
+
+    const updatedEnsemble = this.recruitEnsembleRepo.merge(ensemble, updateDto);
+    return this.recruitEnsembleRepo.save(updatedEnsemble);
   }
 }

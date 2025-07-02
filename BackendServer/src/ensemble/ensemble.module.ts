@@ -8,11 +8,7 @@ import { ApplyEnsemble } from './entities/apply-ensemble.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      RecruitEnsemble,
-      SessionEnsemble,
-      ApplyEnsemble,
-    ]),
+    TypeOrmModule.forFeature([RecruitEnsemble, SessionEnsemble, ApplyEnsemble]),
   ],
   controllers: [EnsembleController],
   providers: [EnsembleService],

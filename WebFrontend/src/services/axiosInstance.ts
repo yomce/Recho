@@ -1,4 +1,5 @@
 // src/services/axiosInstance.ts
+import { useAuthStore } from '@/stores/authStore';
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
 // 백엔드 서버의 기본 URL을 설정합니다.
@@ -68,8 +69,10 @@ axiosInstance.interceptors.response.use(
       } catch (refreshError) {
         // 리프레시 토큰마저 만료되었거나, 갱신에 실패한 경우
         console.error('토큰 갱신 실패:', refreshError);
-        localStorage.removeItem('accessToken');
+
+        useAuthStore.getState().logout();
         window.location.href = '/login'; // 로그인 페이지로 이동
+        
         return Promise.reject(refreshError);
       }
     }

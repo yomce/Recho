@@ -19,6 +19,7 @@ import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage';
 import RecruitEnsembleListPage from '@/pages/ensemble/RecruitEnsemblePage';
 import CreateRecruitEnsemblePage from '@/pages/ensemble/CreateRecruitEnsemblePage';
 import RecruitEnsembleDetailPage from '@/pages/ensemble/RecruitEnsembleDetailPage';
+import UpdateRecruitEnsemblePage from '@/pages/ensemble/UpdateRecruitEnsemblePage';
 
 const AppRouter: React.FC = () => {
   return (
@@ -39,7 +40,8 @@ const AppRouter: React.FC = () => {
         <Route path="/used-products/edit/:id" element={<UpdateUsedProductPage />} /> 
         <Route path="/ensembles" element={<RecruitEnsembleListPage/>} />
         <Route path="/ensembles/create" element={<CreateRecruitEnsemblePage/>} />
-        <Route path="/ensembles/:id" element={<RecruitEnsembleDetailPage />} /> 
+        <Route path="/ensembles/:id" element={<RecruitEnsembleDetailPage />} />
+        <Route path="/ensembles/edit/:id" element={<UpdateRecruitEnsemblePage />} />
       </Routes>
     </Router>
   );

@@ -23,24 +23,6 @@ interface RecruitEnsemble {
   instrument_category_id: number;
 }
 
-// const SKILL_LEVEL_TEXT = {
-//   0: '초보',
-//   1: '중수',
-//   2: '고수',
-//   3: '전문가',
-// };
-
-// const RECRUIT_STATUS_TEXT = {
-//   0: '모집중',
-//   1: '모집완료',
-// };
-
-// const RECRUIT_STATUS_CLASSES = {
-//   0: 'bg-blue-500 text-white',
-//   1: 'bg-gray-500 text-white',
-// };
-
-
 const RecruitEnsembleDetailPage: React.FC = () => {
   const { user } = useAuthStore();
   // URL 파라미터에서 게시글 ID를 가져옵니다.
@@ -52,7 +34,7 @@ const RecruitEnsembleDetailPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // 현재 로그인한 사용자가 게시글 작성자인지 확인하는 변수
-  const isOwner = ensemble && user && ensemble.userId === user.id;
+  const isOwner = ensemble && user && ensemble.userId === user.username;
 
   useEffect(() => {
     if (!id) {

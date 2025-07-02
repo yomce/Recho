@@ -15,6 +15,10 @@ import UsedProductPage from '../pages/usedProduct/UsedProductPage';
 import CreateUsedProductPage from '../pages/usedProduct/CreateUsedProductPage';
 import UsedProductDetailPage from '../pages/usedProduct/UsedProductDetailPage';
 import UpdateUsedProductPage from '../pages/usedProduct/UpdateUsedProductPage';
+import PracticeRoomPage from "@/pages/practiceRoom/PracticeRoomPage";
+import CreatePracticeRoom from "@/pages/practiceRoom/CreatePracticeRoomPage";
+import PracticeRoomDetailPage from "@/pages/practiceRoom/PracticeRoomDetailPage";
+import UpdatePracticeRoomPage from "@/pages/practiceRoom/UpdatePracticeRoomPage";
 
 const AppRouter: React.FC = () => {
   return (
@@ -32,6 +36,10 @@ const AppRouter: React.FC = () => {
         <Route path="/used-products/create" element={<CreateUsedProductPage/>} />
         <Route path="/used-products/:id" element={<UsedProductDetailPage />} /> 
         <Route path="/used-products/edit/:id" element={<UpdateUsedProductPage />} /> 
+        <Route path="/practice-room" element={<PracticeRoomPage/>} />
+        <Route path="/practice-room/create" element={<CreatePracticeRoom />} />
+        <Route path="/practice-room/:id" element={<PracticeRoomDetailPage/>} />
+        <Route path="/practice-room/edit/:id" element={<UpdatePracticeRoomPage />} />
       </Routes>
     </Router>
   );

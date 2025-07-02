@@ -13,6 +13,8 @@ import { VideoInsertModule } from './video-insert/video-insert.module';
 import { ChatModule } from './chat/chat.module';
 import { UsedProductModule } from './used_product/used-product.module';
 import { UsedProduct } from './used_product/entities/used-product.entity';
+import { PracticeRoom } from './practice_room/entities/practice-room.entity';
+import { PracticeRoomModule } from './practice_room/practice-room.module';
 
 @Module({
   imports: [
@@ -46,6 +48,7 @@ import { UsedProduct } from './used_product/entities/used-product.entity';
     VideoInsertModule,
     ChatModule,
     UsedProductModule,
+    PracticeRoomModule,
   ],
   controllers: [AppController],
   providers: [AppService],

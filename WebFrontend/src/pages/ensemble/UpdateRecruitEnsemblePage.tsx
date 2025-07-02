@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from '@/services/axiosInstance';
 import { useAuthStore } from '@/stores/authStore';
-import { EnsembleForm, type EnsembleFormState, SKILL_LEVEL } from '@/components/EnsembleForm';
+import { EnsembleForm, type RecruitEnsembleFormState, SKILL_LEVEL } from '@/pages/ensemble/components/EnsembleForm';
 
 // API 응답 타입 (상세 페이지와 동일)
 interface RecruitEnsemble {
@@ -27,7 +27,7 @@ const UpdateRecruitEnsemblePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuthStore();
 
-  const [form, setForm] = useState<EnsembleFormState>({
+  const [form, setForm] = useState<RecruitEnsembleFormState>({
     title: '',
     content: '',
     eventDate: '',

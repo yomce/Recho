@@ -15,7 +15,7 @@ import { UsedProductModule } from './used_product/used-product.module';
 import { UsedProduct } from './used_product/entities/used-product.entity';
 import { EnsembleModule } from './ensemble/ensemble.module';
 import { RecruitEnsemble } from './ensemble/entities/recruit-ensemble.entity';
-import { SessionEnsemble } from './ensemble/entities/session-ensemble.entity';
+import { SessionEnsemble } from './ensemble/session/entities/session-ensemble.entity';
 import { ApplyEnsemble } from './ensemble/entities/apply-ensemble.entity';
 
 @Module({

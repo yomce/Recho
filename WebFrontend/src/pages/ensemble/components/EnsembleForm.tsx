@@ -18,7 +18,7 @@ export const SKILL_LEVEL_TEXT = {
   [SKILL_LEVEL.PROFESSIONAL]: '전문가',
 };
 
-export interface EnsembleFormState {
+export interface RecruitEnsembleFormState {
   title: string;
   content: string;
   eventDate: string;
@@ -28,8 +28,8 @@ export interface EnsembleFormState {
   totalRecruitCnt: string;
 }
 
-interface EnsembleFormProps {
-  formState: EnsembleFormState;
+interface RecruitEnsembleFormProps {
+  formState: RecruitEnsembleFormState;
   onFormChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
   onFormSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   isLoading: boolean;
@@ -38,7 +38,7 @@ interface EnsembleFormProps {
   loadingButtonText: string;
 }
 
-export const EnsembleForm: React.FC<EnsembleFormProps> = ({
+export const EnsembleForm: React.FC<RecruitEnsembleFormProps> = ({
   formState,
   onFormChange,
   onFormSubmit,

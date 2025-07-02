@@ -2,9 +2,9 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import { InjectRepository } from '@nestjs/typeorm';
 import { RECRUIT_STATUS, RecruitEnsemble } from './entities/recruit-ensemble.entity';
 import { Repository } from 'typeorm';
-import { SessionEnsemble } from './entities/session-ensemble.entity';
+import { SessionEnsemble } from './session/entities/session-ensemble.entity';
 import { ApplyEnsemble } from './entities/apply-ensemble.entity';
-import { PaginatedEnsembleResponse } from './dto/paginated-ensemble.response.dto';
+import { PaginatedRecruitEnsembleResponse } from './dto/paginated-recruit-ensemble.response.dto';
 import { CreateRecruitEnsembleDto } from './dto/create-recruit-ensemble.dto';
 import { UpdateRecruitEnsembleDto } from './dto/update-recruit-ensemble.dto';
 
@@ -25,7 +25,7 @@ export class EnsembleService {
     limit: number,
     lastPostId?: number,
     lastCreateAt?: Date,
-  ): Promise<PaginatedEnsembleResponse> {
+  ): Promise<PaginatedRecruitEnsembleResponse> {
     const realLimit = limit + 1;
     const queryBuilder =
       this.recruitEnsembleRepo.createQueryBuilder('recruitEnsemble');

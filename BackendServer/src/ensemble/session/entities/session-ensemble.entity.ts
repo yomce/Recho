@@ -13,4 +13,7 @@ export class SessionEnsemble {
 
   @Column()
   recruitCount: number;
+
+  @Column()
+  totalRecruitCount: number;
 }

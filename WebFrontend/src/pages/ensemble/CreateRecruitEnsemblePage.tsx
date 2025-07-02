@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import axiosInstance from '@/services/axiosInstance';
 import { useAuthStore } from '@/stores/authStore';
 // 1. 공통 폼과 관련 타입들을 components 폴더에서 가져옵니다.
-import { EnsembleForm, type EnsembleFormState, SKILL_LEVEL } from '@/components/EnsembleForm';
+import { EnsembleForm, type RecruitEnsembleFormState, SKILL_LEVEL } from '@/pages/ensemble/components/EnsembleForm';
 import axios from 'axios';
 
 // 서버에 전송할 데이터 타입 (userId 포함)
@@ -25,7 +25,7 @@ const CreateRecruitEnsemblePage: React.FC = () => {
   const { user } = useAuthStore();
 
   // 2. 폼 상태 타입으로 EnsembleFormState를 사용합니다.
-  const [form, setForm] = useState<EnsembleFormState>({
+  const [form, setForm] = useState<RecruitEnsembleFormState>({
     title: '',
     content: '',
     eventDate: '',

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Res, Req, UseGuards, Get } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Res, Req, UseGuards, Get, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { Response, Request } from 'express';
@@ -63,17 +63,26 @@ export class AuthController {
   }
 
   // [추가] 2. 카카오 로그인 콜백 API
-  @Get('kakao/callback')
+   @Get('kakao/callback')
   @UseGuards(AuthGuard('kakao'))
-  async kakaoLoginCallback(@Req() req: Request, @Res() res: Response) {
-    // Guard에서 user 정보를 req에 담아줍니다. (passport-kakao-token 전략 사용 시)
-    // 혹은 여기에서 직접 authService.kakaoLogin(req.user) 등을 호출합니다.
-    const user = req.user; // Passport strategy가 처리한 사용자 정보
+  async kakaoLoginCallback(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    if (!req.user) {
+      throw new UnauthorizedException('카카오 인증 정보가 없습니다.');
+    }
+    const user = req.user as User;
 
-    // 여기서 JWT 토큰 생성 및 프론트엔드로 리디렉션
-    const jwtToken = await this.authService.socialLogin(req.user as User);
+    // 1. socialLogin을 통해 두 토큰을 모두 받습니다.
+    const { accessToken, refreshToken } = await this.authService.socialLogin(user);
+
+    // 2. 일반 로그인과 동일하게, 리프레시 토큰은 HttpOnly 쿠키로 설정합니다.
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: false, // 프로덕션에서는 true로 변경
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7일
+    });
     
-    // JWT 토큰을 쿼리 파라미터로 담아 프론트엔드의 특정 페이지로 리디렉션
-    res.redirect(`http://localhost:5173/auth/callback?token=${jwtToken.accessToken}`);
+    // 3. 액세스 토큰은 프론트엔드의 콜백 페이지로 리디렉션하며 전달합니다.
+    res.redirect(`http://localhost:5173/auth/callback?token=${accessToken}`);
   }
 }

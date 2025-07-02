@@ -53,10 +53,10 @@ export class UserService {
     return this.userRepo.findOneBy({ email });
   }
 
-  async setCurrentRefreshToken(userId: string, refreshToken: string) {
-    const saltRounds = 10;
-    const hashedRefreshToken = await bcrypt.hash(refreshToken, saltRounds);
-    await this.userRepo.update(userId, { hashedRefreshToken });
+  async setCurrentRefreshToken(userId: string, refreshToken: string | null): Promise<void> {
+    await this.userRepo.update(userId, {
+      hashedRefreshToken: refreshToken,
+    });
   }
 
   async removeRefreshToken(userId: string): Promise<any> {

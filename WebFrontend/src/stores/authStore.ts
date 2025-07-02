@@ -41,9 +41,22 @@ interface AuthState {
    * 서버에 로그아웃 요청을 보내고, 로컬의 토큰과 유저 상태를 초기화합니다.
    */
   logout: () => Promise<void>;
+  setToken: (token: string) => void;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
+  setToken: (token: string) => {
+    // 1. 받은 토큰을 localStorage에 저장합니다.
+    localStorage.setItem('accessToken', token);
+
+    // 2. axios 인스턴스의 기본 헤더에 토큰을 설정하여,
+    //    이후의 모든 API 요청에 인증 정보가 포함되도록 합니다.
+    axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+    // 3. 기존의 setUserFromToken 함수를 호출하여 상태를 업데이트합니다.
+    //    이렇게 하면 로그인 방식(일반/소셜)에 상관없이 상태 관리 로직이 일관성을 유지합니다.
+    get().setUserFromToken();
+  },
   // 초기 상태: 로그아웃 상태
   user: null,
 
@@ -111,3 +124,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
  * 로그인 상태를 복원하는 로직을 실행합니다.
  */
 useAuthStore.getState().setUserFromToken();
+
+const initialToken = localStorage.getItem('accessToken');
+if (initialToken) {
+  axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${initialToken}`;
+}

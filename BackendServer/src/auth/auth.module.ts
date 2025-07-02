@@ -8,11 +8,14 @@ import { PassportModule } from '@nestjs/passport'; // PassportModule import
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './jwt.strategy';
 import { RefreshTokenStrategy } from './refresh-token.strategy'; // RefreshTokenStrategy import
-import { KakaoStrategy } from './kakao.strategy';
+import { PasswordController } from './user/password.controller';
+import { PasswordService } from './user/password.service';
+import { MailerModule } from '@nestjs-modules/mailer';
 
 @Module({
   imports: [UserModule,
             PassportModule,
+            MailerModule,
             JwtModule.registerAsync({
                 imports: [ConfigModule],
                 inject: [ConfigService],
@@ -23,6 +26,6 @@ import { KakaoStrategy } from './kakao.strategy';
             }),
   ], // UserService를 AuthService에서 주입받아 사용하므로 UserModule을 imports 해야함
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, RefreshTokenStrategy, KakaoStrategy],
+  providers: [AuthService, JwtStrategy, RefreshTokenStrategy],
 })
 export class AuthModule {}

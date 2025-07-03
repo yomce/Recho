@@ -41,7 +41,7 @@ export class User {
    * 비밀번호 (해시됨)
    * @description VARCHAR(255), NOT NULL
    */
-  @Column({ name: 'user_pw', type: 'varchar', length: 255 })
+  @Column({ name: 'user_pw', type: 'varchar', length: 255, nullable: true })
   @Exclude()
   password: string;
 
@@ -49,7 +49,12 @@ export class User {
    * 프로필 사진 URL
    * @description VARCHAR(255), NULL
    */
-  @Column({ name: 'user_profile_url', type: 'varchar', length: 255, nullable: true })
+  @Column({
+    name: 'user_profile_url',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
   profileUrl: string | null;
 
   /**
@@ -66,11 +71,23 @@ export class User {
   @Column({ name: 'user_intro', type: 'varchar', length: 255, nullable: true })
   intro: string | null;
 
+  // 소셜로그인 용
+  @Column({ name: 'provider', type: 'varchar', length: 50, nullable: true })
+  provider?: string; // 예: 'kakao', 'google'
+
+  @Column({ name: 'provider_id', type: 'varchar', length: 255, nullable: true })
+  providerId?: string; // 소셜 로그인 플랫폼에서 제공하는 고유 ID
+
   /**
    * 리프레시 토큰 (해시됨)
    * @description 리프레시 토큰을 해시하여 저장합니다. 로그아웃 시 NULL로 만들어 토큰을 무효화합니다.
    */
-  @Column({ name: 'hashed_refresh_token', type: 'varchar', length: 255, nullable: true })
+  @Column({
+    name: 'hashed_refresh_token',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
   @Exclude()
   hashedRefreshToken?: string | null;
 

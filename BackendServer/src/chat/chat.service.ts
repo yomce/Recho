@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { nanoid } from 'nanoid';
+import { Repository, MoreThan } from 'typeorm';
+import { v4 as uuidv4 } from 'uuid';
 
 
 import { Room } from './entities/room.entity'
@@ -13,6 +13,9 @@ import { RoomType } from './dto/create-room.dto';
 // src/chat/chat.service.ts
 @Injectable()
 export class ChatService {
+  private readonly logger = new Logger(ChatService.name);
+
+
   constructor(
     @InjectRepository(Room) private roomRepo: Repository<Room>,
     @InjectRepository(Message) private msgRepo: Repository<Message>,
@@ -22,7 +25,7 @@ export class ChatService {
 
   async createRoom(name: string, type: RoomType, creatorId?: string): Promise<Room> {
     const room = this.roomRepo.create({
-      id: nanoid(),
+      id: uuidv4(),
       name,
       type,
     });
@@ -53,19 +56,46 @@ export class ChatService {
     return this.msgRepo.save(msg);
   }
 
-  // 4) 방 내 대화 이력 조회 (페이징)
-  async getHistory(roomId: string, page = 1, limit = 20): Promise<Message[]> {
+  // 4) 방 내 대화 이력 조회 (페이징) - 수정된 함수
+  async getHistory(roomId: string, userId: string, page = 1, limit = 20): Promise<Message[]> {
+    // 1. 현재 사용자가 이 방에 참여한 정보를 찾습니다.
+    const userRoom = await this.userRoomRepo.findOneBy({ roomId, userId });
+
+    // 2. 만약 어떤 이유로든 참여 정보가 없다면, 빈 배열을 반환합니다.
+    if (!userRoom) {
+      return [];
+    }
+
+    // 3. 사용자의 참여 시간(joinedAt) 이후에 생성된 메시지만 조회합니다.
     return this.msgRepo.find({
-      where: { roomId },
+      where: {
+        roomId,
+        createdAt: MoreThan(userRoom.joinedAt), // [수정] 사용자의 참여 시간보다 최신인 메시지만 필터링
+      },
       order: { createdAt: 'ASC' },
       skip: (page - 1) * limit,
       take: limit,
+      relations: ['sender'], // [추가] 메시지 보낸 사람의 정보를 함께 가져오도록 설정
     });
   }
 
   // 5) 방 나가기
   async leaveRoom(userId: string, roomId: string): Promise<void> {
+    // 1. 사용자를 방에서 내보냅니다 (UserRoom 레코드 삭제).
     await this.urRepo.delete({ userId, roomId });
+    this.logger.log(`User ${userId} left room ${roomId}`);
+
+    // 2. 방에 남은 인원 수를 확인합니다.
+    const remainingCount = await this.urRepo.count({ where: { roomId } });
+    this.logger.log(`Room ${roomId} has ${remainingCount} users remaining.`);
+
+    // 3. 남은 인원이 0명이라면 방과 관련된 모든 데이터를 삭제합니다.
+    if (remainingCount === 0) {
+      this.logger.log(`Room ${roomId} is empty. Deleting room and all related data...`);
+      // Room을 삭제하면 CASCADE 옵션에 의해 Message, UserRoom 데이터도 함께 삭제됩니다.
+      await this.roomRepo.delete(roomId);
+      this.logger.log(`Room ${roomId} has been successfully deleted.`);
+    }
   }
 
   async getAllRooms(): Promise<Room[]> {
@@ -88,29 +118,38 @@ export class ChatService {
   }
 
   async getOrCreatePrivateRoom(user1Id: string, user2Id: string): Promise<Room> {
-    // 두 사용자의 ID를 정렬하여 항상 동일한 순서를 보장합니다.
     const sortedUserIds = [user1Id, user2Id].sort();
-    // 정렬된 ID를 기반으로 고유한 방 ID를 생성합니다.
     const privateRoomId = `private-${sortedUserIds[0]}-${sortedUserIds[1]}`;
 
-    // 1. 해당 ID를 가진 방이 이미 존재하는지 확인합니다.
     let room = await this.roomRepo.findOneBy({ id: privateRoomId });
 
-    // 2. 방이 존재하지 않으면 새로 생성합니다.
     if (!room) {
-      // 새로운 PRIVATE 타입의 방을 생성합니다. (이름은 없음)
+      // 방이 존재하지 않으면 새로 생성
       room = this.roomRepo.create({
         id: privateRoomId,
         type: 'PRIVATE',
       });
       await this.roomRepo.save(room);
 
-      // 두 사용자를 모두 이 방에 참여시킵니다.
+      // 두 사용자를 모두 방에 참여시킵니다.
       await this.joinRoom(user1Id, privateRoomId);
       await this.joinRoom(user2Id, privateRoomId);
+    } else {
+      // [수정] 방이 이미 존재할 경우, 각 사용자가 방에 참여해있는지 확인하고, 없다면 다시 참여시킵니다.
+      
+      // user1이 방에 참여해있는지 확인
+      const user1InRoom = await this.userRoomRepo.findOneBy({ userId: user1Id, roomId: room.id });
+      if (!user1InRoom) {
+        await this.joinRoom(user1Id, room.id);
+      }
+
+      // user2가 방에 참여해있는지 확인
+      const user2InRoom = await this.userRoomRepo.findOneBy({ userId: user2Id, roomId: room.id });
+      if (!user2InRoom) {
+        await this.joinRoom(user2Id, room.id);
+      }
     }
 
-    // 3. 기존 방 또는 새로 생성된 방을 반환합니다.
     return room;
   }
 }

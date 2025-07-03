@@ -32,7 +32,7 @@ export class UsedProduct {
   productId: number;
 
   @Column()
-  userId: number;
+  userId: string;
 
   @Column()
   title: string;

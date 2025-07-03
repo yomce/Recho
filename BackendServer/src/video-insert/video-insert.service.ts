@@ -19,20 +19,33 @@ export class VideoInsertService {
     private readonly videoRepository: Repository<Video>,
   ) {}
 
-  async getPresignedUrl(
+  async getUploadUrls(
     fileType: string,
-  ): Promise<{ url: string; key: string }> {
-    const key = `videos/${uuidv4()}`;
-    const command = new PutObjectCommand({
+  ): Promise<{ videoUrl: string; thumbnailUrl: string; videoKey: string; thumbnailKey: string }> {
+    const videoKey = `videos/${uuidv4()}`;
+    const thumbnailKey = `thumbnails/${uuidv4()}`;
+
+    const videoCommand = new PutObjectCommand({
       Bucket: process.env.AWS_S3_BUCKET,
-      Key: key,
+      Key: videoKey,
       ContentType: fileType,
     });
-    const url = await getSignedUrl(this.s3, command, { expiresIn: 60 * 5 });
-    return { url, key };
+
+    const thumbnailCommand = new PutObjectCommand({
+      Bucket: process.env.AWS_S3_BUCKET,
+      Key: thumbnailKey,
+      ContentType: 'image/png', // Or appropriate thumbnail type
+    });
+
+    const [videoUrl, thumbnailUrl] = await Promise.all([
+      getSignedUrl(this.s3, videoCommand, { expiresIn: 60 * 5 }),
+      getSignedUrl(this.s3, thumbnailCommand, { expiresIn: 60 * 5 }),
+    ]);
+
+    return { videoUrl, thumbnailUrl, videoKey, thumbnailKey };
   }
 
-  async saveVideoMeta(dto: SaveVideoMetaDto) {
+  async saveFinalVideoMeta(dto: SaveVideoMetaDto) {
     const video = this.videoRepository.create(dto);
     return this.videoRepository.save(video);
   }

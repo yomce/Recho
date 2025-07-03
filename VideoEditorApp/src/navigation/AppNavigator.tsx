@@ -9,6 +9,7 @@ import MediaLibraryScreen from '../screens/MediaLibraryScreen';
 import VideoPreviewScreen from '../screens/VideoPreviewScreen';
 import NewVideoTestScreen from '../screens/NewVideoTestScreen';
 import FFmpegTestScreen from '../screens/FFmpegTestScreen'; // FFmpegTestScreen 임포트
+import WebScreen from '../screens/WebScreen'; // WebScreen 임포트
 
 import { RootStackParamList } from '../types'; // RootStackParamList를 types에서 임포트
 
@@ -23,7 +24,7 @@ const AppNavigator = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Home"
+        initialRouteName="Web"
         screenOptions={{
           // headerStyle은 View 컴포넌트에 직접 적용되므로 styled-components로 감싸서 사용
           headerStyle: {
@@ -79,11 +80,19 @@ const AppNavigator = () => {
             headerShown: false, // 합주 녹화 화면에서는 헤더 숨김
           }}
         />
-         <Stack.Screen
+        <Stack.Screen
           name="FFmpegTest"
           component={FFmpegTestScreen}
           options={{
             title: '🛠️ FFmpeg 테스트',
+          }}
+        />
+        <Stack.Screen
+          name="Web"
+          component={WebScreen}
+          options={{
+            title: '웹뷰',
+            headerShown: false,
           }}
         />
         {/* SideBySide 스크린은 RootStackParamList에 있지만, 여기에 컴포넌트가 없으므로 주석 처리하거나 추가해야 합니다. */}

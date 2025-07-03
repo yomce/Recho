@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { TRADE_TYPE, type UsedProductForm } from '../types/product';
+import LocationSearch from '@/components/map/LocationSearch';
 
 // 목업 데이터도 props로 받도록 하여 컴포넌트의 재사용성을 높입니다.
 const mockCategories = [
@@ -10,12 +11,13 @@ const mockCategories = [
   { id: '3', name: '가구/인테리어' },
   { id: '4', name: '의류' },
 ];
+/*
 const mockLocations = [
   { locationId: '1001', regionLevel1: '경기도', regionLevel2: '용인시' },
   { locationId: '1002', regionLevel1: '경기도', regionLevel2: '수원시' },
   { locationId: '2001', regionLevel1: '서울특별시', regionLevel2: '강남구' },
 ];
-
+*/
 // 폼에 필요한 props 타입 정의
 interface ProductFormProps {
   formState: UsedProductForm;
@@ -68,9 +70,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
       <div className="mb-6">
         <label htmlFor="locationId" className="block font-semibold mb-3 text-base text-gray-700">지역</label>
-        <select id="locationId" name="locationId" value={formState.locationId} onChange={onFormChange} className={inputStyles}>
-          {mockLocations.map(loc => <option key={loc.locationId} value={loc.locationId}>{`${loc.regionLevel1} ${loc.regionLevel2}`}</option>)}
-        </select>
+        {/* 실제 위치 값을 반환하는 함수를 import 합니다 */}
+        <LocationSearch />
       </div>
 
       <div className="mb-6">

@@ -23,6 +23,7 @@ import VinylPage from "@/pages/vinyl/VinylPage";
 import Navigation from "@/components/layout/Navigation";
 import StyleGuideTest from "@/components/StyleGuideTest";
 import AuthCallbackPage from "../pages/auth/AuthCallbackPage";
+import KakaoMapApi from "@/components/map/KakaoMapComponent";
 
 const AppRouter: React.FC = () => {
   return (
@@ -56,6 +57,7 @@ const AppRouter: React.FC = () => {
         />
         <Route path="/ensembles/:id" element={<RecruitEnsembleDetailPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
+        <Route path="/kakaomap" element={<KakaoMapApi />} />
       </Routes>
       <Navigation />
     </Router>

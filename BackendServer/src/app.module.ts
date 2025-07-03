@@ -17,6 +17,7 @@ import { RecruitEnsemble } from './ensemble/entities/recruit-ensemble.entity';
 import { SessionEnsemble } from './ensemble/entities/session-ensemble.entity';
 import { ApplyEnsemble } from './ensemble/entities/apply-ensemble.entity';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { LocationModule } from './map/location.module';
 
 
 @Module({
@@ -68,6 +69,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
     ChatModule,
     UsedProductModule,
     EnsembleModule,
+    LocationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

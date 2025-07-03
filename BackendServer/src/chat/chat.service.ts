@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
-import { nanoid } from 'nanoid';
+import { v4 as uuidv4 } from 'uuid';
 
 
 import { Room } from './entities/room.entity'
@@ -25,7 +25,7 @@ export class ChatService {
 
   async createRoom(name: string, type: RoomType, creatorId?: string): Promise<Room> {
     const room = this.roomRepo.create({
-      id: nanoid(),
+      id: uuidv4(),
       name,
       type,
     });

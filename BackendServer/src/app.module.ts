@@ -13,10 +13,14 @@ import { VideoInsertModule } from './video-insert/video-insert.module';
 import { ChatModule } from './chat/chat.module';
 import { UsedProductModule } from './used_product/used-product.module';
 import { UsedProduct } from './used_product/entities/used-product.entity';
+import { PracticeRoom } from './practice_room/entities/practice-room.entity';
+import { PracticeRoomModule } from './practice_room/practice-room.module';
 import { EnsembleModule } from './ensemble/ensemble.module';
 import { RecruitEnsemble } from './ensemble/entities/recruit-ensemble.entity';
 import { SessionEnsemble } from './ensemble/session/entities/session-ensemble.entity';
 import { ApplyEnsemble } from './ensemble/entities/apply-ensemble.entity';
+import { MailerModule } from '@nestjs-modules/mailer';
+import { LocationModule } from './map/location.module';
 
 @Module({
   imports: [
@@ -33,17 +37,30 @@ import { ApplyEnsemble } from './ensemble/entities/apply-ensemble.entity';
         username: cs.get<string>('DB_USERNAME'),
         password: cs.get<string>('DB_PASSWORD'),
         database: cs.get<string>('DB_NAME'),
-        entities: [
-          __dirname + '/**/*.entity{.ts,.js}',
-          UsedProduct,
-          RecruitEnsemble,
-          SessionEnsemble,
-          ApplyEnsemble,
-        ],
+        entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: true,
         logging: true,
         dropSchema: false,
         timezone: 'UTC',
+      }),
+    }),
+
+    MailerModule.forRootAsync({
+      imports: [ConfigModule], // ConfigModule을 의존성으로 포함
+      inject: [ConfigService], // ConfigService를 주입받음
+      useFactory: async (configService: ConfigService) => ({
+        transport: {
+          host: configService.get<string>('MAIL_HOST'),
+          port: 587,
+          secure: false, // true for 465, false for other ports
+          auth: {
+            user: configService.get<string>('MAIL_USER'),
+            pass: configService.get<string>('MAIL_PASSWORD'),
+          },
+        },
+        defaults: {
+          from: configService.get<string>('MAIL_FROM'),
+        },
       }),
     }),
 
@@ -53,7 +70,9 @@ import { ApplyEnsemble } from './ensemble/entities/apply-ensemble.entity';
     VideoInsertModule,
     ChatModule,
     UsedProductModule,
+    PracticeRoomModule,
     EnsembleModule,
+    LocationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

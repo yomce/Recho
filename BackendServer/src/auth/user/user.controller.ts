@@ -1,10 +1,18 @@
-import { UseGuards, Controller, Post, Body, Get, Param, NotFoundException, Req } from '@nestjs/common';
+import {
+  UseGuards,
+  Controller,
+  Post,
+  Body,
+  Get,
+  Param,
+  NotFoundException,
+  Req,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { User } from './user.entity';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
-
 
 interface RequestWithUser extends Request {
   user: User;
@@ -24,9 +32,11 @@ export class UserController {
    */
 
   @Post()
-  async createUser(@Body() createUserDto: CreateUserDto): Promise<Omit<User, 'password' | 'hashedRefreshToken'>> {
-  return this.userService.createUser(createUserDto);
-}
+  async createUser(
+    @Body() createUserDto: CreateUserDto,
+  ): Promise<Omit<User, 'password' | 'hashedRefreshToken'>> {
+    return this.userService.createUser(createUserDto);
+  }
 
   /**
    * 특정 ID를 가진 유저를 조회합니다.
@@ -35,17 +45,19 @@ export class UserController {
    */
   @UseGuards(AuthGuard('jwt'))
   @Get('me')
-  getMyInfo(@Req() req: RequestWithUser) { // 이전에 만든 RequestWithUser 타입 사용
+  getMyInfo(@Req() req: RequestWithUser) {
+    // 이전에 만든 RequestWithUser 타입 사용
 
-  // ↓↓↓↓↓↓ 2번 로그: 컨트롤러에 도착한 데이터 ↓↓↓↓↓↓
-  console.log('[2. UserController] req.user에 담긴 데이터:', req.user);
+    // ↓↓↓↓↓↓ 2번 로그: 컨트롤러에 도착한 데이터 ↓↓↓↓↓↓
+    console.log('[2. UserController] req.user에 담긴 데이터:', req.user);
 
-  return req.user;
-}
-
+    return req.user;
+  }
 
   @Get(':id')
-  async findUserById(@Param('id') id: string): Promise<Omit<User, 'password' | 'hashedRefreshToken'>> {
+  async findUserById(
+    @Param('id') id: string,
+  ): Promise<Omit<User, 'password' | 'hashedRefreshToken'>> {
     // 1. 디버깅을 위해 어떤 ID로 요청이 들어왔는지 서버 콘솔에 로그를 남깁니다.
     //    trim()을 사용하여 파라미터의 양쪽 공백을 제거합니다.
     const trimmedId = id.trim();
@@ -55,18 +67,18 @@ export class UserController {
 
     // 2. 서비스에서 유저를 찾지 못하면(null 반환), 404 에러를 발생시킵니다.
     if (!user) {
-      console.log(`[UserController] 데이터베이스에서 ID '${trimmedId}'를 가진 유저를 찾지 못했습니다.`);
+      console.log(
+        `[UserController] 데이터베이스에서 ID '${trimmedId}'를 가진 유저를 찾지 못했습니다.`,
+      );
       throw new NotFoundException(`User with ID "${trimmedId}" not found`);
     }
 
     // 3. 보안을 위해, 찾은 user 객체에서 password와 hashedRefreshToken을 제거합니다.
     const { password, hashedRefreshToken, ...result } = user;
-    
+
     console.log(`[UserController] 유저를 찾았습니다:`, result);
-    
+
     // 4. 안전한 정보만 담긴 result 객체를 반환합니다.
     return result;
   }
-
-  
 }

@@ -60,16 +60,20 @@ export interface SingleEditorHandles {
 export type RootStackParamList = {
   Home: undefined; // 파라미터 없음
   Camera: undefined;
-  VideoEdit: { videos: MediaItem[] }; // MediaItem 배열을 파라미터로 받음
+  VideoEdit: { videos?: MediaItem[]; parentVideoId?: string }; // MediaItem 배열 또는 parentVideoId를 파라미터로 받음
   MediaLibrary: undefined;
   FFmpegTest: undefined;
+  Web: { url?: string } | undefined;
   SideBySide: undefined; // 향후 사용될 수 있는 라우트
   VideoPreview: undefined;
   NewVideoTest: undefined;
 };
 
 // VideoEditScreen의 라우트 prop 타입
-export type VideoEditScreenRouteProp = RouteProp<RootStackParamList, 'VideoEdit'>;
+export type VideoEditScreenRouteProp = RouteProp<
+  RootStackParamList,
+  'VideoEdit'
+>;
 
 // --- 유틸리티 함수 (여기서 직접 정의하거나 별도 파일로 분리 가능) ---
 
@@ -83,7 +87,9 @@ export const formatFrequency = (freq: number): string => {
 export const formatTime = (seconds: number): string => {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
-  return `${minutes.toFixed(0).padStart(2, '0')}:${remainingSeconds.toFixed(1).padStart(4, '0')}`;
+  return `${minutes.toFixed(0).padStart(2, '0')}:${remainingSeconds
+    .toFixed(1)
+    .padStart(4, '0')}`;
 };
 
 // 파일 크기 포매팅 함수 (바이트를 "KB", "MB", "GB" 등으로)

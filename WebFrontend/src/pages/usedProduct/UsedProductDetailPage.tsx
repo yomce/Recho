@@ -134,7 +134,8 @@ const UsedProductDetailPage: React.FC = () => {
           <div className="my-4 text-base text-gray-600 leading-relaxed">
             <p className="my-2"><strong>판매자:</strong> {product.userId}</p>
             <p className="my-2"><strong>거래 방식:</strong> {TRADE_TYPE_TEXT[product.tradeType]}</p>
-            <p className="my-2"><strong>거래 지역:</strong> {product.location.regionLevel1} {product.location.regionLevel2}</p>
+            {/* <p className="my-2"><strong>거래 지역:</strong> {product.location.regionLevel1} {product.location.regionLevel2}</p> */}
+            <p className="my-2"><strong>거래 지역:</strong> {product.location?.address}</p>
             <p className="my-2"><strong>등록일:</strong> {new Date(product.createdAt).toLocaleDateString()}</p>
           </div>
 

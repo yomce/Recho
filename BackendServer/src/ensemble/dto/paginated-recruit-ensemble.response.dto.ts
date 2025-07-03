@@ -1,6 +1,6 @@
 import { RecruitEnsemble } from '../entities/recruit-ensemble.entity';
 
-export class PaginatedEnsembleResponse {
+export class PaginatedRecruitEnsembleResponse {
   data: RecruitEnsemble[];
 
   nextCursor?: {

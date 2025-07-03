@@ -5,40 +5,11 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import axiosInstance from '@/services/axiosInstance';
 import axios from 'axios';
+import type { SessionEnsemble, RecruitEnsemble } from './types';
+import { SessionDetail } from './components/SessionDetail';
 
 // 목록 페이지에서 사용했던 타입과 텍스트 매핑 객체를 가져옵니다.
 // 별도 types 파일로 분리하여 관리하는 것이 좋습니다.
-interface RecruitEnsemble {
-  postId: number;
-  title: string;
-  content: string;
-  userId: string;
-  createdAt: string;
-  eventDate: string;
-  skillLevel: number;
-  recruit_status: number;
-  total_recruit_cnt: number;
-  viewCount: number;
-  locationId: number;
-  instrument_category_id: number;
-}
-
-// const SKILL_LEVEL_TEXT = {
-//   0: '초보',
-//   1: '중수',
-//   2: '고수',
-//   3: '전문가',
-// };
-
-// const RECRUIT_STATUS_TEXT = {
-//   0: '모집중',
-//   1: '모집완료',
-// };
-
-// const RECRUIT_STATUS_CLASSES = {
-//   0: 'bg-blue-500 text-white',
-//   1: 'bg-gray-500 text-white',
-// };
 
 
 const RecruitEnsembleDetailPage: React.FC = () => {
@@ -47,12 +18,13 @@ const RecruitEnsembleDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
+  const [sessionList, setSessionList] = useState<SessionEnsemble[] | null>(null);
   const [ensemble, setEnsemble] = useState<RecruitEnsemble | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // 현재 로그인한 사용자가 게시글 작성자인지 확인하는 변수
-  const isOwner = ensemble && user && ensemble.userId === user.id;
+  const isOwner = ensemble && user && ensemble.userId === user.username;
 
   useEffect(() => {
     if (!id) {
@@ -67,6 +39,8 @@ const RecruitEnsembleDetailPage: React.FC = () => {
       try {
         // API 엔드포인트를 합주단원 모집 공고 상세 조회로 변경
         const response = await axiosInstance.get<RecruitEnsemble>(`ensembles/${id}`);
+
+        setSessionList(response.data.sessionEnsemble)
         setEnsemble(response.data);
       } catch (err) {
         if (axios.isAxiosError(err) && err.response?.status === 404) {
@@ -120,8 +94,8 @@ const RecruitEnsembleDetailPage: React.FC = () => {
       <header className="pb-4 mb-6 border-b border-gray-200">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">{ensemble.title}</h1>
-          <span className={`py-1 px-3 rounded-full text-sm font-semibold ${ensemble.recruit_status}`}>
-            {ensemble.recruit_status}
+          <span className={`py-1 px-3 rounded-full text-sm font-semibold ${ensemble.recruitStatus}`}>
+            {ensemble.recruitStatus}
           </span>
         </div>
         <div className="text-sm text-gray-500 mt-2 flex justify-between">
@@ -132,10 +106,9 @@ const RecruitEnsembleDetailPage: React.FC = () => {
 
       {/* --- 정보 섹션 --- */}
       <div className="grid md:grid-cols-2 gap-x-8 gap-y-4 mb-8 p-4 bg-gray-50 rounded-md">
-        <p><strong>악기 ID:</strong> {ensemble.instrument_category_id}</p>
         <p><strong>지역 ID:</strong> {ensemble.locationId}</p>
         <p><strong>요구 실력:</strong> {ensemble.skillLevel}</p>
-        <p><strong>모집 인원:</strong> {ensemble.total_recruit_cnt}명</p>
+        <p><strong>모집 인원:</strong> {ensemble.totalRecruitCnt}명</p>
         <p className="md:col-span-2"><strong>연주 일자:</strong> {new Date(ensemble.eventDate).toLocaleDateString()}</p>
       </div>
 
@@ -146,6 +119,13 @@ const RecruitEnsembleDetailPage: React.FC = () => {
           {ensemble.content}
         </pre>
       </div>
+
+      {sessionList?.map((item, index) => 
+        <SessionDetail
+          key={index}
+          item={item}
+        />
+      )}
 
       {/* --- 버튼 섹션 --- */}
       <div className="mt-8 pt-6 flex justify-between items-center border-t border-gray-200">

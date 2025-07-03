@@ -28,6 +28,7 @@ import CreatePracticeRoom from "@/pages/practiceRoom/CreatePracticeRoomPage";
 import PracticeRoomDetailPage from "@/pages/practiceRoom/PracticeRoomDetailPage";
 import UpdatePracticeRoomPage from "@/pages/practiceRoom/UpdatePracticeRoomPage";
 import KakaoMapApi from "@/components/map/KakaoMapComponent";
+import UpdateRecruitEnsemblePage from '@/pages/ensemble/UpdateRecruitEnsemblePage';
 
 const AppRouter: React.FC = () => {
   return (
@@ -66,6 +67,8 @@ const AppRouter: React.FC = () => {
         <Route path="/practice-room/:id" element={<PracticeRoomDetailPage/>} />
         <Route path="/practice-room/edit/:id" element={<UpdatePracticeRoomPage />} />
         <Route path="/kakaomap" element={<KakaoMapApi />} />
+        <Route path="/ensembles/:id" element={<RecruitEnsembleDetailPage />} />
+        <Route path="/ensembles/edit/:id" element={<UpdateRecruitEnsemblePage />} />
       </Routes>
       <Navigation />
     </Router>

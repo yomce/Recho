@@ -1,12 +1,16 @@
 import {
+  IsArray,
   IsDate,
   IsEnum,
   IsNotEmpty,
   IsNumber,
   IsString,
   Min,
+  ValidateNested,
 } from 'class-validator';
 import { SKILL_LEVEL } from '../entities/recruit-ensemble.entity';
+import { CreateSessionEnsembleDto } from '../session/dto/create-session-ensemble.dto';
+import { Type } from 'class-transformer';
 
 export class CreateRecruitEnsembleDto {
   @IsString()
@@ -30,10 +34,12 @@ export class CreateRecruitEnsembleDto {
   locationId: number;
 
   @IsNumber()
-  @IsNotEmpty()
-  instrument_category_id: number;
-
-  @IsNumber()
   @Min(0)
-  total_recruit_cnt: number;
+  totalRecruitCnt: number;
+
+  @IsArray()
+  @IsNotEmpty()
+  @ValidateNested({ each: true })
+  @Type(() => CreateSessionEnsembleDto)
+  readonly sessionList: CreateSessionEnsembleDto[];
 }

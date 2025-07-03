@@ -120,7 +120,7 @@ export class UsedProductService {
     }
   }
 
-  async pathProduct(
+  async patchProduct(
     id: number,
     updateDto: UpdateUsedProductDto,
     username: string,

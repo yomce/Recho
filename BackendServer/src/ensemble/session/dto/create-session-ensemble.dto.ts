@@ -10,3 +10,14 @@ export class CreateSessionEnsembleDto {
   @Column()
   recruitCount: number;
 }
+
+export class UpdateSessionDto {
+  @Column()
+  sessionId: number;
+
+  @Column()
+  instrument: string;
+
+  @Column()
+  recruitCount: number;
+}

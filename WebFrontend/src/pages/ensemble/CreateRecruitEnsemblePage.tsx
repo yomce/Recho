@@ -69,11 +69,13 @@ const CreateRecruitEnsemblePage: React.FC = () => {
     ])
   }
 
-  const handleSessionRemove = () => {
+  const handleSessionRemove = (indexToRemove: number) => {
     if (sessionFormList.length === 1) {
       return;
     }
-    setSessionForm (prev => prev.slice(0, -1));
+    setSessionForm(prevList => 
+      prevList.filter((_, index) => index !== indexToRemove)
+    );
   }
 
   const handleSessionChange = (

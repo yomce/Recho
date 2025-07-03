@@ -1,10 +1,9 @@
-// src/components/EnsembleForm.tsx (새로 생성)
+// src/components/EnsembleForm.tsx
 
 import React from 'react';
 import { SessionForm, type SessionEnsembleFormState } from './SessionForm';
 
-// 필요한 타입과 Enum을 페이지 컴포넌트에서 props로 받도록 합니다.
-// 이렇게 하면 이 폼 컴포넌트는 특정 타입에 종속되지 않습니다.
+// 필요한 타입과 Enum (이전과 동일)
 export enum SKILL_LEVEL {
   BEGINNER,
   INTERMEDIATE,
@@ -40,7 +39,8 @@ interface RecruitEnsembleFormProps {
   sessionFormList: SessionEnsembleFormState[];
   onSessionFormListChange: (index: number, e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
   onSessionFormAdd: () => void;
-  onSessionFormRemove: () => void;
+  // 👇 1. onSessionFormRemove prop이 인덱스를 받도록 수정합니다.
+  onSessionFormRemove: (index: number) => void;
 }
 
 export const EnsembleForm: React.FC<RecruitEnsembleFormProps> = ({
@@ -94,24 +94,30 @@ export const EnsembleForm: React.FC<RecruitEnsembleFormProps> = ({
       
       {errorMessage && <p className="text-center text-red-500 font-semibold bg-red-100 p-3 rounded-md">{errorMessage}</p>}
 
-      {sessionFormList.map((item, index) => 
-        <SessionForm
-          key={index}
-          item={item}
-          index={index}
-          onSessionFormListChange={onSessionFormListChange}
-        />
-      )}
+      {/* 👇 2. 세션 폼을 순회하는 부분 수정 */}
+      {sessionFormList.map((item, index) => (
+        <div key={index} className="p-4 border rounded-xl shadow-sm bg-white">
+          <SessionForm
+            item={item}
+            index={index}
+            onSessionFormListChange={onSessionFormListChange}
+          />
+          <div className="mt-4 text-right"> {/* 버튼을 오른쪽 정렬하기 위한 컨테이너 */}
+            <button
+              type="button"
+              onClick={() => onSessionFormRemove(index)}
+              className="px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+              aria-label={`${index + 1}번째 세션 삭제`}
+            >
+              삭제
+            </button>
+          </div>
+        </div>
+      ))}
 
       <div className="pt-1">
-        <button type="button" onClick={() => onSessionFormAdd()} className="w-full py-2 text-xl font-bold text-white bg-green-600 rounded-md hover:bg-green-700 disabled:bg-gray-400 transition-colors">
+        <button type="button" onClick={onSessionFormAdd} className="w-full py-2 text-xl font-bold text-white bg-green-600 rounded-md hover:bg-green-700 disabled:bg-gray-400 transition-colors">
           세션 추가하기
-        </button>
-      </div>
-
-      <div className="pt-1">
-        <button type="button" onClick={() => onSessionFormRemove()} className="w-full py-2 text-xl font-bold text-white bg-red-600 rounded-md hover:bg-red-700 disabled:bg-gray-400 transition-colors">
-          세션 삭제하기
         </button>
       </div>
 

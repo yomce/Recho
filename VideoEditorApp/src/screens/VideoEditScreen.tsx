@@ -108,8 +108,8 @@ const ResultSection = styled.View`
   border-color: #27ae60; /* 녹색 테두리로 결과 섹션 강조 */
 `;
 
-const ResultSectionTitle : TextStyle = {
-  color: '#27ae60', /* 녹색 제목 */
+const ResultSectionTitle: TextStyle = {
+  color: '#27ae60' /* 녹색 제목 */,
   marginBottom: 15,
   textAlign: 'center',
   fontSize: 18,
@@ -129,7 +129,9 @@ const SaveResultButton = styled(CommonButton)`
   margin-bottom: 0; /* CommonButton의 기본 마진 오버라이드 */
 `;
 
-const VideoEditScreen: React.FC<{ route: VideoEditScreenRouteProp }> = ({ route }) => {
+const VideoEditScreen: React.FC<{ route: VideoEditScreenRouteProp }> = ({
+  route,
+}) => {
   const { videos = [] } = route.params ?? {};
   const [trimmers, setTrimmers] = useState<TrimmerState[]>([]);
   const editorRefs = useRef<Record<string, SingleEditorHandles | null>>({});
@@ -151,21 +153,33 @@ const VideoEditScreen: React.FC<{ route: VideoEditScreenRouteProp }> = ({ route 
         originalAspectRatioValue: '1.777',
       };
     });
-    console.log('[VideoEditScreen] Trimmer slots initialized:', initialTrimmers.map(t => ({ id: t.id, hasVideo: !!t.sourceVideo })));
+    console.log(
+      '[VideoEditScreen] Trimmer slots initialized:',
+      initialTrimmers.map(t => ({ id: t.id, hasVideo: !!t.sourceVideo })),
+    );
     setTrimmers(initialTrimmers);
   }, [videos]);
 
-  const handleTrimmerUpdate = (id: string, newState: Partial<Omit<TrimmerState, 'id'>>) => {
+  const handleTrimmerUpdate = (
+    id: string,
+    newState: Partial<Omit<TrimmerState, 'id'>>,
+  ) => {
     console.log(`[VideoEditScreen] '${id}' state update received:`, newState);
     setTrimmers(prevTrimmers =>
       prevTrimmers.map(trimmer =>
-        trimmer.id === id ? { ...trimmer, ...newState } : trimmer
-      )
+        trimmer.id === id ? { ...trimmer, ...newState } : trimmer,
+      ),
     );
   };
 
-  const handleVideoLoad = (id: string, data: OnLoadData, aspectRatio: string) => {
-    console.log(`[VideoEditScreen] Video '${id}' loaded. DURATION: ${data.duration}, AR: ${aspectRatio}`);
+  const handleVideoLoad = (
+    id: string,
+    data: OnLoadData,
+    aspectRatio: string,
+  ) => {
+    console.log(
+      `[VideoEditScreen] Video '${id}' loaded. DURATION: ${data.duration}, AR: ${aspectRatio}`,
+    );
     handleTrimmerUpdate(id, {
       duration: data.duration,
       endTime: data.duration,
@@ -189,7 +203,9 @@ const VideoEditScreen: React.FC<{ route: VideoEditScreenRouteProp }> = ({ route 
   };
 
   const createCollage = async () => {
-    const activeTrimmers = trimmers.filter(t => t.sourceVideo && t.duration > 0);
+    const activeTrimmers = trimmers.filter(
+      t => t.sourceVideo && t.duration > 0,
+    );
     if (activeTrimmers.length === 0) {
       Alert.alert('오류', '콜라주를 만들려면 하나 이상의 비디오가 필요합니다.');
       return;
@@ -205,30 +221,42 @@ const VideoEditScreen: React.FC<{ route: VideoEditScreenRouteProp }> = ({ route 
           startTime: t.startTime,
           endTime: t.endTime,
           volume: t.volume,
-          aspectRatio: t.aspectRatio === 'original' && t.originalAspectRatioValue
-            ? t.originalAspectRatioValue
-            : t.aspectRatio,
-          equalizer: t.equalizer.map(({ frequency, gain }) => ({ frequency, gain })),
+          aspectRatio:
+            t.aspectRatio === 'original' && t.originalAspectRatioValue
+              ? t.originalAspectRatioValue
+              : t.aspectRatio,
+          equalizer: t.equalizer.map(({ frequency, gain }) => ({
+            frequency,
+            gain,
+          })),
         })),
       };
 
-      console.log('[VideoEditScreen] Data for filter generation:', JSON.stringify(editData, null, 2));
+      console.log(
+        '[VideoEditScreen] Data for filter generation:',
+        JSON.stringify(editData, null, 2),
+      );
 
       const filterComplexArray = generateCollageFilterComplex(editData);
       const filterComplexString = filterComplexArray.join('; ');
 
       // [수정] cleanUri를 사용하여 각 비디오의 경로를 정제
       const inputVideos = activeTrimmers.map(t => t.sourceVideo!);
-      const inputCommands = inputVideos.map(v => `-i "${cleanUri(v.uri)}"`).join(' ');
+      const inputCommands = inputVideos
+        .map(v => `-i "${cleanUri(v.uri)}"`)
+        .join(' ');
 
-      const outputPath = `${RNFS.DocumentDirectoryPath}/collage_${Date.now()}.mp4`;
+      const outputPath = `${
+        RNFS.DocumentDirectoryPath
+      }/collage_${Date.now()}.mp4`;
       const hasAudio = activeTrimmers.some(t => t.volume > 0);
       const audioMapCommand = hasAudio ? '-map "[a]"' : '';
 
       // [수정] 안드로이드 인코더를 하드웨어 가속(h264_mediacodec)으로 변경하여 성능 향상
-      const encoder = Platform.OS === 'ios'
-        ? '-c:v h264_videotoolbox -b:v 2M'
-        : '-c:v h264_mediacodec';
+      const encoder =
+        Platform.OS === 'ios'
+          ? '-c:v h264_videotoolbox -b:v 2M'
+          : '-c:v h264_mediacodec';
 
       const command = `${inputCommands} -filter_complex "${filterComplexString}" -map "[v]" ${audioMapCommand} ${encoder} -preset fast -crf 28 -shortest "${outputPath}"`;
       console.log('[VideoEditScreen] Final command to execute:', command);
@@ -241,8 +269,14 @@ const VideoEditScreen: React.FC<{ route: VideoEditScreenRouteProp }> = ({ route 
         Alert.alert('성공!', '비디오 콜라주가 성공적으로 생성되었습니다.');
       } else {
         const errorLogs = await session.getLogsAsString();
-        Alert.alert('오류', '콜라주 생성 중 오류가 발생했습니다. 콘솔 로그를 확인하세요.');
-        console.error('[VideoEditScreen] FFmpeg execution failed! Detailed logs:', errorLogs);
+        Alert.alert(
+          '오류',
+          '콜라주 생성 중 오류가 발생했습니다. 콘솔 로그를 확인하세요.',
+        );
+        console.error(
+          '[VideoEditScreen] FFmpeg execution failed! Detailed logs:',
+          errorLogs,
+        );
       }
     } catch (error) {
       Alert.alert('오류', '콜라주 생성 중 예외가 발생했습니다.');
@@ -254,12 +288,18 @@ const VideoEditScreen: React.FC<{ route: VideoEditScreenRouteProp }> = ({ route 
 
   const saveCollageToGallery = async () => {
     if (!collagePath) {
-      Alert.alert('알림', '저장할 콜라주가 없습니다. 먼저 콜라주를 생성해주세요.');
+      Alert.alert(
+        '알림',
+        '저장할 콜라주가 없습니다. 먼저 콜라주를 생성해주세요.',
+      );
       return;
     }
     try {
       // [수정] 저장 경로를 file:// 접두사와 함께 전달해야 CameraRoll이 인식
-      await CameraRoll.save(`file://${collagePath}`, { type: 'video', album: 'VideoEditorApp' });
+      await CameraRoll.save(`file://${collagePath}`, {
+        type: 'video',
+        album: 'VideoEditorApp',
+      });
       Alert.alert('성공', '콜라주가 사진첩에 저장되었습니다!');
     } catch (error) {
       Alert.alert('오류', '사진첩 저장 중 오류가 발생했습니다.');
@@ -298,9 +338,16 @@ const VideoEditScreen: React.FC<{ route: VideoEditScreenRouteProp }> = ({ route 
 
         {collagePath && (
           <ResultSection>
-            <SectionHeader title="✨ 콜라주 결과" titleStyle={ResultSectionTitle} />
+            <SectionHeader
+              title="✨ 콜라주 결과"
+              titleStyle={ResultSectionTitle}
+            />
             {/* [수정] file:// 접두사를 붙여 Video 컴포넌트가 인식하도록 함 */}
-            <ResultVideoPlayer source={{ uri: `file://${collagePath}` }} controls={true} resizeMode="contain" />
+            <ResultVideoPlayer
+              source={{ uri: `file://${collagePath}` }}
+              controls={true}
+              resizeMode="contain"
+            />
             <SaveResultButton onPress={saveCollageToGallery}>
               <GlobalButtonText>결과물 사진첩에 저장</GlobalButtonText>
             </SaveResultButton>

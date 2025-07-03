@@ -1,7 +1,19 @@
 import React, { useState } from 'react';
 import styled from 'styled-components/native';
-import { TouchableOpacity, Dimensions, Alert, Modal, Button, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
-import { PanGestureHandler, PanGestureHandlerGestureEvent } from 'react-native-gesture-handler';
+import {
+  TouchableOpacity,
+  Dimensions,
+  Alert,
+  Modal,
+  Button,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+} from 'react-native';
+import {
+  PanGestureHandler,
+  PanGestureHandlerGestureEvent,
+} from 'react-native-gesture-handler';
 import MultiSlider from '@ptomasroos/react-native-multi-slider';
 import { EditingTimeType, formatTime } from '../../types'; // EditingTimeType 및 formatTime 임포트
 
@@ -134,7 +146,14 @@ interface Props {
  * 시간 값을 직접 입력할 수 있는 모달도 포함되어 있습니다.
  * 모든 스타일은 styled-components로 정의되었습니다.
  */
-const RangeControl: React.FC<Props> = ({ startTime, endTime, duration, currentTime, onValuesChange, onSeek }) => {
+const RangeControl: React.FC<Props> = ({
+  startTime,
+  endTime,
+  duration,
+  currentTime,
+  onValuesChange,
+  onSeek,
+}) => {
   const [isModalVisible, setModalVisible] = useState(false);
   const [editingTimeType, setEditingTimeType] = useState<EditingTimeType>(null);
   const [tempTimeValue, setTempTimeValue] = useState('');
@@ -157,7 +176,9 @@ const RangeControl: React.FC<Props> = ({ startTime, endTime, duration, currentTi
   const openTimeModal = (type: EditingTimeType) => {
     setEditingTimeType(type);
     // 현재 시간을 소수점 한 자리까지 문자열로 변환하여 초기값 설정
-    setTempTimeValue(type === 'start' ? startTime.toFixed(1) : endTime.toFixed(1));
+    setTempTimeValue(
+      type === 'start' ? startTime.toFixed(1) : endTime.toFixed(1),
+    );
     setModalVisible(true);
   };
 
@@ -192,7 +213,10 @@ const RangeControl: React.FC<Props> = ({ startTime, endTime, duration, currentTi
       </TimeLabelContainer>
 
       <SliderContainer>
-        <PanGestureHandler onGestureEvent={onGestureEvent} onHandlerStateChange={onGestureEvent}>
+        <PanGestureHandler
+          onGestureEvent={onGestureEvent}
+          onHandlerStateChange={onGestureEvent}
+        >
           <SliderEventCatcher>
             <MultiSlider
               values={[startTime, endTime]}
@@ -203,16 +227,33 @@ const RangeControl: React.FC<Props> = ({ startTime, endTime, duration, currentTi
               allowOverlap={false} // 핸들이 서로 겹치지 않도록
               snapped // 핸들이 스텝에 맞춰 스냅되도록
               sliderLength={sliderLength}
-              containerStyle={MultiSliderContainer.styledComponentId ? {}:styles.multiSliderContainerPlaceholder} // styled-components를 사용하기 위해 더미 스타일 추가
-              trackStyle={TrackStyle.styledComponentId ? {}:styles.trackStylePlaceholder} // styled-components를 사용하기 위해 더미 스타일 추가
-              selectedStyle={SelectedTrackStyle.styledComponentId ? {}:styles.selectedTrackStylePlaceholder} // styled-components를 사용하기 위해 더미 스타일 추가
-              markerStyle={MarkerStyle.styledComponentId ? {}:styles.markerStylePlaceholder} // styled-components를 사용하기 위해 더미 스타일 추가
+              containerStyle={
+                MultiSliderContainer.styledComponentId
+                  ? {}
+                  : styles.multiSliderContainerPlaceholder
+              } // styled-components를 사용하기 위해 더미 스타일 추가
+              trackStyle={
+                TrackStyle.styledComponentId ? {} : styles.trackStylePlaceholder
+              } // styled-components를 사용하기 위해 더미 스타일 추가
+              selectedStyle={
+                SelectedTrackStyle.styledComponentId
+                  ? {}
+                  : styles.selectedTrackStylePlaceholder
+              } // styled-components를 사용하기 위해 더미 스타일 추가
+              markerStyle={
+                MarkerStyle.styledComponentId
+                  ? {}
+                  : styles.markerStylePlaceholder
+              } // styled-components를 사용하기 위해 더미 스타일 추가
               enabledTwo // 두 개의 마커 사용
               isMarkersSeparated // 마커가 분리되어 표시되도록
             />
             {/* 현재 재생 위치 인디케이터. 편집 구간 내에 있을 때만 표시 */}
             {currentTime >= startTime && currentTime <= endTime && (
-              <ProgressIndicator indicatorPosition={indicatorPosition} pointerEvents="none" />
+              <ProgressIndicator
+                indicatorPosition={indicatorPosition}
+                pointerEvents="none"
+              />
             )}
           </SliderEventCatcher>
         </PanGestureHandler>
@@ -225,10 +266,19 @@ const RangeControl: React.FC<Props> = ({ startTime, endTime, duration, currentTi
         onRequestClose={() => setModalVisible(false)}
         animationType="fade"
       >
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={ModalContainer.styledComponentId ? {}:styles.modalContainerPlaceholder}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={
+            ModalContainer.styledComponentId
+              ? {}
+              : styles.modalContainerPlaceholder
+          }
+        >
           <ModalContainer>
             <ModalContent>
-              <ModalTitle>{editingTimeType === 'start' ? '시작' : '종료'} 시간 입력 (초)</ModalTitle>
+              <ModalTitle>
+                {editingTimeType === 'start' ? '시작' : '종료'} 시간 입력 (초)
+              </ModalTitle>
               <StyledTextInput
                 value={tempTimeValue}
                 onChangeText={setTempTimeValue}
@@ -236,7 +286,11 @@ const RangeControl: React.FC<Props> = ({ startTime, endTime, duration, currentTi
                 autoFocus={true}
               />
               <ModalButtonContainer>
-                <Button title="취소" onPress={() => setModalVisible(false)} color="#e74c3c" />
+                <Button
+                  title="취소"
+                  onPress={() => setModalVisible(false)}
+                  color="#e74c3c"
+                />
                 <Button title="확인" onPress={handleConfirmTime} />
               </ModalButtonContainer>
             </ModalContent>
@@ -251,11 +305,21 @@ const RangeControl: React.FC<Props> = ({ startTime, endTime, duration, currentTi
 // styled-components로 직접 MultiSlider의 내부 컴포넌트를 스타일링하기 어렵기 때문에
 // 임시 placeholder 스타일을 추가하고, 실제 스타일은 styled-components 내에서 처리하도록 합니다.
 const styles = StyleSheet.create({
-  multiSliderContainerPlaceholder: { /* Placeholder */ },
-  trackStylePlaceholder: { /* Placeholder */ },
-  selectedTrackStylePlaceholder: { /* Placeholder */ },
-  markerStylePlaceholder: { /* Placeholder */ },
-  modalContainerPlaceholder: { /* Placeholder */ },
+  multiSliderContainerPlaceholder: {
+    /* Placeholder */
+  },
+  trackStylePlaceholder: {
+    /* Placeholder */
+  },
+  selectedTrackStylePlaceholder: {
+    /* Placeholder */
+  },
+  markerStylePlaceholder: {
+    /* Placeholder */
+  },
+  modalContainerPlaceholder: {
+    /* Placeholder */
+  },
 });
 
 export default RangeControl;

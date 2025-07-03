@@ -41,7 +41,9 @@ const VideoEditScreen: React.FC = () => {
   const [trimEnd, setTrimEnd] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [processing, setProcessing] = useState(false);
-  const [processedVideoUri, setProcessedVideoUri] = useState<string | null>(null);
+  const [processedVideoUri, setProcessedVideoUri] = useState<string | null>(
+    null,
+  );
   const [thumbnailUri, setThumbnailUri] = useState<string | null>(null);
 
   useEffect(() => {
@@ -118,7 +120,10 @@ const VideoEditScreen: React.FC = () => {
         setProcessedVideoUri(outputPath);
 
         // Generate thumbnail after video processing
-        const generatedThumbnailPath = await generateThumbnail(outputPath, outputThumbnailPath);
+        const generatedThumbnailPath = await generateThumbnail(
+          outputPath,
+          outputThumbnailPath,
+        );
         setThumbnailUri(generatedThumbnailPath);
 
         Alert.alert('성공', '비디오 처리 및 썸네일 생성이 완료되었습니다.');
@@ -152,7 +157,8 @@ const VideoEditScreen: React.FC = () => {
           fileType: 'video/mp4', // Adjust as needed
         },
       );
-      const { videoUrl, thumbnailUrl, videoKey, thumbnailKey } = uploadUrlsRes.data;
+      const { videoUrl, thumbnailUrl, videoKey, thumbnailKey } =
+        uploadUrlsRes.data;
 
       // 2. Upload video to S3
       const videoFile = await RNFS.readFile(processedVideoUri, 'base64');
@@ -194,7 +200,10 @@ const VideoEditScreen: React.FC = () => {
     return (
       <View style={styles.container}>
         <Text>비디오를 선택해주세요.</Text>
-        <Button title="미디어 라이브러리에서 선택" onPress={() => navigation.navigate('MediaLibrary')} />
+        <Button
+          title="미디어 라이브러리에서 선택"
+          onPress={() => navigation.navigate('MediaLibrary')}
+        />
       </View>
     );
   }
@@ -219,7 +228,8 @@ const VideoEditScreen: React.FC = () => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>트리밍</Text>
         <Text style={styles.timeText}>
-          시작: {trimStart.toFixed(2)}s | 끝: {trimEnd.toFixed(2)}s | 현재: {currentTime.toFixed(2)}s
+          시작: {trimStart.toFixed(2)}s | 끝: {trimEnd.toFixed(2)}s | 현재:{' '}
+          {currentTime.toFixed(2)}s
         </Text>
         <Slider
           style={styles.slider}
@@ -228,7 +238,7 @@ const VideoEditScreen: React.FC = () => {
           value={trimStart}
           onValueChange={setTrimStart}
           step={0.1}
-          minimumTrackTintColor="#3498db"
+          minimumTrackTintColor="#fff"
           maximumTrackTintColor="#bdc3c7"
           thumbTintColor="#2980b9"
         />

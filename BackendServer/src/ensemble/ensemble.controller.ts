@@ -57,6 +57,8 @@ export class EnsembleController {
     }
     const userId = req.user.id;
 
+    console.log(createRecruitEnsembleDto);
+
     this.logger.log(`Enrolling a new post: ${createRecruitEnsembleDto.title}`);
     return await this.ensembleService.enrollEnsemble(
       createRecruitEnsembleDto,
@@ -92,7 +94,7 @@ export class EnsembleController {
 
     await this.ensembleService.deleteEnsemble(id, userId);
   }
-  
+
   @Patch(':id')
   @UseGuards(AuthGuard('jwt'))
   async patchEnsemble(
@@ -108,7 +110,7 @@ export class EnsembleController {
     }
     const userId = req.user.id; // JwtStrategy에서 반환된 user.id 사용 가능
     this.logger.log(
-      `Received patch request for product ID: ${id} from user ID: ${userId}`,
+      `Received patch request for post ID: ${id} from user ID: ${userId}`,
     );
 
     return this.ensembleService.patchEnsemble(

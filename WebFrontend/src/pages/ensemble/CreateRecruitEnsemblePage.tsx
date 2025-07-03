@@ -7,32 +7,42 @@ import { useAuthStore } from '@/stores/authStore';
 // 1. 공통 폼과 관련 타입들을 components 폴더에서 가져옵니다.
 import { EnsembleForm, type RecruitEnsembleFormState, SKILL_LEVEL } from '@/pages/ensemble/components/EnsembleForm';
 import axios from 'axios';
+import type { SessionEnsembleFormState } from './components/SessionForm';
 
 // 서버에 전송할 데이터 타입 (userId 포함)
+interface CreateSessionEnsemblePayload {
+  instrument: string;
+  recruitCount: number;
+}
+
 interface CreateRecruitEnsemblePayload {
   title: string;
   content: string;
   eventDate: Date;
   skillLevel: SKILL_LEVEL;
   locationId: number;
-  instrument_category_id: number;
-  total_recruit_cnt: number;
+  totalRecruitCnt: number;
+  sessionList: CreateSessionEnsemblePayload[];
 }
-
 
 const CreateRecruitEnsemblePage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
 
   // 2. 폼 상태 타입으로 EnsembleFormState를 사용합니다.
+  const [sessionFormList, setSessionForm] = useState<SessionEnsembleFormState[]>([{
+      instrument: '',
+      recruitCount: '',
+  }])
+
   const [form, setForm] = useState<RecruitEnsembleFormState>({
     title: '',
     content: '',
     eventDate: '',
     skillLevel: SKILL_LEVEL.BEGINNER,
     locationId: '',
-    instrumentCategoryId: '',
     totalRecruitCnt: '1',
+    sessionEnsemble: sessionFormList,
   });
 
   useEffect(() => {
@@ -45,11 +55,40 @@ const CreateRecruitEnsemblePage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleRecruitChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     // skillLevel 값은 숫자로 변환하여 상태에 저장합니다.
     const processedValue = name === 'skillLevel' ? Number(value) : value;
     setForm(prev => ({ ...prev, [name]: processedValue }));
+  };
+
+  const handleSessionAdd = () => {
+    setSessionForm (prev => [
+      ...prev,
+      { instrument: '', recruitCount: '',}
+    ])
+  }
+
+  const handleSessionRemove = () => {
+    if (sessionFormList.length === 1) {
+      return;
+    }
+    setSessionForm (prev => prev.slice(0, -1));
+  }
+
+  const handleSessionChange = (
+    index: number,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    // skillLevel 값은 숫자로 변환하여 상태에 저장합니다.
+    setSessionForm(prev => {
+      const newForm = [...prev];
+      newForm[index] = {
+        ...newForm[index],
+        [name]: value,
+      }
+      return newForm;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -63,15 +102,22 @@ const CreateRecruitEnsemblePage: React.FC = () => {
 
     try {
       // payload 생성
+      const sessionListPayLoad: CreateSessionEnsemblePayload[] = sessionFormList.map((item) => ({
+        instrument: item.instrument,
+        recruitCount: Number(item.recruitCount),
+      }))
+
       const payload: CreateRecruitEnsemblePayload = {
         title: form.title,
         content: form.content,
         eventDate: new Date(form.eventDate),
         skillLevel: Number(form.skillLevel),
         locationId: Number(form.locationId),
-        instrument_category_id: Number(form.instrumentCategoryId),
-        total_recruit_cnt: Number(form.totalRecruitCnt),
+        totalRecruitCnt: Number(form.totalRecruitCnt),
+        sessionList: sessionListPayLoad,
       };
+
+      console.log(payload)
 
       const response = await axiosInstance.post('ensembles', payload);
       alert('모집 공고가 성공적으로 등록되었습니다!');
@@ -102,12 +148,16 @@ const CreateRecruitEnsemblePage: React.FC = () => {
       {/* 3. 복잡한 폼 UI 대신 EnsembleForm 컴포넌트를 사용합니다. */}
       <EnsembleForm
         formState={form}
-        onFormChange={handleChange}
+        onFormChange={handleRecruitChange}
         onFormSubmit={handleSubmit}
         isLoading={loading}
         errorMessage={error}
         submitButtonText="모집 공고 등록하기"
         loadingButtonText="등록 중..."
+        sessionFormList={sessionFormList}
+        onSessionFormListChange={handleSessionChange}
+        onSessionFormAdd={handleSessionAdd}
+        onSessionFormRemove={handleSessionRemove}
       />
     </div>
   );

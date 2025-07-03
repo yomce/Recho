@@ -5,21 +5,24 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from '@/services/axiosInstance';
 import { useAuthStore } from '@/stores/authStore';
 import { EnsembleForm, type RecruitEnsembleFormState, SKILL_LEVEL } from '@/pages/ensemble/components/EnsembleForm';
+import type { SessionEnsembleFormState } from './components/SessionForm';
+import type { RecruitEnsemble } from './types';
 
 // API 응답 타입 (상세 페이지와 동일)
-interface RecruitEnsemble {
-  postId: number;
+interface UpdateSessionEnsemblePayload {
+  sessionId: number;
+  instrument: string;
+  recruitCount: number;
+}
+
+interface UpdateRecruitEnsemblePayload {
   title: string;
   content: string;
-  userId: string;
-  createdAt: string;
-  eventDate: string;
+  eventDate: Date;
   skillLevel: SKILL_LEVEL;
-  recruit_status: number;
-  total_recruit_cnt: number;
-  viewCount: number;
   locationId: number;
-  instrument_category_id: number;
+  totalRecruitCnt: number;
+  sessionList: UpdateSessionEnsemblePayload[];
 }
 
 const UpdateRecruitEnsemblePage: React.FC = () => {
@@ -27,14 +30,20 @@ const UpdateRecruitEnsemblePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuthStore();
 
+  const [sessionFormList, setSessionForm] = useState<SessionEnsembleFormState[]>([{
+    sessionId: '',
+    instrument: '',
+    recruitCount: '',
+  }])
+
   const [form, setForm] = useState<RecruitEnsembleFormState>({
     title: '',
     content: '',
     eventDate: '',
     skillLevel: SKILL_LEVEL.BEGINNER,
     locationId: '',
-    instrumentCategoryId: '',
-    totalRecruitCnt: '',
+    totalRecruitCnt: '1',
+    sessionEnsemble: sessionFormList,
   });
 
   const [loading, setLoading] = useState(false);
@@ -58,14 +67,21 @@ const UpdateRecruitEnsemblePage: React.FC = () => {
         // eventDate는 'YYYY-MM-DD' 형식으로 변환해야 <input type="date">에 표시됩니다.
         const formattedEventDate = new Date(ensemble.eventDate).toISOString().split('T')[0];
 
+        console.log(ensemble);
+        const newSessionForm : SessionEnsembleFormState[] = ensemble.sessionEnsemble.map(item => ({
+          sessionId: String(item.sessionId),
+          instrument: item.instrument,
+          recruitCount: String(item.recruitCount),
+        }))
+        setSessionForm(newSessionForm)
         setForm({
           title: ensemble.title,
           content: ensemble.content,
           eventDate: formattedEventDate,
           skillLevel: ensemble.skillLevel,
           locationId: String(ensemble.locationId),
-          instrumentCategoryId: String(ensemble.instrument_category_id),
-          totalRecruitCnt: String(ensemble.total_recruit_cnt),
+          totalRecruitCnt: String(ensemble.totalRecruitCnt),
+          sessionEnsemble: newSessionForm
         });
 
       } catch (err) {
@@ -75,15 +91,43 @@ const UpdateRecruitEnsemblePage: React.FC = () => {
         setLoading(false);
       }
     };
-
     fetchEnsemble();
   }, [id, user, navigate]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleRecruitChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     // skillLevel은 숫자로 변환
     const processedValue = name === 'skillLevel' ? Number(value) : value;
     setForm(prev => ({ ...prev, [name]: processedValue }));
+  };
+
+  const handleSessionAdd = () => {
+    setSessionForm (prev => [
+      ...prev,
+      { instrument: '', recruitCount: '',}
+    ])
+  }
+
+  const handleSessionRemove = () => {
+    if (sessionFormList.length === 1) {
+      return;
+    }
+    setSessionForm (prev => prev.slice(0, -1));
+  }
+
+  const handleSessionChange = (
+    index: number,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    // skillLevel 값은 숫자로 변환하여 상태에 저장합니다.
+    setSessionForm(prev => {
+      const newForm = [...prev];
+      newForm[index] = {
+        ...newForm[index],
+        [name]: value,
+      }
+      return newForm;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -93,15 +137,24 @@ const UpdateRecruitEnsemblePage: React.FC = () => {
 
     try {
       // payload 생성 (Create 페이지와 유사하나, userId는 보내지 않음)
-      const payload = {
+      const sessionListPayLoad: UpdateSessionEnsemblePayload[] = sessionFormList.map((item) => ({
+        sessionId: Number(item.sessionId),
+        instrument: item.instrument,
+        recruitCount: Number(item.recruitCount),
+      }))
+
+      const payload: UpdateRecruitEnsemblePayload = {
         title: form.title,
         content: form.content,
         eventDate: new Date(form.eventDate),
         skillLevel: Number(form.skillLevel),
         locationId: Number(form.locationId),
-        instrument_category_id: Number(form.instrumentCategoryId),
-        total_recruit_cnt: Number(form.totalRecruitCnt),
+        totalRecruitCnt: Number(form.totalRecruitCnt),
+        sessionList: sessionListPayLoad,
       };
+
+      console.log('patch');
+      console.log(payload);
 
       // PATCH 메서드로 수정 요청
       await axiosInstance.patch(`ensembles/${id}`, payload);
@@ -121,12 +174,16 @@ const UpdateRecruitEnsemblePage: React.FC = () => {
       <h2 className="text-center mt-0 mb-8 text-2xl font-bold text-gray-800">모집 공고 수정</h2>
       <EnsembleForm
         formState={form}
-        onFormChange={handleChange}
+        onFormChange={handleRecruitChange}
         onFormSubmit={handleSubmit}
         isLoading={loading}
         errorMessage={error}
         submitButtonText="수정 완료"
         loadingButtonText="수정 중..."
+        sessionFormList={sessionFormList}
+        onSessionFormListChange={handleSessionChange}
+        onSessionFormAdd={handleSessionAdd}
+        onSessionFormRemove={handleSessionRemove}
       />
     </div>
   );

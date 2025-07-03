@@ -1,12 +1,16 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { RecruitEnsemble } from 'src/ensemble/entities/recruit-ensemble.entity';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity({ name: 'recruit_session' })
 export class SessionEnsemble {
   @PrimaryGeneratedColumn()
   sessionId: number;
-
-  @Column()
-  postId: number;
 
   @Column()
   instrument: string;
@@ -15,5 +19,16 @@ export class SessionEnsemble {
   recruitCount: number;
 
   @Column()
-  totalRecruitCount: number;
+  nowRecruitCount: number;
+
+  @ManyToOne(
+    () => RecruitEnsemble,
+    (recruitEnsemble) => recruitEnsemble.sessionEnsemble,
+    {
+      //모집글 삭제 시 세션 정보도 삭제
+      onDelete: 'CASCADE',
+    },
+  )
+  @JoinColumn({ name: 'postId' })
+  recruitEnsemble: RecruitEnsemble;
 }

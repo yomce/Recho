@@ -1,6 +1,7 @@
 // src/components/EnsembleForm.tsx (새로 생성)
 
 import React from 'react';
+import { SessionForm, type SessionEnsembleFormState } from './SessionForm';
 
 // 필요한 타입과 Enum을 페이지 컴포넌트에서 props로 받도록 합니다.
 // 이렇게 하면 이 폼 컴포넌트는 특정 타입에 종속되지 않습니다.
@@ -24,8 +25,8 @@ export interface RecruitEnsembleFormState {
   eventDate: string;
   skillLevel: SKILL_LEVEL;
   locationId: string;
-  instrumentCategoryId: string;
   totalRecruitCnt: string;
+  sessionEnsemble: SessionEnsembleFormState[];
 }
 
 interface RecruitEnsembleFormProps {
@@ -36,6 +37,10 @@ interface RecruitEnsembleFormProps {
   errorMessage: string | null;
   submitButtonText: string;
   loadingButtonText: string;
+  sessionFormList: SessionEnsembleFormState[];
+  onSessionFormListChange: (index: number, e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
+  onSessionFormAdd: () => void;
+  onSessionFormRemove: () => void;
 }
 
 export const EnsembleForm: React.FC<RecruitEnsembleFormProps> = ({
@@ -46,6 +51,10 @@ export const EnsembleForm: React.FC<RecruitEnsembleFormProps> = ({
   errorMessage,
   submitButtonText,
   loadingButtonText,
+  sessionFormList,
+  onSessionFormListChange,
+  onSessionFormAdd,
+  onSessionFormRemove,
 }) => {
   const inputStyle = "w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition";
 
@@ -78,20 +87,33 @@ export const EnsembleForm: React.FC<RecruitEnsembleFormProps> = ({
 
       <div className="grid md:grid-cols-3 gap-6">
         <div>
-          <label htmlFor="instrumentCategoryId" className="block text-lg font-semibold mb-2 text-gray-700">악기 (ID)</label>
-          <input type="number" id="instrumentCategoryId" name="instrumentCategoryId" value={formState.instrumentCategoryId} onChange={onFormChange} required className={inputStyle} />
-        </div>
-        <div>
           <label htmlFor="locationId" className="block text-lg font-semibold mb-2 text-gray-700">지역 (ID)</label>
           <input type="number" id="locationId" name="locationId" value={formState.locationId} onChange={onFormChange} required className={inputStyle} />
-        </div>
-        <div>
-          <label htmlFor="totalRecruitCnt" className="block text-lg font-semibold mb-2 text-gray-700">모집 인원</label>
-          <input type="number" id="totalRecruitCnt" name="totalRecruitCnt" min="1" value={formState.totalRecruitCnt} onChange={onFormChange} required className={inputStyle} />
         </div>
       </div>
       
       {errorMessage && <p className="text-center text-red-500 font-semibold bg-red-100 p-3 rounded-md">{errorMessage}</p>}
+
+      {sessionFormList.map((item, index) => 
+        <SessionForm
+          key={index}
+          item={item}
+          index={index}
+          onSessionFormListChange={onSessionFormListChange}
+        />
+      )}
+
+      <div className="pt-1">
+        <button type="button" onClick={() => onSessionFormAdd()} className="w-full py-2 text-xl font-bold text-white bg-green-600 rounded-md hover:bg-green-700 disabled:bg-gray-400 transition-colors">
+          세션 추가하기
+        </button>
+      </div>
+
+      <div className="pt-1">
+        <button type="button" onClick={() => onSessionFormRemove()} className="w-full py-2 text-xl font-bold text-white bg-red-600 rounded-md hover:bg-red-700 disabled:bg-gray-400 transition-colors">
+          세션 삭제하기
+        </button>
+      </div>
 
       <div className="pt-4">
         <button type="submit" disabled={isLoading} className="w-full py-4 text-xl font-bold text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-400 transition-colors">

@@ -1,12 +1,20 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { RECRUIT_STATUS, RecruitEnsemble } from './entities/recruit-ensemble.entity';
+import {
+  RECRUIT_STATUS,
+  RecruitEnsemble,
+} from './entities/recruit-ensemble.entity';
 import { Repository } from 'typeorm';
 import { SessionEnsemble } from './session/entities/session-ensemble.entity';
 import { ApplyEnsemble } from './entities/apply-ensemble.entity';
 import { PaginatedRecruitEnsembleResponse } from './dto/paginated-recruit-ensemble.response.dto';
 import { CreateRecruitEnsembleDto } from './dto/create-recruit-ensemble.dto';
 import { UpdateRecruitEnsembleDto } from './dto/update-recruit-ensemble.dto';
+import { CreateSessionEnsembleDto } from './session/dto/create-session-ensemble.dto';
 
 @Injectable()
 export class EnsembleService {
@@ -15,7 +23,7 @@ export class EnsembleService {
     private readonly recruitEnsembleRepo: Repository<RecruitEnsemble>,
 
     @InjectRepository(SessionEnsemble)
-    private readonly instrumentalEnsembleRepo: Repository<SessionEnsemble>,
+    private readonly sessionEnsembleRepo: Repository<SessionEnsemble>,
 
     @InjectRepository(ApplyEnsemble)
     private readonly applyEnsembleRepo: Repository<ApplyEnsemble>,
@@ -71,14 +79,31 @@ export class EnsembleService {
     const newEnsemble = this.recruitEnsembleRepo.create({
       ...recruitEnsembleDto,
       userId: userId,
-      recruit_status: RECRUIT_STATUS.RECRUITING,
+      recruitStatus: RECRUIT_STATUS.RECRUITING,
       viewCount: 0,
     });
-    return await this.recruitEnsembleRepo.save(newEnsemble);
+
+    const savedEnsemble = await this.recruitEnsembleRepo.save(newEnsemble);
+    const postId = savedEnsemble.postId;
+
+    for (const itemDto of createDto.sessionList) {
+      const newSessionEnsemble = this.sessionEnsembleRepo.create({
+        ...itemDto,
+        recruitEnsemble: { postId: postId },
+        nowRecruitCount: 0,
+      });
+
+      await this.sessionEnsembleRepo.save(newSessionEnsemble);
+    }
+
+    return savedEnsemble;
   }
 
   async detailEnsemble(id: number): Promise<RecruitEnsemble> {
-    const ensemble = await this.recruitEnsembleRepo.findOneBy({ postId: id });
+    const ensemble = await this.recruitEnsembleRepo.findOne({
+      where: { postId: id },
+      relations: ['sessionEnsemble'],
+    });
     if (!ensemble) {
       throw new NotFoundException(`Ensemble with ID #${id} not found.`);
     }
@@ -106,8 +131,29 @@ export class EnsembleService {
     if (username !== ensemble.userId) {
       throw new ForbiddenException(`Unauthorized`);
     }
+    const sessionMap = new Map(
+      ensemble.sessionEnsemble.map((session) => [session.sessionId, session]),
+    );
 
-    const updatedEnsemble = this.recruitEnsembleRepo.merge(ensemble, updateDto);
+    console.log('patch');
+    console.log(ensemble);
+    console.log(updateDto);
+    console.log(id);
+
+    const toUpdate: CreateSessionEnsembleDto[] = [];
+    const toAdd: CreateSessionEnsembleDto[] = [];
+
+    if (updateDto.sessionList) {
+      for (const item of updateDto.sessionList) {
+        if (item.sessionId && sessionMap.has(item.sessionId)) {
+          toUpdate.push(item);
+          sessionMap.delete(item.sessionId);
+        } else {
+          toAdd.push(item);
+        }
+      }
+    }
+
     return this.recruitEnsembleRepo.save(updatedEnsemble);
   }
 }

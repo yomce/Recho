@@ -12,6 +12,9 @@ import { UserModule } from './auth/user/user.module';
 import { VideoInsertModule } from './video-insert/video-insert.module';
 import { ChatModule } from './chat/chat.module';
 import { UsedProductModule } from './used_product/used-product.module';
+import { UsedProduct } from './used_product/entities/used-product.entity';
+import { PracticeRoom } from './practice_room/entities/practice-room.entity';
+import { PracticeRoomModule } from './practice_room/practice-room.module';
 import { EnsembleModule } from './ensemble/ensemble.module';
 import { RecruitEnsemble } from './ensemble/entities/recruit-ensemble.entity';
 import { SessionEnsemble } from './ensemble/entities/session-ensemble.entity';
@@ -68,6 +71,7 @@ import { LocationModule } from './map/location.module';
     VideoInsertModule,
     ChatModule,
     UsedProductModule,
+    PracticeRoomModule,
     EnsembleModule,
     LocationModule,
   ],

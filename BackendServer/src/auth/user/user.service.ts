@@ -1,4 +1,3 @@
-
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -13,35 +12,21 @@ export class UserService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-
-  async createUser(dto: CreateUserDto): Promise<Omit<User, 'password' | 'hashedRefreshToken'>> {
-    // 1. 아이디 중복 확인 추가 👍 
-    const existingUserById = await this.userRepo.findOneBy({ id: dto.id });
-    if (existingUserById) {
-      throw new ConflictException('이미 존재하는 아이디입니다.');
-    }
-    
-    // 2. 이메일 중복 확인도 추가 👍 to동주님
-    const existingUserByEmail = await this.userRepo.findOne({
-      where: { email: dto.email },
-    });
-    if (existingUserByEmail) {
-      throw new ConflictException('이미 사용 중인 이메일입니다.');
-    }
   async findById(id: string): Promise<User | null> {
     return this.userRepository.findOneBy({ id });
   }
 
-
   async findByUsername(username: string): Promise<User | null> {
     return this.userRepository.findOneBy({ username });
   }
-  
+
   async findByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOneBy({ email });
   }
 
-  async createUser(createUserDto: CreateUserDto): Promise<Omit<User, 'password' | 'hashedRefreshToken'>> {
+  async createUser(
+    createUserDto: CreateUserDto,
+  ): Promise<Omit<User, 'password' | 'hashedRefreshToken'>> {
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
     const newUser = this.userRepository.create({
       ...createUserDto,
@@ -53,7 +38,10 @@ export class UserService {
     return result;
   }
 
-  async findByProviderId(provider: string, providerId: string): Promise<User | null> {
+  async findByProviderId(
+    provider: string,
+    providerId: string,
+  ): Promise<User | null> {
     return this.userRepository.findOne({
       where: { provider, providerId },
     });
@@ -75,7 +63,10 @@ export class UserService {
     return this.userRepository.save(newUser);
   }
 
-  async updatePassword(userId: string, newHashedPassword: string): Promise<void> {
+  async updatePassword(
+    userId: string,
+    newHashedPassword: string,
+  ): Promise<void> {
     const user = await this.userRepository.findOneBy({ id: userId });
     if (!user) {
       throw new NotFoundException('사용자를 찾을 수 없습니다.');
@@ -84,7 +75,10 @@ export class UserService {
     await this.userRepository.save(user);
   }
 
-  async setCurrentRefreshToken(userId: string, refreshToken: string | null): Promise<void> {
+  async setCurrentRefreshToken(
+    userId: string,
+    refreshToken: string | null,
+  ): Promise<void> {
     await this.userRepository.update(userId, {
       hashedRefreshToken: refreshToken,
     });

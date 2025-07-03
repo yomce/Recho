@@ -2,7 +2,11 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../stores/authStore"; // Zustand 스토어 import
-import { jwtDecode } from "jwt-decode";
+import { jwtDecode, type JwtPayload } from "jwt-decode";
+
+interface CustomJwtPayload extends JwtPayload {
+  userId: number;
+}
 
 const MainPage: React.FC = () => {
   const navigate = useNavigate();
@@ -18,6 +22,7 @@ const MainPage: React.FC = () => {
     navigate("/"); // 로그아웃 후 메인 페이지로 리프레시
   };
 
+  const accessToken = localStorage.getItem("accessToken");
   /**
    * 페이지 이동 함수들
    */
@@ -26,19 +31,19 @@ const MainPage: React.FC = () => {
   const handleGoToUsedProducts = () => navigate("/used-products");
   const handleGoToEnsemble = () => navigate("/ensembles");
   const handleCreateVideo = () => {
+    // RN의 비디오 편집 컴포넌트로 전환
     const message = {
+      // RN에게 넘길 정보
       type: "CREATE_VIDEO",
+      token: accessToken,
     };
-
     // React Native WebView 환경인지 확인, postMessage를 호출
     if (window.ReactNativeWebView) {
       window.ReactNativeWebView.postMessage(JSON.stringify(message));
       console.log("Sent message to React Native: CREATE_VIDEO");
     } else {
-      console.log(
-        "ReactNativeWebView is not available. Are you running in a standard browser?"
-      );
-      // 웹 브라우저 환경일 때의 대체 동작 (예: 알림)
+      // 웹 브라우저 환경일 때의 대체 동작
+      // 나중에 버튼을 없애는 쪽으로 바꾸는 게 좋을 듯??
       alert("비디오 생성은 앱에서만 가능합니다.");
     }
   };
@@ -48,7 +53,7 @@ const MainPage: React.FC = () => {
     const token = localStorage.getItem("accessToken");
     if (token) {
       try {
-        const decodedToken = jwtDecode<JwtPayload>(token);
+        const decodedToken = jwtDecode<CustomJwtPayload>(token);
         const userId = decodedToken.userId;
         navigate(`/users/${userId}`);
       } catch (error) {

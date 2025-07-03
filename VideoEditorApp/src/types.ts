@@ -60,10 +60,10 @@ export interface SingleEditorHandles {
 export type RootStackParamList = {
   Home: undefined; // 파라미터 없음
   Camera: undefined;
-  VideoEdit: { videos: MediaItem[] }; // MediaItem 배열을 파라미터로 받음
+  VideoEdit: { videos?: MediaItem[]; parentVideoId?: string }; // MediaItem 배열 또는 parentVideoId를 파라미터로 받음
   MediaLibrary: undefined;
   FFmpegTest: undefined;
-  Web: undefined;
+  Web: { url?: string } | undefined;
   SideBySide: undefined; // 향후 사용될 수 있는 라우트
   VideoPreview: undefined;
   NewVideoTest: undefined;

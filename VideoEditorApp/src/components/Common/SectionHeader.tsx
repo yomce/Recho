@@ -19,7 +19,7 @@ const HeaderContainer = styled.View<Pick<Props, 'containerStyle'>>`
 const TitleText = styled.Text<Pick<Props, 'titleStyle'>>`
   font-size: 20px;
   font-weight: bold;
-  color: #3498db; /* Default color for section titles */
+  color: #000; /* Default color for section titles */
   text-align: center; /* Center align the title text */
 `;
 
@@ -28,7 +28,11 @@ const TitleText = styled.Text<Pick<Props, 'titleStyle'>>`
  * It uses styled-components for its styling and allows for additional customization
  * via `containerStyle` and `titleStyle` props.
  */
-const SectionHeader: React.FC<Props> = ({ title, containerStyle, titleStyle }) => {
+const SectionHeader: React.FC<Props> = ({
+  title,
+  containerStyle,
+  titleStyle,
+}) => {
   return (
     <HeaderContainer style={containerStyle}>
       <TitleText style={titleStyle}>{title}</TitleText>

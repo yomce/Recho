@@ -18,7 +18,6 @@ import { SessionEnsemble } from './ensemble/entities/session-ensemble.entity';
 import { ApplyEnsemble } from './ensemble/entities/apply-ensemble.entity';
 import { MailerModule } from '@nestjs-modules/mailer';
 
-
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -37,14 +36,14 @@ import { MailerModule } from '@nestjs-modules/mailer';
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: true,
         logging: true,
-        dropSchema: true,
+        dropSchema: false,
         timezone: 'UTC',
       }),
     }),
 
     MailerModule.forRootAsync({
       imports: [ConfigModule], // ConfigModule을 의존성으로 포함
-      inject: [ConfigService],  // ConfigService를 주입받음
+      inject: [ConfigService], // ConfigService를 주입받음
       useFactory: async (configService: ConfigService) => ({
         transport: {
           host: configService.get<string>('MAIL_HOST'),

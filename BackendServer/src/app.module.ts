@@ -21,6 +21,7 @@ import { EnsembleModule } from './ensemble/ensemble.module';
 
 import { MailerModule } from '@nestjs-modules/mailer';
 import { LocationModule } from './map/location.module';
+import { ApplicationModule } from './application/application.module';
 
 @Module({
   imports: [
@@ -74,6 +75,7 @@ import { LocationModule } from './map/location.module';
     PracticeRoomModule,
     EnsembleModule,
     LocationModule,
+    ApplicationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

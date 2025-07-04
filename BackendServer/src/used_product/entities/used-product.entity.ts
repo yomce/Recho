@@ -29,7 +29,7 @@ export class UsedProduct {
   productId: number;
 
   @Column()
-  userId: string;
+  username: string;
 
   @Column()
   title: string;

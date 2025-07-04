@@ -5,7 +5,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import axiosInstance from '@/services/axiosInstance';
 import axios from 'axios';
-import type { SessionEnsemble, RecruitEnsemble } from './types';
+import type { SessionEnsemble, RecruitEnsemble, ApplicationEnsemble } from './types';
 import { SessionDetail } from './components/SessionDetail';
 
 // 목록 페이지에서 사용했던 타입과 텍스트 매핑 객체를 가져옵니다.
@@ -20,11 +20,13 @@ const RecruitEnsembleDetailPage: React.FC = () => {
 
   const [sessionList, setSessionList] = useState<SessionEnsemble[] | null>(null);
   const [ensemble, setEnsemble] = useState<RecruitEnsemble | null>(null);
+  const [applicationList, setApplicationList] = useState<ApplicationEnsemble[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isApplied, setIsApplied] = useState(false);
 
   // 현재 로그인한 사용자가 게시글 작성자인지 확인하는 변수
-  const isOwner = ensemble && user && ensemble.userId === user.username;
+  const isOwner = ensemble && user && ensemble.username === user.username;
 
   useEffect(() => {
     if (!id) {
@@ -56,6 +58,33 @@ const RecruitEnsembleDetailPage: React.FC = () => {
     fetchEnsembleDetail();
   }, [id]);
 
+  useEffect(() => {
+    const fetchSessionDetail = async () => {
+      try {
+        if (ensemble) {
+          const response = await axiosInstance.get<ApplicationEnsemble[]>(`application/${ensemble.postId}`)
+          setApplicationList(response.data);
+        }
+      } catch (err) {
+        if (axios.isAxiosError(err) && err.response?.status === 404) {
+          setError('지원자 정보를 찾을 수 없습니다.');
+        } else {
+          setError('지원자 정보를 불러오는 데 실패했습니다.');
+        }
+      }
+    }
+
+    fetchSessionDetail();
+  }, [ensemble])
+
+  useEffect(() => {
+    if (applicationList) {
+      setIsApplied(applicationList.some((app) => app.username === user?.username));
+    } else {
+      setIsApplied(false);
+    }
+  }, [applicationList, user])
+
   const handleEdit = () => {
     navigate(`/ensembles/edit/${id}`);
   };
@@ -67,7 +96,6 @@ const RecruitEnsembleDetailPage: React.FC = () => {
         alert('모집 공고가 성공적으로 삭제되었습니다.');
         navigate('/ensembles'); // 목록 페이지로 이동
       } catch (err) {
-        // ... (에러 처리 로직)
         setError('공고 삭제 중 오류가 발생했습니다.');
       }
     }
@@ -99,7 +127,7 @@ const RecruitEnsembleDetailPage: React.FC = () => {
           </span>
         </div>
         <div className="text-sm text-gray-500 mt-2 flex justify-between">
-          <span>작성자: {ensemble.userId}</span>
+          <span>작성자: {ensemble.username}</span>
           <span>등록일: {new Date(ensemble.createdAt).toLocaleDateString()} (조회수: {ensemble.viewCount})</span>
         </div>
       </header>
@@ -120,11 +148,20 @@ const RecruitEnsembleDetailPage: React.FC = () => {
         </pre>
       </div>
 
-      {sessionList?.map((item, index) => 
-        <SessionDetail
-          key={index}
-          item={item}
-        />
+      {applicationList && sessionList?.map((item, index) => {
+        const matchingApplication = applicationList.filter(
+          (app) => app.sessionEnsemble.sessionId === item.sessionId
+        );
+
+        return (
+          <SessionDetail
+            key={index}
+            item={item}
+            ensemble={ensemble}
+            applicationEnsembleList={matchingApplication}
+            isApplied={isApplied}
+          />
+        )}
       )}
 
       {/* --- 버튼 섹션 --- */}

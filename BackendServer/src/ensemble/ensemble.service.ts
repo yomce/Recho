@@ -10,7 +10,7 @@ import {
 } from './entities/recruit-ensemble.entity';
 import { In, Repository } from 'typeorm';
 import { SessionEnsemble } from './session/entities/session-ensemble.entity';
-import { ApplyEnsemble } from './entities/apply-ensemble.entity';
+import { ApplyEnsemble } from '../application/entities/apply-ensemble.entity';
 import { PaginatedRecruitEnsembleResponse } from './dto/paginated-recruit-ensemble.response.dto';
 import { CreateRecruitEnsembleDto } from './dto/create-recruit-ensemble.dto';
 import { UpdateRecruitEnsembleDto } from './dto/update-recruit-ensemble.dto';
@@ -243,7 +243,6 @@ export class EnsembleService {
 
       // 6. 최신 상태의 데이터를 다시 조회하여 반환합니다.
       return this.detailEnsemble(postId);
-
     } catch (err) {
       // 에러 발생 시 모든 변경사항을 롤백합니다.
       await queryRunner.rollbackTransaction();

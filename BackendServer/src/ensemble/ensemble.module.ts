@@ -4,7 +4,7 @@ import { EnsembleService } from './ensemble.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RecruitEnsemble } from './entities/recruit-ensemble.entity';
 import { SessionEnsemble } from './session/entities/session-ensemble.entity';
-import { ApplyEnsemble } from './entities/apply-ensemble.entity';
+import { ApplyEnsemble } from '../application/entities/apply-ensemble.entity';
 
 @Module({
   imports: [

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { TRADE_TYPE, type UsedProductForm, type UsedProduct } from '../../types/product';
-import { ProductForm } from '../../components/ProductForm'; // 재사용 폼 컴포넌트 import
+import { ProductForm } from '../../components/layout/pages/usedProduct/ProductForm'; // 재사용 폼 컴포넌트 import
 import { useAuthStore } from '@/stores/authStore';
 import axiosInstance from '@/services/axiosInstance';
 import { useLocationStore } from '@/components/map/store/useLocationStore';

@@ -88,7 +88,7 @@ export class UsedProductService {
       region_level_2: locationEntity.region_level2, // 임시 데이터
       address: locationEntity.address,
     };
-    */
+    */   
 
     const newProduct = this.usedProductRepo.create({
       ...restOfDto,

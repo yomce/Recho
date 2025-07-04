@@ -2,6 +2,7 @@ import {
     Body,
     Controller,
     Delete,
+    ForbiddenException,
     Get,
     HttpCode,
     Logger,
@@ -10,6 +11,8 @@ import {
     Patch,
     Post,
     Query,
+    Req,
+    UseGuards,
 } from '@nestjs/common';
 
 import { CreatePracticeRoomDto } from './dto/create-practice-room.dto';
@@ -18,7 +21,8 @@ import { PracticeRoom } from './entities/practice-room.entity';
 import { PracticeRoomService } from './practice-room.service';
 import { PaginationQueryPracticeRoomDto } from './dto/pagination-query-practice-room.dto'
 import { PaginatedPracticeRoomResponse } from './dto/paginated-practice-room.response.dto';
-
+import { Request } from 'express';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('practice-room')
 export class PracticeRoomController {
@@ -40,12 +44,18 @@ export class PracticeRoomController {
   }
 
   @Post()
+  @UseGuards(AuthGuard('jwt'))
   async enrollPracticeRoom(
     @Body() CreatePracticeRoomDto: CreatePracticeRoomDto,
+    @Req() req: Request,
   ): Promise<PracticeRoom> {
-    this.logger.log(`Enrolling a new practice room: ${CreatePracticeRoomDto.title}`);
-  return await this.practiceRoomService.enrollPracticeRoom(
-    CreatePracticeRoomDto,
+    if(!req.user || !req.user.id){
+      this.logger.log(`Enrolling a new practice room: ${CreatePracticeRoomDto.title}`);
+      throw new ForbiddenException ('사용자 인증 정보를 찾을 수 없습니다.');
+    };
+    const userId = req.user.id;
+    return await this.practiceRoomService.enrollPracticeRoom(
+      CreatePracticeRoomDto, userId
     );
   }
 

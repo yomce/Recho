@@ -3,13 +3,11 @@ import {
     CreateDateColumn, 
     Entity,
     PrimaryGeneratedColumn,
+    ManyToOne,
+    JoinColumn,
 } from 'typeorm';
 
-export interface Location {
-    location_id: number;
-    region_level_1: string;
-    region_level_2: string;
-}
+import { Location } from 'src/map/entities/location.entity';
 
 @Entity({ name: 'practice_rooms' })
 export class PracticeRoom {
@@ -17,7 +15,7 @@ export class PracticeRoom {
     postId: number;
 
     @Column()
-    userId: number;
+    userId: string;
 
     @Column()
     title: string;
@@ -28,8 +26,12 @@ export class PracticeRoom {
     @CreateDateColumn()
     createdAt: Date;
 
-    @Column({ type: 'jsonb' })
+    @ManyToOne(() => Location, { eager: true })
+    @JoinColumn({ name: 'locationId' })
     location: Location;
+
+    @Column()
+    locationId: number;
 
     @Column({ default: 0 })
     viewCount: number;

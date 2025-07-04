@@ -103,7 +103,8 @@ const PracticeRoomPage: React.FC = () => {
                         <span className="date text-footnote text-brand-text-disabled ml-auto">{new Date(post.createdAt).toLocaleDateString()}</span>
                       </div>
                       <div className="location text-caption text-brand-gray mb-2">
-                        {post.location.regionLevel1} {post.location.regionLevel2}
+                        {post.location?.address}
+                        {post.location?.regionLevel1} {post.location?.regionLevel2}
                       </div>
                     </div>
                   </a>

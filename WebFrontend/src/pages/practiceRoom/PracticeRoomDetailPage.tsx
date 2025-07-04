@@ -75,6 +75,11 @@ const PracticeRoomDetailPage: React.FC = () =>
       }
     }
 
+    // 예시: 연습실 상세 정보에서 위도/경도 정보가 있을 때
+    const practiceRoom = post; // 연습실 정보 객체
+    const lat = practiceRoom?.location?.lat ?? 37.5665; // 기본값(서울)
+    const lng = practiceRoom?.location?.lng ?? 126.9780;
+
     return(
       <div className='centered-card-container'>
         <div className='bg-white rounded-[20px] shadow-lg p-8 w-full max-w-xl flex flex-col items-center'>
@@ -109,6 +114,7 @@ const PracticeRoomDetailPage: React.FC = () =>
             <button
               type="button"
               className='bg-brand-blue text-white text-button py-2 px-6 rounded-[10px] shadow hover:bg-blue-500 transition'
+              onClick={() => window.open(`/map-view?lat=${lat}&lng=${lng}`, "_blank")}
             >
               지도에서 보기
             </button>

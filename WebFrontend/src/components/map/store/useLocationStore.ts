@@ -5,7 +5,7 @@ import { create } from 'zustand';
 
 export interface Location {
   place_name: string;
-  address_name: string;
+  address: string;
   road_address_name: string;
   x: string;    // longitude
   y: string;    // latitude

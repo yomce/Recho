@@ -1,38 +1,39 @@
-// src/pages/CreateRecruitEnsemblePage.tsx
+// src/pages/UpdateRecruitEnsemblePage.tsx (새로 생성)
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from '@/services/axiosInstance';
 import { useAuthStore } from '@/stores/authStore';
-// 1. 공통 폼과 관련 타입들을 components 폴더에서 가져옵니다.
 import { EnsembleForm, type RecruitEnsembleFormState, SKILL_LEVEL } from '@/pages/ensemble/components/EnsembleForm';
-import axios from 'axios';
 import type { SessionEnsembleFormState } from './components/SessionForm';
+import type { RecruitEnsemble } from './types';
 
-// 서버에 전송할 데이터 타입 (userId 포함)
-interface CreateSessionEnsemblePayload {
+// API 응답 타입 (상세 페이지와 동일)
+interface UpdateSessionEnsemblePayload {
+  sessionId: number;
   instrument: string;
   recruitCount: number;
 }
 
-interface CreateRecruitEnsemblePayload {
+interface UpdateRecruitEnsemblePayload {
   title: string;
   content: string;
   eventDate: Date;
   skillLevel: SKILL_LEVEL;
   locationId: number;
   totalRecruitCnt: number;
-  sessionList: CreateSessionEnsemblePayload[];
+  sessionList: UpdateSessionEnsemblePayload[];
 }
 
-const CreateRecruitEnsemblePage: React.FC = () => {
+const UpdateRecruitEnsemblePage: React.FC = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const { user } = useAuthStore();
 
-  // 2. 폼 상태 타입으로 EnsembleFormState를 사용합니다.
   const [sessionFormList, setSessionForm] = useState<SessionEnsembleFormState[]>([{
-      instrument: '',
-      recruitCount: '',
+    sessionId: '',
+    instrument: '',
+    recruitCount: '',
   }])
 
   const [form, setForm] = useState<RecruitEnsembleFormState>({
@@ -45,19 +46,57 @@ const CreateRecruitEnsemblePage: React.FC = () => {
     sessionEnsemble: sessionFormList,
   });
 
-  useEffect(() => {
-    if (!user) {
-      alert('로그인이 필요합니다.');
-      navigate('/login');
-    }
-  }, [user, navigate]);
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    const fetchEnsemble = async () => {
+      setLoading(true);
+      try {
+        const response = await axiosInstance.get<RecruitEnsemble>(`ensembles/${id}`);
+        const ensemble = response.data;
+
+        // --- 작성자 본인 확인 ---
+        if (user?.username !== ensemble.userId) {
+          alert('수정 권한이 없습니다.');
+          navigate(`/ensembles/${id}`);
+          return;
+        }
+
+        // --- 폼 상태 설정 ---
+        // eventDate는 'YYYY-MM-DD' 형식으로 변환해야 <input type="date">에 표시됩니다.
+        const formattedEventDate = new Date(ensemble.eventDate).toISOString().split('T')[0];
+
+        console.log(ensemble);
+        const newSessionForm : SessionEnsembleFormState[] = ensemble.sessionEnsemble.map(item => ({
+          sessionId: String(item.sessionId),
+          instrument: item.instrument,
+          recruitCount: String(item.recruitCount),
+        }))
+        setSessionForm(newSessionForm)
+        setForm({
+          title: ensemble.title,
+          content: ensemble.content,
+          eventDate: formattedEventDate,
+          skillLevel: ensemble.skillLevel,
+          locationId: String(ensemble.locationId),
+          totalRecruitCnt: String(ensemble.totalRecruitCnt),
+          sessionEnsemble: newSessionForm
+        });
+
+      } catch (err) {
+        setError('게시글 정보를 불러오는 데 실패했습니다.');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEnsemble();
+  }, [id, user, navigate]);
+
   const handleRecruitChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    // skillLevel 값은 숫자로 변환하여 상태에 저장합니다.
+    // skillLevel은 숫자로 변환
     const processedValue = name === 'skillLevel' ? Number(value) : value;
     setForm(prev => ({ ...prev, [name]: processedValue }));
   };
@@ -95,21 +134,18 @@ const CreateRecruitEnsemblePage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!user) {
-      setError('인증 정보가 없습니다. 다시 로그인해주세요.');
-      return;
-    }
     setLoading(true);
     setError(null);
 
     try {
-      // payload 생성
-      const sessionListPayLoad: CreateSessionEnsemblePayload[] = sessionFormList.map((item) => ({
+      // payload 생성 (Create 페이지와 유사하나, userId는 보내지 않음)
+      const sessionListPayLoad: UpdateSessionEnsemblePayload[] = sessionFormList.map((item) => ({
+        sessionId: Number(item.sessionId),
         instrument: item.instrument,
         recruitCount: Number(item.recruitCount),
       }))
 
-      const payload: CreateRecruitEnsemblePayload = {
+      const payload: UpdateRecruitEnsemblePayload = {
         title: form.title,
         content: form.content,
         eventDate: new Date(form.eventDate),
@@ -119,43 +155,33 @@ const CreateRecruitEnsemblePage: React.FC = () => {
         sessionList: sessionListPayLoad,
       };
 
-      console.log(payload)
+      console.log('patch');
+      console.log(payload);
 
-      const response = await axiosInstance.post('ensembles', payload);
-      alert('모집 공고가 성공적으로 등록되었습니다!');
-      navigate(`/ensembles/${response.data.postId}`);
+      // PATCH 메서드로 수정 요청
+      await axiosInstance.patch(`ensembles/${id}`, payload);
+      alert('모집 공고가 성공적으로 수정되었습니다!');
+      navigate(`/ensembles/${id}`);
 
     } catch (err) {
-        if (axios.isAxiosError(err)) {
-            const messages = err.response?.data?.message;
-            setError(Array.isArray(messages) ? messages.join('\n') : messages || err.message || '등록 중 오류가 발생했습니다.');
-        } else if (err instanceof Error) {
-            setError(err.message);
-        } else {
-            setError('예상치 못한 오류가 발생했습니다.');
-        }
+      setError('수정 중 오류가 발생했습니다.');
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  if (!user) {
-    return <div className="text-center mt-10">로그인 페이지로 이동 중...</div>;
-  }
-
   return (
     <div className="max-w-3xl mx-auto my-8 p-10 bg-white rounded-lg shadow-xl">
-      <h2 className="text-center mt-0 mb-8 text-2xl font-bold text-gray-800">합주단원 모집 공고 등록</h2>
-      
-      {/* 3. 복잡한 폼 UI 대신 EnsembleForm 컴포넌트를 사용합니다. */}
+      <h2 className="text-center mt-0 mb-8 text-2xl font-bold text-gray-800">모집 공고 수정</h2>
       <EnsembleForm
         formState={form}
         onFormChange={handleRecruitChange}
         onFormSubmit={handleSubmit}
         isLoading={loading}
         errorMessage={error}
-        submitButtonText="모집 공고 등록하기"
-        loadingButtonText="등록 중..."
+        submitButtonText="수정 완료"
+        loadingButtonText="수정 중..."
         sessionFormList={sessionFormList}
         onSessionFormListChange={handleSessionChange}
         onSessionFormAdd={handleSessionAdd}
@@ -165,4 +191,4 @@ const CreateRecruitEnsemblePage: React.FC = () => {
   );
 };
 
-export default CreateRecruitEnsemblePage;
+export default UpdateRecruitEnsemblePage;

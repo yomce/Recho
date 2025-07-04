@@ -96,7 +96,7 @@ export class UsedProductController {
 
   @Patch(':id')
   @UseGuards(AuthGuard('jwt'))
-  async pathProduct(
+  async patchProduct(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateUsedProductDto: UpdateUsedProductDto,
     @Req() req: Request,
@@ -112,7 +112,7 @@ export class UsedProductController {
       `Received patch request for product ID: ${id} from user ID: ${userId}`,
     );
 
-    return this.usedProductService.pathProduct(
+    return this.usedProductService.patchProduct(
       id,
       updateUsedProductDto,
       userId,

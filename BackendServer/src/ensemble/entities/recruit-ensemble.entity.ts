@@ -4,8 +4,10 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { SessionEnsemble } from '../session/entities/session-ensemble.entity';
 
 export enum SKILL_LEVEL {
   BEGINNER,
@@ -44,13 +46,10 @@ export class RecruitEnsemble {
   locationId: number;
 
   @Column()
-  instrument_category_id: number;
-
-  @Column()
-  total_recruit_cnt: number;
+  totalRecruitCnt: number;
 
   @Column({ default: RECRUIT_STATUS.RECRUITING })
-  recruit_status: RECRUIT_STATUS;
+  recruitStatus: RECRUIT_STATUS;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -58,6 +57,9 @@ export class RecruitEnsemble {
   @Column({ default: 0 })
   viewCount: number;
 
-  // @Column()
-  // roomId: number;
+  @OneToMany(
+    () => SessionEnsemble,
+    (sessionEnsemble) => sessionEnsemble.recruitEnsemble,
+  )
+  sessionEnsemble: SessionEnsemble[];
 }

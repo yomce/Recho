@@ -1,7 +1,7 @@
 import { Type } from 'class-transformer';
 import { IsDate, IsInt, IsOptional, Max, Min } from 'class-validator';
 
-export class PaginationQueryEnsembleDto {
+export class PaginationQueryRecruitEnsembleDto {
   // 기본값은 DTO가 아닌 사용하는 곳(Controller)에서 설정하는 것이 더 명확합니다.
   @IsOptional()
   @Type(() => Number)

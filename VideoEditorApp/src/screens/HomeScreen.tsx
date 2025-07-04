@@ -8,6 +8,8 @@ import {
   useMicrophonePermission,
 } from 'react-native-vision-camera';
 import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { jwtDecode } from 'jwt-decode';
 
 import { RootStackParamList } from '../types'; // RootStackParamList 임포트
 import CommonButton from '../components/Common/CommonButton'; // CommonButton 임포트 (수정됨)
@@ -16,7 +18,7 @@ import SectionHeader from '../components/Common/SectionHeader'; // SectionHeader
 // Styled Components 정의
 const ScreenContainer = styled(SafeAreaView)`
   flex: 1;
-  background-color: #34495e;
+  background-color: #f3f4f6;
 `;
 
 const ContentScrollView = styled.ScrollView`
@@ -27,14 +29,14 @@ const ContentScrollView = styled.ScrollView`
 const TitleText = styled.Text`
   font-size: 28px;
   font-weight: bold;
-  color: #ecf0f1;
+  color: #000;
   text-align: center;
   margin-bottom: 10px;
 `;
 
 const SubtitleText = styled.Text`
   font-size: 16px;
-  color: #bdc3c7;
+  color: #000;
   text-align: center;
   margin-bottom: 30px;
 `;
@@ -45,9 +47,7 @@ const SectionContainer = styled.View`
 
 // CommonButton을 확장하여 MainFeatureButton 정의
 const MainFeatureButton = styled(CommonButton)`
-  background-color: #2c3e50; /* Darker background */
-  border-width: 1px;
-  border-color: #34495e;
+  background-color: #f3f4f6; /* Darker background */
 `;
 
 // CommonButton을 확장하여 DevFeatureButton 정의
@@ -57,14 +57,14 @@ const DevFeatureButton = styled(CommonButton)`
 
 // 버튼 텍스트 스타일 (CommonButton의 children으로 사용될 styled.Text)
 const ButtonTextStyled = styled.Text`
-  color: #ecf0f1;
+  color: #333;
   font-size: 16px;
   font-weight: bold;
   text-align: center;
 `;
 
 const InfoSectionContainer = styled.View`
-  background-color: #2c3e50;
+  background-color: #fff;
   padding: 20px;
   border-radius: 10px;
   margin-top: 20px;
@@ -80,13 +80,16 @@ const InfoTitle = styled.Text`
 `;
 
 const InfoText = styled.Text`
-  color: #bdc3c7;
+  color: #000;
   font-size: 14px;
   line-height: 20px;
   margin-bottom: 8px;
   text-align: center;
 `;
 
+interface CustomJwtPayload {
+  userId: number;
+}
 
 /**
  * HomeScreen 컴포넌트는 앱의 시작 화면으로, 주요 기능 및 정보 섹션을 표시합니다.
@@ -95,8 +98,14 @@ const InfoText = styled.Text`
  */
 const HomeScreen: React.FC = () => {
   // 카메라 및 마이크 권한 상태와 요청 훅
-  const { hasPermission: hasCameraPermission, requestPermission: requestCameraPermission } = useCameraPermission();
-  const { hasPermission: hasMicrophonePermission, requestPermission: requestMicrophonePermission } = useMicrophonePermission();
+  const {
+    hasPermission: hasCameraPermission,
+    requestPermission: requestCameraPermission,
+  } = useCameraPermission();
+  const {
+    hasPermission: hasMicrophonePermission,
+    requestPermission: requestMicrophonePermission,
+  } = useMicrophonePermission();
 
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
@@ -126,7 +135,12 @@ const HomeScreen: React.FC = () => {
     ]);
 
     // Promise.all의 결과를 평탄화하고 모든 권한이 'granted'인지 확인
-    const allGranted = results.flat().every(result => result === RESULTS.GRANTED || typeof result === 'boolean' && result);
+    const allGranted = results
+      .flat()
+      .every(
+        result =>
+          result === RESULTS.GRANTED || (typeof result === 'boolean' && result),
+      );
 
     if (!allGranted) {
       Alert.alert(
@@ -149,37 +163,78 @@ const HomeScreen: React.FC = () => {
   return (
     <ScreenContainer>
       <ContentScrollView contentInsetAdjustmentBehavior="automatic">
-        <TitleText>🎬 비디오 편집 앱</TitleText>
+        <TitleText>Recho</TitleText>
         <SubtitleText>통합된 비디오 편집 솔루션</SubtitleText>
 
         <SectionContainer>
-          <SectionHeader title="📱 메인 기능" />
+          <SectionHeader title="메인 기능" />
 
-          <MainFeatureButton onPress={() => navigation.navigate('MediaLibrary')}>
-            <ButtonTextStyled>파일에서 비디오 선택</ButtonTextStyled> {/* children으로 텍스트 전달 */}
+          <MainFeatureButton
+            onPress={() => navigation.navigate('MediaLibrary')}
+          >
+            <ButtonTextStyled>파일에서 비디오 선택</ButtonTextStyled>{' '}
+            {/* children으로 텍스트 전달 */}
           </MainFeatureButton>
 
-          <MainFeatureButton onPress={() => navigation.navigate('NewVideoTest')}>
-            <ButtonTextStyled>🎤 합주 녹화 (카메라 + 비디오)</ButtonTextStyled> {/* children으로 텍스트 전달 */}
+          <MainFeatureButton
+            onPress={() => navigation.navigate('NewVideoTest')}
+          >
+            <ButtonTextStyled>합주 녹화 (카메라 + 비디오)</ButtonTextStyled>{' '}
+            {/* children으로 텍스트 전달 */}
           </MainFeatureButton>
         </SectionContainer>
 
         <SectionContainer>
-          <SectionHeader title="🛠️ 개발 및 테스트" />
+          <SectionHeader title="개발 및 테스트" />
           <DevFeatureButton onPress={() => navigation.navigate('FFmpegTest')}>
-            <ButtonTextStyled>FFmpeg 테스트</ButtonTextStyled> {/* children으로 텍스트 전달 */}
+            <ButtonTextStyled>FFmpeg 테스트</ButtonTextStyled>{' '}
+            {/* children으로 텍스트 전달 */}
+          </DevFeatureButton>
+          <DevFeatureButton
+            onPress={async () => {
+              const token = await AsyncStorage.getItem('accessToken');
+              if (token) {
+                const decodedToken = jwtDecode<CustomJwtPayload>(token);
+                const userId = decodedToken.userId;
+                // 뒤로가기 제한
+                navigation.reset({
+                  index: 0,
+                  routes: [
+                    {
+                      name: 'Web',
+                      params: {
+                        url: `http://localhost:5173/users/${userId}`,
+                      },
+                    },
+                  ],
+                });
+              } else {
+                // 토큰이 없으면 로그인 페이지로 이동
+                navigation.reset({
+                  index: 0,
+                  routes: [
+                    {
+                      name: 'Web',
+                      params: {
+                        url: 'http://localhost:5173/login',
+                      },
+                    },
+                  ],
+                });
+              }
+            }}
+          >
+            <ButtonTextStyled>웹뷰 테스트</ButtonTextStyled>
           </DevFeatureButton>
         </SectionContainer>
 
         <InfoSectionContainer>
-          <InfoTitle>ℹ️ 앱 정보</InfoTitle>
+          <InfoTitle>앱 정보</InfoTitle>
           <InfoText>
             이 앱은 기존의 iOSTestApp과 new_video_test 프로젝트를 통합한
             것입니다.
           </InfoText>
-          <InfoText>
-            각 버튼을 눌러서 원하는 기능을 테스트해보세요.
-          </InfoText>
+          <InfoText>각 버튼을 눌러서 원하는 기능을 테스트해보세요.</InfoText>
         </InfoSectionContainer>
       </ContentScrollView>
     </ScreenContainer>

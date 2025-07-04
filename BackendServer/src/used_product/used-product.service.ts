@@ -9,6 +9,7 @@ import { UsedProduct, STATUS as Status } from './entities/used-product.entity';
 import { CreateUsedProductDto } from './dto/create-used-product.dto';
 import { UpdateUsedProductDto } from './dto/update-used-product.dto';
 import { PaginatedUsedProductResponse } from './dto/paginated-used-product.response.dto';
+import { Location } from 'src/map/entities/location.entity';
 
 @Injectable()
 export class UsedProductService {
@@ -16,8 +17,8 @@ export class UsedProductService {
     @InjectRepository(UsedProduct)
     private readonly usedProductRepo: Repository<UsedProduct>,
     // TODO: 실제 프로젝트에서는 Location 엔티티의 Repository를 주입받아야 합니다.
-    // @InjectRepository(Location)
-    // private readonly locationRepo: Repository<Location>,
+    @InjectRepository(Location)
+    private readonly locationRepo: Repository<Location>,
   ) {}
 
   async findUsedProductWithPagination(
@@ -73,17 +74,26 @@ export class UsedProductService {
     //   throw new NotFoundException(`Location with ID #${locationId} not found.`);
     // }
 
+    // 실제로 locationRepo를 사용해 ID로 지역 정보를 조회
+    const locationEntity = await this.locationRepo.findOneBy({ locationId: Number(locationId) });
+
+    if (!locationEntity) {
+      throw new NotFoundException(`Location with ID #${locationId} not found.`);
+    }
+    /*
     // 임시로 location 객체를 생성합니다. (실제로는 위 주석처럼 DB에서 조회)
     const locationDataForDb = {
-      location_id: locationId,
-      region_level_1: '경기도', // 임시 데이터
-      region_level_2: '용인시', // 임시 데이터
+      location_id: locationEntity.locationId,
+      region_level_1: locationEntity.region_level1, // 임시 데이터
+      region_level_2: locationEntity.region_level2, // 임시 데이터
+      address: locationEntity.address,
     };
+    */
 
     const newProduct = this.usedProductRepo.create({
       ...restOfDto,
-      location: locationDataForDb, // DB에 저장할 객체
-      userId: userId, //
+      locationId: locationEntity.locationId,
+      userId: userId,
       status: Status.FOR_SALE,
       viewCount: 0,
     });
@@ -110,7 +120,7 @@ export class UsedProductService {
     }
   }
 
-  async pathProduct(
+  async patchProduct(
     id: number,
     updateDto: UpdateUsedProductDto,
     username: string,

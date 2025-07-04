@@ -62,3 +62,12 @@ credentials.json
 *.sqlite
 *.sqlite3
 database.yml
+
+# Ignored Markdown files
+CHANGELOG_FROM_DEV.md
+PROMPT_FOR_SUCCESSOR.md
+IMPLEMENTATION_REPORT.md
+GEMINI.md
+IMPLEMENTATION_MILESTONE.md
+DEPLOYMENT-SIMPLE.md
+DEPLOYMENT.md

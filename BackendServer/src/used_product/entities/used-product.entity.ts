@@ -5,7 +5,10 @@ import {
   CreateDateColumn,
   Entity,
   PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
+import { Location } from 'src/map/entities/location.entity';
 
 // 👇 STATUS Enum에 문자열 값을 할당합니다.
 export enum STATUS {
@@ -18,12 +21,6 @@ export enum STATUS {
 export enum TRADE_TYPE {
   IN_PERSON,
   DELIVERY,
-}
-
-export interface Location {
-  location_id: number;
-  region_level_1: string;
-  region_level_2: string;
 }
 
 @Entity({ name: 'used_products' })
@@ -56,8 +53,12 @@ export class UsedProduct {
   @CreateDateColumn()
   createdAt: Date;
 
-  @Column({ type: 'jsonb' })
+  @ManyToOne(() => Location, { eager: true })
+  @JoinColumn({ name: 'locationId' })
   location: Location;
+
+  @Column()
+  locationId: number;
 
   @Column({
     type: 'enum',

@@ -19,13 +19,12 @@ interface RecruitEnsemble {
 
   // 상태 및 숫자 정보
   skillLevel: number;         // 0 (BEGINNER), 1 (INTERMEDIATE) 등
-  recruit_status: number;   // 0 (모집중) 등
-  total_recruit_cnt: number;
+  recruitStatus: number;   // 0 (모집중) 등
+  totalRecruitCnt: number;
   viewCount: number;
   
   // 다른 테이블과의 관계 ID
   locationId: number;
-  instrument_category_id: number;
 }
 
 // 페이지네이션 커서 타입
@@ -69,8 +68,6 @@ const RecruitEnsembleListPage: React.FC = () => {
         { params }
       );
 
-      console.log(response);
-
       const { data, nextCursor: newCursor, hasNextPage: newHasNextPage } = response.data;
 
       setItems(prev => (isInitialFetch ? data : [...prev, ...data]));
@@ -100,7 +97,7 @@ const RecruitEnsembleListPage: React.FC = () => {
       <header className="flex justify-between items-center mb-8">
         <h2 className="m-0 text-3xl font-bold text-left">합주단원 모집</h2>
         { user && <Link 
-          to="/ensemble/create" // 등록 페이지 경로 변경
+          to="/ensembles/create" // 등록 페이지 경로 변경
           className="inline-block py-2.5 px-5 text-base font-semibold text-white bg-blue-500 rounded-md no-underline text-center transition-colors hover:bg-blue-700"
         >
           모집 공고 등록하기
@@ -128,7 +125,6 @@ const RecruitEnsembleListPage: React.FC = () => {
                 <h3 className="text-lg font-bold mb-2 text-blue-700 truncate">{item.title}</h3>
                 <div className="text-sm text-gray-600 space-y-1 mt-2">
                   {/* --- 수정: ID를 텍스트로 변환하여 표시 --- */}
-                  <p><strong>악기:</strong> {item.instrument_category_id || '정보 없음'}</p>
                   <p><strong>지역:</strong> {item.locationId || '정보 없음'}</p>
                   <p><strong>요구 실력:</strong> {item.skillLevel || '정보 없음'}</p>
                   <p><strong>연주 일자:</strong> {new Date(item.eventDate).toLocaleDateString()}</p>

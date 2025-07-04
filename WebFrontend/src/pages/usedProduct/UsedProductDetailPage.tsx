@@ -134,7 +134,8 @@ const UsedProductDetailPage: React.FC = () => {
           <div className="my-4 text-base text-gray-600 leading-relaxed">
             <p className="my-2"><strong>판매자:</strong> {product.userId}</p>
             <p className="my-2"><strong>거래 방식:</strong> {TRADE_TYPE_TEXT[product.tradeType]}</p>
-            <p className="my-2"><strong>거래 지역:</strong> {product.location.regionLevel1} {product.location.regionLevel2}</p>
+            {/* <p className="my-2"><strong>거래 지역:</strong> {product.location.regionLevel1} {product.location.regionLevel2}</p> */}
+            <p className="my-2"><strong>거래 지역:</strong> {product.location?.address}</p>
             <p className="my-2"><strong>등록일:</strong> {new Date(product.createdAt).toLocaleDateString()}</p>
           </div>
 
@@ -156,19 +157,18 @@ const UsedProductDetailPage: React.FC = () => {
             
             {/* TODO: 현재 로그인한 사용자가 판매자일 경우에만 보이도록 처리 */}
             <div className="flex gap-2">
-              
-              {isOwner && <button
+              <button
                 onClick={handleEdit}
-                className="py-3 px-6 rounded-md font-semibold text-white bg-blue-500 cursor-pointer transition-colors hover:bg-blue-700"
+                className="py-2 px-5 rounded-md font-semibold text-white bg-blue-500 cursor-pointer transition-colors hover:bg-blue-700"
               >
                 수정
-              </button> }
-              {isOwner && <button
+              </button>
+              <button
                 onClick={handleDelete}
-                className="py-3 px-6 rounded-md font-semibold text-white bg-red-600 cursor-pointer transition-colors hover:bg-red-700"
+                className="py-2 px-5 rounded-md font-semibold text-white bg-red-600 cursor-pointer transition-colors hover:bg-red-700"
               >
                 삭제
-              </button> }
+              </button>
             </div>
           </div>
         </div>

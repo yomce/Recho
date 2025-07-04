@@ -5,6 +5,8 @@ import { TRADE_TYPE, type UsedProductForm, type CreateUsedProductPayload } from 
 import { ProductForm } from '../../components/ProductForm';
 import { useAuthStore } from '../../stores/authStore'; // Zustand 스토어 import
 import axiosInstance from '@/services/axiosInstance';
+import { useLocationStore } from '@/components/map/store/useLocationStore';
+import { saveLocationToDB } from '@/components/map/LocationSaveHandler';
 
 const CreateUsedProductPage: React.FC = () => {
   const navigate = useNavigate();
@@ -15,8 +17,10 @@ const CreateUsedProductPage: React.FC = () => {
     price: '',
     categoryId: '1',
     tradeType: TRADE_TYPE.IN_PERSON,
-    locationId: '1001',
+    locationId: '',
   });
+
+  const location = useLocationStore((state) => state.location);
 
   useEffect(() => {
     if (!user) {
@@ -44,9 +48,17 @@ const CreateUsedProductPage: React.FC = () => {
       setError('인증 정보가 없습니다. 다시 로그인해주세요.');
       return;
     }
+    if (!location) {
+      setError('지역을 선택해주세요.');
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
+      // 1. locationId 먼저 저장
+      const locationId = await saveLocationToDB(location);
+
+      // 2. 게시글 저장
       const priceAsNumber = parseInt(form.price, 10);
       if (isNaN(priceAsNumber) || priceAsNumber < 0) throw new Error('가격은 0 이상의 숫자로 입력해야 합니다.');
 
@@ -56,7 +68,7 @@ const CreateUsedProductPage: React.FC = () => {
         price: priceAsNumber,
         categoryId: parseInt(form.categoryId, 10),
         tradeType: form.tradeType,
-        locationId: form.locationId,
+        locationId: String(locationId),
       };
 
       const response = await axiosInstance.post('used-products', payload);

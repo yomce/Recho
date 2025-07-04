@@ -13,6 +13,7 @@ export interface Location {
   locationId: string;
   regionLevel1: string;
   regionLevel2: string;
+  address: string;
 }
 
 /**

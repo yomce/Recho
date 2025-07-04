@@ -13,16 +13,16 @@ export class VideoInsertController {
   constructor(private readonly videoInsertService: VideoInsertService) {}
 
   // 1. Pre-signed URL 생성 요청을 처리하는 엔드포인트 (POST)
-  @Post('upload-url')
-  async getUploadUrl(@Body() getUploadUrlDto: GetUploadUrlDto) {
-    return await this.videoInsertService.getPresignedUrl(
+  @Post('upload-urls')
+  async getUploadUrls(@Body() getUploadUrlDto: GetUploadUrlDto) {
+    return await this.videoInsertService.getUploadUrls(
       getUploadUrlDto.fileType,
     );
   }
 
   // 2. S3 업로드 완료 후 DB에 영상 메타데이터 저장 (POST)
   @Post('complete')
-  saveVideoMeta(@Body() saveVideoMetaDto: SaveVideoMetaDto) {
-    return this.videoInsertService.saveVideoMeta(saveVideoMetaDto);
+  saveFinalVideoMeta(@Body() saveVideoMetaDto: SaveVideoMetaDto) {
+    return this.videoInsertService.saveFinalVideoMeta(saveVideoMetaDto);
   }
 }

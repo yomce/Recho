@@ -1,4 +1,3 @@
-
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -20,12 +19,14 @@ export class UserService {
   async findByUsername(username: string): Promise<User | null> {
     return this.userRepository.findOneBy({ username });
   }
-  
+
   async findByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOneBy({ email });
   }
 
-  async createUser(createUserDto: CreateUserDto): Promise<Omit<User, 'password' | 'hashedRefreshToken'>> {
+  async createUser(
+    createUserDto: CreateUserDto,
+  ): Promise<Omit<User, 'password' | 'hashedRefreshToken'>> {
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
     const newUser = this.userRepository.create({
       ...createUserDto,
@@ -37,7 +38,10 @@ export class UserService {
     return result;
   }
 
-  async findByProviderId(provider: string, providerId: string): Promise<User | null> {
+  async findByProviderId(
+    provider: string,
+    providerId: string,
+  ): Promise<User | null> {
     return this.userRepository.findOne({
       where: { provider, providerId },
     });
@@ -59,7 +63,10 @@ export class UserService {
     return this.userRepository.save(newUser);
   }
 
-  async updatePassword(userId: string, newHashedPassword: string): Promise<void> {
+  async updatePassword(
+    userId: string,
+    newHashedPassword: string,
+  ): Promise<void> {
     const user = await this.userRepository.findOneBy({ id: userId });
     if (!user) {
       throw new NotFoundException('사용자를 찾을 수 없습니다.');
@@ -68,7 +75,10 @@ export class UserService {
     await this.userRepository.save(user);
   }
 
-  async setCurrentRefreshToken(userId: string, refreshToken: string | null): Promise<void> {
+  async setCurrentRefreshToken(
+    userId: string,
+    refreshToken: string | null,
+  ): Promise<void> {
     await this.userRepository.update(userId, {
       hashedRefreshToken: refreshToken,
     });

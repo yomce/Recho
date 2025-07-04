@@ -7,3 +7,4 @@ import { ApplyEnsemble } from 'src/application/entities/apply-ensemble.entity';
     TypeOrmModule.forFeature([ApplyEnsemble])
   ]
 })
+export class ApplicationModule {}

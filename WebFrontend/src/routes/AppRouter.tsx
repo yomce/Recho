@@ -1,3 +1,4 @@
+// src/routes/AppRouter.tsx
 import React from "react";
 import {
   BrowserRouter as Router,
@@ -29,46 +30,41 @@ import PracticeRoomDetailPage from "@/pages/practiceRoom/PracticeRoomDetailPage"
 import UpdatePracticeRoomPage from "@/pages/practiceRoom/UpdatePracticeRoomPage";
 import UpdateRecruitEnsemblePage from '@/pages/ensemble/UpdateRecruitEnsemblePage';
 import MapViewPage from "@/pages/map/MapViewPage";
+import ProtectedRoute from "./ProtectedRoute";
 
 const AppRouter: React.FC = () => {
   return (
     <Router>
       <Routes>
-        {/* 기본 경로를 로그인 페이지로 설정 */}
+        {/* 인증이 필요 없는 페이지들 */}
         <Route path="/" element={<Navigate to="/main" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/chat" element={<ChatListPage />} />
-        <Route path="/chat/:roomId" element={<ChatRoomPage />} />
-        <Route path="/users/:userId" element={<UserPage />} />
-        <Route path="/main" element={<MainPage />} />
-        <Route path="/vinyl" element={<VinylPage />} />
-        <Route path="/used-products" element={<UsedProductPage />} />
-        <Route path="/style-guide" element={<StyleGuideTest />} />
-        <Route
-          path="/used-products/create"
-          element={<CreateUsedProductPage />}
-        />
-        <Route path="/used-products/:id" element={<UsedProductDetailPage />} />
-        <Route
-          path="/used-products/edit/:id"
-          element={<UpdateUsedProductPage />}
-        />
-        <Route path="/ensembles" element={<RecruitEnsembleListPage />} />
-        <Route
-          path="/ensembles/create"
-          element={<CreateRecruitEnsemblePage />}
-        />
-        <Route path="/ensembles/:id" element={<RecruitEnsembleDetailPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
-        <Route path="/practice-room" element={<PracticeRoomPage/>} />
-        <Route path="/practice-room/create" element={<CreatePracticeRoom />} />
-        <Route path="/practice-room/:id" element={<PracticeRoomDetailPage/>} />
-        <Route path="/practice-room/edit/:id" element={<UpdatePracticeRoomPage />} />
-        <Route path="/map-view" element={<MapViewPage />} />
-        <Route path="/ensembles/:id" element={<RecruitEnsembleDetailPage />} />
-        <Route path="/ensembles/edit/:id" element={<UpdateRecruitEnsemblePage />} />
+
+        {/* 인증이 필요한 페이지들 */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/chat" element={<ChatListPage />} />
+          <Route path="/chat/:roomId" element={<ChatRoomPage />} />
+          <Route path="/users/:userId" element={<UserPage />} />
+          <Route path="/main" element={<MainPage />} />
+          <Route path="/vinyl" element={<VinylPage />} />
+          <Route path="/used-products" element={<UsedProductPage />} />
+          <Route path="/used-products/create" element={<CreateUsedProductPage />} />
+          <Route path="/used-products/:id" element={<UsedProductDetailPage />} />
+          <Route path="/used-products/edit/:id" element={<UpdateUsedProductPage />} />
+          <Route path="/ensembles" element={<RecruitEnsembleListPage />} />
+          <Route path="/ensembles/create" element={<CreateRecruitEnsemblePage />} />
+          <Route path="/ensembles/edit/:id" element={<UpdateRecruitEnsemblePage />} />
+          <Route path="/ensembles/:id" element={<RecruitEnsembleDetailPage />} />
+          <Route path="/practice-room" element={<PracticeRoomPage />} />
+          <Route path="/practice-room/create" element={<CreatePracticeRoom />} />
+          <Route path="/practice-room/:id" element={<PracticeRoomDetailPage />} />
+          <Route path="/practice-room/edit/:id" element={<UpdatePracticeRoomPage />} />
+          <Route path="/map-view" element={<MapViewPage />} />
+          <Route path="/style-guide" element={<StyleGuideTest />} />
+        </Route>
       </Routes>
       <Navigation />
     </Router>

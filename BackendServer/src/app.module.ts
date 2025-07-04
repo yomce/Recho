@@ -4,6 +4,7 @@ import { Module } from '@nestjs/common';
 import { MulterModule } from '@nestjs/platform-express';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { VideosModule } from './videos/videos.module';
@@ -26,6 +27,7 @@ import { ApplicationModule } from './application/application.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     MulterModule,
+    ScheduleModule.forRoot(),
 
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],

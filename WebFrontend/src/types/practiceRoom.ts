@@ -2,12 +2,16 @@ export interface Location {
   locationId: string;
   regionLevel1: string;
   regionLevel2: string;
+  address: string;
+  lat: number;
+  lng: number;
 }
 
 // -- DB에 저장된 상품 데이터의 완전한 형태 -- 
 export interface PracticeRoom {
   readonly postId: number;
   readonly userId: number;
+  user_name: string;
   title: string;
   description: string;
   readonly createdAt: string;
@@ -17,7 +21,7 @@ export interface PracticeRoom {
 }
 
 // -- 합주실 등록 / 수정 폼에서 사용되는 데이터 형태 -- 
-export interface PracticeRoomForm {
+export interface PracticeRoomType {
   title: string;
   description: string;
   locationId: string;

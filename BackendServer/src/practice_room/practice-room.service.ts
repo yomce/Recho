@@ -5,6 +5,7 @@ import { PracticeRoom } from './entities/practice-room.entity';
 import { CreatePracticeRoomDto } from './dto/create-practice-room.dto';
 import { UpdatePracticeRoomDto } from './dto/update-practice-room.dto';
 import { PaginatedPracticeRoomResponse } from './dto/paginated-practice-room.response.dto';
+import { Location } from 'src/map/entities/location.entity';
 
 
 @Injectable()
@@ -13,6 +14,9 @@ export class PracticeRoomService{
     @InjectRepository(PracticeRoom)
     private readonly practiceRoomRepo:
     Repository<PracticeRoom>,
+
+    @InjectRepository(Location)
+    private readonly locationRepo: Repository<Location>,
   ) {}
 
   async findPracticeRoomWithPagination (
@@ -54,28 +58,32 @@ export class PracticeRoomService{
 
   async enrollPracticeRoom(
     createDto: CreatePracticeRoomDto,
+    userId: string,
   ): Promise<PracticeRoom> {
     const { locationId, ...restofDto } = createDto;
 
     // TODO: 실제 프로젝트에서는 주입받은 locationRepo를 사용해 ID로 지역 정보를 조회해야 합니다.
 
-    const locationDataForDb = {
-      location_id: locationId,
-      region_level_1: '경기도', // 임시 데이터
-      region_level_2: '용인시', // 임시 데이터
-    };
+    const locationEntity = await this.locationRepo.findOneBy({ locationId: Number(locationId) });
+
+    if (!locationEntity) {
+      throw new NotFoundException(`Location with ID #${locationId} not found.`);
+    }
 
     const newPracticeRoom = this.practiceRoomRepo.create({
       ...restofDto,
-      location: locationDataForDb,
-      userId: 1, // 실제 유저 ID를 사용해야 합니다
+      locationId: locationEntity.locationId,
+      userId: userId, // 실제 유저 ID를 사용해야 합니다
       viewCount: 0,
     })
     return await this.practiceRoomRepo.save(newPracticeRoom);
   }
 
   async detailPracticeRoom(id: number): Promise<PracticeRoom> {
-    const post = await this.practiceRoomRepo.findOneBy({ postId: id });
+    const post = await this.practiceRoomRepo.findOne({
+      where: { postId: id },
+      relations: ['location'], // ← location 조인!
+    });
     if (!post){
       throw new NotFoundException(`Post withID #${id} not found`)
     };

@@ -203,7 +203,7 @@ const HomeScreen: React.FC = () => {
                     {
                       name: 'Web',
                       params: {
-                        url: `http://localhost:5173/users/${userId}`,
+                        url: `http://localhost:5173/users/${userId}?token=${token}`,
                       },
                     },
                   ],

@@ -260,10 +260,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 272SA3Y293;
+				DEVELOPMENT_TEAM = 27N5BF296Q;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = VideoEditorApp/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -275,7 +275,7 @@
 					"-lc++",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.JungleTeam5.Recho;
-				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = "com.siwoolee.videoeditorapp-com.mogi.videoeditorapp-";
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.siwoolee.videoeditorapp;
 				PRODUCT_NAME = VideoEditorApp;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -290,9 +290,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 272SA3Y293;
+				DEVELOPMENT_TEAM = 27N5BF296Q;
 				INFOPLIST_FILE = VideoEditorApp/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -304,7 +304,7 @@
 					"-lc++",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.JungleTeam5.Recho;
-				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = "com.siwoolee.videoeditorapp-com.mogi.videoeditorapp-";
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.siwoolee.videoeditorapp;
 				PRODUCT_NAME = VideoEditorApp;
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";

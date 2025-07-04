@@ -91,4 +91,26 @@ export class AuthController {
     // 3. 액세스 토큰은 프론트엔드의 콜백 페이지로 리디렉션하며 전달합니다.
     res.redirect(`http://localhost:5173/auth/callback?token=${accessToken}`);
   }
+
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  async googleLogin() {
+    // Guard가 사용자를 구글 로그인 페이지로 리디렉션합니다.
+  }
+
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleLoginCallback(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    // 카카오 콜백과 로직이 완전히 동일합니다.
+    if (!req.user) {
+      throw new UnauthorizedException('구글 인증 정보가 없습니다.');
+    }
+    const user = req.user as User;
+    const { accessToken, refreshToken } = await this.authService.socialLogin(user);
+
+    res.cookie('refreshToken', refreshToken, { httpOnly: true, /*...*/ });
+    res.redirect(`http://localhost:5173/auth/callback?token=${accessToken}`);
+  }
+
+
 }

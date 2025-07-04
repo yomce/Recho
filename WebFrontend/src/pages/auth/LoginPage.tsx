@@ -161,12 +161,14 @@ const LoginPage: React.FC = () => {
 
               <div className="mt-6 grid grid-cols-2 gap-3">
                 <a
-                  href="#"
-                  className="inline-flex w-full justify-center rounded-[var(--radius-button)] border border-gray-300 bg-[var(--color-brand-default)] py-2 px-4 text-navigation font-medium text-[var(--color-brand-gray)] hover:bg-gray-50"
+                  href="http://localhost:3000/auth/google" // 백엔드의 구글 로그인 시작 API 주소
+                  className="inline-flex w-full justify-center rounded-[var(--radius-button)] border border-gray-300 bg-white py-2 px-4 text-navigation font-medium text-gray-500 hover:bg-gray-50"
                 >
-                  <svg className="mr-2 h-5 w-5" fill="currentColor" viewBox="0 0 24 24">...</svg>
-                  Google
-                </a>
+                <svg className="mr-3 h-5 w-5" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M6.29 18.25a.75.75 0 00.75.75h6a.75.75 0 00.75-.75v-3.25H6.29v3.25zM12.5 4.5h-5A3.5 3.5 0 004 8v5a3.5 3.5 0 003.5 3.5h5A3.5 3.5 0 0016 13V8a3.5 3.5 0 00-3.5-3.5z"></path>
+                </svg>
+                   Google
+               </a>
                 {/* [수정] GitHub -> Kakao 로그인 버튼 */}
                 <a
                   href="http://localhost:3000/auth/kakao" // 백엔드의 카카오 로그인 시작 API 주소

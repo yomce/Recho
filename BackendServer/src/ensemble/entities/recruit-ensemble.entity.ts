@@ -8,6 +8,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { SessionEnsemble } from '../session/entities/session-ensemble.entity';
+import { ApplierEnsemble } from 'src/application/entities/applier-ensemble.entity';
 
 export enum SKILL_LEVEL {
   BEGINNER,
@@ -62,4 +63,10 @@ export class RecruitEnsemble {
     (sessionEnsemble) => sessionEnsemble.recruitEnsemble,
   )
   sessionEnsemble: SessionEnsemble[];
+
+  @OneToMany(
+    () => ApplierEnsemble,
+    (applierEnsemble) => applierEnsemble.recruitEnsemble,
+  )
+  applierEnsemble: ApplierEnsemble[];
 }

@@ -8,9 +8,8 @@ import {
   RECRUIT_STATUS,
   RecruitEnsemble,
 } from './entities/recruit-ensemble.entity';
-import { In, Repository } from 'typeorm';
+import { DataSource, EntityManager, In, Repository } from 'typeorm';
 import { SessionEnsemble } from './session/entities/session-ensemble.entity';
-import { ApplyEnsemble } from '../application/entities/apply-ensemble.entity';
 import { PaginatedRecruitEnsembleResponse } from './dto/paginated-recruit-ensemble.response.dto';
 import { CreateRecruitEnsembleDto } from './dto/create-recruit-ensemble.dto';
 import { UpdateRecruitEnsembleDto } from './dto/update-recruit-ensemble.dto';
@@ -28,8 +27,7 @@ export class EnsembleService {
     @InjectRepository(SessionEnsemble)
     private readonly sessionEnsembleRepo: Repository<SessionEnsemble>,
 
-    @InjectRepository(ApplyEnsemble)
-    private readonly applyEnsembleRepo: Repository<ApplyEnsemble>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async findEnsembleWithPagination(
@@ -77,38 +75,40 @@ export class EnsembleService {
     createDto: CreateRecruitEnsembleDto,
     userId: string,
   ): Promise<RecruitEnsemble> {
-    const recruitEnsembleDto = createDto;
+    return this.dataSource.transaction(async (transactionalEntityManager) => {
+      const recruitEnsembleDto = createDto;
 
-    const newEnsemble = this.recruitEnsembleRepo.create({
-      ...recruitEnsembleDto,
-      userId: userId,
-      recruitStatus: RECRUIT_STATUS.RECRUITING,
-      viewCount: 0,
+      const newEnsemble = this.recruitEnsembleRepo.create({
+        ...recruitEnsembleDto,
+        userId: userId,
+        recruitStatus: RECRUIT_STATUS.RECRUITING,
+        viewCount: 0,
+      });
+
+      const savedEnsemble = await transactionalEntityManager.save(newEnsemble);
+      const postId = savedEnsemble.postId;
+
+      for (const itemDto of createDto.sessionList) {
+        await this.enrollSession(itemDto, postId, transactionalEntityManager);
+      }
+
+      return savedEnsemble;
     });
-
-    const savedEnsemble = await this.recruitEnsembleRepo.save(newEnsemble);
-    const postId = savedEnsemble.postId;
-
-    for (const itemDto of createDto.sessionList) {
-      await this.enrollSession(itemDto, postId);
-    }
-
-    return savedEnsemble;
   }
 
   async enrollSession(
     createDto: CreateSessionEnsembleDto,
     postId: number,
-  ): Promise<SessionEnsemble> {
+    manager: EntityManager,
+  ) {
     const sessionEnsembleDto = createDto;
 
-    const newSessionEnsemble = this.sessionEnsembleRepo.create({
+    const newSessionEnsemble = manager.create(SessionEnsemble, {
       ...sessionEnsembleDto,
       recruitEnsemble: { postId: postId },
       nowRecruitCount: 0,
     });
-
-    return this.sessionEnsembleRepo.save(newSessionEnsemble);
+    await manager.save(SessionEnsemble, newSessionEnsemble);
   }
 
   async detailEnsemble(id: number): Promise<RecruitEnsemble> {

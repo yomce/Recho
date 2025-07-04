@@ -1,9 +1,11 @@
+import { ApplierEnsemble } from 'src/application/entities/applier-ensemble.entity';
 import { RecruitEnsemble } from 'src/ensemble/entities/recruit-ensemble.entity';
 import {
   Column,
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
@@ -31,4 +33,10 @@ export class SessionEnsemble {
   )
   @JoinColumn({ name: 'postId' })
   recruitEnsemble: RecruitEnsemble;
+
+  @OneToMany(
+    () => ApplierEnsemble,
+    (applierEnsemble) => applierEnsemble.sessionEnsemble,
+  )
+  applierEnsemble: ApplierEnsemble[];
 }

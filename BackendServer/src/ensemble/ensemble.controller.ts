@@ -57,8 +57,6 @@ export class EnsembleController {
     }
     const userId = req.user.id;
 
-    console.log(createRecruitEnsembleDto);
-
     this.logger.log(`Enrolling a new post: ${createRecruitEnsembleDto.title}`);
     return await this.ensembleService.enrollEnsemble(
       createRecruitEnsembleDto,

@@ -114,7 +114,7 @@ export class EnsembleService {
   async detailEnsemble(id: number): Promise<RecruitEnsemble> {
     const ensemble = await this.recruitEnsembleRepo.findOne({
       where: { postId: id },
-      relations: ['sessionEnsemble'],
+      relations: ['sessionEnsemble', 'applierEnsemble'],
     });
     if (!ensemble) {
       throw new NotFoundException(`Ensemble with ID #${id} not found.`);
@@ -124,6 +124,16 @@ export class EnsembleService {
 
   async detailSession(id: number): Promise<SessionEnsemble> {
     const session = await this.sessionEnsembleRepo.findOneBy({
+      sessionId: id,
+    });
+    if (!session) {
+      throw new NotFoundException(`Ensemble with ID #${id} not found.`);
+    }
+    return session;
+  }
+
+  async detailSessionList(id: number): Promise<SessionEnsemble[]> {
+    const session = await this.sessionEnsembleRepo.findBy({
       sessionId: id,
     });
     if (!session) {

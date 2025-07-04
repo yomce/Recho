@@ -19,7 +19,7 @@ export enum APPLICATION_STATUS {
 @Entity({ name: 'applier_ensemble' })
 export class ApplierEnsemble {
   @PrimaryGeneratedColumn()
-  applierId: number;
+  applicationId: number;
 
   @ManyToOne(
     () => RecruitEnsemble,

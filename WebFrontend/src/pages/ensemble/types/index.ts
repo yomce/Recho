@@ -1,4 +1,3 @@
-import type { Session } from 'react-router-dom';
 import type { SKILL_LEVEL } from '../components/EnsembleForm';
 
 export enum APPLICATION_STATUS {
@@ -9,7 +8,7 @@ export enum APPLICATION_STATUS {
 }
 
 export interface ApplicationEnsemble {
-  applierId: number;
+  applicationId: number;
   recruitEnsemble: RecruitEnsemble;
   sessionEnsemble: SessionEnsemble;
   username: string;

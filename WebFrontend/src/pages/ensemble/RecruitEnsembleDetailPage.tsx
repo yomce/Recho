@@ -23,7 +23,7 @@ const RecruitEnsembleDetailPage: React.FC = () => {
   const [applicationList, setApplicationList] = useState<ApplicationEnsemble[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isApplied, setApplied] = useState(false);
+  const [isApplied, setIsApplied] = useState(false);
 
   // 현재 로그인한 사용자가 게시글 작성자인지 확인하는 변수
   const isOwner = ensemble && user && ensemble.userId === user.username;
@@ -76,6 +76,14 @@ const RecruitEnsembleDetailPage: React.FC = () => {
 
     fetchSessionDetail();
   }, [ensemble])
+
+  useEffect(() => {
+    if (applicationList) {
+      setIsApplied(applicationList.some((app) => app.username === user?.username));
+    } else {
+      setIsApplied(false);
+    }
+  }, [applicationList, user])
 
   const handleEdit = () => {
     navigate(`/ensembles/edit/${id}`);
@@ -151,6 +159,7 @@ const RecruitEnsembleDetailPage: React.FC = () => {
             item={item}
             postId={ensemble.postId}
             applicationEnsembleList={matchingApplication}
+            isApplied={isApplied}
           />
         )}
       )}

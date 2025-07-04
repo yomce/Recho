@@ -13,7 +13,7 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({ children, ...props }) => 
     <button
       {...props} // type, disabled, onClick 등 전달받은 모든 props를 적용
       className="flex w-full justify-center 
-      rounded-[var(--radius-button)] 
+      rounded-[var(--radius-card)] 
       border border-transparent 
       bg-[var(--color-brand-primary)] 
       py-2 px-4 text-button text-[var(--color-brand-inverse)] 

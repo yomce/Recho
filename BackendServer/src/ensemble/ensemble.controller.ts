@@ -55,12 +55,12 @@ export class EnsembleController {
       );
       throw new ForbiddenException('사용자 인증 정보가 없습니다.');
     }
-    const userId = req.user.id;
+    const username = req.user.id;
 
     this.logger.log(`Enrolling a new post: ${createRecruitEnsembleDto.title}`);
     return await this.ensembleService.enrollEnsemble(
       createRecruitEnsembleDto,
-      userId,
+      username,
     );
   }
 
@@ -85,12 +85,12 @@ export class EnsembleController {
       );
       throw new ForbiddenException('사용자 인증 정보가 없습니다.');
     }
-    const userId = req.user.id; // JwtStrategy에서 반환된 user.id 사용 가능
+    const username = req.user.id; // JwtStrategy에서 반환된 user.id 사용 가능
     this.logger.log(
-      `Received delete request for product ID: ${id} from user ID: ${userId}`,
+      `Received delete request for product ID: ${id} from user ID: ${username}`,
     );
 
-    await this.ensembleService.deleteEnsemble(id, userId);
+    await this.ensembleService.deleteEnsemble(id, username);
   }
 
   @Patch(':id')
@@ -106,15 +106,15 @@ export class EnsembleController {
       );
       throw new ForbiddenException('사용자 인증 정보가 없습니다.');
     }
-    const userId = req.user.id; // JwtStrategy에서 반환된 user.id 사용 가능
+    const username = req.user.id; // JwtStrategy에서 반환된 user.id 사용 가능
     this.logger.log(
-      `Received patch request for post ID: ${id} from user ID: ${userId}`,
+      `Received patch request for post ID: ${id} from user ID: ${username}`,
     );
 
     return this.ensembleService.patchEnsemble(
       id,
       updateRecruitEnsembleDto,
-      userId,
+      username,
     );
   }
 }

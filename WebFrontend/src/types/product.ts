@@ -21,7 +21,7 @@ export interface Location {
  */
 export interface UsedProduct {
   readonly productId: number;
-  readonly userId: string;
+  readonly username: string;
   title: string;
   description: string;
   price: number;

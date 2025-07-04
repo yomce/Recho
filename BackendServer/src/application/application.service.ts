@@ -51,7 +51,7 @@ export class ApplicationService {
     const recruitEnsemblePost =
       await this.recruitEnsemble.detailEnsemble(postId);
 
-    if (recruitEnsemblePost.userId === username) {
+    if (recruitEnsemblePost.username === username) {
       this.logger.error(
         'Authentication information missing from request user object.',
       );

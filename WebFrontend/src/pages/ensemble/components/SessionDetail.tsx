@@ -1,19 +1,23 @@
 import React, { useEffect, useMemo, useState } from "react";
-import type { ApplicationEnsemble, SessionEnsemble } from "../types";
+import type {
+  ApplicationEnsemble,
+  RecruitEnsemble,
+  SessionEnsemble,
+} from "../types";
 import axiosInstance from "@/services/axiosInstance";
 import axios from "axios";
 import { useAuthStore } from "@/stores/authStore";
 
 interface SessionDetailProps {
   item: SessionEnsemble;
-  postId: number;
+  ensemble: RecruitEnsemble;
   applicationEnsembleList: ApplicationEnsemble[];
   isApplied: boolean;
 }
 
 export const SessionDetail: React.FC<SessionDetailProps> = ({
   item,
-  postId,
+  ensemble,
   applicationEnsembleList,
   isApplied,
 }) => {
@@ -42,7 +46,9 @@ export const SessionDetail: React.FC<SessionDetailProps> = ({
     }
 
     try {
-      await axiosInstance.post(`application/${postId}/${item.sessionId}`);
+      await axiosInstance.post(
+        `application/${ensemble.postId}/${item.sessionId}`
+      );
       alert("모집 공고에 지원했습니다!");
     } catch (err) {
       if (axios.isAxiosError(err)) {
@@ -68,7 +74,7 @@ export const SessionDetail: React.FC<SessionDetailProps> = ({
 
     try {
       await axiosInstance.delete(
-        `application/${postId}/${item.sessionId}/${application?.applicationId}`
+        `application/${ensemble.postId}/${item.sessionId}/${application?.applicationId}`
       );
       alert("모집 공고 지원을 취소했습니다!");
     } catch (err) {
@@ -125,25 +131,27 @@ export const SessionDetail: React.FC<SessionDetailProps> = ({
       )}
 
       {/* --- 버튼 추가 부분 --- */}
-      <div className="flex justify-end">
-        {isApplied ? (
-          isIn ? (
+      {user?.username !== ensemble.username ? (
+        <div className="flex justify-end">
+          {isApplied ? (
+            isIn ? (
+              <button
+                onClick={handleCancel}
+                className="px-4 py-2 font-semibold text-white bg-red-500 rounded-md shadow-sm hover:bg-red-600"
+              >
+                지원 취소
+              </button>
+            ) : null
+          ) : (
             <button
-              onClick={handleCancel}
-              className="px-4 py-2 font-semibold text-white bg-red-500 rounded-md shadow-sm hover:bg-red-600"
+              onClick={handleApply}
+              className="px-4 py-2 font-semibold text-white bg-blue-500 rounded-md shadow-sm hover:bg-blue-600"
             >
-              지원 취소
+              지원하기
             </button>
-          ) : null
-        ) : (
-          <button
-            onClick={handleApply}
-            className="px-4 py-2 font-semibold text-white bg-blue-500 rounded-md shadow-sm hover:bg-blue-600"
-          >
-            지원하기
-          </button>
-        )}
-      </div>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 };

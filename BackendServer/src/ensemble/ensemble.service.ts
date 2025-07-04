@@ -73,14 +73,14 @@ export class EnsembleService {
 
   async enrollEnsemble(
     createDto: CreateRecruitEnsembleDto,
-    userId: string,
+    username: string,
   ): Promise<RecruitEnsemble> {
     return this.dataSource.transaction(async (transactionalEntityManager) => {
       const recruitEnsembleDto = createDto;
 
       const newEnsemble = this.recruitEnsembleRepo.create({
         ...recruitEnsembleDto,
-        userId: userId,
+        username: username,
         recruitStatus: RECRUIT_STATUS.RECRUITING,
         viewCount: 0,
       });
@@ -144,7 +144,7 @@ export class EnsembleService {
 
   async deleteEnsemble(id: number, username: string): Promise<void> {
     const ensemble = await this.detailEnsemble(id);
-    if (username !== ensemble?.userId) {
+    if (username !== ensemble?.username) {
       throw new ForbiddenException(`Unauthorized`);
     }
 
@@ -190,7 +190,7 @@ export class EnsembleService {
       if (!ensemble) {
         throw new NotFoundException(`Ensemble with ID #${postId} not found.`);
       }
-      if (username !== ensemble.userId) {
+      if (username !== ensemble.username) {
         throw new ForbiddenException(`Unauthorized`);
       }
 

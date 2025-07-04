@@ -27,7 +27,7 @@ export interface RecruitEnsemble {
   postId: number;
   title: string;
   content: string;
-  userId: string;
+  username: string;
   eventDate: string;
   skillLevel: SKILL_LEVEL;
   locationId: number;

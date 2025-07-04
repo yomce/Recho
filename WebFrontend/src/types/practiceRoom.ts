@@ -2,6 +2,9 @@ export interface Location {
   locationId: string;
   regionLevel1: string;
   regionLevel2: string;
+  address: string;
+  lat: number;
+  lng: number;
 }
 
 // -- DB에 저장된 상품 데이터의 완전한 형태 -- 

@@ -70,6 +70,7 @@ const LocationSearch = () => {
         region_level1: region.region_1depth_name,
         region_level2: region.region_2depth_name,
         region_level3: region.region_3depth_name,
+        address: location.address_name,
       });
     } catch (err) {
       console.error('역 지오코딩 실패:', err);
@@ -87,6 +88,7 @@ const LocationSearch = () => {
           className="flex-1 border border-brand-frame rounded-[10px] px-4 py-2 text-body focus:outline-brand-primary"
         />
         <button
+          type='button'
           onClick={handleSearch}
           className="bg-brand-blue text-white text-button px-4 py-2 rounded-[10px] hover:bg-blue-600 transition"
         >

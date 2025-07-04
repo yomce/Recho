@@ -24,6 +24,7 @@
     "ffmpeg-kit-react-native": "^6.0.2",
     "jwt-decode": "^4.0.0",
     "react": "19.1.0",
+    "react-hot-toast": "^2.5.2",
     "react-native": "0.80.0",
     "react-native-device-info": "^14.0.4",
     "react-native-fs": "^2.20.0",

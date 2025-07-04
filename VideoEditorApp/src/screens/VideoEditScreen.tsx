@@ -6,6 +6,7 @@
 // https://medium.com/@nooruddinlakhani/resolved-ffmpegkit-retirement-issue-in-react-native-a-complete-guide-0f54b113b390
 // 참고하여 해결하기
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components/native';
 import { SafeAreaView, Alert, Platform, TextStyle } from 'react-native';
@@ -13,18 +14,37 @@ import { CameraRoll } from '@react-native-camera-roll/camera-roll';
 import RNFS from 'react-native-fs';
 import { FFmpegKit, ReturnCode } from 'ffmpeg-kit-react-native';
 import Video, { OnLoadData } from 'react-native-video';
+import { RouteProp, useNavigation } from '@react-navigation/native';
+import axios from 'axios';
+import { StackNavigationProp } from '@react-navigation/stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { jwtDecode } from 'jwt-decode';
 
-import SingleVideoEditor from '../components/SingleVideoEditor'; // 리팩터링된 SingleVideoEditor 임포트
-import { generateCollageFilterComplex } from '../utils/ffmpegFilters'; // ffmpegFilters 유틸리티 임포트
+import SingleVideoEditor from '../components/SingleVideoEditor';
+import { generateCollageFilterComplex } from '../utils/ffmpegFilters';
 import {
-  VideoEditScreenRouteProp,
   TrimmerState,
   SingleEditorHandles,
   EQBand,
   EditData,
-} from '../types'; // 업데이트된 타입 임포트
-import CommonButton from '../components/Common/CommonButton'; // CommonButton 임포트 (수정됨)
-import SectionHeader from '../components/Common/SectionHeader'; // SectionHeader 임포트
+  MediaItem,
+  RootStackParamList,
+} from '../types';
+import CommonButton from '../components/Common/CommonButton';
+import SectionHeader from '../components/Common/SectionHeader';
+import axiosInstance from '../api/axiosInstance';
+
+// JWT 페이로드 타입 정의
+interface CustomJwtPayload {
+  userId: string;
+}
+
+// [수정] 타입을 로컬로 재정의하여 파일 동기화 문제 우회
+type LocalVideoEditParams = {
+  videos?: MediaItem[];
+  parentVideoId?: string;
+  total_slots?: number;
+};
 
 // 기본 EQ 밴드 설정
 const defaultEQBands: EQBand[] = [
@@ -34,9 +54,6 @@ const defaultEQBands: EQBand[] = [
   { id: 'band4', frequency: 4000, gain: 0 },
   { id: 'band5', frequency: 12000, gain: 0 },
 ];
-
-// 총 비디오 슬롯 개수
-const TOTAL_SLOTS = 6;
 
 // [추가] URI를 FFmpeg가 인식 가능한 순수 파일 경로로 변환하는 헬퍼 함수
 const cleanUri = (uri: string): string => {
@@ -98,48 +115,18 @@ const CreateCollageButton = styled(CommonButton)`
   background-color: #27ae60; /* 녹색으로 콜라주 생성 버튼 강조 */
 `;
 
-const ResultSection = styled.View`
-  margin-horizontal: 15px;
-  margin-vertical: 20px;
-  padding: 15px;
-  background-color: #34495e;
-  border-radius: 15px;
-  border-width: 2px;
-  border-color: #27ae60; /* 녹색 테두리로 결과 섹션 강조 */
-`;
-
-const ResultSectionTitle: TextStyle = {
-  color: '#27ae60' /* 녹색 제목 */,
-  marginBottom: 15,
-  textAlign: 'center',
-  fontSize: 18,
-  fontWeight: 'bold',
-};
-
-const ResultVideoPlayer = styled(Video)`
-  width: 100%;
-  height: 250px;
-  background-color: #000;
-  border-radius: 10px;
-  margin-bottom: 15px;
-`;
-
-const SaveResultButton = styled(CommonButton)`
-  background-color: #f39c12; /* 주황색으로 저장 버튼 강조 */
-  margin-bottom: 0; /* CommonButton의 기본 마진 오버라이드 */
-`;
-
-const VideoEditScreen: React.FC<{ route: VideoEditScreenRouteProp }> = ({
-  route,
-}) => {
-  const { videos = [] } = route.params ?? {};
+const VideoEditScreen: React.FC<{
+  route: RouteProp<{ VideoEdit: LocalVideoEditParams }, 'VideoEdit'>;
+}> = ({ route }) => {
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+  const { videos = [], total_slots = 1 } = route.params ?? {};
   const [trimmers, setTrimmers] = useState<TrimmerState[]>([]);
   const editorRefs = useRef<Record<string, SingleEditorHandles | null>>({});
-  const [isCreatingCollage, setIsCreatingCollage] = useState(false);
-  const [collagePath, setCollagePath] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    const initialTrimmers = Array.from({ length: TOTAL_SLOTS }, (_, i) => {
+    const initialTrimmers = Array.from({ length: total_slots }, (_, i) => {
       const video = videos[i] || null;
       return {
         id: `trimmer${i + 1}`,
@@ -158,7 +145,7 @@ const VideoEditScreen: React.FC<{ route: VideoEditScreenRouteProp }> = ({
       initialTrimmers.map(t => ({ id: t.id, hasVideo: !!t.sourceVideo })),
     );
     setTrimmers(initialTrimmers);
-  }, [videos]);
+  }, [videos, total_slots]);
 
   const handleTrimmerUpdate = (
     id: string,
@@ -202,20 +189,24 @@ const VideoEditScreen: React.FC<{ route: VideoEditScreenRouteProp }> = ({
     Object.values(editorRefs.current).forEach(ref => ref?.seekToStart());
   };
 
-  const createCollage = async () => {
+  const processVideoForUpload = async () => {
     const activeTrimmers = trimmers.filter(
       t => t.sourceVideo && t.duration > 0,
     );
     if (activeTrimmers.length === 0) {
-      Alert.alert('오류', '콜라주를 만들려면 하나 이상의 비디오가 필요합니다.');
+      Alert.alert('오류', '업로드할 비디오를 선택해주세요.');
       return;
     }
 
-    console.log('[VideoEditScreen] Starting collage creation...');
-    setIsCreatingCollage(true);
-    setCollagePath(null);
+    console.log(
+      '[VideoEditScreen] Starting video processing for upload (SKIPPING FFMPEG)...',
+    );
+    setIsProcessing(true);
 
     try {
+      // --- FFmpeg 처리 로직 임시 비활성화 (나중에 복구해야 할 코드) ---
+      /*
+      console.log('[VideoEditScreen] Starting collage creation...');
       const editData: EditData = {
         trimmers: activeTrimmers.map(t => ({
           startTime: t.startTime,
@@ -232,98 +223,161 @@ const VideoEditScreen: React.FC<{ route: VideoEditScreenRouteProp }> = ({
         })),
       };
 
-      console.log(
-        '[VideoEditScreen] Data for filter generation:',
-        JSON.stringify(editData, null, 2),
-      );
-
       const filterComplexArray = generateCollageFilterComplex(editData);
       const filterComplexString = filterComplexArray.join('; ');
 
-      // [수정] cleanUri를 사용하여 각 비디오의 경로를 정제
       const inputVideos = activeTrimmers.map(t => t.sourceVideo!);
       const inputCommands = inputVideos
         .map(v => `-i "${cleanUri(v.uri)}"`)
         .join(' ');
 
-      const outputPath = `${
+      const outputPath_original = `${
         RNFS.DocumentDirectoryPath
       }/collage_${Date.now()}.mp4`;
       const hasAudio = activeTrimmers.some(t => t.volume > 0);
       const audioMapCommand = hasAudio ? '-map "[a]"' : '';
 
-      // [수정] 안드로이드 인코더를 하드웨어 가속(h264_mediacodec)으로 변경하여 성능 향상
       const encoder =
         Platform.OS === 'ios'
           ? '-c:v h264_videotoolbox -b:v 2M'
           : '-c:v h264_mediacodec';
 
-      const command = `${inputCommands} -filter_complex "${filterComplexString}" -map "[v]" ${audioMapCommand} ${encoder} -preset fast -crf 28 -shortest "${outputPath}"`;
-      console.log('[VideoEditScreen] Final command to execute:', command);
-
+      const command = `${inputCommands} -filter_complex "${filterComplexString}" -map "[v]" ${audioMapCommand} ${encoder} -preset fast -crf 28 -shortest "${outputPath_original}"`;
+      
       const session = await FFmpegKit.execute(command);
       const returnCode = await session.getReturnCode();
 
-      if (ReturnCode.isSuccess(returnCode)) {
-        setCollagePath(outputPath);
-        Alert.alert('성공!', '비디오 콜라주가 성공적으로 생성되었습니다.');
-      } else {
+      if (!ReturnCode.isSuccess(returnCode)) {
         const errorLogs = await session.getLogsAsString();
         Alert.alert(
           '오류',
-          '콜라주 생성 중 오류가 발생했습니다. 콘솔 로그를 확인하세요.',
+          '비디오 처리 중 오류가 발생했습니다. 콘솔 로그를 확인하세요.',
         );
         console.error(
           '[VideoEditScreen] FFmpeg execution failed! Detailed logs:',
           errorLogs,
         );
+        setIsProcessing(false);
+        return; // FFmpeg 실패 시 함수 종료
+      }
+      
+      // FFmpeg 성공 시의 outputPath를 업로드에 사용해야 함
+      // const resultUriToUpload = outputPath_original;
+      */
+
+      // FFmpeg를 건너뛰고 원본 비디오를 직접 업로드/처리하는 로직
+      const getPresignedUrlAndUpload = async (video: any) => {
+        if (!video) {
+          Alert.alert('오류', '업로드할 비디오가 선택되지 않았습니다.');
+          return;
+        }
+        try {
+          setUploading(true);
+
+          // 1. Presigned URL 요청
+          const urlsResponse = await axiosInstance.post(
+            '/video-insert/upload-urls',
+            {
+              fileType: video.type,
+            },
+          );
+          const { videoUrl, thumbnailUrl, videoKey, thumbnailKey } =
+            urlsResponse.data;
+
+          // 2. S3로 파일 업로드 (fetch 사용)
+          console.log('Uploading original video to S3 using fetch...');
+          const uploadFile = async (url: string, file: any) => {
+            const response = await fetch(url, {
+              method: 'PUT',
+              headers: { 'Content-Type': file.type },
+              body: file,
+            });
+            if (!response.ok) {
+              const responseText = await response.text();
+              throw new Error(
+                `S3 Upload Failed: ${response.status} ${responseText}`,
+              );
+            }
+            return response;
+          };
+
+          // 비디오와 (임시)썸네일을 병렬로 업로드
+          await Promise.all([
+            uploadFile(videoUrl, video),
+            uploadFile(thumbnailUrl, video),
+          ]);
+          console.log('S3 Upload successful for video and thumbnail.');
+
+          // 3. 메타데이터 저장
+          console.log('Saving video metadata to DB...');
+
+          // --- 유저 ID 가져오기 ---
+          const token = await AsyncStorage.getItem('accessToken');
+          if (!token) {
+            Alert.alert(
+              '오류',
+              '로그인 정보가 없습니다. 업로드를 진행할 수 없습니다.',
+            );
+            return;
+          }
+          const decodedToken = jwtDecode<CustomJwtPayload>(token);
+          const userId = decodedToken.userId;
+          if (!userId) {
+            Alert.alert(
+              '오류',
+              '사용자 ID를 확인할 수 없습니다. 다시 로그인해주세요.',
+            );
+            return;
+          }
+          // --- 유저 ID 가져오기 끝 ---
+
+          await axiosInstance.post('/video-insert/complete', {
+            user_id: userId,
+            results_video_key: videoKey,
+            source_video_key: videoKey,
+            thumbnail_key: thumbnailKey,
+            parent_video_id: null,
+            depth: 1,
+          });
+          console.log('Metadata saved.');
+
+          Alert.alert('성공', '비디오가 성공적으로 업로드되었습니다.');
+
+          // 업로드 성공 후 WebScreen으로 돌아가면서 스택 초기화
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Web' }],
+          });
+        } catch (uploadError) {
+          console.error('Upload failed:', uploadError);
+          Alert.alert('오류', '업로드 중 오류가 발생했습니다.');
+        } finally {
+          setUploading(false);
+        }
+      };
+
+      // --- 테스트용 임시 로직: 원본 비디오를 바로 사용 ---
+      const firstVideo = activeTrimmers[0].sourceVideo;
+      const firstTrimmer = activeTrimmers[0];
+      if (firstVideo) {
+        // 비디오 업로드 및 메타데이터 저장
+        await getPresignedUrlAndUpload({
+          ...firstVideo,
+          uri: cleanUri(firstVideo.uri),
+          duration: firstTrimmer.duration, // 영상 길이 전달
+        });
       }
     } catch (error) {
-      Alert.alert('오류', '콜라주 생성 중 예외가 발생했습니다.');
-      console.error('Collage creation exception:', error);
+      console.error('[VideoEditScreen] Upload process failed:', error);
+      Alert.alert('오류', '업로드 과정에서 문제가 발생했습니다.');
     } finally {
-      setIsCreatingCollage(false);
-    }
-  };
-
-  const saveCollageToGallery = async () => {
-    if (!collagePath) {
-      Alert.alert(
-        '알림',
-        '저장할 콜라주가 없습니다. 먼저 콜라주를 생성해주세요.',
-      );
-      return;
-    }
-    try {
-      // [수정] 저장 경로를 file:// 접두사와 함께 전달해야 CameraRoll이 인식
-      await CameraRoll.save(`file://${collagePath}`, {
-        type: 'video',
-        album: 'VideoEditorApp',
-      });
-      Alert.alert('성공', '콜라주가 사진첩에 저장되었습니다!');
-    } catch (error) {
-      Alert.alert('오류', '사진첩 저장 중 오류가 발생했습니다.');
-      console.error('Saving to gallery failed:', error);
+      setIsProcessing(false);
     }
   };
 
   return (
     <ScreenContainer>
       <ContentScrollView contentInsetAdjustmentBehavior="automatic">
-        <SectionHeader title="6-Video Collage Editor" />
-
-        <GlobalActionsContainer>
-          <GlobalActionButton onPress={handleGlobalSeekToStart}>
-            <GlobalButtonText>위치 초기화</GlobalButtonText>
-          </GlobalActionButton>
-          <GlobalActionButton onPress={handleGlobalPlay}>
-            <GlobalButtonText>동시 재생</GlobalButtonText>
-          </GlobalActionButton>
-          <GlobalActionButton onPress={handleGlobalPause}>
-            <GlobalButtonText>동시 정지</GlobalButtonText>
-          </GlobalActionButton>
-        </GlobalActionsContainer>
-
         {trimmers.map(trimmerState => (
           <SingleVideoEditor
             key={trimmerState.id}
@@ -336,31 +390,26 @@ const VideoEditScreen: React.FC<{ route: VideoEditScreenRouteProp }> = ({
           />
         ))}
 
-        {collagePath && (
-          <ResultSection>
-            <SectionHeader
-              title="✨ 콜라주 결과"
-              titleStyle={ResultSectionTitle}
-            />
-            {/* [수정] file:// 접두사를 붙여 Video 컴포넌트가 인식하도록 함 */}
-            <ResultVideoPlayer
-              source={{ uri: `file://${collagePath}` }}
-              controls={true}
-              resizeMode="contain"
-            />
-            <SaveResultButton onPress={saveCollageToGallery}>
-              <GlobalButtonText>결과물 사진첩에 저장</GlobalButtonText>
-            </SaveResultButton>
-          </ResultSection>
-        )}
+        {/* 전역 재생 컨트롤러 */}
+        <GlobalActionsContainer>
+          <GlobalActionButton onPress={handleGlobalSeekToStart}>
+            <GlobalButtonText>위치 초기화</GlobalButtonText>
+          </GlobalActionButton>
+          <GlobalActionButton onPress={handleGlobalPlay}>
+            <GlobalButtonText>동시 재생</GlobalButtonText>
+          </GlobalActionButton>
+          <GlobalActionButton onPress={handleGlobalPause}>
+            <GlobalButtonText>동시 정지</GlobalButtonText>
+          </GlobalActionButton>
+        </GlobalActionsContainer>
 
         <CreateCollageSection>
           <CreateCollageButton
-            onPress={createCollage}
-            isLoading={isCreatingCollage}
-            disabled={isCreatingCollage}
+            onPress={processVideoForUpload}
+            isLoading={isProcessing}
+            disabled={isProcessing}
           >
-            <GlobalButtonText>콜라주 생성</GlobalButtonText>
+            <GlobalButtonText>편집 완료 및 업로드</GlobalButtonText>
           </CreateCollageButton>
         </CreateCollageSection>
       </ContentScrollView>

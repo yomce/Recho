@@ -155,8 +155,8 @@ const UsedProductDetailPage: React.FC = () => {
               목록으로
             </Link>
             
-            {/* TODO: 현재 로그인한 사용자가 판매자일 경우에만 보이도록 처리 */}
-            <div className="flex gap-2">
+            {
+              isOwner && <div className="flex gap-2">
               <button
                 onClick={handleEdit}
                 className="py-2 px-5 rounded-md font-semibold text-white bg-blue-500 cursor-pointer transition-colors hover:bg-blue-700"
@@ -170,6 +170,8 @@ const UsedProductDetailPage: React.FC = () => {
                 삭제
               </button>
             </div>
+            }
+            
           </div>
         </div>
       </div>

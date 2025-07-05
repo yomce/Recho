@@ -9,5 +9,6 @@ import { SessionEnsemble } from './session/entities/session-ensemble.entity';
   imports: [TypeOrmModule.forFeature([RecruitEnsemble, SessionEnsemble])],
   controllers: [EnsembleController],
   providers: [EnsembleService],
+  exports: [EnsembleService],
 })
 export class EnsembleModule {}

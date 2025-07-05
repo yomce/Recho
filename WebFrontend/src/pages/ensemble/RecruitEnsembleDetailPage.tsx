@@ -7,6 +7,7 @@ import axiosInstance from '@/services/axiosInstance';
 import axios from 'axios';
 import type { SessionEnsemble, RecruitEnsemble, ApplicationEnsemble } from './types';
 import { SessionDetail } from './components/SessionDetail';
+import useViewCounter from '@/hooks/useViewCounter';
 
 // 목록 페이지에서 사용했던 타입과 텍스트 매핑 객체를 가져옵니다.
 // 별도 types 파일로 분리하여 관리하는 것이 좋습니다.
@@ -17,6 +18,7 @@ const RecruitEnsembleDetailPage: React.FC = () => {
   // URL 파라미터에서 게시글 ID를 가져옵니다.
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  useViewCounter({ type: 'ensembles' });
 
   const [sessionList, setSessionList] = useState<SessionEnsemble[] | null>(null);
   const [ensemble, setEnsemble] = useState<RecruitEnsemble | null>(null);

@@ -164,4 +164,8 @@ export class UsedProductService {
     
     return results.map(row => row.locationId);
   }
+
+  async incrementViewCount(id: number): Promise<void> {
+    await this.usedProductRepo.increment({ productId: id }, 'viewCount', 1);
+  }
 }

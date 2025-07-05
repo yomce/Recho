@@ -106,4 +106,8 @@ export class PracticeRoomService{
     const updatedPost = this.practiceRoomRepo.merge(post, updateDto);
     return this.practiceRoomRepo.save(updatedPost);
   }
+
+  async incrementViewCount(id: number): Promise<void> {
+    await this.practiceRoomRepo.increment({ postId: id }, 'viewCount', 1);
+  }
 }

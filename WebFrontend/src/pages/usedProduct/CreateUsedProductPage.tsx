@@ -30,7 +30,7 @@ const CreateUsedProductPage: React.FC = () => {
     }
     setForm(prev => ({
       ...prev,
-      username: user?.username as string,
+      userId: user?.userId,
     }))
   }, [user, navigate]);
 

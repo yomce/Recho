@@ -35,7 +35,7 @@ const UsedProductDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const isOwner = (product && user && product.username === user.username)
+  const isOwner = (product && user && product.userId === user.userId)
 
   useEffect(() => {
     if (!id) {
@@ -132,7 +132,7 @@ const UsedProductDetailPage: React.FC = () => {
           </div>
 
           <div className="my-4 text-base text-gray-600 leading-relaxed">
-            <p className="my-2"><strong>판매자:</strong> {product.username}</p>
+            <p className="my-2"><strong>판매자:</strong> {product.userId}</p>
             <p className="my-2"><strong>거래 방식:</strong> {TRADE_TYPE_TEXT[product.tradeType]}</p>
             {/* <p className="my-2"><strong>거래 지역:</strong> {product.location.regionLevel1} {product.location.regionLevel2}</p> */}
             <p className="my-2"><strong>거래 지역:</strong> {product.location?.address}</p>
@@ -155,8 +155,8 @@ const UsedProductDetailPage: React.FC = () => {
               목록으로
             </Link>
             
-            {/* TODO: 현재 로그인한 사용자가 판매자일 경우에만 보이도록 처리 */}
-            <div className="flex gap-2">
+            {
+              isOwner && <div className="flex gap-2">
               <button
                 onClick={handleEdit}
                 className="py-2 px-5 rounded-md font-semibold text-white bg-blue-500 cursor-pointer transition-colors hover:bg-blue-700"
@@ -170,6 +170,8 @@ const UsedProductDetailPage: React.FC = () => {
                 삭제
               </button>
             </div>
+            }
+            
           </div>
         </div>
       </div>

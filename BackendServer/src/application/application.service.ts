@@ -46,12 +46,12 @@ export class ApplicationService {
   async enrollApplication(
     postId: number,
     sessionId: number,
-    username: string,
+    userId: string,
   ): Promise<ApplierEnsemble> {
     const recruitEnsemblePost =
       await this.recruitEnsemble.detailEnsemble(postId);
 
-    if (recruitEnsemblePost.username === username) {
+    if (recruitEnsemblePost.userId === userId) {
       this.logger.error(
         'Authentication information missing from request user object.',
       );
@@ -59,9 +59,7 @@ export class ApplicationService {
     }
 
     if (
-      recruitEnsemblePost.applierEnsemble.some(
-        (app) => app.username === username,
-      )
+      recruitEnsemblePost.applierEnsemble.some((app) => app.userId === userId)
     ) {
       this.logger.error(
         'Authentication information missing from request user object.',
@@ -72,7 +70,7 @@ export class ApplicationService {
     const newApplier = this.applyEnsembleRepo.create({
       recruitEnsemble: { postId: postId },
       sessionEnsemble: { sessionId: sessionId },
-      username: username,
+      userId: userId,
       applicationStatus: APPLICATION_STATUS.WAITING,
     });
 
@@ -81,10 +79,10 @@ export class ApplicationService {
 
   async deleteApplication(
     applicationId: number,
-    username: string,
+    userId: string,
   ): Promise<void> {
     const application = await this.detailApplication(applicationId);
-    if (username !== application?.username) {
+    if (userId !== application?.userId) {
       throw new ForbiddenException(`Unauthorized`);
     }
 

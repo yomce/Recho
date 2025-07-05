@@ -29,7 +29,7 @@ export class RecruitEnsemble {
   postId: number;
 
   @Column()
-  username: string;
+  userId: string;
 
   @Column()
   title: string;

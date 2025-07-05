@@ -56,12 +56,12 @@ export class UsedProductController {
       );
       throw new ForbiddenException('사용자 인증 정보가 없습니다.');
     }
-    const username = req.user.id;
+    const userId = req.user.id;
 
     this.logger.log(`Enrolling a new product: ${createUsedProductDto.title}`);
     return await this.usedProductService.enrollUsedProduct(
       createUsedProductDto,
-      username,
+      userId,
     );
   }
 
@@ -86,12 +86,12 @@ export class UsedProductController {
       );
       throw new ForbiddenException('사용자 인증 정보가 없습니다.');
     }
-    const username = req.user.id; // JwtStrategy에서 반환된 user.id 사용 가능
+    const userId = req.user.id; // JwtStrategy에서 반환된 user.id 사용 가능
     this.logger.log(
-      `Received delete request for product ID: ${id} from user ID: ${username}`,
+      `Received delete request for product ID: ${id} from user ID: ${userId}`,
     );
 
-    await this.usedProductService.deleteProduct(id, username);
+    await this.usedProductService.deleteProduct(id, userId);
   }
 
   @Patch(':id')
@@ -107,15 +107,15 @@ export class UsedProductController {
       );
       throw new ForbiddenException('사용자 인증 정보가 없습니다.');
     }
-    const username = req.user.id; // JwtStrategy에서 반환된 user.id 사용 가능
+    const userId = req.user.id; // JwtStrategy에서 반환된 user.id 사용 가능
     this.logger.log(
-      `Received patch request for product ID: ${id} from user ID: ${username}`,
+      `Received patch request for product ID: ${id} from user ID: ${userId}`,
     );
 
     return this.usedProductService.patchProduct(
       id,
       updateUsedProductDto,
-      username,
+      userId,
     );
   }
 } 

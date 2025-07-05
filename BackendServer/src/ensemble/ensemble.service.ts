@@ -276,4 +276,8 @@ export class EnsembleService {
     const updatedSession = this.sessionEnsembleRepo.merge(session, updateDto);
     return this.sessionEnsembleRepo.save(updatedSession);
   }
+
+  async incrementViewCount(id: number): Promise<void> {
+    await this.recruitEnsembleRepo.increment({ postId: id }, 'viewCount', 1);
+  }
 }

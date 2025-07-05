@@ -4,6 +4,7 @@ import axios from 'axios';
 import { type UsedProduct, STATUS, TRADE_TYPE } from '../../types/product';
 import { useAuthStore } from '@/stores/authStore';
 import axiosInstance from '@/services/axiosInstance';
+import useViewCounter from '@/hooks/useViewCounter';
 
 // CSS 파일을 import 하던 코드는 삭제합니다.
 
@@ -36,6 +37,8 @@ const UsedProductDetailPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const isOwner = (product && user && product.userId === user.userId)
+
+  useViewCounter({ type: 'used-products' });
 
   useEffect(() => {
     if (!id) {

@@ -26,7 +26,7 @@ const RecruitEnsembleDetailPage: React.FC = () => {
   const [isApplied, setIsApplied] = useState(false);
 
   // 현재 로그인한 사용자가 게시글 작성자인지 확인하는 변수
-  const isOwner = ensemble && user && ensemble.username === user.username;
+  const isOwner = ensemble && user && ensemble.userId === user.userId;
 
   useEffect(() => {
     if (!id) {
@@ -79,7 +79,7 @@ const RecruitEnsembleDetailPage: React.FC = () => {
 
   useEffect(() => {
     if (applicationList) {
-      setIsApplied(applicationList.some((app) => app.username === user?.username));
+      setIsApplied(applicationList.some((app) => app.userId === user?.userId));
     } else {
       setIsApplied(false);
     }
@@ -127,7 +127,7 @@ const RecruitEnsembleDetailPage: React.FC = () => {
           </span>
         </div>
         <div className="text-sm text-gray-500 mt-2 flex justify-between">
-          <span>작성자: {ensemble.username}</span>
+          <span>작성자: {ensemble.userId}</span>
           <span>등록일: {new Date(ensemble.createdAt).toLocaleDateString()} (조회수: {ensemble.viewCount})</span>
         </div>
       </header>

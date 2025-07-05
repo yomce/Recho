@@ -42,7 +42,7 @@ export class ApplierEnsemble {
   sessionEnsemble: SessionEnsemble;
 
   @Column()
-  username: string;
+  userId: string;
 
   @Column()
   applicationStatus: APPLICATION_STATUS;

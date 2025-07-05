@@ -46,13 +46,13 @@ export class ApplicationController {
       throw new ForbiddenException('사용자 인증 정보가 없습니다.');
     }
 
-    const username = req.user.id;
+    const userId = req.user.id;
 
     this.logger.log(`Apply to new session: ${sessionId}`);
     return await this.applicationService.enrollApplication(
       postId,
       sessionId,
-      username,
+      userId,
     );
   }
 
@@ -62,16 +62,16 @@ export class ApplicationController {
     @Param('applicationId', ParseIntPipe) applicationId: number,
     @Req() req: Request,
   ): Promise<void> {
-    if (!req.user || !req.user.username) {
+    if (!req.user || !req.user.id) {
       this.logger.error(
         'Authentication information missing from request user object.',
       );
       throw new ForbiddenException('사용자 인증 정보가 없습니다.');
     }
 
-    const username = req.user.username;
+    const userId = req.user.id;
 
     this.logger.log(`Apply to new session: ${applicationId}`);
-    await this.applicationService.deleteApplication(applicationId, username);
+    await this.applicationService.deleteApplication(applicationId, userId);
   }
 }

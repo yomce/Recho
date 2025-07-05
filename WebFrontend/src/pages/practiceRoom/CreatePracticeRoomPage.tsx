@@ -30,7 +30,7 @@ const CreatePracticeRoom: React.FC = () =>
     }
     setForm(prev => ({
       ...prev,
-      userId: user?.username as string,
+      userId: user?.userId
     }))
   }, [user, navigate])
   

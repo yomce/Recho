@@ -11,7 +11,7 @@ export interface ApplicationEnsemble {
   applicationId: number;
   recruitEnsemble: RecruitEnsemble;
   sessionEnsemble: SessionEnsemble;
-  username: string;
+  userId: string;
   applicationStatus: APPLICATION_STATUS;
   appliedAt: string;
   approvedAt?: string;
@@ -27,7 +27,7 @@ export interface RecruitEnsemble {
   postId: number;
   title: string;
   content: string;
-  username: string;
+  userId: string;
   eventDate: string;
   skillLevel: SKILL_LEVEL;
   locationId: number;

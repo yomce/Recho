@@ -64,7 +64,7 @@ export class UsedProductService {
 
   async enrollUsedProduct(
     createDto: CreateUsedProductDto,
-    username: string,
+    userId: string,
   ): Promise<UsedProduct> {
     const { locationId, ...restOfDto } = createDto;
 
@@ -93,7 +93,7 @@ export class UsedProductService {
     const newProduct = this.usedProductRepo.create({
       ...restOfDto,
       locationId: locationEntity.locationId,
-      username: username,
+      userId: userId,
       status: Status.FOR_SALE,
       viewCount: 0,
     });
@@ -111,9 +111,9 @@ export class UsedProductService {
     return product;
   }
 
-  async deleteProduct(id: number, username: string): Promise<void> {
+  async deleteProduct(id: number, userId: string): Promise<void> {
     const product = await this.detailProduct(id);
-    if (username !== product?.username) {
+    if (userId !== product?.userId) {
       throw new ForbiddenException(`Unauthorized`);
     }
 
@@ -126,10 +126,10 @@ export class UsedProductService {
   async patchProduct(
     id: number,
     updateDto: UpdateUsedProductDto,
-    username: string,
+    userId: string,
   ): Promise<UsedProduct> {
     const product = await this.detailProduct(id);
-    if (username !== product.username) {
+    if (userId !== product.userId) {
       throw new ForbiddenException(`Unauthorized`);
     }
 

@@ -1,8 +1,8 @@
 // src/components/ProductForm.tsx (새로 생성)
 
 import React from 'react';
-import { TRADE_TYPE, type UsedProductForm } from '../types/product'
-import LocationSelector from './map/LocationSelector';
+import { TRADE_TYPE, type UsedProductForm } from '../../../../types/product'
+import LocationSelector from '../../../map/LocationSelector';
 
 // 목업 데이터도 props로 받도록 하여 컴포넌트의 재사용성을 높입니다.
 const mockCategories = [

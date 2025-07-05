@@ -57,7 +57,7 @@ const UpdateRecruitEnsemblePage: React.FC = () => {
         const ensemble = response.data;
 
         // --- 작성자 본인 확인 ---
-        if (user?.username !== ensemble.userId) {
+        if (user?.userId !== ensemble.userId) {
           alert('수정 권한이 없습니다.');
           navigate(`/ensembles/${id}`);
           return;

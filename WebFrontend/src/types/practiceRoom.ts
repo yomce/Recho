@@ -11,6 +11,7 @@ export interface Location {
 export interface PracticeRoom {
   readonly postId: number;
   readonly userId: number;
+  user_name: string;
   title: string;
   description: string;
   readonly createdAt: string;
@@ -20,7 +21,7 @@ export interface PracticeRoom {
 }
 
 // -- 합주실 등록 / 수정 폼에서 사용되는 데이터 형태 -- 
-export interface PracticeRoomForm {
+export interface PracticeRoomType {
   title: string;
   description: string;
   locationId: string;

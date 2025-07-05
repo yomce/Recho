@@ -88,7 +88,7 @@ export class UsedProductService {
       region_level_2: locationEntity.region_level2, // 임시 데이터
       address: locationEntity.address,
     };
-    */
+    */   
 
     const newProduct = this.usedProductRepo.create({
       ...restOfDto,
@@ -111,9 +111,9 @@ export class UsedProductService {
     return product;
   }
 
-  async deleteProduct(id: number, username: string): Promise<void> {
+  async deleteProduct(id: number, userId: string): Promise<void> {
     const product = await this.detailProduct(id);
-    if (username !== product?.userId) {
+    if (userId !== product?.userId) {
       throw new ForbiddenException(`Unauthorized`);
     }
 
@@ -126,10 +126,10 @@ export class UsedProductService {
   async patchProduct(
     id: number,
     updateDto: UpdateUsedProductDto,
-    username: string,
+    userId: string,
   ): Promise<UsedProduct> {
     const product = await this.detailProduct(id);
-    if (username !== product.userId) {
+    if (userId !== product.userId) {
       throw new ForbiddenException(`Unauthorized`);
     }
 

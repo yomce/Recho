@@ -119,8 +119,6 @@ const CreateRecruitEnsemblePage: React.FC = () => {
         sessionList: sessionListPayLoad,
       };
 
-      console.log(payload)
-
       const response = await axiosInstance.post('ensembles', payload);
       alert('모집 공고가 성공적으로 등록되었습니다!');
       navigate(`/ensembles/${response.data.postId}`);

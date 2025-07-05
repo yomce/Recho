@@ -1,5 +1,22 @@
 import type { SKILL_LEVEL } from '../components/EnsembleForm';
 
+export enum APPLICATION_STATUS {
+  WAITING,
+  APPROVAL,
+  REJECT,
+  CANCEL,
+}
+
+export interface ApplicationEnsemble {
+  applicationId: number;
+  recruitEnsemble: RecruitEnsemble;
+  sessionEnsemble: SessionEnsemble;
+  userId: string;
+  applicationStatus: APPLICATION_STATUS;
+  appliedAt: string;
+  approvedAt?: string;
+}
+
 export interface SessionEnsemble {
   sessionId: number;
   instrument: string;

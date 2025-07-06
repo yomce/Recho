@@ -151,3 +151,16 @@ afterEvaluate {
     // Make sure the AAR is downloaded before compilation begins
     preBuild.dependsOn("downloadAar")
 }
+
+project.ext.react = [
+    enableHermes: true,  // clean and rebuild if changing
+]
+
+apply from: "../../node_modules/react-native/react.gradle"
+apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
+
+/**
+ * Set this to true to create four separate APKs instead of one:
+ *   - arm64-v8a
+ *   - armeabi-v7a
+ */

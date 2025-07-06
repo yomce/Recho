@@ -270,6 +270,7 @@ export class EnsembleService {
       }
 
       // 4. 부모 엔티티(Ensemble)의 필드 머지(업데이트) 처리
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { sessionList, ...ensembleDto } = updateDto;
       await queryRunner.manager.update(RecruitEnsemble, postId, ensembleDto);
 

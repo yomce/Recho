@@ -28,9 +28,18 @@ const ContentContainer = styled.View`
   background-color: transparent; /* ScreenContainer에서 배경색을 이미 설정했으므로 투명하게 */
 `;
 
+const Container = styled.View`
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  background-color: #000000; /* CommonStyles.screenContainer.backgroundColor와 동일 */
+`;
+
 const VideoPlayerStyled = styled(Video)`
   width: ${Dimensions.get('window').width * 0.9}px; /* 화면 너비의 90% */
-  height: ${Dimensions.get('window').width * 0.9 * (9 / 16)}px; /* 16:9 비율 유지 */
+  height: ${Dimensions.get('window').width *
+  0.9 *
+  (9 / 16)}px; /* 16:9 비율 유지 */
   background-color: black;
   margin-bottom: 20px;
   border-radius: 8px; /* 둥근 모서리 */
@@ -79,22 +88,31 @@ const VideoPreviewScreen: React.FC<VideoPreviewScreenProps> = ({
         />
 
         <NavButton onPress={() => navigation.navigate('FFmpegTest')}>
-          <ButtonTextStyled>FFmpeg 테스트 화면으로 이동</ButtonTextStyled> {/* children으로 텍스트 전달 */}
+          <ButtonTextStyled>FFmpeg 테스트 화면으로 이동</ButtonTextStyled>{' '}
+          {/* children으로 텍스트 전달 */}
         </NavButton>
         <NavButton
           onPress={() => {
             // RootStackParamList에 'SideBySide'가 정의되어 있는지 확인 후 내비게이션
             // 이 로직은 RootStackParamList에 SideBySide가 선택적일 때 유용합니다.
-            if (navigation.canGoBack() && (navigation.getState().routeNames as string[]).includes('SideBySide')) {
-                navigation.navigate('SideBySide');
+            if (
+              navigation.canGoBack() &&
+              (navigation.getState().routeNames as string[]).includes(
+                'SideBySide',
+              )
+            ) {
+              navigation.navigate('SideBySide');
             } else {
-                console.warn("SideBySideScreen is not defined in RootStackParamList or cannot navigate.");
-                // 사용자에게 알림을 주거나 홈으로 돌아가는 등의 폴백 처리 가능
-                // Alert.alert("알림", "Side-by-Side 테스트 화면을 찾을 수 없습니다.");
+              console.warn(
+                'SideBySideScreen is not defined in RootStackParamList or cannot navigate.',
+              );
+              // 사용자에게 알림을 주거나 홈으로 돌아가는 등의 폴백 처리 가능
+              // Alert.alert("알림", "Side-by-Side 테스트 화면을 찾을 수 없습니다.");
             }
           }}
         >
-          <ButtonTextStyled>Side-by-Side 테스트 화면으로 이동</ButtonTextStyled> {/* children으로 텍스트 전달 */}
+          <ButtonTextStyled>Side-by-Side 테스트 화면으로 이동</ButtonTextStyled>{' '}
+          {/* children으로 텍스트 전달 */}
         </NavButton>
       </ContentContainer>
     </ScreenContainer>

@@ -41,7 +41,7 @@ const AppNavigator = () => {
           name="Home"
           component={HomeScreen}
           options={{
-            title: '🎬 비디오 편집 앱',
+            title: '비디오 편집 앱',
             headerShown: false, // 홈 화면에서는 헤더 숨김
           }}
         />
@@ -49,35 +49,36 @@ const AppNavigator = () => {
           name="Camera"
           component={CameraScreen}
           options={{
-            title: '📷 카메라',
+            title: '카메라',
           }}
         />
         <Stack.Screen
           name="VideoEdit"
           component={VideoEditScreen}
           options={{
-            title: '✂️ 비디오 편집',
+            title: '비디오 편집',
+            headerShown: false,
           }}
         />
         <Stack.Screen
           name="MediaLibrary"
           component={MediaLibraryScreen}
           options={{
-            title: '📁 파일 선택',
+            title: '파일 선택',
           }}
         />
         <Stack.Screen
           name="VideoPreview"
           component={VideoPreviewScreen}
           options={{
-            title: '👁️ 비디오 미리보기',
+            title: '비디오 미리보기',
           }}
         />
         <Stack.Screen
           name="NewVideoTest"
           component={NewVideoTestScreen}
           options={{
-            title: '🎤 합주 녹화',
+            title: '합주 녹화',
             headerShown: false, // 합주 녹화 화면에서는 헤더 숨김
           }}
         />
@@ -85,7 +86,7 @@ const AppNavigator = () => {
           name="FFmpegTest"
           component={FFmpegTestScreen}
           options={{
-            title: '🛠️ FFmpeg 테스트',
+            title: 'FFmpeg 테스트',
           }}
         />
         <Stack.Screen

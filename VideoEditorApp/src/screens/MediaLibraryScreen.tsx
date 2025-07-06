@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
 import styled from 'styled-components/native';
-import { View, Text, TouchableOpacity, SafeAreaView, FlatList, Alert, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  SafeAreaView,
+  FlatList,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 
 import { RootStackParamList, MediaItem, formatFileSize } from '../types'; // RootStackParamList, MediaItem, formatFileSize 임포트
@@ -21,9 +29,9 @@ interface Props {
 }
 
 // Styled Components 정의
-const ScreenContainer = styled(SafeAreaView)`
+const ScreenContainer = styled.SafeAreaView`
   flex: 1;
-  background-color: #34495e;
+  background-color: #000000;
 `;
 
 const HeaderContainer = styled.View`
@@ -56,7 +64,7 @@ const ButtonTextStyled = styled.Text`
 `;
 
 const ListContainer = styled(FlatList).attrs({
-  contentContainerStyle: { padding: 10 }
+  contentContainerStyle: { padding: 10 },
 })`
   /* FlatList 자체의 스타일 (필요하다면) */
 `;
@@ -82,7 +90,11 @@ const MediaLibraryScreen: React.FC<Props> = ({ navigation }) => {
   const pickVideos = async (allowMultiSelection: boolean) => {
     try {
       setIsLoading(true); // 로딩 시작
-      console.log(`[MediaLibraryScreen] ${allowMultiSelection ? '여러' : '단일'} 비디오 파일 선택 시작...`);
+      console.log(
+        `[MediaLibraryScreen] ${
+          allowMultiSelection ? '여러' : '단일'
+        } 비디오 파일 선택 시작...`,
+      );
 
       const result = await pick({
         type: [types.video], // 비디오 파일만 선택
@@ -138,14 +150,14 @@ const MediaLibraryScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <ScreenContainer>
       <HeaderContainer>
-        <SectionHeader title="📁 비디오 파일 선택" containerStyle={{ paddingVertical: 0 }} />
+        <SectionHeader
+          title="📁 비디오 파일 선택"
+          containerStyle={{ paddingVertical: 0 }}
+        />
       </HeaderContainer>
 
       <ButtonContainer>
-        <PickButton
-          onPress={() => pickVideos(false)}
-          disabled={isLoading}
-        >
+        <PickButton onPress={() => pickVideos(false)} disabled={isLoading}>
           <ButtonTextStyled>
             {isLoading ? '🔄 선택 중...' : '📁 비디오 파일 선택'}
           </ButtonTextStyled>
@@ -175,7 +187,7 @@ const MediaLibraryScreen: React.FC<Props> = ({ navigation }) => {
               message="선택된 비디오가 없습니다"
               subMessages={[
                 '위의 버튼을 눌러서 비디오 파일을 선택해보세요',
-                '지원 형식: MP4, MOV, AVI, MKV 등'
+                '지원 형식: MP4, MOV, AVI, MKV 등',
               ]}
             />
           }

@@ -64,10 +64,10 @@ export class UserService {
   }
 
   async updatePassword(
-    userId: string,
+    id: string,
     newHashedPassword: string,
   ): Promise<void> {
-    const user = await this.userRepository.findOneBy({ id: userId });
+    const user = await this.userRepository.findOneBy({ id: id });
     if (!user) {
       throw new NotFoundException('사용자를 찾을 수 없습니다.');
     }
@@ -76,10 +76,10 @@ export class UserService {
   }
 
   async setCurrentRefreshToken(
-    userId: string,
+    id: string,
     refreshToken: string | null,
   ): Promise<void> {
-    await this.userRepository.update(userId, {
+    await this.userRepository.update(id, {
       hashedRefreshToken: refreshToken,
     });
   }

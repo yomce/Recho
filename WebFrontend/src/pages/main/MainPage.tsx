@@ -5,7 +5,7 @@ import { useAuthStore } from "../../stores/authStore"; // Zustand 스토어 impo
 import { jwtDecode, type JwtPayload } from "jwt-decode";
 
 interface CustomJwtPayload extends JwtPayload {
-  userId: number;
+  id: string;
 }
 
 const MainPage: React.FC = () => {
@@ -49,13 +49,13 @@ const MainPage: React.FC = () => {
   };
 
   const handleGoToMyPage = () => {
-    // localStorage에서 토큰을 가져와 userId를 추출
+    // localStorage에서 토큰을 가져와 id를 추출
     const token = localStorage.getItem("accessToken");
     if (token) {
       try {
         const decodedToken = jwtDecode<CustomJwtPayload>(token);
-        const userId = decodedToken.userId;
-        navigate(`/users/${userId}`);
+        const id = decodedToken.id;
+        navigate(`/users/${id}`);
       } catch (error) {
         console.error("마이페이지 이동 실패: 유효하지 않은 토큰입니다.", error);
         alert("세션이 만료되었습니다. 다시 로그인해주세요.");

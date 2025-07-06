@@ -28,7 +28,10 @@ const RecruitEnsembleDetailPage: React.FC = () => {
   const [isApplied, setIsApplied] = useState(false);
 
   // 현재 로그인한 사용자가 게시글 작성자인지 확인하는 변수
-  const isOwner = ensemble && user && ensemble.userId === user.userId;
+  const isOwner = ensemble && user && ensemble.user.id === user.id;
+
+  console.log("ensemble", ensemble?.user.id);
+  console.log("auth store", user);
 
   useEffect(() => {
     if (!id) {
@@ -43,6 +46,7 @@ const RecruitEnsembleDetailPage: React.FC = () => {
       try {
         // API 엔드포인트를 합주단원 모집 공고 상세 조회로 변경
         const response = await axiosInstance.get<RecruitEnsemble>(`ensembles/${id}`);
+        console.log(response.data);
 
         setSessionList(response.data.sessionEnsemble)
         setEnsemble(response.data);
@@ -81,7 +85,7 @@ const RecruitEnsembleDetailPage: React.FC = () => {
 
   useEffect(() => {
     if (applicationList) {
-      setIsApplied(applicationList.some((app) => app.userId === user?.userId));
+      setIsApplied(applicationList.some((app) => app.id === user?.id));
     } else {
       setIsApplied(false);
     }
@@ -129,7 +133,7 @@ const RecruitEnsembleDetailPage: React.FC = () => {
           </span>
         </div>
         <div className="text-sm text-gray-500 mt-2 flex justify-between">
-          <span>작성자: {ensemble.userId}</span>
+          <span>작성자: {ensemble.user.id}</span>
           <span>등록일: {new Date(ensemble.createdAt).toLocaleDateString()} (조회수: {ensemble.viewCount})</span>
         </div>
       </header>

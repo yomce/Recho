@@ -8,12 +8,12 @@ import { useAuthStore } from './authStore';
 export interface Message {
   id: string;
   roomId: string;
-  senderId?: number;
+  senderId?: string;
   senderName?: string;
   content: string;
   createdAt: string;
   sender?: { 
-    id: number;
+    id: string;
     username: string; 
     profileUrl: string | null;
   };
@@ -21,7 +21,7 @@ export interface Message {
 }
 
 interface ChatPartner {
-  id: number | null;
+  id: string | null;
   username: string;
   profileUrl: string | null;
 }
@@ -97,7 +97,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       set({ messages: messageHistory });
       
       const partnerSender = messageHistory.find(
-        (msg) => msg.senderId && msg.senderId !== currentUser.userId
+        (msg) => msg.senderId && msg.senderId !== currentUser.id
       )?.sender;
 
       if (partnerSender) {
@@ -118,7 +118,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
 
     if (!socket.connected) socket.connect();
-    socket.emit('joinRoom', { userId: currentUser.userId, roomId });
+    socket.emit('joinRoom', { id: currentUser.id, roomId });
   },
 
   sendMessage: (content) => {
@@ -128,7 +128,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     socket.emit('sendMessage', {
       roomId,
-      senderId: user.userId,
+      senderId: user.id,
       senderName: user.username,
       content,
     });
@@ -145,7 +145,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const { roomId } = get();
     const { user } = useAuthStore.getState();
     if (!roomId || !user) return;
-    socket.emit('leaveRoom', { userId: user.userId, roomId });
+    socket.emit('leaveRoom', { id: user.id, roomId });
     set({ roomId: null, messages: [], chatPartner: { id: null, username: '', profileUrl: null } });
     get().closeModal();
   },

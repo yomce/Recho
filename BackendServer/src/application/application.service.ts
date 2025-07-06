@@ -18,7 +18,7 @@ export class ApplicationService {
     @InjectRepository(ApplierEnsemble)
     private readonly applyEnsembleRepo: Repository<ApplierEnsemble>,
 
-    private readonly recruitEnsemble: EnsembleService,
+    private readonly ensembleService: EnsembleService,
   ) {}
   private readonly logger = new Logger(ApplicationService.name);
 
@@ -46,12 +46,12 @@ export class ApplicationService {
   async enrollApplication(
     postId: number,
     sessionId: number,
-    userId: string,
+    id: string,
   ): Promise<ApplierEnsemble> {
     const recruitEnsemblePost =
-      await this.recruitEnsemble.detailEnsemble(postId);
+      await this.ensembleService.detailEnsemble(postId);
 
-    if (recruitEnsemblePost.userId === userId) {
+    if (recruitEnsemblePost.user.id === id) {
       this.logger.error(
         'Authentication information missing from request user object.',
       );
@@ -59,7 +59,7 @@ export class ApplicationService {
     }
 
     if (
-      recruitEnsemblePost.applierEnsemble.some((app) => app.userId === userId)
+      recruitEnsemblePost.applierEnsemble.some((app) => app.id === id)
     ) {
       this.logger.error(
         'Authentication information missing from request user object.',
@@ -70,7 +70,7 @@ export class ApplicationService {
     const newApplier = this.applyEnsembleRepo.create({
       recruitEnsemble: { postId: postId },
       sessionEnsemble: { sessionId: sessionId },
-      userId: userId,
+      id: id,
       applicationStatus: APPLICATION_STATUS.WAITING,
     });
 
@@ -79,10 +79,10 @@ export class ApplicationService {
 
   async deleteApplication(
     applicationId: number,
-    userId: string,
+    id: string,
   ): Promise<void> {
     const application = await this.detailApplication(applicationId);
-    if (userId !== application?.userId) {
+    if (id !== application?.id) {
       throw new ForbiddenException(`Unauthorized`);
     }
 

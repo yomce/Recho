@@ -47,7 +47,7 @@ const AppRouter: React.FC = () => {
         <Route element={<ProtectedRoute />}>
           <Route path="/chat" element={<ChatListPage />} />
           <Route path="/chat/:roomId" element={<ChatRoomPage />} />
-          <Route path="/users/:userId" element={<UserPage />} />
+          <Route path="/users/:id" element={<UserPage />} />
           <Route path="/main" element={<MainPage />} />
           <Route path="/vinyl" element={<VinylPage />} />
           <Route path="/used-products" element={<UsedProductPage />} />

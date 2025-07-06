@@ -11,7 +11,7 @@ interface RecruitEnsemble {
   postId: number;
   title: string;
   content: string;
-  userId: string;
+  id: string;
 
   // 날짜 정보 (API에서 문자열로 전달)
   createdAt: string;

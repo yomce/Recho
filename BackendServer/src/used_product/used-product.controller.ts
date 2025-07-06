@@ -56,28 +56,28 @@ export class UsedProductController {
       );
       throw new ForbiddenException('사용자 인증 정보가 없습니다.');
     }
-    const userId = req.user.id;
+    const id = req.user.id;
 
     this.logger.log(`Enrolling a new product: ${createUsedProductDto.title}`);
     return await this.usedProductService.enrollUsedProduct(
       createUsedProductDto,
-      userId,
+      id,
     );
   }
 
-  @Get(':id')
+  @Get(':productId')
   async detailProduct(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('productId', ParseIntPipe) productId: number,
   ): Promise<UsedProduct> {
-    this.logger.log(`Fetching detail for product ID: ${id}`);
-    return await this.usedProductService.detailProduct(id);
+    this.logger.log(`Fetching detail for product ID: ${productId}`);
+    return await this.usedProductService.detailProduct(productId);
   }
 
-  @Delete(':id')
+  @Delete(':productId')
   @UseGuards(AuthGuard('jwt'))
   @HttpCode(204)
   async deleteProduct(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('productId', ParseIntPipe) productId: number,
     @Req() req: Request,
   ): Promise<void> {
     if (!req.user || !req.user.id) {
@@ -86,18 +86,18 @@ export class UsedProductController {
       );
       throw new ForbiddenException('사용자 인증 정보가 없습니다.');
     }
-    const userId = req.user.id; // JwtStrategy에서 반환된 user.id 사용 가능
+    const id = req.user.id; // JwtStrategy에서 반환된 user.id 사용 가능
     this.logger.log(
-      `Received delete request for product ID: ${id} from user ID: ${userId}`,
+      `Received delete request for product ID: ${id} from user ID: ${id}`,
     );
 
-    await this.usedProductService.deleteProduct(id, userId);
+    await this.usedProductService.deleteProduct(productId, id);
   }
 
-  @Patch(':id')
+  @Patch(':productId')
   @UseGuards(AuthGuard('jwt'))
   async patchProduct(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('productId', ParseIntPipe) productId: number,
     @Body() updateUsedProductDto: UpdateUsedProductDto,
     @Req() req: Request,
   ): Promise<UsedProduct> {
@@ -107,15 +107,15 @@ export class UsedProductController {
       );
       throw new ForbiddenException('사용자 인증 정보가 없습니다.');
     }
-    const userId = req.user.id; // JwtStrategy에서 반환된 user.id 사용 가능
+    const id = req.user.id; // JwtStrategy에서 반환된 user.id 사용 가능
     this.logger.log(
-      `Received patch request for product ID: ${id} from user ID: ${userId}`,
+      `Received patch request for product ID: ${productId} from user ID: ${id}`,
     );
 
     return this.usedProductService.patchProduct(
-      id,
+      productId,
       updateUsedProductDto,
-      userId,
+      id,
     );
   }
-} 
+}

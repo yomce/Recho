@@ -46,13 +46,13 @@ export class ApplicationController {
       throw new ForbiddenException('사용자 인증 정보가 없습니다.');
     }
 
-    const userId = req.user.id;
+    const id = req.user.id;
 
     this.logger.log(`Apply to new session: ${sessionId}`);
     return await this.applicationService.enrollApplication(
       postId,
       sessionId,
-      userId,
+      id,
     );
   }
 
@@ -69,9 +69,9 @@ export class ApplicationController {
       throw new ForbiddenException('사용자 인증 정보가 없습니다.');
     }
 
-    const userId = req.user.id;
+    const id = req.user.id;
 
     this.logger.log(`Apply to new session: ${applicationId}`);
-    await this.applicationService.deleteApplication(applicationId, userId);
+    await this.applicationService.deleteApplication(applicationId, id);
   }
 }

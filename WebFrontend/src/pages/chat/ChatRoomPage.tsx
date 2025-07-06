@@ -21,7 +21,7 @@ const ChatRoomPage: React.FC = () => {
     const navigate = useNavigate();
 
     // --- 스토어에서 상태와 액션 가져오기 ---
-    const userId = useAuthStore((state) => state.user?.userId);
+    const id = useAuthStore((state) => state.user?.id);
     const {
         messages,
         chatPartner,
@@ -50,7 +50,7 @@ const ChatRoomPage: React.FC = () => {
     
     // --- 컴포넌트 생명주기와 스토어 액션 연결 ---
     useEffect(() => {
-        if (!userId) {
+        if (!id) {
             // authStore가 user 상태를 관리하므로 로그인 확인 로직도 간결해집니다.
             alert('로그인이 필요합니다.');
             navigate('/login');
@@ -65,7 +65,7 @@ const ChatRoomPage: React.FC = () => {
         return () => {
             cleanupRoom();
         };
-    }, [roomId, userId, initializeRoom, cleanupRoom, navigate]);
+    }, [roomId, id, initializeRoom, cleanupRoom, navigate]);
 
     // 메시지 목록이 변경될 때마다 맨 아래로 스크롤
     useEffect(() => {
@@ -145,10 +145,10 @@ const ChatRoomPage: React.FC = () => {
                             </div>
                         ) : (
                           <div key={msg.id}>
-                                {msg.senderId === userId ? (
+                                {msg.senderId === id ? (
                                     // 내가 보낸 메시지
                                     <div className="flex w-full justify-end">
-                                        <MessageBubble msg={msg} currentUserId={userId} dragX={dragX} />
+                                        <MessageBubble msg={msg} currentid={id} dragX={dragX} />
                                     </div>
                                 ) : (
                                     // 상대방이 보낸 메시지
@@ -159,7 +159,7 @@ const ChatRoomPage: React.FC = () => {
                                         />
                                         <div className="flex flex-col">
                                             <span className="text-sm text-brand-gray mb-1 text-left block">{msg.sender?.username}</span>
-                                            <MessageBubble msg={msg} currentUserId={userId} dragX={dragX} />
+                                            <MessageBubble msg={msg} currentid={id} dragX={dragX} />
                                         </div>
                                     </div>
                                 )}

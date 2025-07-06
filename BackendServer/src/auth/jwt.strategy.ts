@@ -19,7 +19,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   // JWT 검증이 완료되면 실행되는 메서드
   async validate(payload: any) {
-    const user = await this.userService.findById(payload.userId);
+    const user = await this.userService.findById(payload.id);
     if (!user) {
       throw new UnauthorizedException('존재하지 않는 사용자입니다.');
     }

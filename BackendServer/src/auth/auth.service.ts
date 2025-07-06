@@ -32,7 +32,7 @@ export class AuthService {
   }
 
   private async _issueTokens(user: User): Promise<{ accessToken: string; refreshToken: string }> {
-    const payload = { userId: user.id, username: user.username };
+    const payload = { id: user.id, username: user.username };
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
@@ -46,12 +46,12 @@ export class AuthService {
   }
 
   async refreshAccessToken(user: User): Promise<{ accessToken: string }> {
-    const payload = { userId: user.id, username: user.username };
+    const payload = { id: user.id, username: user.username };
     const newAccessToken = this.jwtService.sign(payload);
     return { accessToken: newAccessToken };
   }
 
-  async logout(userId: string): Promise<void> {
-    await this.userService.setCurrentRefreshToken(userId, null);
+  async logout(id: string): Promise<void> {
+    await this.userService.setCurrentRefreshToken(id, null);
   }
 }

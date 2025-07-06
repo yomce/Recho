@@ -16,12 +16,12 @@ interface UserProfile {
 
 // JWT 페이로드 타입
 interface JwtPayload {
-  userId: string;
+  id: string;
   username: string;
 }
 
 const UserPage: React.FC = () => {
-  const { userId } = useParams<{ userId: string }>();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -36,7 +36,7 @@ const UserPage: React.FC = () => {
       setCurrentUser(jwtDecode<JwtPayload>(token));
     }
 
-    if (!userId) {
+    if (!id) {
       setError('사용자 ID가 없습니다.');
       setLoading(false);
       return;
@@ -44,7 +44,7 @@ const UserPage: React.FC = () => {
 
     const fetchUserProfile = async () => {
       try {
-        const response = await axiosInstance.get<UserProfile>(`/users/${userId}`);
+        const response = await axiosInstance.get<UserProfile>(`/users/${id}`);
         setUser(response.data);
       } catch (err) {
         setError('사용자 정보를 찾을 수 없습니다.');
@@ -54,7 +54,7 @@ const UserPage: React.FC = () => {
     };
 
     fetchUserProfile();
-  }, [userId]);
+  }, [id]);
 
   /**
    * [신규] DM 보내기 버튼 클릭 시 실행되는 함수
@@ -81,7 +81,7 @@ const UserPage: React.FC = () => {
   if (error) return <div style={styles.container}><h2>에러: {error}</h2></div>;
 
   // 현재 보고 있는 프로필이 내 프로필인지 확인
-  const isMyProfile = currentUser?.userId === user?.id;
+  const isMyProfile = currentUser?.id === user?.id;
 
   return (
     <div style={styles.container}>
@@ -94,7 +94,7 @@ const UserPage: React.FC = () => {
             style={styles.profileImage}
           />
           <h1 style={styles.username}>{user.username}</h1>
-          <p style={styles.userId}>@{user.id}</p>
+          <p style={styles.id}>@{user.id}</p>
           
           {/* 내 프로필이 아닐 경우에만 DM 보내기 버튼을 보여줍니다. */}
           {!isMyProfile && (
@@ -119,7 +119,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   profileCard: { textAlign: 'center', padding: '40px', border: '1px solid #eee', borderRadius: '15px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' },
   profileImage: { width: '150px', height: '150px', borderRadius: '50%', objectFit: 'cover', marginBottom: '20px', border: '4px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' },
   username: { margin: '0 0 5px 0', fontSize: '2em', color: '#333' },
-  userId: { margin: '0 0 20px 0', fontSize: '1em', color: '#888' },
+  id: { margin: '0 0 20px 0', fontSize: '1em', color: '#888' },
   dmButton: { padding: '10px 25px', fontSize: '1em', cursor: 'pointer', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '20px', marginBottom: '20px' },
   email: { margin: '0 0 15px 0', fontSize: '1em', color: '#555' },
   intro: { margin: '0 0 20px 0', fontSize: '1.1em', color: '#666', minHeight: '40px' },

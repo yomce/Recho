@@ -64,7 +64,7 @@ export class UsedProductService {
 
   async enrollUsedProduct(
     createDto: CreateUsedProductDto,
-    userId: string,
+    id: string,
   ): Promise<UsedProduct> {
     const { locationId, ...restOfDto } = createDto;
 
@@ -88,58 +88,61 @@ export class UsedProductService {
       region_level_2: locationEntity.region_level2, // 임시 데이터
       address: locationEntity.address,
     };
-    */   
-
+    */
     const newProduct = this.usedProductRepo.create({
       ...restOfDto,
       locationId: locationEntity.locationId,
-      userId: userId,
+      id: id,
       status: Status.FOR_SALE,
       viewCount: 0,
     });
     return await this.usedProductRepo.save(newProduct);
   }
 
-  async detailProduct(id: number): Promise<UsedProduct> {
+  async detailProduct(productId: number): Promise<UsedProduct> {
     const product = await this.usedProductRepo.findOne({
-      where: { productId: id },
+      where: { productId: productId },
       relations: ['location'],
     });
     if (!product) {
-      throw new NotFoundException(`Product with ID #${id} not found.`);
+      throw new NotFoundException(`Product with ID #${productId} not found.`);
     }
     return product;
   }
 
-  async deleteProduct(id: number, userId: string): Promise<void> {
-    const product = await this.detailProduct(id);
-    if (userId !== product?.userId) {
+  async deleteProduct(productId: number, id: string): Promise<void> {
+    const product = await this.detailProduct(productId);
+    if (id !== product?.id) {
       throw new ForbiddenException(`Unauthorized`);
     }
 
-    const result = await this.usedProductRepo.delete({ productId: id });
+    const result = await this.usedProductRepo.delete({ productId: productId });
     if (result.affected === 0) {
       throw new NotFoundException(`Product with ID #${id} not found.`);
     }
   }
 
   async patchProduct(
-    id: number,
+    productId: number,
     updateDto: UpdateUsedProductDto,
-    userId: string,
+    id: string,
   ): Promise<UsedProduct> {
-    const product = await this.detailProduct(id);
-    if (userId !== product.userId) {
+    const product = await this.detailProduct(productId);
+    if (id !== product.id) {
       throw new ForbiddenException(`Unauthorized`);
     }
 
-    // -- 장소를 수정할 수 있도록 변경합니다. 
+    // -- 장소를 수정할 수 있도록 변경합니다.
     // locationId가 있으면 Location 엔티티를 찾아서 연결
     let locationEntity = product.location;
     if (updateDto.locationId) {
-      const found = await this.locationRepo.findOneBy({ locationId: Number(updateDto.locationId) });
+      const found = await this.locationRepo.findOneBy({
+        locationId: Number(updateDto.locationId),
+      });
       if (!found) {
-        throw new NotFoundException(`Location with ID #${updateDto.locationId} not found.`);
+        throw new NotFoundException(
+          `Location with ID #${updateDto.locationId} not found.`,
+        );
       }
       locationEntity = found;
     }
@@ -154,14 +157,14 @@ export class UsedProductService {
     return this.usedProductRepo.save(updatedProduct);
   }
 
-  // 참조하는 locationId를 반환합니다 
+  // 참조하는 locationId를 반환합니다
   // locationService에서 호출되어 참조하지 않는 locatonId를 hard delete 합니다
-  async getUsedLocationIds(): Promise<number []> {
+  async getUsedLocationIds(): Promise<number[]> {
     const results = await this.usedProductRepo
       .createQueryBuilder('used')
       .select('DISTINCT used.locationId', 'locationId')
       .getRawMany();
-    
+
     return results.map(row => row.locationId);
   }
 

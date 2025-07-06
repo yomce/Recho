@@ -4,11 +4,14 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { SessionEnsemble } from '../session/entities/session-ensemble.entity';
 import { ApplierEnsemble } from 'src/application/entities/applier-ensemble.entity';
+import { User } from 'src/auth/user/user.entity';
 
 export enum SKILL_LEVEL {
   BEGINNER,
@@ -28,8 +31,11 @@ export class RecruitEnsemble {
   @PrimaryGeneratedColumn()
   postId: number;
 
-  @Column()
-  userId: string;
+  @ManyToOne(() => User, (user) => user.recruitEnsemble, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'user' })
+  user: User;
 
   @Column()
   title: string;

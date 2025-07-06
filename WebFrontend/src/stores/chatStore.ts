@@ -8,12 +8,12 @@ import { useAuthStore } from './authStore';
 export interface Message {
   id: string;
   roomId: string;
-  senderId?: number;
+  senderId?: string;
   senderName?: string;
   content: string;
   createdAt: string;
   sender?: { 
-    id: number;
+    id: string;
     username: string; 
     profileUrl: string | null;
   };
@@ -21,7 +21,7 @@ export interface Message {
 }
 
 interface ChatPartner {
-  id: number | null;
+  id: string | null;
   username: string;
   profileUrl: string | null;
 }

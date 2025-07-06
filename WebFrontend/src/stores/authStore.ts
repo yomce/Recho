@@ -8,8 +8,8 @@ import axios from "axios";
 /**
  * JWT 토큰 payload에 포함된 사용자 정보 타입
  */
-interface User {
-  userId: string;
+export interface User {
+  id: string;
   username: string;
 }
 

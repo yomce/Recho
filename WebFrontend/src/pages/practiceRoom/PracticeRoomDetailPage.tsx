@@ -15,7 +15,7 @@ const PracticeRoomDetailPage: React.FC = () =>
   const [post, setPost] = useState<PracticeRoom | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const isOwner = Boolean(post && user && post.userId === user.userId);
+  const isOwner = Boolean(post && user && post.id === user.id);
 
   useViewCounter({ type: 'practice-room' });
 

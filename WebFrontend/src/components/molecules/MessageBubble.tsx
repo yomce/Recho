@@ -11,12 +11,12 @@ interface MessageBubbleProps {
     createdAt: string;
     senderId?: number;
   };
-  currentUserId?: number | null;
+  currentid?: number | null;
   dragX: MotionValue<number>;   
 }
 
-const MessageBubble: React.FC<MessageBubbleProps> = ({ msg, currentUserId, dragX }) => {
-  const isMyMessage = msg.senderId === currentUserId;
+const MessageBubble: React.FC<MessageBubbleProps> = ({ msg, currentid, dragX }) => {
+  const isMyMessage = msg.senderId === currentid;
 
 
   const timestampOpacity = useTransform(

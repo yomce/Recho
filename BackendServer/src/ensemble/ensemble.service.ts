@@ -17,6 +17,9 @@ import {
   CreateSessionEnsembleDto,
   UpdateSessionDto,
 } from './session/dto/create-session-ensemble.dto';
+import { UserService } from 'src/auth/user/user.service';
+import { RecruitEnsembleResponseDto } from './dto/recruit-ensemble.response.dto';
+import { UserResponseDto } from 'src/auth/user/dto/user.response.dto';
 
 @Injectable()
 export class EnsembleService {
@@ -27,6 +30,7 @@ export class EnsembleService {
     @InjectRepository(SessionEnsemble)
     private readonly sessionEnsembleRepo: Repository<SessionEnsemble>,
 
+    private readonly userService: UserService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -73,14 +77,19 @@ export class EnsembleService {
 
   async enrollEnsemble(
     createDto: CreateRecruitEnsembleDto,
-    userId: string,
-  ): Promise<RecruitEnsemble> {
+    id: string,
+  ): Promise<RecruitEnsembleResponseDto> {
     return this.dataSource.transaction(async (transactionalEntityManager) => {
       const recruitEnsembleDto = createDto;
+      const user = await this.userService.findById(id);
+
+      if (!user) {
+        throw new NotFoundException(`User with ID "${id}" not found`);
+      }
 
       const newEnsemble = this.recruitEnsembleRepo.create({
         ...recruitEnsembleDto,
-        userId: userId,
+        user: user,
         recruitStatus: RECRUIT_STATUS.RECRUITING,
         viewCount: 0,
       });
@@ -92,7 +101,12 @@ export class EnsembleService {
         await this.enrollSession(itemDto, postId, transactionalEntityManager);
       }
 
-      return savedEnsemble;
+      const userResponse = UserResponseDto.from(user);
+      const savedEnsembleResponse = RecruitEnsembleResponseDto.from(
+        savedEnsemble,
+        userResponse,
+      );
+      return savedEnsembleResponse;
     });
   }
 
@@ -111,15 +125,21 @@ export class EnsembleService {
     await manager.save(SessionEnsemble, newSessionEnsemble);
   }
 
-  async detailEnsemble(id: number): Promise<RecruitEnsemble> {
+  async detailEnsemble(id: number): Promise<RecruitEnsembleResponseDto> {
     const ensemble = await this.recruitEnsembleRepo.findOne({
       where: { postId: id },
-      relations: ['sessionEnsemble', 'applierEnsemble'],
+      relations: ['sessionEnsemble', 'applierEnsemble', 'user'],
     });
     if (!ensemble) {
       throw new NotFoundException(`Ensemble with ID #${id} not found.`);
     }
-    return ensemble;
+    const responseUser = UserResponseDto.from(ensemble.user);
+    const responseEnsemble = RecruitEnsembleResponseDto.from(
+      ensemble,
+      responseUser,
+    );
+
+    return responseEnsemble;
   }
 
   async detailSession(id: number): Promise<SessionEnsemble> {
@@ -142,13 +162,13 @@ export class EnsembleService {
     return session;
   }
 
-  async deleteEnsemble(id: number, username: string): Promise<void> {
-    const ensemble = await this.detailEnsemble(id);
-    if (username !== ensemble?.userId) {
+  async deleteEnsemble(postId: number, id: string): Promise<void> {
+    const ensemble = await this.detailEnsemble(postId);
+    if (id !== ensemble?.user.id) {
       throw new ForbiddenException(`Unauthorized`);
     }
 
-    const result = await this.recruitEnsembleRepo.delete({ postId: id });
+    const result = await this.recruitEnsembleRepo.delete({ postId: postId });
     if (result.affected === 0) {
       throw new NotFoundException(`Ensemble with ID #${id} not found.`);
     }
@@ -170,8 +190,8 @@ export class EnsembleService {
   async patchEnsemble(
     postId: number,
     updateDto: UpdateRecruitEnsembleDto,
-    username: string,
-  ): Promise<RecruitEnsemble> {
+    id: string,
+  ): Promise<RecruitEnsembleResponseDto> {
     // 1. 데이터베이스 커넥션에서 QueryRunner를 가져옵니다.
     const queryRunner =
       this.recruitEnsembleRepo.manager.connection.createQueryRunner();
@@ -184,13 +204,18 @@ export class EnsembleService {
       // 2. 권한 확인 (트랜잭션 내에서 데이터를 다시 조회하여 최신 상태 보장)
       const ensemble = await queryRunner.manager.findOne(RecruitEnsemble, {
         where: { postId },
-        relations: ['sessionEnsemble'],
+        relations: ['sessionEnsemble', 'user'],
       });
 
       if (!ensemble) {
         throw new NotFoundException(`Ensemble with ID #${postId} not found.`);
       }
-      if (username !== ensemble.userId) {
+      console.log('-----------');
+      console.log(id);
+      console.log(ensemble);
+      console.log('-----------');
+
+      if (id !== ensemble.user.id) {
         throw new ForbiddenException(`Unauthorized`);
       }
 

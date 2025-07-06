@@ -12,7 +12,7 @@ import { Room } from './room.entity';
 @Entity('user_room')
 export class UserRoom {
   @PrimaryColumn({ type: 'varchar', length: 255, name: 'user_id' })
-  userId: string;
+  id: string;
 
   @PrimaryColumn({ type: 'varchar', length: 255, name: 'room_id' })
   roomId: string;

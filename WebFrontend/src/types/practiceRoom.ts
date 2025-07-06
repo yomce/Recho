@@ -10,7 +10,7 @@ export interface Location {
 // -- DB에 저장된 상품 데이터의 완전한 형태 -- 
 export interface PracticeRoom {
   readonly postId: number;
-  readonly userId: string;
+  readonly id: string;
   user_name: string;
   title: string;
   description: string;

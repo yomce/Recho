@@ -9,6 +9,7 @@ import {
 import { Exclude } from 'class-transformer';
 import { Message } from '../../chat/entities/message.entity';
 import { UserRoom } from '../../chat/entities/user-room.entity';
+import { RecruitEnsemble } from 'src/ensemble/entities/recruit-ensemble.entity';
 
 @Entity('Users')
 export class User {
@@ -98,4 +99,8 @@ export class User {
   /** 이 사용자가 참여한 방 목록 (관계 정의) */
   @OneToMany(() => UserRoom, (userRoom) => userRoom.user)
   userRooms: UserRoom[];
+
+  /** 이 사용자의 합주 포스터 */
+  @OneToMany(() => RecruitEnsemble, (recruitEnsemble) => recruitEnsemble.user)
+  recruitEnsemble: RecruitEnsemble[];
 }

@@ -53,9 +53,9 @@ export class PracticeRoomController {
       this.logger.log(`Enrolling a new practice room: ${CreatePracticeRoomDto.title}`);
       throw new ForbiddenException ('사용자 인증 정보를 찾을 수 없습니다.');
     };
-    const userId = req.user.id;
+    const id = req.user.id;
     return await this.practiceRoomService.enrollPracticeRoom(
-      CreatePracticeRoomDto, userId
+      CreatePracticeRoomDto, id
     );
   }
 

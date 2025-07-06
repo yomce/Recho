@@ -36,7 +36,7 @@ const UsedProductDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const isOwner = (product && user && product.userId === user.userId)
+  const isOwner = (product && user && product.id === user.id)
 
   useViewCounter({ type: 'used-products' });
 
@@ -52,6 +52,7 @@ const UsedProductDetailPage: React.FC = () => {
       setError(null);
       try {
         const response = await axiosInstance.get<UsedProduct>(`used-products/${id}`);
+        console.log(response.data);
         setProduct(response.data);
       } catch (err) {
         if (axios.isAxiosError(err) && err.response?.status === 404) {
@@ -135,7 +136,7 @@ const UsedProductDetailPage: React.FC = () => {
           </div>
 
           <div className="my-4 text-base text-gray-600 leading-relaxed">
-            <p className="my-2"><strong>판매자:</strong> {product.userId}</p>
+            <p className="my-2"><strong>판매자:</strong> {product.id}</p>
             <p className="my-2"><strong>거래 방식:</strong> {TRADE_TYPE_TEXT[product.tradeType]}</p>
             {/* <p className="my-2"><strong>거래 지역:</strong> {product.location.regionLevel1} {product.location.regionLevel2}</p> */}
             <p className="my-2"><strong>거래 지역:</strong> {product.location?.address}</p>

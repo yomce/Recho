@@ -1,7 +1,7 @@
-import { RecruitEnsemble } from '../entities/recruit-ensemble.entity';
+import { RecruitEnsembleResponseDto } from './recruit-ensemble.response.dto';
 
 export class PaginatedRecruitEnsembleResponse {
-  data: RecruitEnsemble[];
+  data: RecruitEnsembleResponseDto[];
 
   nextCursor?: {
     lastPostId: number;

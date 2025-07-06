@@ -30,7 +30,7 @@ export class RefreshTokenStrategy extends PassportStrategy(
 
   async validate(req: Request, payload: any) {
     const refreshToken = req.cookies.refreshToken;
-    const user = await this.userService.findById(payload.userId);
+    const user = await this.userService.findById(payload.id);
 
     
     if (!user || !user.hashedRefreshToken) {

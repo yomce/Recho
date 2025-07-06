@@ -15,9 +15,9 @@ export class VideosService {
     private readonly videoRepository: Repository<Video>,
   ) {}
 
-  async getThumbnailsByUser(userId: string): Promise<string[]> {
+  async getThumbnailsByUser(id: string): Promise<string[]> {
     const videos = await this.videoRepository.find({
-      where: { user_id: parseInt(userId, 10) },
+      where: { user_id: parseInt(id, 10) },
       select: ['thumbnail_key'],
     });
 

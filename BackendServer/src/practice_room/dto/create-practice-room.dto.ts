@@ -1,34 +1,29 @@
-import { Type } from "class-transformer";
-import {
-    IsString,
-    IsNotEmpty,
-    IsNumber,
-    IsOptional,
-} from 'class-validator'
+import { Type } from 'class-transformer';
+import { IsString, IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
 
-export class CreatePracticeRoomDto { 
-    @IsNumber()
-    @IsNotEmpty()
-    post_id: number;
-    
-    @IsString()
-    @IsNotEmpty()
-    title: string;
+export class CreatePracticeRoomDto {
+  @IsNumber()
+  @IsNotEmpty()
+  post_id: number;
 
-    @IsString()
-    @IsNotEmpty()
-    description: string;
+  @IsString()
+  @IsNotEmpty()
+  title: string;
 
-    @IsString()
-    @IsOptional()
-    user_name: string;
+  @IsString()
+  @IsNotEmpty()
+  description: string;
 
-    @IsString()
-    @IsOptional()
-    iamges?: string;
+  @IsString()
+  @IsOptional()
+  user_name: string;
 
-    @Type(() => Number)
-    @IsNumber()
-    @IsNotEmpty()
-    locationId: number;
+  @IsString()
+  @IsOptional()
+  iamges?: string;
+
+  @Type(() => Number)
+  @IsNumber()
+  @IsNotEmpty()
+  locationId: number;
 }

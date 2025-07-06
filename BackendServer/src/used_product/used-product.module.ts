@@ -6,7 +6,7 @@ import { UsedProduct } from './entities/used-product.entity';
 import { LocationModule } from 'src/map/location.module';
 import { Location } from '../map/entities/location.entity';
 
-// -- location import 추가합니다 -- 
+// -- location import 추가합니다 --
 @Module({
   imports: [
     TypeOrmModule.forFeature([UsedProduct, Location]),

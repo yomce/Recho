@@ -1,15 +1,20 @@
 // src/pages/MainPage.tsx (수정 완료)
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../stores/authStore"; // Zustand 스토어 import
 import { jwtDecode, type JwtPayload } from "jwt-decode";
+import { toast } from "react-hot-toast";
+import Modal from "@/components/molecules/modal/Modal";
+import PrimaryButton from "@/components/atoms/button/PrimaryButton";
+import SecondaryButton from "@/components/atoms/button/SecondaryButton";
 
 interface CustomJwtPayload extends JwtPayload {
-  userId: number;
+  userId: string; // userId 타입을 string으로 변경
 }
 
 const MainPage: React.FC = () => {
   const navigate = useNavigate();
+  const [isModalOpen, setIsModalOpen] = useState(false);
   // 스토어에서 user 정보와 logout 함수를 가져옵니다.
   const { user, logout } = useAuthStore();
 
@@ -32,15 +37,10 @@ const MainPage: React.FC = () => {
   const handleGoToEnsemble = () => navigate("/ensembles");
   const handleCreateVideo = () => {
     // RN의 비디오 편집 컴포넌트로 전환
-    const message = {
-      // RN에게 넘길 정보
-      type: "CREATE_VIDEO",
-      token: accessToken,
-    };
-    // React Native WebView 환경인지 확인, postMessage를 호출
     if (window.ReactNativeWebView) {
-      window.ReactNativeWebView.postMessage(JSON.stringify(message));
-      console.log("Sent message to React Native: CREATE_VIDEO");
+      window.ReactNativeWebView.postMessage(
+        JSON.stringify({ type: "CREATE_VIDEO", token: accessToken })
+      );
     } else {
       // 웹 브라우저 환경일 때의 대체 동작
       // 나중에 버튼을 없애는 쪽으로 바꾸는 게 좋을 듯??
@@ -57,14 +57,32 @@ const MainPage: React.FC = () => {
         const userId = decodedToken.userId;
         navigate(`/users/${userId}`);
       } catch (error) {
-        console.error("마이페이지 이동 실패: 유효하지 않은 토큰입니다.", error);
-        alert("세션이 만료되었습니다. 다시 로그인해주세요.");
+        console.error("마이페이지 이동 실패:", error);
         handleLogout();
       }
     } else {
       alert("로그인이 필요합니다.");
       navigate("/login");
     }
+  };
+
+  const openModal = () => setIsModalOpen(true);
+  const closeModal = () => setIsModalOpen(false);
+
+  const handleSelectVideoFromGallery = () => {
+    const accessToken = localStorage.getItem("accessToken");
+    if (!accessToken) {
+      toast.error("로그인이 필요합니다.");
+      return;
+    }
+    window.ReactNativeWebView?.postMessage(
+      JSON.stringify({
+        type: "CREATE_VIDEO_FROM_GALLERY",
+        payload: { token: accessToken },
+      })
+    );
+    toast.success("앱에서 갤러리를 확인해주세요!");
+    closeModal();
   };
 
   // 공통 버튼 스타일
@@ -113,9 +131,15 @@ const MainPage: React.FC = () => {
             </button>
             <button
               onClick={handleCreateVideo}
-              className={`${buttonBaseStyle} bg-brand-primary`}
+              className={`${buttonBaseStyle} bg-orange-600`}
             >
-              비디오 생성
+              RN컴포넌트 테스트
+            </button>
+            <button
+              onClick={openModal}
+              className={`${buttonBaseStyle} bg-purple-600 hover:bg-purple-700`}
+            >
+              진짜 비디오 생성 테스트
             </button>
           </div>
         </div>
@@ -142,6 +166,27 @@ const MainPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        title="새로운 Vinyl 만들기"
+      >
+        <div className="flex flex-col gap-3 mt-4">
+          <p className="text-body text-brand-text-secondary mb-2">
+            새로운 비디오를 만들기 위한 소스를 선택해주세요.
+          </p>
+          <PrimaryButton onClick={handleSelectVideoFromGallery}>
+            갤러리에서 선택
+          </PrimaryButton>
+          <PrimaryButton
+            onClick={() => alert("촬영하기 기능은 준비 중입니다.")}
+          >
+            촬영하기
+          </PrimaryButton>
+          <SecondaryButton onClick={closeModal}>닫기</SecondaryButton>
+        </div>
+      </Modal>
     </div>
   );
 };

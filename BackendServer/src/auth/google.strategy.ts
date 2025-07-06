@@ -10,7 +10,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     private readonly configService: ConfigService,
     private readonly userService: UserService,
   ) {
-     // [수정] super()를 호출하기 전에 환경 변수를 확인하고 할당합니다.
+    // [수정] super()를 호출하기 전에 환경 변수를 확인하고 할당합니다.
     const clientID = configService.get('GOOGLE_CLIENT_ID');
     const clientSecret = configService.get('GOOGLE_CLIENT_SECRET');
 
@@ -26,7 +26,12 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     });
   }
 
-  async validate(accessToken: string, refreshToken: string, profile: Profile, done: VerifyCallback): Promise<any> {
+  async validate(
+    accessToken: string,
+    refreshToken: string,
+    profile: Profile,
+    done: VerifyCallback,
+  ): Promise<any> {
     const { id, name, emails } = profile;
     const providerId = id;
     const email = emails?.[0]?.value; // 구글은 이메일 정보를 배열로 줌

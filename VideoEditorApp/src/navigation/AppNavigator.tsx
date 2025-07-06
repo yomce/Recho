@@ -10,6 +10,7 @@ import VideoPreviewScreen from '../screens/VideoPreviewScreen';
 import NewVideoTestScreen from '../screens/NewVideoTestScreen';
 import FFmpegTestScreen from '../screens/FFmpegTestScreen'; // FFmpegTestScreen 임포트
 import WebScreen from '../screens/WebScreen'; // WebScreen 임포트
+import ProcessingScreen from '../screens/ProcessingScreen'; // ProcessingScreen 임포트
 
 import { RootStackParamList } from '../types'; // RootStackParamList를 types에서 임포트
 
@@ -92,6 +93,14 @@ const AppNavigator = () => {
           component={WebScreen}
           options={{
             title: '웹뷰',
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="Processing"
+          component={ProcessingScreen}
+          options={{
+            title: '준비 중...',
             headerShown: false,
           }}
         />

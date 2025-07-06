@@ -3,34 +3,56 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
 } from 'typeorm';
+import { User } from '../auth/user/user.entity';
 
 @Entity('videos')
 export class Video {
-  @PrimaryGeneratedColumn({ type: 'bigint' })
-  video_id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Column({ type: 'bigint' })
-  user_id: number;
+  @ManyToOne(() => User, (user) => user.id)
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 
-  @Column({ type: 'bigint', nullable: true })
-  parent_video_id: number;
+  @Column()
+  user_id: string;
 
-  @Column({ type: 'int', default: 0 })
+  @ManyToOne(() => Video, (video) => video.children, { nullable: true })
+  @JoinColumn({ name: 'parent_video_id' })
+  parent: Video;
+
+  @Column({ nullable: true })
+  parent_video_id: string;
+
+  @OneToMany(() => Video, (video) => video.parent)
+  children: Video[];
+
+  @Column({ default: 0 })
   depth: number;
 
-  @Column({ length: 255 })
-  video_key: string;
+  @Column()
+  results_video_key: string;
 
-  @Column({ length: 255 })
+  @Column()
+  source_video_key: string;
+
+  @Column()
   thumbnail_key: string;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ default: 0 })
   like_count: number;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ default: 0 })
   comment_count: number;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn()
   created_at: Date;
+
+  // These are not columns in the database
+  video_url?: string;
+  thumbnail_url?: string;
 }

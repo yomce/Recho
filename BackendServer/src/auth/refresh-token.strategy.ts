@@ -15,26 +15,24 @@ export class RefreshTokenStrategy extends PassportStrategy(
     private readonly configService: ConfigService,
     private readonly userService: UserService,
   ) {
-
     super({
-    jwtFromRequest: ExtractJwt.fromExtractors([
-      (request: Request) => {
-        return request.cookies?.refreshToken;
-      },
-    ]),
-    ignoreExpiration: false,
-    secretOrKey: configService.get<string>('JWT_REFRESH_SECRET') as string,
-    passReqToCallback: true,
-  });
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        (request: Request) => {
+          return request.cookies?.refreshToken;
+        },
+      ]),
+      ignoreExpiration: false,
+      secretOrKey: configService.get<string>('JWT_REFRESH_SECRET') as string,
+      passReqToCallback: true,
+    });
   }
 
   async validate(req: Request, payload: any) {
     const refreshToken = req.cookies.refreshToken;
     const user = await this.userService.findById(payload.userId);
 
-    
     if (!user || !user.hashedRefreshToken) {
-      console.log("검증 실패 원인: DB에 유저 또는 저장된 토큰이 없습니다.");
+      console.log('검증 실패 원인: DB에 유저 또는 저장된 토큰이 없습니다.');
       throw new UnauthorizedException('인증 정보가 올바르지 않습니다.');
     }
 

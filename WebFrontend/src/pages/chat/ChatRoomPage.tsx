@@ -1,223 +1,267 @@
 // src/pages/chat/ChatRoomPage.tsx
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { motion, useMotionValue } from 'framer-motion'; 
+import React, { useState, useEffect, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { motion, useMotionValue } from "framer-motion";
 // Zustand 스토어 임포트
-import { useAuthStore } from '../../stores/authStore';
-import { useChatStore } from '../../stores/chatStore'; 
-import type { Message } from '../../stores/chatStore';
+import { useAuthStore } from "../../stores/authStore";
+import { useChatStore } from "../../stores/chatStore";
+import type { Message } from "../../stores/chatStore";
 // 컴포넌트 임포트
-import MessageBubble from '@/components/molecules/MessageBubble';
-import PrimaryButton from '@/components/atoms/button/PrimaryButton';
-import SecondaryButton from '@/components/atoms/button/SecondaryButton';
-import TextInput from '@/components/atoms/input/TextInput';
-import MessageInput from '@/components/molecules/MessageInput';
-import Modal from '@/components/atoms/modal/Modal';
-import Icon from '@/components/atoms/icon/Icon';
-import Avatar from '@/components/atoms/avatar/Avatar';
+import MessageBubble from "@/components/molecules/MessageBubble";
+import PrimaryButton from "@/components/atoms/button/PrimaryButton";
+import SecondaryButton from "@/components/atoms/button/SecondaryButton";
+import TextInput from "@/components/atoms/input/TextInput";
+import MessageInput from "@/components/molecules/MessageInput";
+import Modal from "@/components/molecules/modal/Modal";
+import Icon from "@/components/atoms/icon/Icon";
+import Avatar from "@/components/atoms/avatar/Avatar";
 
 const ChatRoomPage: React.FC = () => {
-    const { roomId } = useParams<{ roomId: string }>();
-    const navigate = useNavigate();
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
 
-    // --- 스토어에서 상태와 액션 가져오기 ---
-    const userId = useAuthStore((state) => state.user?.userId);
-    const {
-        messages,
-        chatPartner,
-        isModalOpen,
-        modalType,
-        initializeRoom,
-        cleanupRoom,
-        sendMessage,
-        inviteUser,
-        leaveCurrentRoom,
-        openModal,
-        closeModal,
-    } = useChatStore();
+  // --- 스토어에서 상태와 액션 가져오기 ---
+  const userId = useAuthStore((state) => state.user?.userId);
+  const {
+    messages,
+    chatPartner,
+    isModalOpen,
+    modalType,
+    initializeRoom,
+    cleanupRoom,
+    sendMessage,
+    inviteUser,
+    leaveCurrentRoom,
+    openModal,
+    closeModal,
+  } = useChatStore();
 
-    const goToUserProfile = () => {
-      if (chatPartner.id) {
-        navigate(`/users/${chatPartner.id}`);
-      }
-    };
-
-    // --- 컴포넌트 로컬 상태 (UI에만 한정된 상태) ---
-    const [newMessage, setNewMessage] = useState('');
-    const [inviteeId, setInviteeId] = useState('');
-    const chatEndRef = useRef<HTMLDivElement>(null);
-    const dragX = useMotionValue(0);
-    
-    // --- 컴포넌트 생명주기와 스토어 액션 연결 ---
-    useEffect(() => {
-        if (!userId) {
-            // authStore가 user 상태를 관리하므로 로그인 확인 로직도 간결해집니다.
-            alert('로그인이 필요합니다.');
-            navigate('/login');
-            return;
-        }
-        if (roomId) {
-            // 방에 들어갈 때 스토어의 초기화 액션 호출
-            initializeRoom(roomId);
-        }
-
-        // 컴포넌트가 사라질 때(unmount) 정리(cleanup) 액션이 자동으로 호출됩니다.
-        return () => {
-            cleanupRoom();
-        };
-    }, [roomId, userId, initializeRoom, cleanupRoom, navigate]);
-
-    // 메시지 목록이 변경될 때마다 맨 아래로 스크롤
-    useEffect(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
-
-
-    // --- 핸들러 함수들: 스토어 액션을 호출하는 역할만 수행 ---
-    const handleSendMessage = () => { 
-      if (!newMessage.trim()) return; 
-      sendMessage(newMessage);
-      setNewMessage('');
+  const goToUserProfile = () => {
+    if (chatPartner.id) {
+      navigate(`/users/${chatPartner.id}`);
+    }
   };
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.nativeEvent.isComposing) {
-        return;
-      }
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault(); // 기본 동작(줄바꿈) 방지
-        handleSendMessage();
-      }
-    };
-    const confirmLeaveRoom = () => {
-        leaveCurrentRoom();
-        navigate('/chat'); // 나가기 후 채팅 목록 페이지로 이동
-    };
 
-    const confirmInviteUser = () => {
-        inviteUser(inviteeId);
-        setInviteeId(''); // 입력 필드 초기화
+  // --- 컴포넌트 로컬 상태 (UI에만 한정된 상태) ---
+  const [newMessage, setNewMessage] = useState("");
+  const [inviteeId, setInviteeId] = useState("");
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const dragX = useMotionValue(0);
+
+  // --- 컴포넌트 생명주기와 스토어 액션 연결 ---
+  useEffect(() => {
+    if (!userId) {
+      // authStore가 user 상태를 관리하므로 로그인 확인 로직도 간결해집니다.
+      alert("로그인이 필요합니다.");
+      navigate("/login");
+      return;
+    }
+    if (roomId) {
+      // 방에 들어갈 때 스토어의 초기화 액션 호출
+      initializeRoom(roomId);
+    }
+
+    // 컴포넌트가 사라질 때(unmount) 정리(cleanup) 액션이 자동으로 호출됩니다.
+    return () => {
+      cleanupRoom();
     };
+  }, [roomId, userId, initializeRoom, cleanupRoom, navigate]);
 
-    // --- JSX (UI 렌더링) ---
-    return (
-        <div className="flex flex-col h-screen max-w-4xl mx-auto bg-brand-default">
-          {/* 헤더 */}
-            <header className="flex items-center justify-between p-4 border-b border-gray-200">
-                <button onClick={() => navigate('/chat')} className="p-2 text-brand-gray hover:text-brand-primary">
-                    <Icon name="back" />
-                </button>
-                <button 
-                  onClick={goToUserProfile} 
-                  className="flex items-center gap-3 p-2 -ml-2 rounded-lg hover:bg-gray-100"
-                  disabled={!chatPartner.id} // 상대방 ID가 없으면(새 채팅방 등) 버튼 비활성화
-                >
-                    <Avatar 
-                        src={chatPartner.profileUrl || `https://placehold.co/32x32/e9ecef/495057?text=${chatPartner.username?.charAt(0)}`}
-                        alt={chatPartner.username}
-                        size={32}
-                    />
-                    <h2 className="text-subheadline text-brand-text-primary">{chatPartner.username}</h2>
-                </button>
-                
-                <div className="flex items-center gap-2">
-                    <button onClick={() => openModal('invite')} className="p-2 text-brand-gray hover:text-brand-primary">
-                        <Icon name="addUser" size={22} />
-                    </button>
-                    <button onClick={() => openModal('leave')} className="p-2 text-brand-gray hover:text-brand-error-text">
-                        <Icon name="exit" />
-                    </button>
-                </div>
-            </header>
-            {/* 채팅 메시지 목록 */}
-            <motion.main
-                className="flex-1 p-4 overflow-y-auto bg-brand-frame"
-                style={{ x: dragX }} // 드래그 값을 실제 x 위치에 바인딩
-                drag="x" // x축으로 드래그 가능하게 설정
-                dragConstraints={{ left: -100, right: 0 }} // 왼쪽으로 최대 100px까지만 드래그
-                dragElastic={0.1} // 경계를 넘어서 드래그할 때의 탄성
-                dragSnapToOrigin
-            >
-                <div className="flex flex-col gap-2">
-                    {messages.map((msg: Message) =>
-                        msg.isSystem ? (
-                            <div key={msg.id} className="self-center px-3 py-1 text-xs text-brand-gray bg-gray-200 rounded-full">
-                                {msg.content}
-                            </div>
-                        ) : (
-                          <div key={msg.id}>
-                                {msg.senderId === userId ? (
-                                    // 내가 보낸 메시지
-                                    <div className="flex w-full justify-end">
-                                        <MessageBubble msg={msg} currentUserId={userId} dragX={dragX} />
-                                    </div>
-                                ) : (
-                                    // 상대방이 보낸 메시지
-                                    <div className="flex items-end gap-2"> 
-                                        <Avatar 
-                                            src={msg.sender?.profileUrl || `https://placehold.co/32x32/e9ecef/495057?text=${msg.sender?.username.charAt(0)}`} 
-                                            alt={msg.sender?.username}
-                                        />
-                                        <div className="flex flex-col">
-                                            <span className="text-sm text-brand-gray mb-1 text-left block">{msg.sender?.username}</span>
-                                            <MessageBubble msg={msg} currentUserId={userId} dragX={dragX} />
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )
-                    )}
-                </div>
-                <div ref={chatEndRef} />
-            </motion.main> 
-            {/* 푸터 */}
-            <footer className="p-4 bg-white border-t border-gray-200">
-                <div className="flex items-end gap-3">
-                    <MessageInput
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                    />
-                    <button 
-                        onClick={handleSendMessage}
-                        className="flex-shrink-0 p-3 text-white rounded-full bg-brand-primary disabled:bg-brand-disabled" 
-                        disabled={!newMessage.trim()}
-                    >
-                        <Icon name="send" size={20} />
-                    </button>
-                </div>
-            </footer>
+  // 메시지 목록이 변경될 때마다 맨 아래로 스크롤
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-            {/* 모달 렌더링 */}
-            {isModalOpen && (
-                <Modal isOpen={isModalOpen} onClose={closeModal} title={modalType === 'leave' ? '채팅방 나가기' : '사용자 초대'}>
-                    {modalType === 'leave' ? (
-                        <>
-                            <p className="mb-6">정말로 이 방을 나가시겠습니까?</p>
-                            <div className="flex justify-end gap-3">
-                                <SecondaryButton onClick={closeModal}>취소</SecondaryButton>
-                                <PrimaryButton onClick={confirmLeaveRoom} className="!w-auto !bg-red-500">나가기</PrimaryButton>
-                            </div>
-                        </>
-                    ) : (
-                        <>
-                            <p className="mb-4">초대할 사용자의 ID를 입력하세요.</p>
-                            <TextInput
-                                type="text"
-                                placeholder="사용자 ID"
-                                value={inviteeId}
-                                onChange={(e) => setInviteeId(e.target.value)}
-                                autoFocus
-                            />
-                            <div className="flex justify-end gap-3 mt-6">
-                                <SecondaryButton onClick={closeModal}>취소</SecondaryButton>
-                                <PrimaryButton onClick={confirmInviteUser} className="!w-auto">초대하기</PrimaryButton>
-                            </div>
-                        </>
-                    )}
-                </Modal>
-            )}
+  // --- 핸들러 함수들: 스토어 액션을 호출하는 역할만 수행 ---
+  const handleSendMessage = () => {
+    if (!newMessage.trim()) return;
+    sendMessage(newMessage);
+    setNewMessage("");
+  };
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.nativeEvent.isComposing) {
+      return;
+    }
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault(); // 기본 동작(줄바꿈) 방지
+      handleSendMessage();
+    }
+  };
+  const confirmLeaveRoom = () => {
+    leaveCurrentRoom();
+    navigate("/chat"); // 나가기 후 채팅 목록 페이지로 이동
+  };
+
+  const confirmInviteUser = () => {
+    inviteUser(inviteeId);
+    setInviteeId(""); // 입력 필드 초기화
+  };
+
+  // --- JSX (UI 렌더링) ---
+  return (
+    <div className="flex flex-col h-screen max-w-4xl mx-auto bg-brand-default">
+      {/* 헤더 */}
+      <header className="flex items-center justify-between p-4 border-b border-gray-200">
+        <button
+          onClick={() => navigate("/chat")}
+          className="p-2 text-brand-gray hover:text-brand-primary"
+        >
+          <Icon name="back" />
+        </button>
+        <button
+          onClick={goToUserProfile}
+          className="flex items-center gap-3 p-2 -ml-2 rounded-lg hover:bg-gray-100"
+          disabled={!chatPartner.id} // 상대방 ID가 없으면(새 채팅방 등) 버튼 비활성화
+        >
+          <Avatar
+            src={
+              chatPartner.profileUrl ||
+              `https://placehold.co/32x32/e9ecef/495057?text=${chatPartner.username?.charAt(
+                0
+              )}`
+            }
+            alt={chatPartner.username}
+            size={32}
+          />
+          <h2 className="text-subheadline text-brand-text-primary">
+            {chatPartner.username}
+          </h2>
+        </button>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => openModal("invite")}
+            className="p-2 text-brand-gray hover:text-brand-primary"
+          >
+            <Icon name="addUser" size={22} />
+          </button>
+          <button
+            onClick={() => openModal("leave")}
+            className="p-2 text-brand-gray hover:text-brand-error-text"
+          >
+            <Icon name="exit" />
+          </button>
         </div>
-    );
+      </header>
+      {/* 채팅 메시지 목록 */}
+      <motion.main
+        className="flex-1 p-4 overflow-y-auto bg-brand-frame"
+        style={{ x: dragX }} // 드래그 값을 실제 x 위치에 바인딩
+        drag="x" // x축으로 드래그 가능하게 설정
+        dragConstraints={{ left: -100, right: 0 }} // 왼쪽으로 최대 100px까지만 드래그
+        dragElastic={0.1} // 경계를 넘어서 드래그할 때의 탄성
+        dragSnapToOrigin
+      >
+        <div className="flex flex-col gap-2">
+          {messages.map((msg: Message) =>
+            msg.isSystem ? (
+              <div
+                key={msg.id}
+                className="self-center px-3 py-1 text-xs text-brand-gray bg-gray-200 rounded-full"
+              >
+                {msg.content}
+              </div>
+            ) : (
+              <div key={msg.id}>
+                {msg.senderId === userId ? (
+                  // 내가 보낸 메시지
+                  <div className="flex w-full justify-end">
+                    <MessageBubble
+                      msg={msg}
+                      currentUserId={userId}
+                      dragX={dragX}
+                    />
+                  </div>
+                ) : (
+                  // 상대방이 보낸 메시지
+                  <div className="flex items-end gap-2">
+                    <Avatar
+                      src={
+                        msg.sender?.profileUrl ||
+                        `https://placehold.co/32x32/e9ecef/495057?text=${msg.sender?.username.charAt(
+                          0
+                        )}`
+                      }
+                      alt={msg.sender?.username}
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-sm text-brand-gray mb-1 text-left block">
+                        {msg.sender?.username}
+                      </span>
+                      <MessageBubble
+                        msg={msg}
+                        currentUserId={userId}
+                        dragX={dragX}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          )}
+        </div>
+        <div ref={chatEndRef} />
+      </motion.main>
+      {/* 푸터 */}
+      <footer className="p-4 bg-white border-t border-gray-200">
+        <div className="flex items-end gap-3">
+          <MessageInput
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
+          <button
+            onClick={handleSendMessage}
+            className="flex-shrink-0 p-3 text-white rounded-full bg-brand-primary disabled:bg-brand-disabled"
+            disabled={!newMessage.trim()}
+          >
+            <Icon name="send" size={20} />
+          </button>
+        </div>
+      </footer>
+
+      {/* 모달 렌더링 */}
+      {isModalOpen && (
+        <Modal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          title={modalType === "leave" ? "채팅방 나가기" : "사용자 초대"}
+        >
+          {modalType === "leave" ? (
+            <>
+              <p className="mb-6">정말로 이 방을 나가시겠습니까?</p>
+              <div className="flex justify-end gap-3">
+                <SecondaryButton onClick={closeModal}>취소</SecondaryButton>
+                <PrimaryButton
+                  onClick={confirmLeaveRoom}
+                  className="!w-auto !bg-red-500"
+                >
+                  나가기
+                </PrimaryButton>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="mb-4">초대할 사용자의 ID를 입력하세요.</p>
+              <TextInput
+                type="text"
+                placeholder="사용자 ID"
+                value={inviteeId}
+                onChange={(e) => setInviteeId(e.target.value)}
+                autoFocus
+              />
+              <div className="flex justify-end gap-3 mt-6">
+                <SecondaryButton onClick={closeModal}>취소</SecondaryButton>
+                <PrimaryButton onClick={confirmInviteUser} className="!w-auto">
+                  초대하기
+                </PrimaryButton>
+              </div>
+            </>
+          )}
+        </Modal>
+      )}
+    </div>
+  );
 };
 
 export default ChatRoomPage;

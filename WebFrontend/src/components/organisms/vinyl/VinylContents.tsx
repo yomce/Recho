@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
+import PrimaryButton from "@/components/atoms/button/PrimaryButton";
 
 interface VinylContentsProps {
   likes: number;
@@ -8,6 +9,9 @@ interface VinylContentsProps {
   videoSrc: string;
   isVisible: boolean; // 현재 화면에 보이는지 여부
   rotationAngle: number; // 회전 각도
+  depth: number; // depth prop 추가
+  onVideoReady?: () => void; // 비디오 로딩 완료 콜백
+  onStartEnsemble: (videoId: string) => void; // prop 타입 정의 추가
 }
 
 const VinylContents: React.FC<VinylContentsProps> = (props) => {
@@ -17,14 +21,29 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
     props.rotationAngle
   );
 
+  const handleVideoCanPlay = () => {
+    // 비디오가 재생 준비되면 재생 시도
+    if (videoRef.current && props.isVisible) {
+      videoRef.current.play().catch((error) => {
+        console.log("자동 재생 실패. 사용자의 상호작용이 필요합니다.", error);
+      });
+    }
+    // 부모 컴포넌트에게 로딩 완료 알림 (필요한 경우)
+    if (props.onVideoReady) {
+      props.onVideoReady();
+    }
+  };
+
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.loop = true;
-      // 화면에 보일 때만 재생
       if (props.isVisible) {
-        videoRef.current.play();
+        // 화면에 보일 때 비디오 로드를 시작 (재생은 onCanPlay에서)
+        videoRef.current.load();
       } else {
+        // 보이지 않으면 일시정지하고 시간 리셋
         videoRef.current.pause();
+        videoRef.current.currentTime = 0;
       }
     }
   }, [props.isVisible]);
@@ -70,7 +89,9 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
         controls={false}
         playsInline
         muted
+        crossOrigin="anonymous"
         style={{ display: "block" }}
+        onCanPlay={handleVideoCanPlay}
       />
       <div
         id="video_data"
@@ -88,8 +109,25 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
       >
         <h1>{props.likes}</h1>
         <h1>{props.comments}</h1>
-        <button>합주하기 소스:{props.videoInfo}</button>
       </div>
+
+      {/* 버튼은 비디오 위에, 중앙에 위치 */}
+      {props.depth < 6 && (
+        <PrimaryButton
+          onClick={() => props.onStartEnsemble(props.videoInfo)}
+          style={{
+            width: "50%",
+            position: "absolute",
+            bottom: "8px",
+            boxShadow: "0 0 5px 0 rgba(0, 0, 0, 0.3)",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            zIndex: 10, // 다른 요소 위에 오도록 z-index 설정
+          }}
+        >
+          합주하기
+        </PrimaryButton>
+      )}
     </motion.div>
   );
 };

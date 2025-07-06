@@ -23,7 +23,7 @@ export class VideosController {
     return this.videosService.getThumbnailsByUser(userId);
   }
 
-  @Get('videos')
+  @Get()
   async getVideos(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
@@ -38,5 +38,15 @@ export class VideosController {
       throw new NotFoundException('Video key is required');
     }
     return this.videosService.getSourceVideoUrl(videoKey);
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.videosService.getVideoDetails(id);
+  }
+
+  @Get(':id/lineage')
+  findVideoLineage(@Param('id') id: string) {
+    return this.videosService.findVideoLineage(id);
   }
 }

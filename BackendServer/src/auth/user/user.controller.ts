@@ -61,7 +61,9 @@ export class UserController {
     // 1. 디버깅을 위해 어떤 ID로 요청이 들어왔는지 서버 콘솔에 로그를 남깁니다.
     //    trim()을 사용하여 파라미터의 양쪽 공백을 제거합니다.
     const trimmedId = id.trim();
-    console.log(`[UserController] findUserById가 호출되었습니다. ID: ${trimmedId}`);
+    console.log(
+      `[UserController] findUserById가 호출되었습니다. ID: ${trimmedId}`,
+    );
 
     const user = await this.userService.findById(trimmedId);
 

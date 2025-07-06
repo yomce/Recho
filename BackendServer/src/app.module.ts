@@ -41,7 +41,7 @@ import { ViewCountModule } from './hooks/view_count/view-count.module';
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: true,
         logging: true,
-        dropSchema: true,
+        dropSchema: false,
         timezone: 'UTC',
       }),
     }),

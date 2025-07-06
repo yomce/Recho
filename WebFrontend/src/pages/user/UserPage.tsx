@@ -48,7 +48,7 @@ const UserPage: React.FC = () => {
         // 프로필 정보와 썸네일 정보를 병렬로 가져옵니다.
         const [userResponse, thumbnailsResponse] = await Promise.all([
           axiosInstance.get<UserProfile>(`/users/${id}`),
-          axiosInstance.get<string[]>(`/videos/thumbnails?userId=${id}`),
+          axiosInstance.get<string[]>(`/videos/thumbnails?id=${id}`),
         ]);
 
         setUser(userResponse.data);

@@ -2,8 +2,8 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "../stores/authStore";
 
-// 백엔드 서버의 기본 URL을 설정합니다.
-const API_BASE_URL = "http://localhost:3000";
+// 백엔드 서버의 기본 URL을 환경 변수에서 가져옵니다.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,

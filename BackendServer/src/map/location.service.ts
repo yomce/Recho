@@ -1,9 +1,9 @@
-import { Injectable, Inject, forwardRef } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Location } from "./entities/location.entity";
-import { Repository, Not, In } from "typeorm";
-import { CreateLocationDto } from "./dto/create-location.dto";
-import { UsedProductService } from "src/used_product/used-product.service";
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Location } from './entities/location.entity';
+import { Repository, Not, In } from 'typeorm';
+import { CreateLocationDto } from './dto/create-location.dto';
+import { UsedProductService } from 'src/used_product/used-product.service';
 
 @Injectable()
 export class LocationService {
@@ -24,7 +24,7 @@ export class LocationService {
 
     // 2. 이미 있으면 해당 locationId 반환
     if (existingLocation) {
-      return existingLocation
+      return existingLocation;
     }
 
     // 3. 없다면 새로 생성
@@ -33,16 +33,14 @@ export class LocationService {
   }
 
   async findLocationById(id: number): Promise<Location | null> {
-    return this.locationRepo.findOne({ where: {locationId: id }})
+    return this.locationRepo.findOne({ where: { locationId: id } });
   }
 
   async cleanUpUnusedLocations() {
-    const usedIds = [
-      ...(await this.usedProductService.getUsedLocationIds())
-    ];
+    const usedIds = [...(await this.usedProductService.getUsedLocationIds())];
 
     await this.locationRepo.delete({
-      locationId: Not(In(usedIds.length ? usedIds: [0])),
-    })
+      locationId: Not(In(usedIds.length ? usedIds : [0])),
+    });
   }
 }

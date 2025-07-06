@@ -1,11 +1,10 @@
-import { Injectable, Logger } from "@nestjs/common";
-import { Cron, CronExpression } from "@nestjs/schedule";
-import { LocationService } from "./location.service";
+import { Injectable, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { LocationService } from './location.service';
 
-
-// -- 위치 정보를 사용하는 모든 테이블에서 참조하지 않는 위치 정보 데이터를 주기적으로 삭제합니다 (Hard Delete) -- 
+// -- 위치 정보를 사용하는 모든 테이블에서 참조하지 않는 위치 정보 데이터를 주기적으로 삭제합니다 (Hard Delete) --
 @Injectable()
-export class LocationCleanerService{
+export class LocationCleanerService {
   private readonly logger = new Logger(LocationCleanerService.name);
 
   constructor(private readonly locationService: LocationService) {}

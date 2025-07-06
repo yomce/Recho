@@ -19,11 +19,14 @@ export class VideoInsertService {
     private readonly videoRepository: Repository<Video>,
   ) {}
 
-  async getUploadUrls(
-    fileType: string,
-  ): Promise<{ videoUrl: string; thumbnailUrl: string; videoKey: string; thumbnailKey: string }> {
-    const videoKey = `videos/${uuidv4()}`;
-    const thumbnailKey = `thumbnails/${uuidv4()}`;
+  async getUploadUrls(fileType: string): Promise<{
+    videoUrl: string;
+    thumbnailUrl: string;
+    videoKey: string;
+    thumbnailKey: string;
+  }> {
+    const videoKey = `${process.env.RESULTS_PATH}/${uuidv4()}`;
+    const thumbnailKey = `${process.env.THUMBNAIL_PATH}/${uuidv4()}`;
 
     const videoCommand = new PutObjectCommand({
       Bucket: process.env.AWS_S3_BUCKET,

@@ -14,10 +14,8 @@ import { VideoInsertModule } from './video-insert/video-insert.module';
 import { ChatModule } from './chat/chat.module';
 import { UsedProductModule } from './used_product/used-product.module';
 
-
 import { PracticeRoomModule } from './practice_room/practice-room.module';
 import { EnsembleModule } from './ensemble/ensemble.module';
-
 
 import { MailerModule } from '@nestjs-modules/mailer';
 import { LocationModule } from './map/location.module';

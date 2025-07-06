@@ -6,11 +6,14 @@ const apiClient = axios.create({
   baseURL: "/api",
 });
 
+// likes나 createdAt으로 정렬 할 듯
+// 무한 스크롤과 간단한 추천 시스템 추가 필요
+
 export const getVideos = async (page = 1, limit = 10): Promise<Video[]> => {
   try {
     const response = await apiClient.get<Video[]>("/videos", {
       params: {
-        sortBy: "date", // 'likes' or 'date'
+        sortBy: "createdAt",
         page,
         limit,
       },

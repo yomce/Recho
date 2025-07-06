@@ -29,6 +29,7 @@ import {
   EditData,
   MediaItem,
   RootStackParamList,
+  Video as ServerVideo,
 } from '../types';
 import CommonButton from '../components/Common/CommonButton';
 import SectionHeader from '../components/Common/SectionHeader';
@@ -44,6 +45,7 @@ type LocalVideoEditParams = {
   videos?: MediaItem[];
   parentVideoId?: string;
   total_slots?: number;
+  sourceVideos?: ServerVideo[];
 };
 
 // 기본 EQ 밴드 설정
@@ -119,15 +121,22 @@ const VideoEditScreen: React.FC<{
   route: RouteProp<{ VideoEdit: LocalVideoEditParams }, 'VideoEdit'>;
 }> = ({ route }) => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
-  const { videos = [], total_slots = 1 } = route.params ?? {};
+  const {
+    videos: localVideos = [],
+    total_slots = 1,
+    sourceVideos: serverVideos = [],
+  } = route.params ?? {};
   const [trimmers, setTrimmers] = useState<TrimmerState[]>([]);
   const editorRefs = useRef<Record<string, SingleEditorHandles | null>>({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    const initialTrimmers = Array.from({ length: total_slots }, (_, i) => {
-      const video = videos[i] || null;
+    const finalVideos = localVideos || [];
+    const numSlots = finalVideos.length > 0 ? finalVideos.length : total_slots;
+
+    const initialTrimmers = Array.from({ length: numSlots }, (_, i) => {
+      const video = finalVideos[i] || null;
       return {
         id: `trimmer${i + 1}`,
         sourceVideo: video,
@@ -140,12 +149,13 @@ const VideoEditScreen: React.FC<{
         originalAspectRatioValue: '1.777',
       };
     });
+
     console.log(
       '[VideoEditScreen] Trimmer slots initialized:',
       initialTrimmers.map(t => ({ id: t.id, hasVideo: !!t.sourceVideo })),
     );
     setTrimmers(initialTrimmers);
-  }, [videos, total_slots]);
+  }, [localVideos, total_slots]);
 
   const handleTrimmerUpdate = (
     id: string,
@@ -331,15 +341,27 @@ const VideoEditScreen: React.FC<{
           }
           // --- 유저 ID 가져오기 끝 ---
 
+          const parentVideo =
+            serverVideos && serverVideos.length > 0
+              ? serverVideos[serverVideos.length - 1]
+              : null;
+          const parentVideoId = parentVideo ? parentVideo.id : null;
+          const depth = serverVideos ? serverVideos.length + 1 : 1;
+
           await axiosInstance.post('/video-insert/complete', {
             user_id: id,
             results_video_key: videoKey,
             source_video_key: videoKey,
             thumbnail_key: thumbnailKey,
-            parent_video_id: null,
-            depth: 1,
+            parent_video_id: parentVideoId,
+            depth: depth,
+            total_slots: total_slots,
           });
-          console.log('Metadata saved.');
+          console.log('Metadata saved with:', {
+            parent_video_id: parentVideoId,
+            depth: depth,
+            total_slots: total_slots,
+          });
 
           Alert.alert('성공', '비디오가 성공적으로 업로드되었습니다.');
 
@@ -356,15 +378,15 @@ const VideoEditScreen: React.FC<{
         }
       };
 
-      // --- 테스트용 임시 로직: 원본 비디오를 바로 사용 ---
-      const firstVideo = activeTrimmers[0].sourceVideo;
-      const firstTrimmer = activeTrimmers[0];
-      if (firstVideo) {
+      // --- 테스트용 임시 로직: 마지막 슬롯의 비디오를 원본 그대로 사용 ---
+      const lastTrimmer = activeTrimmers[activeTrimmers.length - 1];
+      const videoToUpload = lastTrimmer?.sourceVideo;
+      if (videoToUpload) {
         // 비디오 업로드 및 메타데이터 저장
         await getPresignedUrlAndUpload({
-          ...firstVideo,
-          uri: cleanUri(firstVideo.uri),
-          duration: firstTrimmer.duration, // 영상 길이 전달
+          ...videoToUpload,
+          uri: cleanUri(videoToUpload.uri),
+          duration: lastTrimmer.duration, // 영상 길이 전달
         });
       }
     } catch (error) {

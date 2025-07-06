@@ -75,7 +75,9 @@ export class UsedProductService {
     // }
 
     // 실제로 locationRepo를 사용해 ID로 지역 정보를 조회
-    const locationEntity = await this.locationRepo.findOneBy({ locationId: Number(locationId) });
+    const locationEntity = await this.locationRepo.findOneBy({
+      locationId: Number(locationId),
+    });
 
     if (!locationEntity) {
       throw new NotFoundException(`Location with ID #${locationId} not found.`);
@@ -165,7 +167,7 @@ export class UsedProductService {
       .select('DISTINCT used.locationId', 'locationId')
       .getRawMany();
 
-    return results.map(row => row.locationId);
+    return results.map((row) => row.locationId);
   }
 
   async incrementViewCount(id: number): Promise<void> {

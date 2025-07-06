@@ -1,7 +1,11 @@
 // src/auth/password/password.controller.ts
 import { Controller, Post, Body, HttpCode } from '@nestjs/common';
 import { PasswordService } from './password.service';
-import { SendEmailDto, VerifyCodeDto, ResetPasswordDto } from './dto/password.dto';
+import {
+  SendEmailDto,
+  VerifyCodeDto,
+  ResetPasswordDto,
+} from './dto/password.dto';
 
 @Controller('auth/password')
 export class PasswordController {
@@ -23,7 +27,9 @@ export class PasswordController {
 
   @Post('reset')
   @HttpCode(200)
-  async resetPassword(@Body() dto: ResetPasswordDto): Promise<{ message: string }> {
+  async resetPassword(
+    @Body() dto: ResetPasswordDto,
+  ): Promise<{ message: string }> {
     await this.passwordService.resetPassword(dto.email, dto.code, dto.password);
     return { message: '비밀번호가 성공적으로 변경되었습니다.' };
   }

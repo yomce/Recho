@@ -1,6 +1,4 @@
-import React from 'react';
-import PrimaryButton from '../button/PrimaryButton';
-import SecondaryButton from '../button/SecondaryButton';
+import React from "react";
 
 interface ModalProps {
   isOpen: boolean;
@@ -14,22 +12,22 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
 
   return (
     // 배경 (Backdrop)
-    <div 
+    <div
       className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
       onClick={onClose}
     >
       {/* 모달 컨테이너 */}
-      <div 
-        className="relative w-full max-w-sm p-6 bg-brand-default rounded-[var(--radius-card)]"   
+      <div
+        className="relative w-full max-w-sm p-6 bg-brand-default rounded-[var(--radius-card)] shadow-lg"
         onClick={(e) => e.stopPropagation()} // 모달 내부 클릭 시 전파 방지
       >
         {/* 타이틀 */}
-        <h3 className="text-subheadline text-brand-text-primary mb-4">{title}</h3>
-        
+        <h3 className="text-subheadline text-brand-text-primary mb-4">
+          {title}
+        </h3>
+
         {/* 내용 (자식 요소들이 여기에 렌더링됨) */}
-        <div className="text-body text-brand-text-secondary">
-          {children}
-        </div>
+        <div className="text-body text-brand-text-secondary">{children}</div>
       </div>
     </div>
   );

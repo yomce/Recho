@@ -1,5 +1,10 @@
 // src/auth/password/password.service.ts
-import { Injectable, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { MailerService } from '@nestjs-modules/mailer';
 import * as bcrypt from 'bcrypt';
@@ -45,15 +50,21 @@ export class PasswordService {
     info.verified = true; // 인증 완료 상태로 변경
   }
 
-  async resetPassword(email: string, code: string, newPass: string): Promise<void> {
+  async resetPassword(
+    email: string,
+    code: string,
+    newPass: string,
+  ): Promise<void> {
     const info = this.verificationCodes.get(email);
     // 코드가 유효한지, 그리고 '인증 완료' 상태인지 함께 확인
     if (!info || info.code !== code || !info.verified) {
       throw new UnauthorizedException('인증 절차를 다시 진행해주세요.');
     }
-     if (info.expiresAt < Date.now()){
-      throw new BadRequestException('인증 세션이 만료되었습니다. 다시 시도해주세요.');
-     }
+    if (info.expiresAt < Date.now()) {
+      throw new BadRequestException(
+        '인증 세션이 만료되었습니다. 다시 시도해주세요.',
+      );
+    }
 
     const user = await this.userService.findByEmail(email);
     if (!user) {

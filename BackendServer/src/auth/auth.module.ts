@@ -20,15 +20,24 @@ import { GoogleStrategy } from './google.strategy';
     MailerModule,
     ConfigModule, // ConfigService를 사용하기 위해 ConfigModule을 import
     JwtModule.registerAsync({
-        imports: [ConfigModule],
-        inject: [ConfigService],
-        useFactory: (configService: ConfigService) => ({
-            secret: configService.get<string>('JWT_SECRET'),
-            signOptions: { expiresIn: configService.get<string>('JWT_EXPIRATION_TIME') },
-        }),
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: {
+          expiresIn: configService.get<string>('JWT_EXPIRATION_TIME'),
+        },
+      }),
     }),
   ],
   controllers: [AuthController, PasswordController],
-  providers: [AuthService, JwtStrategy, RefreshTokenStrategy, PasswordService, KakaoStrategy, GoogleStrategy], // KakaoStrategy 추가
+  providers: [
+    AuthService,
+    JwtStrategy,
+    RefreshTokenStrategy,
+    PasswordService,
+    KakaoStrategy,
+    GoogleStrategy,
+  ], // KakaoStrategy 추가
 })
 export class AuthModule {}

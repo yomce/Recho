@@ -19,7 +19,12 @@ export class KakaoStrategy extends PassportStrategy(Strategy, 'kakao') {
     });
   }
 
-   async validate(accessToken: string, refreshToken: string, profile: Profile, done: Function) {
+  async validate(
+    accessToken: string,
+    refreshToken: string,
+    profile: Profile,
+    done: Function,
+  ) {
     const { id, username, _json } = profile;
     const kakao_account = _json.kakao_account;
 
@@ -45,7 +50,7 @@ export class KakaoStrategy extends PassportStrategy(Strategy, 'kakao') {
         email, // 정상적으로 받아온 이메일을 사용
       });
     }
-    
+
     // 3. 사용자 정보를 반환하면, Guard가 req.user에 담아줍니다.
     done(null, user);
   }

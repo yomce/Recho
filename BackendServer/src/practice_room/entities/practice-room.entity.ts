@@ -1,38 +1,38 @@
 import {
-    Column,
-    CreateDateColumn, 
-    Entity,
-    PrimaryGeneratedColumn,
-    ManyToOne,
-    JoinColumn,
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 
 import { Location } from 'src/map/entities/location.entity';
 
 @Entity({ name: 'practice_rooms' })
 export class PracticeRoom {
-    @PrimaryGeneratedColumn()
-    postId: number;
+  @PrimaryGeneratedColumn()
+  postId: number;
 
-    @Column()
-    id: string;
+  @Column()
+  id: string;
 
-    @Column()
-    title: string;
+  @Column()
+  title: string;
 
-    @Column({ type: 'text' })
-    description: string
+  @Column({ type: 'text' })
+  description: string;
 
-    @CreateDateColumn()
-    createdAt: Date;
+  @CreateDateColumn()
+  createdAt: Date;
 
-    @ManyToOne(() => Location, { eager: true })
-    @JoinColumn({ name: 'locationId' })
-    location: Location;
+  @ManyToOne(() => Location, { eager: true })
+  @JoinColumn({ name: 'locationId' })
+  location: Location;
 
-    @Column()
-    locationId: number;
+  @Column()
+  locationId: number;
 
-    @Column({ default: 0 })
-    viewCount: number;
+  @Column({ default: 0 })
+  viewCount: number;
 }

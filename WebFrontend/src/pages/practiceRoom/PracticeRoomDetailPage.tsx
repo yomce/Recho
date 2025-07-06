@@ -4,6 +4,7 @@ import axiosInstance from '@/services/axiosInstance';
 import { type PracticeRoom } from '@/types/practiceRoom';
 import { useAuthStore } from '@/stores/authStore';
 import { PracticeRoomDetail } from '@/components/layout/pages/practiceRoom/PracticeRoomDetailForm';
+import useViewCounter from '@/hooks/useViewCounter';
 
 const PracticeRoomDetailPage: React.FC = () => 
 {
@@ -14,7 +15,9 @@ const PracticeRoomDetailPage: React.FC = () =>
   const [post, setPost] = useState<PracticeRoom | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const isOwner = Boolean(post && user && post.userId === user.userId);
+  const isOwner = Boolean(post && user && post.id === user.id);
+
+  useViewCounter({ type: 'practice-room' });
 
   useEffect (() => {
     if(!id){

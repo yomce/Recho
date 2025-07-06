@@ -20,6 +20,7 @@ import { EnsembleModule } from './ensemble/ensemble.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { LocationModule } from './map/location.module';
 import { ApplicationModule } from './application/application.module';
+import { ViewCountModule } from './hooks/view_count/view-count.module';
 
 @Module({
   imports: [
@@ -40,7 +41,7 @@ import { ApplicationModule } from './application/application.module';
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: true,
         logging: true,
-        dropSchema: false,
+        dropSchema: true,
         timezone: 'UTC',
       }),
     }),
@@ -74,6 +75,7 @@ import { ApplicationModule } from './application/application.module';
     EnsembleModule,
     LocationModule,
     ApplicationModule,
+    ViewCountModule,
   ],
   controllers: [AppController],
   providers: [AppService],

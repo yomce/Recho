@@ -9,7 +9,7 @@ import PrimaryButton from "@/components/atoms/button/PrimaryButton";
 import SecondaryButton from "@/components/atoms/button/SecondaryButton";
 
 interface CustomJwtPayload extends JwtPayload {
-  userId: string; // userId 타입을 string으로 변경
+  id: string;
 }
 
 const MainPage: React.FC = () => {
@@ -49,13 +49,13 @@ const MainPage: React.FC = () => {
   };
 
   const handleGoToMyPage = () => {
-    // localStorage에서 토큰을 가져와 userId를 추출
+    // localStorage에서 토큰을 가져와 id를 추출
     const token = localStorage.getItem("accessToken");
     if (token) {
       try {
         const decodedToken = jwtDecode<CustomJwtPayload>(token);
-        const userId = decodedToken.userId;
-        navigate(`/users/${userId}`);
+        const id = decodedToken.id;
+        navigate(`/users/${id}`);
       } catch (error) {
         console.error("마이페이지 이동 실패:", error);
         handleLogout();

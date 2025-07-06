@@ -16,11 +16,11 @@ export class VideosController {
   constructor(private readonly videosService: VideosService) {}
 
   @Get('thumbnails')
-  async getThumbnails(@Query('userId') userId: string) {
-    if (!userId) {
+  async getThumbnails(@Query('id') id: string) {
+    if (!id) {
       throw new NotFoundException('User not found');
     }
-    return this.videosService.getThumbnailsByUser(userId);
+    return this.videosService.getThumbnailsByUser(id);
   }
 
   @Get()

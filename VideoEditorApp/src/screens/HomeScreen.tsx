@@ -88,7 +88,7 @@ const InfoText = styled.Text`
 `;
 
 interface CustomJwtPayload {
-  userId: number;
+  id: number;
 }
 
 /**
@@ -195,7 +195,7 @@ const HomeScreen: React.FC = () => {
               const token = await AsyncStorage.getItem('accessToken');
               if (token) {
                 const decodedToken = jwtDecode<CustomJwtPayload>(token);
-                const userId = decodedToken.userId;
+                const id = decodedToken.id;
                 // 뒤로가기 제한
                 navigation.reset({
                   index: 0,
@@ -203,7 +203,7 @@ const HomeScreen: React.FC = () => {
                     {
                       name: 'Web',
                       params: {
-                        url: `http://localhost:5173/users/${userId}?token=${token}`,
+                        url: `http://localhost:5173/users/${id}?token=${token}`,
                       },
                     },
                   ],

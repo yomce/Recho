@@ -24,8 +24,8 @@ export class PasswordService {
     private readonly mailerService: MailerService,
   ) {}
 
-  async sendVerificationEmail(userId: string, email: string): Promise<void> {
-    const user = await this.userService.findById(userId);
+  async sendVerificationEmail(id: string, email: string): Promise<void> {
+    const user = await this.userService.findById(id);
     if (!user || user.email !== email) {
       throw new NotFoundException('일치하는 사용자 정보를 찾을 수 없습니다.');
     }

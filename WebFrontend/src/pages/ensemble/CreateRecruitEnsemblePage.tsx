@@ -9,7 +9,7 @@ import { EnsembleForm, type RecruitEnsembleFormState, SKILL_LEVEL } from '@/page
 import axios from 'axios';
 import type { SessionEnsembleFormState } from './components/SessionForm';
 
-// 서버에 전송할 데이터 타입 (userId 포함)
+// 서버에 전송할 데이터 타입 (id 포함)
 interface CreateSessionEnsemblePayload {
   instrument: string;
   recruitCount: number;

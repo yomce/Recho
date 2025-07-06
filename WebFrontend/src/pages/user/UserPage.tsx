@@ -16,12 +16,12 @@ interface UserProfile {
 
 // JWT 페이로드 타입
 interface JwtPayload {
-  userId: string;
+  id: string;
   username: string;
 }
 
 const UserPage: React.FC = () => {
-  const { userId } = useParams<{ userId: string }>();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -37,7 +37,7 @@ const UserPage: React.FC = () => {
       setCurrentUser(jwtDecode<JwtPayload>(token));
     }
 
-    if (!userId) {
+    if (!id) {
       setError("사용자 ID가 없습니다.");
       setLoading(false);
       return;
@@ -47,8 +47,8 @@ const UserPage: React.FC = () => {
       try {
         // 프로필 정보와 썸네일 정보를 병렬로 가져옵니다.
         const [userResponse, thumbnailsResponse] = await Promise.all([
-          axiosInstance.get<UserProfile>(`/users/${userId}`),
-          axiosInstance.get<string[]>(`/videos/thumbnails?userId=${userId}`),
+          axiosInstance.get<UserProfile>(`/users/${id}`),
+          axiosInstance.get<string[]>(`/videos/thumbnails?userId=${id}`),
         ]);
 
         setUser(userResponse.data);
@@ -62,7 +62,7 @@ const UserPage: React.FC = () => {
     };
 
     fetchUserData();
-  }, [userId]);
+  }, [id]);
 
   /**
    * [신규] DM 보내기 버튼 클릭 시 실행되는 함수
@@ -98,7 +98,7 @@ const UserPage: React.FC = () => {
     );
 
   // 현재 보고 있는 프로필이 내 프로필인지 확인
-  const isMyProfile = currentUser?.userId === user?.id;
+  const isMyProfile = currentUser?.id === user?.id;
 
   return (
     <div style={styles.container}>
@@ -227,18 +227,18 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
   thumbnailContainer: {
     position: "relative",
-    width: "100%",
-    paddingBottom: "100%" /* 1:1 Aspect Ratio */,
+    paddingBottom: "100%", // 1:1 비율
+    backgroundColor: "#eee",
+    borderRadius: "8px",
+    overflow: "hidden",
   },
   thumbnailImage: {
     position: "absolute",
-    top: "0",
-    left: "0",
+    top: 0,
+    left: 0,
     width: "100%",
     height: "100%",
     objectFit: "cover",
-    borderRadius: "8px",
-    backgroundColor: "#f0f0f0",
   },
 };
 

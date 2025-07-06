@@ -33,7 +33,7 @@ export const SessionDetail: React.FC<SessionDetailProps> = ({
   const applierUsernames = useMemo(() => {
     return applicationEnsembleList
       .filter((app) => app.sessionEnsemble.sessionId === item.sessionId)
-      .map((app) => app.userId); // user 객체 안의 username을 추출
+      .map((app) => app.id); // user 객체 안의 username을 추출
   }, [applicationEnsembleList, item.sessionId]);
 
   // 2. 위에서 계산한 목록의 길이를 통해 현재 지원자 수를 구합니다.
@@ -95,7 +95,7 @@ export const SessionDetail: React.FC<SessionDetailProps> = ({
 
   useEffect(() => {
     const selfApplication = applicationEnsembleList.find(
-      (app) => app.userId === user?.userId
+      (app) => app.id === user?.id
     );
 
     setIsIn(!!selfApplication);
@@ -131,7 +131,7 @@ export const SessionDetail: React.FC<SessionDetailProps> = ({
       )}
 
       {/* --- 버튼 추가 부분 --- */}
-      {user?.userId !== ensemble.userId ? (
+      {user?.id !== ensemble.user.id ? (
         <div className="flex justify-end">
           {isApplied ? (
             isIn ? (

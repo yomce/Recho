@@ -29,7 +29,7 @@ export class RefreshTokenStrategy extends PassportStrategy(
 
   async validate(req: Request, payload: any) {
     const refreshToken = req.cookies.refreshToken;
-    const user = await this.userService.findById(payload.userId);
+    const user = await this.userService.findById(payload.id);
 
     if (!user || !user.hashedRefreshToken) {
       console.log('검증 실패 원인: DB에 유저 또는 저장된 토큰이 없습니다.');

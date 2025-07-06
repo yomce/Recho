@@ -15,7 +15,7 @@ export class PracticeRoom {
   postId: number;
 
   @Column()
-  userId: string;
+  id: string;
 
   @Column()
   title: string;

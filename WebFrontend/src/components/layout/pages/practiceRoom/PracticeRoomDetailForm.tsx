@@ -33,7 +33,7 @@ export const PracticeRoomDetail: React.FC<PracticeRoomDetailProps> = ({
           <h1 className="text-3xl font-bold mb-2">{post.title}</h1>
           <div className="my-4 text-base text-gray-600 leading-relaxed">
             <p className="my-2">
-              <strong>작성자:</strong> {post.userId}
+              <strong>작성자:</strong> {post.id}
             </p>
 
             <p className="my-2">

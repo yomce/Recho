@@ -33,12 +33,12 @@ export class ChatGateway {
 
   @SubscribeMessage('joinRoom')
   async handleJoinRoom(
-    @MessageBody() payload: { roomId: string; userId: string },
+    @MessageBody() payload: { roomId: string; id: string },
     @ConnectedSocket() client: Socket,
   ) {
-    await this.chatService.joinRoom(payload.userId, payload.roomId);
+    await this.chatService.joinRoom(payload.id, payload.roomId);
     client.join(payload.roomId);
-    this.server.to(payload.roomId).emit('userJoined', payload.userId);
+    this.server.to(payload.roomId).emit('userJoined', payload.id);
   }
 
   @SubscribeMessage('sendMessage')
@@ -69,20 +69,20 @@ export class ChatGateway {
 
   @SubscribeMessage('getHistory')
   async handleGetHistory(
-    // [수정] payload에 userId를 추가로 받도록 타입을 수정합니다.
+    // [수정] payload에 id를 추가로 받도록 타입을 수정합니다.
     @MessageBody()
     payload: {
       roomId: string;
-      userId: string; // userId를 필수로 받습니다.
+      id: string; // id를 필수로 받습니다.
       page?: number;
       limit?: number;
     },
     @ConnectedSocket() client: Socket,
   ) {
-    // [수정] chatService.getHistory 호출 시 payload에서 받은 userId를 전달합니다.
+    // [수정] chatService.getHistory 호출 시 payload에서 받은 id를 전달합니다.
     const history = await this.chatService.getHistory(
       payload.roomId,
-      payload.userId, // userId 전달
+      payload.id, // id 전달
       payload.page,
       payload.limit,
     );
@@ -91,19 +91,19 @@ export class ChatGateway {
 
   @SubscribeMessage('leaveRoom')
   async handleLeaveRoom(
-    @MessageBody() payload: { roomId: string; userId: string },
+    @MessageBody() payload: { roomId: string; id: string },
     @ConnectedSocket() client: Socket,
   ) {
     // 1. DB에서 사용자 정보를 조회하여 이름을 가져옵니다.
-    const user = await this.userService.findById(payload.userId);
+    const user = await this.userService.findById(payload.id);
 
     // 2. ChatService를 통해 사용자를 방에서 내보냅니다.
-    await this.chatService.leaveRoom(payload.userId, payload.roomId);
+    await this.chatService.leaveRoom(payload.id, payload.roomId);
     client.leave(payload.roomId);
 
     // 3. 방에 남아있는 다른 사용자들에게 'username'을 포함하여 이벤트를 전송합니다.
     this.server.to(payload.roomId).emit('userLeft', {
-      userId: payload.userId,
+      id: payload.id,
       username: user ? user.username : '알 수 없는 사용자', // 유저가 존재하면 username, 없으면 기본값
     });
   }

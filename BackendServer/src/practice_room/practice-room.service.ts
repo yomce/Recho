@@ -61,7 +61,7 @@ export class PracticeRoomService {
 
   async enrollPracticeRoom(
     createDto: CreatePracticeRoomDto,
-    userId: string,
+    id: string,
   ): Promise<PracticeRoom> {
     const { locationId, ...restofDto } = createDto;
 
@@ -78,7 +78,7 @@ export class PracticeRoomService {
     const newPracticeRoom = this.practiceRoomRepo.create({
       ...restofDto,
       locationId: locationEntity.locationId,
-      userId: userId, // 실제 유저 ID를 사용해야 합니다
+      id: id, // 실제 유저 ID를 사용해야 합니다
       viewCount: 0,
     });
     return await this.practiceRoomRepo.save(newPracticeRoom);
@@ -109,5 +109,9 @@ export class PracticeRoomService {
     const post = await this.detailPracticeRoom(id);
     const updatedPost = this.practiceRoomRepo.merge(post, updateDto);
     return this.practiceRoomRepo.save(updatedPost);
+  }
+
+  async incrementViewCount(id: number): Promise<void> {
+    await this.practiceRoomRepo.increment({ postId: id }, 'viewCount', 1);
   }
 }

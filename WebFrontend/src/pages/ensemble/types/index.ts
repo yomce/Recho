@@ -1,3 +1,4 @@
+import type { User } from '@/stores/authStore';
 import type { SKILL_LEVEL } from '../components/EnsembleForm';
 
 export enum APPLICATION_STATUS {
@@ -11,7 +12,7 @@ export interface ApplicationEnsemble {
   applicationId: number;
   recruitEnsemble: RecruitEnsemble;
   sessionEnsemble: SessionEnsemble;
-  userId: string;
+  id: string;
   applicationStatus: APPLICATION_STATUS;
   appliedAt: string;
   approvedAt?: string;
@@ -27,7 +28,7 @@ export interface RecruitEnsemble {
   postId: number;
   title: string;
   content: string;
-  userId: string;
+  user: User;
   eventDate: string;
   skillLevel: SKILL_LEVEL;
   locationId: number;

@@ -37,7 +37,7 @@ import axiosInstance from '../api/axiosInstance';
 
 // JWT 페이로드 타입 정의
 interface CustomJwtPayload {
-  userId: string;
+  id: string;
 }
 
 // [수정] 타입을 로컬로 재정의하여 파일 동기화 문제 우회
@@ -331,8 +331,8 @@ const VideoEditScreen: React.FC<{
             return;
           }
           const decodedToken = jwtDecode<CustomJwtPayload>(token);
-          const userId = decodedToken.userId;
-          if (!userId) {
+          const id = decodedToken.id;
+          if (!id) {
             Alert.alert(
               '오류',
               '사용자 ID를 확인할 수 없습니다. 다시 로그인해주세요.',
@@ -349,7 +349,7 @@ const VideoEditScreen: React.FC<{
           const depth = serverVideos ? serverVideos.length + 1 : 1;
 
           await axiosInstance.post('/video-insert/complete', {
-            user_id: userId,
+            user_id: id,
             results_video_key: videoKey,
             source_video_key: videoKey,
             thumbnail_key: thumbnailKey,

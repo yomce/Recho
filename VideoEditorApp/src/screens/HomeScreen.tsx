@@ -10,6 +10,7 @@ import {
 import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
+import { WEB_FRONTEND_URL } from '@env';
 
 import { RootStackParamList } from '../types'; // RootStackParamList 임포트
 import CommonButton from '../components/Common/CommonButton'; // CommonButton 임포트 (수정됨)
@@ -203,7 +204,7 @@ const HomeScreen: React.FC = () => {
                     {
                       name: 'Web',
                       params: {
-                        url: `http://localhost:5173/users/${id}?token=${token}`,
+                        url: `${WEB_FRONTEND_URL}/users/${id}?token=${token}`,
                       },
                     },
                   ],
@@ -216,7 +217,7 @@ const HomeScreen: React.FC = () => {
                     {
                       name: 'Web',
                       params: {
-                        url: 'http://localhost:5173/login',
+                        url: `${WEB_FRONTEND_URL}/login`,
                       },
                     },
                   ],

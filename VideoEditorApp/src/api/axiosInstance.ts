@@ -1,8 +1,6 @@
 import axios, { type InternalAxiosRequestConfig } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// TODO: 나중에 .env 파일로 관리
-const API_BASE_URL = 'http://localhost:3000';
+import { API_BASE_URL } from '@env';
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,

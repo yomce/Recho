@@ -16,7 +16,7 @@ import Slider from '@react-native-community/slider';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import RNFS from 'react-native-fs';
-import axios from 'axios';
+import axiosInstance from '../api/axiosInstance';
 
 import { RootStackParamList, MediaItem } from '../../src/types';
 
@@ -151,8 +151,8 @@ const VideoEditScreen: React.FC = () => {
     setProcessing(true);
     try {
       // 1. Get presigned URLs from backend
-      const uploadUrlsRes = await axios.post(
-        'http://localhost:3000/video-insert/upload-urls', // Replace with your backend URL
+      const uploadUrlsRes = await axiosInstance.post(
+        '/video-insert/upload-urls', // Replace with your backend URL
         {
           fileType: 'video/mp4', // Adjust as needed
         },
@@ -162,7 +162,7 @@ const VideoEditScreen: React.FC = () => {
 
       // 2. Upload video to S3
       const videoFile = await RNFS.readFile(processedVideoUri, 'base64');
-      await axios.put(videoUrl, videoFile, {
+      await axiosInstance.put(videoUrl, videoFile, {
         headers: {
           'Content-Type': 'video/mp4',
         },
@@ -170,15 +170,15 @@ const VideoEditScreen: React.FC = () => {
 
       // 3. Upload thumbnail to S3
       const thumbnailFile = await RNFS.readFile(thumbnailUri, 'base64');
-      await axios.put(thumbnailUrl, thumbnailFile, {
+      await axiosInstance.put(thumbnailUrl, thumbnailFile, {
         headers: {
           'Content-Type': 'image/png',
         },
       });
 
       // 4. Notify backend of completion
-      await axios.post(
-        'http://localhost:3000/video-insert/complete', // Replace with your backend URL
+      await axiosInstance.post(
+        '/video-insert/complete', // Replace with your backend URL
         {
           user_id: 1, // Replace with actual user ID
           video_key: videoKey,

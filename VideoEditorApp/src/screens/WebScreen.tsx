@@ -12,6 +12,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isErrorWithCode, pick, types } from '@react-native-documents/picker';
 import axiosInstance from '../api/axiosInstance';
+import { WEB_FRONTEND_URL } from '@env';
 
 type WebScreenRouteProp = RouteProp<RootStackParamList, 'Web'>;
 
@@ -20,9 +21,7 @@ const WebScreen: React.FC = () => {
   const route = useRoute<WebScreenRouteProp>();
   const webviewRef = useRef<WebView>(null);
 
-  // 나중에 env로 변경
-  const defaultUrl = 'http://172.21.102.40:5173';
-  const webFrontendUrl = route.params?.url ?? defaultUrl;
+  const webFrontendUrl = route.params?.url ?? WEB_FRONTEND_URL;
 
   const injectedJavaScriptForLogs = `
     const originalConsoleLog = console.log;

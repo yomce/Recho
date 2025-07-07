@@ -31,7 +31,6 @@ import axios from 'axios';
 import { StackNavigationProp } from '@react-navigation/stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import VideoPreviewSlot, {
@@ -150,6 +149,16 @@ const SlotContainer = styled.View<{ width: number; height: number }>`
 const ControlsWrapper = styled.View`
   flex: 1;
   background-color: #000000; /* 배경색 추가 */
+`;
+
+const GlobalActionButton = styled(CommonButton)`
+  background-color: #3498db;
+  padding-vertical: 10px;
+  padding-horizontal: 12px;
+  border-radius: 8px;
+  margin-bottom: 0; /* CommonButton의 기본 마진 오버라이드 */
+  flex: 1; /* 공간을 균등하게 분배 */
+  margin-horizontal: 5px; /* 버튼 간 작은 간격 */
 `;
 
 const Dragger = styled.View`
@@ -389,17 +398,13 @@ const VideoEditScreen: React.FC<{
   };
 
   const processVideoForUpload = async () => {
-    const activeTrimmers = trimmers.filter(
-      t => t.sourceVideo && t.duration > 0,
-    );
-    if (activeTrimmers.length === 0) {
-      Alert.alert('오류', '업로드할 비디오를 선택해주세요.');
-      return;
-    }
-
     setIsProcessing(true);
 
     try {
+      // --- FFmpeg 처리 로직을 비활성화하고 직접 업로드 로직으로 대체 ---
+
+      // 기존 FFmpeg 콜라주 생성 로직 전체 주석 처리
+      /*
       console.log('[VideoEditScreen] Starting collage creation...');
       const editData: EditData = {
         trimmers: activeTrimmers.map(t => ({
@@ -460,9 +465,104 @@ const VideoEditScreen: React.FC<{
         console.error('[VideoEditScreen] FFmpeg process failed. Logs:', logs);
         Alert.alert('오류', 'FFmpeg 처리 중 오류가 발생했습니다.');
       }
-    } catch (error) {
+      */
+
+      // FFmpeg를 건너뛰고 직접 업로드하는 로직 (이전 버전에서 복원)
+      const directUpload = async (video: MediaItem) => {
+        if (!video) {
+          Alert.alert('오류', '업로드할 비디오가 선택되지 않았습니다.');
+          return;
+        }
+        setUploading(true);
+        try {
+          // 1. Presigned URL 요청
+          const urlsResponse = await axiosInstance.post(
+            '/video-insert/upload-urls',
+            {
+              fileType: video.type || 'video/mp4',
+            },
+          );
+          const { videoUrl, thumbnailUrl, videoKey, thumbnailKey } =
+            urlsResponse.data;
+
+          // 2. S3로 파일 업로드 (이전 버전의 fetch 로직으로 복원)
+          const uploadWithFetch = async (url: string, file: MediaItem) => {
+            const videoPayload = {
+              uri: cleanUri(file.uri),
+              type: file.type || 'video/mp4',
+              name: file.filename,
+            };
+
+            const response = await fetch(url, {
+              method: 'PUT',
+              headers: { 'Content-Type': videoPayload.type },
+              body: videoPayload,
+            });
+
+            if (!response.ok) {
+              const responseText = await response.text();
+              throw new Error(
+                `S3 Upload Failed: ${response.status} ${responseText}`,
+              );
+            }
+            return response;
+          };
+
+          await Promise.all([
+            uploadWithFetch(videoUrl, video),
+            uploadWithFetch(thumbnailUrl, video), // 썸네일도 임시로 비디오 사용
+          ]);
+
+          // 3. 메타데이터 저장
+          const token = await AsyncStorage.getItem('accessToken');
+          if (!token) throw new Error('No access token found.');
+          const decodedToken = jwtDecode<CustomJwtPayload>(token);
+          const userId = decodedToken.id;
+
+          const parentVideo =
+            serverVideos.length > 0
+              ? serverVideos[serverVideos.length - 1]
+              : null;
+          const parentVideoId = parentVideo ? parentVideo.id : null;
+          const depth = serverVideos.length > 0 ? serverVideos.length + 1 : 1;
+
+          await axiosInstance.post('/video-insert/complete', {
+            user_id: userId,
+            results_video_key: videoKey,
+            source_video_key: videoKey,
+            thumbnail_key: thumbnailKey,
+            parent_video_id: parentVideoId,
+            depth: depth,
+            total_slots: total_slots,
+          });
+
+          Alert.alert('성공', '비디오가 성공적으로 업로드되었습니다.');
+          navigation.reset({ index: 0, routes: [{ name: 'Web' }] });
+        } catch (uploadError: any) {
+          const errorMessage =
+            uploadError.response?.data?.message ||
+            uploadError.message ||
+            'An unknown error occurred';
+          console.error('Upload failed:', errorMessage, uploadError.stack);
+          Alert.alert('오류', `업로드 중 오류가 발생했습니다: ${errorMessage}`);
+        } finally {
+          setUploading(false);
+        }
+      };
+
+      // 마지막 슬롯의 비디오를 원본 그대로 업로드
+      const lastTrimmer = trimmers[trimmers.length - 1];
+      if (lastTrimmer?.sourceVideo) {
+        await directUpload(lastTrimmer.sourceVideo);
+      } else {
+        Alert.alert('오류', '업로드할 비디오 정보를 찾을 수 없습니다.');
+      }
+    } catch (error: any) {
       console.error('[VideoEditScreen] Error during video processing:', error);
-      Alert.alert('오류', '비디오 처리 중 오류가 발생했습니다.');
+      Alert.alert(
+        '오류',
+        `비디오 처리 중 오류가 발생했습니다: ${error.message}`,
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -588,15 +688,15 @@ const VideoEditScreen: React.FC<{
 
       <ControlsWrapper>
         <GlobalActionsContainer>
-          <IconButton onPress={handleGlobalPlay}>
-            <MaterialCommunityIcons name="play" size={30} color="#3498db" />
-          </IconButton>
-          <IconButton onPress={handleGlobalPause}>
-            <MaterialCommunityIcons name="pause" size={30} color="#3498db" />
-          </IconButton>
-          <IconButton onPress={handleGlobalSeekToStart}>
-            <MaterialCommunityIcons name="refresh" size={30} color="#3498db" />
-          </IconButton>
+          <GlobalActionButton onPress={handleGlobalSeekToStart}>
+            <GlobalButtonText>위치 초기화</GlobalButtonText>
+          </GlobalActionButton>
+          <GlobalActionButton onPress={handleGlobalPlay}>
+            <GlobalButtonText>동시 재생</GlobalButtonText>
+          </GlobalActionButton>
+          <GlobalActionButton onPress={handleGlobalPause}>
+            <GlobalButtonText>동시 정지</GlobalButtonText>
+          </GlobalActionButton>
         </GlobalActionsContainer>
 
         <ControlsScrollView showsVerticalScrollIndicator={false}>

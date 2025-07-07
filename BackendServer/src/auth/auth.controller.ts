@@ -106,7 +106,7 @@ export class AuthController {
 
     // 3. 액세스 토큰은 프론트엔드의 콜백 페이지로 리디렉션하며 전달합니다.
     res.redirect(
-      `http://172.21.102.40:5173/auth/callback?token=${accessToken}`,
+      `http://172.21.100.148:5173/auth/callback?token=${accessToken}`,
     );
   }
 
@@ -137,7 +137,7 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7일
     });
     res.redirect(
-      `http://172.21.102.40:5173/auth/callback?token=${accessToken}`,
+      `http://172.21.100.148:5173/auth/callback?token=${accessToken}`,
     );
   }
 }

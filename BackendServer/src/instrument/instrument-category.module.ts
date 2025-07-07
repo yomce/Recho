@@ -1,11 +1,11 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
+// import { Module } from '@nestjs/common';
+// import { TypeOrmModule } from '@nestjs/typeorm';
 
-@Module({
-  imports: [
-    TypeOrmModule.forFeature([InstrumentCategory])
-  ],
-  controllers: [InstrumentController],
-  providers: [InstrumentService]
-})
-export class InstrumentCategoryModule {}
+// @Module({
+//   imports: [
+//     TypeOrmModule.forFeature([InstrumentCategory])
+//   ],
+//   controllers: [InstrumentController],
+//   providers: [InstrumentService]
+// })
+// export class InstrumentCategoryModule {}

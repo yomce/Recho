@@ -1,6 +1,10 @@
 import React, { useRef } from 'react';
 import { SafeAreaView, StyleSheet, Alert } from 'react-native';
-import { WebView, type WebViewMessageEvent } from 'react-native-webview';
+import {
+  WebView,
+  type WebViewMessageEvent,
+  WebViewNavigation,
+} from 'react-native-webview';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { type StackNavigationProp } from '@react-navigation/stack';
 import RNFS from 'react-native-fs';
@@ -12,16 +16,25 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isErrorWithCode, pick, types } from '@react-native-documents/picker';
 import axiosInstance from '../api/axiosInstance';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { jwtDecode } from 'jwt-decode';
+import { WEB_URL } from '@env';
 
 type WebScreenRouteProp = RouteProp<RootStackParamList, 'Web'>;
+
+interface DecodedToken {
+  id: string;
+  username: string;
+  exp: number;
+}
 
 const WebScreen: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const route = useRoute<WebScreenRouteProp>();
   const webviewRef = useRef<WebView>(null);
+  const insets = useSafeAreaInsets();
 
-  // 나중에 env로 변경
-  const defaultUrl = 'http://172.21.102.40:5173';
+  const defaultUrl = WEB_URL || 'http://localhost:5173';
   const webFrontendUrl = route.params?.url ?? defaultUrl;
 
   const injectedJavaScriptForLogs = `
@@ -242,6 +255,11 @@ const WebScreen: React.FC = () => {
     }
   };
 
+  const handleShouldStartLoadWithRequest = (event: WebViewNavigation) => {
+    console.log('handleShouldStartLoadWithRequest', event);
+    return true;
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <WebView
@@ -258,6 +276,7 @@ const WebScreen: React.FC = () => {
         onMessage={handleWebViewMessage}
         onLoadEnd={sendTokenToWebView}
         mediaPlaybackRequiresUserAction={false}
+        onShouldStartLoadWithRequest={handleShouldStartLoadWithRequest}
       />
     </SafeAreaView>
   );

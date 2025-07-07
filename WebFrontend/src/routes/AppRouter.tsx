@@ -36,7 +36,6 @@ const AppRouter: React.FC = () => {
   return (
     <Router>
       <Routes>
-        {/* 인증이 필요 없는 페이지들 */}
         <Route path="/" element={<Navigate to="/main" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -45,10 +44,14 @@ const AppRouter: React.FC = () => {
 
         {/* 인증이 필요한 페이지들 */}
         <Route element={<ProtectedRoute />}>
+          {/* 사용자가 직접 / 로 접근했을 때, 로그인 여부에 따라 적절한 페이지를 보여주기 위해
+              MainPage를 / 와 /main 두 경로에 연결할 수 있습니다. */}
+          <Route path="/" element={<MainPage />} />
+          <Route path="/main" element={<MainPage />} />
+
           <Route path="/chat" element={<ChatListPage />} />
           <Route path="/chat/:roomId" element={<ChatRoomPage />} />
           <Route path="/users/:id" element={<UserPage />} />
-          <Route path="/main" element={<MainPage />} />
           <Route path="/vinyl" element={<VinylPage />} />
           <Route path="/used-products" element={<UsedProductPage />} />
           <Route path="/used-products/create" element={<CreateUsedProductPage />} />

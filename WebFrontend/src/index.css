@@ -145,3 +145,18 @@
   Tailwind 기본 스타일 불러오기 (가장 마지막)
 ======================================== */
 @import "tailwindcss";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 전체 화면 높이를 위한 스타일 추가 */
+html,
+body,
+#root {
+  height: 100%;
+}
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+}

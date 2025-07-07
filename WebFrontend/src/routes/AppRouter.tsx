@@ -28,7 +28,7 @@ import PracticeRoomPage from "@/pages/practiceRoom/PracticeRoomPage";
 import CreatePracticeRoom from "@/pages/practiceRoom/CreatePracticeRoomPage";
 import PracticeRoomDetailPage from "@/pages/practiceRoom/PracticeRoomDetailPage";
 import UpdatePracticeRoomPage from "@/pages/practiceRoom/UpdatePracticeRoomPage";
-import UpdateRecruitEnsemblePage from '@/pages/ensemble/UpdateRecruitEnsemblePage';
+import UpdateRecruitEnsemblePage from "@/pages/ensemble/UpdateRecruitEnsemblePage";
 import MapViewPage from "@/pages/map/MapViewPage";
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -51,17 +51,44 @@ const AppRouter: React.FC = () => {
           <Route path="/main" element={<MainPage />} />
           <Route path="/vinyl" element={<VinylPage />} />
           <Route path="/used-products" element={<UsedProductPage />} />
-          <Route path="/used-products/create" element={<CreateUsedProductPage />} />
-          <Route path="/used-products/:id" element={<UsedProductDetailPage />} />
-          <Route path="/used-products/edit/:id" element={<UpdateUsedProductPage />} />
+          <Route
+            path="/used-products/create"
+            element={<CreateUsedProductPage />}
+          />
+          <Route
+            path="/used-products/:id"
+            element={<UsedProductDetailPage />}
+          />
+          <Route
+            path="/used-products/edit/:id"
+            element={<UpdateUsedProductPage />}
+          />
           <Route path="/ensembles" element={<RecruitEnsembleListPage />} />
-          <Route path="/ensembles/create" element={<CreateRecruitEnsemblePage />} />
-          <Route path="/ensembles/edit/:id" element={<UpdateRecruitEnsemblePage />} />
-          <Route path="/ensembles/:id" element={<RecruitEnsembleDetailPage />} />
+          <Route
+            path="/ensembles/create"
+            element={<CreateRecruitEnsemblePage />}
+          />
+          <Route
+            path="/ensembles/edit/:id"
+            element={<UpdateRecruitEnsemblePage />}
+          />
+          <Route
+            path="/ensembles/:id"
+            element={<RecruitEnsembleDetailPage />}
+          />
           <Route path="/practice-room" element={<PracticeRoomPage />} />
-          <Route path="/practice-room/create" element={<CreatePracticeRoom />} />
-          <Route path="/practice-room/:id" element={<PracticeRoomDetailPage />} />
-          <Route path="/practice-room/edit/:id" element={<UpdatePracticeRoomPage />} />
+          <Route
+            path="/practice-room/create"
+            element={<CreatePracticeRoom />}
+          />
+          <Route
+            path="/practice-room/:id"
+            element={<PracticeRoomDetailPage />}
+          />
+          <Route
+            path="/practice-room/edit/:id"
+            element={<UpdatePracticeRoomPage />}
+          />
           <Route path="/map-view" element={<MapViewPage />} />
           <Route path="/style-guide" element={<StyleGuideTest />} />
         </Route>

@@ -62,6 +62,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           // Side effects (localStorage, axios header)
           localStorage.setItem("accessToken", token);
           axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+          // React Native WebView로 토큰 전송 로직 추가
+          if (window.ReactNativeWebView) {
+            const message = JSON.stringify({ type: "TOKEN_UPDATE", token });
+            window.ReactNativeWebView.postMessage(message);
+          }
         } else {
           // 토큰이 null인 경우, 모든 인증 정보를 제거합니다.
           localStorage.removeItem("accessToken");
@@ -74,7 +80,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         delete axiosInstance.defaults.headers.common["Authorization"];
       } finally {
         // 성공하든, 실패하든, 어떤 경우에도 마지막에 단 한 번만 상태를 업데이트합니다.
-        // user, accessToken, isLoading 상태가 원자적으로(함께) 변경됩니다.
         set({ ...finalUserState, isLoading: false });
       }
     },

@@ -113,6 +113,8 @@ export class AuthController {
       'FRONTEND_CALLBACK_URL',
     );
     res.redirect(`${frontendCallbackUrl}?token=${accessToken}`);
+
+    
   }
 
   @Get('google')

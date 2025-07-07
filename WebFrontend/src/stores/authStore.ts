@@ -1,7 +1,7 @@
 // src/stores/authStore.ts
 
 import { create } from "zustand";
-import { jwtDecode } from "jwt-decode";
+import { jwtDecode, type JwtPayload } from "jwt-decode";
 import axiosInstance from "../services/axiosInstance"; // 설정된 Axios 인스턴스
 import axios from "axios";
 
@@ -23,11 +23,11 @@ interface LoginCredentials {
 
 /**
  * 스토어의 상태 및 함수들의 타입 정의
- * 상태와 액션을 명확히 분리하여 관리합니다.
  */
 interface AuthState {
   user: User | null;
   accessToken: string | null;
+  isLoading: boolean; // 인증 상태 확인 중인지 여부
   actions: {
     setToken: (token: string | null) => void;
     login: (credentials: LoginCredentials) => Promise<void>;
@@ -36,48 +36,46 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
+  // 1. 초기 상태 설정
   user: null,
   accessToken: null,
+  isLoading: true, // 앱 시작 시, 로딩 상태로 초기화
+
+  // 2. 상태를 변경하는 함수들
   actions: {
     /**
-     * 토큰을 상태와 localStorage에 설정하고, 관련된 모든 사이드 이펙트를 처리합니다.
-     * @param token - 새로운 액세스 토큰 또는 null (로그아웃 시)
+     * 토큰을 처리하고, 모든 관련 상태를 업데이트하는 중앙화된 함수
      */
     setToken: (token) => {
-      if (token) {
-        // 1. localStorage에 'accessToken' 키로 토큰 저장
-        localStorage.setItem("accessToken", token);
+      // 최종적으로 스토어에 저장될 상태를 미리 정의합니다.
+      let finalUserState: { user: User | null; accessToken: string | null } = {
+        user: null,
+        accessToken: null,
+      };
 
-        // 2. Axios 인스턴스의 기본 헤더 설정
-        axiosInstance.defaults.headers.common[
-          "Authorization"
-        ] = `Bearer ${token}`;
-
-        try {
-          // 3. 토큰을 디코딩하여 사용자 정보 추출 및 상태 업데이트
+      try {
+        if (token) {
+          // 토큰이 유효한 경우, 디코딩하여 상태를 준비합니다.
           const decodedUser = jwtDecode<User>(token);
-          set({ accessToken: token, user: decodedUser });
-
-          // 4. React Native WebView로 토큰 전송
-          if (window.ReactNativeWebView) {
-            const message = JSON.stringify({
-              type: "TOKEN_UPDATE",
-              token,
-            });
-            window.ReactNativeWebView.postMessage(message);
-          }
-        } catch (error) {
-          console.error(
-            "유효하지 않은 토큰입니다. 상태를 초기화합니다.",
-            error
-          );
-          get().actions.setToken(null); // 잘못된 토큰이면 모든 관련 상태 초기화
+          finalUserState = { user: decodedUser, accessToken: token };
+          
+          // Side effects (localStorage, axios header)
+          localStorage.setItem("accessToken", token);
+          axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+        } else {
+          // 토큰이 null인 경우, 모든 인증 정보를 제거합니다.
+          localStorage.removeItem("accessToken");
+          delete axiosInstance.defaults.headers.common["Authorization"];
         }
-      } else {
-        // 토큰이 null이면 모든 인증 정보 제거
+      } catch (error) {
+        // 토큰이 유효하지 않거나 디코딩에 실패한 경우
+        console.error("유효하지 않은 토큰입니다. 상태를 초기화합니다.", error);
         localStorage.removeItem("accessToken");
         delete axiosInstance.defaults.headers.common["Authorization"];
-        set({ accessToken: null, user: null });
+      } finally {
+        // 성공하든, 실패하든, 어떤 경우에도 마지막에 단 한 번만 상태를 업데이트합니다.
+        // user, accessToken, isLoading 상태가 원자적으로(함께) 변경됩니다.
+        set({ ...finalUserState, isLoading: false });
       }
     },
 
@@ -115,7 +113,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           error
         );
       } finally {
-        get().actions.setToken(null); // 최종적으로 상태 초기화
+        get().actions.setToken(null);
       }
     },
   },

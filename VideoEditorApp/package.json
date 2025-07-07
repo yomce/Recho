@@ -8,7 +8,7 @@
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest",
-    "postinstall": "cd android && ./gradlew :app:downloadAar"
+    "postinstall-disabled": "cd android && ./gradlew :app:downloadAar"
   },
   "dependencies": {
     "@ptomasroos/react-native-multi-slider": "^2.2.2",

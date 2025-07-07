@@ -434,8 +434,8 @@ const VideoEditScreen: React.FC<{
       const encoder =
         Platform.OS === 'ios' ? 'h264_videotoolbox' : 'h264_mediacodec';
 
-      const command = `${inputCommands} -filter_complex "${filterComplexString}" ${audioMapCommand} -c:v ${encoder} -c:a aac -b:a 192k -movflags +faststart "${outputPath}"`;
-
+      const command = `${inputCommands} -filter_complex "${filterComplexString}" -map "[v]" ${audioMapCommand} -c:v ${encoder} -c:a aac -b:a 192k -movflags +faststart "${outputPath}"`;
+      
       console.log('[VideoEditScreen] Executing FFmpeg command:', command);
 
       const session = await FFmpegKit.execute(command);

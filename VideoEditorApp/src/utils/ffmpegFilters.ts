@@ -17,7 +17,7 @@ const cleanUri = (uri: string): string => {
 };
 
 /**
- * 주어진 편집 데이터(비디오 트리밍, 볼륨, 이퀄라이저, 화면 비율 등)를 기반으로 FFmpeg filter_complex 문자열 배열을 생성합니다.
+ * 주어진 편집 데이터(비디오 트리밍, 볼륨, 이퀄라이저, 화면 비율 등)를 기반으로 FFmpeg filter_complex 문자열 배열을 생성합니다. 
  * (이 함수 내부 로직은 변경되지 않았습니다.)
  */
 export const generateCollageFilterComplex = (editData: EditData): string[] => {

@@ -4,7 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 
 import HomeScreen from '../screens/HomeScreen';
 import CameraScreen from '../screens/CameraScreen';
-import VideoEditScreen from '../screens/VideoEditScreen';
+import VideoEditScreen from '../screens/VideoEditScreen.arm';
 import MediaLibraryScreen from '../screens/MediaLibraryScreen';
 import VideoPreviewScreen from '../screens/VideoPreviewScreen';
 import NewVideoTestScreen from '../screens/NewVideoTestScreen';

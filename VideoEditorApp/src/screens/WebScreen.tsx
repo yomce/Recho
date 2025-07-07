@@ -21,7 +21,7 @@ const WebScreen: React.FC = () => {
   const webviewRef = useRef<WebView>(null);
 
   // 나중에 env로 변경
-  const defaultUrl = 'http://172.21.102.40:5173';
+  const defaultUrl = 'http://172.21.100.148:5173';
   const webFrontendUrl = route.params?.url ?? defaultUrl;
 
   const injectedJavaScriptForLogs = `

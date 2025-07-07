@@ -28,7 +28,9 @@ export enum RECRUIT_STATUS {
 
 @Entity({ name: 'recruit_ensemble' })
 export class RecruitEnsemble {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({
+    name: 'post_id',
+  })
   postId: number;
 
   @ManyToOne(() => User, (user) => user.recruitEnsemble, {
@@ -37,31 +39,63 @@ export class RecruitEnsemble {
   @JoinColumn({ name: 'user' })
   user: User;
 
-  @Column()
+  @Column({
+    type: 'varchar',
+    length: 255,
+    name: 'title',
+  })
   title: string;
 
-  @Column({ type: 'text' })
+  @Column({
+    type: 'text',
+    name: 'content',
+  })
   content: string;
 
-  @Column()
+  @Column({
+    type: 'timestamp',
+    name: 'event_date',
+  })
   eventDate: Date;
 
-  @Column()
+  @Column({
+    type: 'enum',
+    enum: SKILL_LEVEL,
+    name: 'skill_level',
+  })
   skillLevel: SKILL_LEVEL;
 
-  @Column()
+  @Column({
+    type: 'int',
+    name: 'location_id',
+  })
   locationId: number;
 
-  @Column()
+  @Column({
+    type: 'int',
+    name: 'total_recruit_cnt',
+  })
   totalRecruitCnt: number;
 
-  @Column({ default: RECRUIT_STATUS.RECRUITING })
+  @Column({
+    type: 'enum',
+    enum: RECRUIT_STATUS,
+    name: 'recruit_status',
+    default: RECRUIT_STATUS.RECRUITING,
+  })
   recruitStatus: RECRUIT_STATUS;
 
-  @CreateDateColumn()
+  @CreateDateColumn({
+    type: 'timestamp',
+    name: 'created_at',
+  })
   createdAt: Date;
 
-  @Column({ default: 0 })
+  @Column({
+    type: 'int',
+    name: 'view_count',
+    default: 0,
+  })
   viewCount: number;
 
   @OneToMany(

@@ -11,6 +11,7 @@ import {
 } from './entities/applier-ensemble.entity';
 import { Repository } from 'typeorm';
 import { EnsembleService } from 'src/ensemble/ensemble.service';
+import { UserService } from 'src/auth/user/user.service';
 
 @Injectable()
 export class ApplicationService {
@@ -18,6 +19,7 @@ export class ApplicationService {
     @InjectRepository(ApplierEnsemble)
     private readonly applyEnsembleRepo: Repository<ApplierEnsemble>,
 
+    private readonly userService: UserService,
     private readonly ensembleService: EnsembleService,
   ) {}
   private readonly logger = new Logger(ApplicationService.name);
@@ -58,31 +60,32 @@ export class ApplicationService {
       throw new ForbiddenException('동일한 사용자의 잘못된 접근입니다.');
     }
 
-    if (
-      recruitEnsemblePost.applierEnsemble.some((app) => app.id === id)
-    ) {
+    if (recruitEnsemblePost.applierEnsemble.some((app) => app.user.id === id)) {
       this.logger.error(
         'Authentication information missing from request user object.',
       );
       throw new ForbiddenException('이미 지원한 사용자의 잘못된 접근입니다.');
     }
 
+    const user = await this.userService.findById(id);
+
+    if (!user) {
+      throw new NotFoundException(`User with ID "${id}" not found`);
+    }
+
     const newApplier = this.applyEnsembleRepo.create({
       recruitEnsemble: { postId: postId },
       sessionEnsemble: { sessionId: sessionId },
-      id: id,
+      user: user,
       applicationStatus: APPLICATION_STATUS.WAITING,
     });
 
     return await this.applyEnsembleRepo.save(newApplier);
   }
 
-  async deleteApplication(
-    applicationId: number,
-    id: string,
-  ): Promise<void> {
+  async deleteApplication(applicationId: number, id: string): Promise<void> {
     const application = await this.detailApplication(applicationId);
-    if (id !== application?.id) {
+    if (id !== application?.user.id) {
       throw new ForbiddenException(`Unauthorized`);
     }
 

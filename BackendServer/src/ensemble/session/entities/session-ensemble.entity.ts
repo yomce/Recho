@@ -11,16 +11,29 @@ import {
 
 @Entity({ name: 'recruit_session' })
 export class SessionEnsemble {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({
+    name: 'session_id',
+  })
   sessionId: number;
 
-  @Column()
+  @Column({
+    type: 'varchar',
+    length: 100,
+    name: 'instrument',
+  })
   instrument: string;
 
-  @Column()
+  @Column({
+    type: 'int',
+    name: 'recruit_count',
+  })
   recruitCount: number;
 
-  @Column()
+  @Column({
+    type: 'int',
+    name: 'now_recruit_count',
+    default: 0,
+  })
   nowRecruitCount: number;
 
   @ManyToOne(
@@ -31,7 +44,7 @@ export class SessionEnsemble {
       onDelete: 'CASCADE',
     },
   )
-  @JoinColumn({ name: 'postId' })
+  @JoinColumn({ name: 'post_id' })
   recruitEnsemble: RecruitEnsemble;
 
   @OneToMany(

@@ -10,15 +10,17 @@ import { CreateUsedProductDto } from './dto/create-used-product.dto';
 import { UpdateUsedProductDto } from './dto/update-used-product.dto';
 import { PaginatedUsedProductResponse } from './dto/paginated-used-product.response.dto';
 import { Location } from 'src/map/entities/location.entity';
+import { UserService } from 'src/auth/user/user.service';
 
 @Injectable()
 export class UsedProductService {
   constructor(
     @InjectRepository(UsedProduct)
     private readonly usedProductRepo: Repository<UsedProduct>,
-    // TODO: 실제 프로젝트에서는 Location 엔티티의 Repository를 주입받아야 합니다.
     @InjectRepository(Location)
     private readonly locationRepo: Repository<Location>,
+
+    private readonly userService: UserService,
   ) {}
 
   async findUsedProductWithPagination(
@@ -68,12 +70,6 @@ export class UsedProductService {
   ): Promise<UsedProduct> {
     const { locationId, ...restOfDto } = createDto;
 
-    // TODO: 실제 프로젝트에서는 주입받은 locationRepo를 사용해 ID로 지역 정보를 조회해야 합니다.
-    // const locationInfo = await this.locationRepo.findOneBy({ id: locationId });
-    // if (!locationInfo) {
-    //   throw new NotFoundException(`Location with ID #${locationId} not found.`);
-    // }
-
     // 실제로 locationRepo를 사용해 ID로 지역 정보를 조회
     const locationEntity = await this.locationRepo.findOneBy({
       locationId: Number(locationId),
@@ -91,10 +87,16 @@ export class UsedProductService {
       address: locationEntity.address,
     };
     */
+    const user = await this.userService.findById(id);
+
+    if (!user) {
+      throw new NotFoundException(`User with ID "${id}" not found`);
+    }
+
     const newProduct = this.usedProductRepo.create({
       ...restOfDto,
       locationId: locationEntity.locationId,
-      id: id,
+      user: user,
       status: Status.FOR_SALE,
       viewCount: 0,
     });
@@ -114,7 +116,7 @@ export class UsedProductService {
 
   async deleteProduct(productId: number, id: string): Promise<void> {
     const product = await this.detailProduct(productId);
-    if (id !== product?.id) {
+    if (id !== product?.user.id) {
       throw new ForbiddenException(`Unauthorized`);
     }
 
@@ -130,7 +132,7 @@ export class UsedProductService {
     id: string,
   ): Promise<UsedProduct> {
     const product = await this.detailProduct(productId);
-    if (id !== product.id) {
+    if (id !== product.user.id) {
       throw new ForbiddenException(`Unauthorized`);
     }
 

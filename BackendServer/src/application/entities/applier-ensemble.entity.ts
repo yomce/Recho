@@ -1,3 +1,4 @@
+import { User } from 'src/auth/user/user.entity';
 import { RecruitEnsemble } from 'src/ensemble/entities/recruit-ensemble.entity';
 import { SessionEnsemble } from 'src/ensemble/session/entities/session-ensemble.entity';
 import {
@@ -18,7 +19,9 @@ export enum APPLICATION_STATUS {
 
 @Entity({ name: 'applier_ensemble' })
 export class ApplierEnsemble {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({
+    name: 'application_id',
+  })
   applicationId: number;
 
   @ManyToOne(
@@ -28,7 +31,7 @@ export class ApplierEnsemble {
       onDelete: 'CASCADE',
     },
   )
-  @JoinColumn({ name: 'postId' })
+  @JoinColumn({ name: 'post_id' })
   recruitEnsemble: RecruitEnsemble;
 
   @ManyToOne(
@@ -38,20 +41,43 @@ export class ApplierEnsemble {
       onDelete: 'CASCADE',
     },
   )
-  @JoinColumn({ name: 'sessionId' })
+  @JoinColumn({ name: 'session_id' })
   sessionEnsemble: SessionEnsemble;
 
-  @Column()
-  id: string;
+  /**
+   * User
+   */
+  @ManyToOne(() => User, (user) => user.applierEnsemble, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'user' })
+  user: User;
 
-  @Column()
+  /**
+   * 지원 상태
+   */
+  @Column({
+    type: 'enum',
+    enum: APPLICATION_STATUS,
+    name: 'application_status',
+  })
   applicationStatus: APPLICATION_STATUS;
 
-  @CreateDateColumn()
+  /**
+   * 지원 일시
+   */
+  @CreateDateColumn({
+    type: 'timestamp',
+    name: 'applied_at',
+  })
   appliedAt: Date;
 
+  /**
+   * 최종 승인(합격) 일시
+   */
   @Column({
     type: 'timestamp',
+    name: 'approved_at',
     nullable: true,
   })
   approvedAt: Date | null;

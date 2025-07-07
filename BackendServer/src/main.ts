@@ -19,6 +19,7 @@ async function bootstrap() {
   const allowedOrigins: string[] = [];
   if (frontendUrlLocal) allowedOrigins.push(frontendUrlLocal);
   if (frontendUrlIp) allowedOrigins.push(frontendUrlIp);
+  allowedOrigins.push('http://localhost:5173');
 
   app.enableCors({
     origin: allowedOrigins,

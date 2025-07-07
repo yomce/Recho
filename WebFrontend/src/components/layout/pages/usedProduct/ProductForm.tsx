@@ -11,13 +11,7 @@ const mockCategories = [
   { id: '3', name: '가구/인테리어' },
   { id: '4', name: '의류' },
 ];
-/*
-const mockLocations = [
-  { locationId: '1001', regionLevel1: '경기도', regionLevel2: '용인시' },
-  { locationId: '1002', regionLevel1: '경기도', regionLevel2: '수원시' },
-  { locationId: '2001', regionLevel1: '서울특별시', regionLevel2: '강남구' },
-];
-*/
+
 // 폼에 필요한 props 타입 정의
 interface ProductFormProps {
   formState: UsedProductForm;

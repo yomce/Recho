@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const API_BASE_URL = 'http://localhost:3000/api'; // 백엔드 서버 주소
+const API_BASE_URL = 'http://localhost:3000/'; // 백엔드 서버 주소
 
 const testClient = axios.create({
   baseURL: API_BASE_URL,

@@ -10,6 +10,8 @@ import { Exclude } from 'class-transformer';
 import { Message } from '../../chat/entities/message.entity';
 import { UserRoom } from '../../chat/entities/user-room.entity';
 import { RecruitEnsemble } from 'src/ensemble/entities/recruit-ensemble.entity';
+import { ApplierEnsemble } from 'src/application/entities/applier-ensemble.entity';
+import { UsedProduct } from 'src/used_product/entities/used-product.entity';
 
 @Entity('Users')
 export class User {
@@ -100,7 +102,15 @@ export class User {
   @OneToMany(() => UserRoom, (userRoom) => userRoom.user)
   userRooms: UserRoom[];
 
+  /** 이 사용자의 중고 제품 판매 목록 */
+  @OneToMany(() => UsedProduct, (usedProduct) => usedProduct.user)
+  usedProduct: UsedProduct[];
+
   /** 이 사용자의 합주 포스터 */
   @OneToMany(() => RecruitEnsemble, (recruitEnsemble) => recruitEnsemble.user)
   recruitEnsemble: RecruitEnsemble[];
+
+  /** 이 사용자의 지원 목록 */
+  @OneToMany(() => ApplierEnsemble, (applierEnsemble) => applierEnsemble.user)
+  applierEnsemble: ApplierEnsemble[];
 }

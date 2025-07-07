@@ -55,10 +55,10 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  async refreshAccessToken(user: User): Promise<{ accessToken: string }> {
-    const payload = { id: user.id, username: user.username };
-    const newAccessToken = this.jwtService.sign(payload);
-    return { accessToken: newAccessToken };
+  async refreshAccessToken(
+    user: User,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    return this._issueTokens(user);
   }
 
   async logout(id: string): Promise<void> {

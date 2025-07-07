@@ -7,6 +7,7 @@ import { toast } from "react-hot-toast";
 import Modal from "@/components/molecules/modal/Modal";
 import PrimaryButton from "@/components/atoms/button/PrimaryButton";
 import SecondaryButton from "@/components/atoms/button/SecondaryButton";
+import { Link } from "react-router-dom";
 
 interface CustomJwtPayload extends JwtPayload {
   id: string;
@@ -15,16 +16,21 @@ interface CustomJwtPayload extends JwtPayload {
 const MainPage: React.FC = () => {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  // 스토어에서 user 정보와 logout 함수를 가져옵니다.
-  const { user, logout } = useAuthStore();
+  // 구조 변경에 따라 user 상태와 actions를 별도로 선택합니다.
+  const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.actions.logout);
 
   /**
    * 로그아웃 처리 함수
    */
   const handleLogout = async () => {
-    await logout(); // 스토어의 통합 로그아웃 함수 호출
-    alert("로그아웃 되었습니다.");
-    navigate("/"); // 로그아웃 후 메인 페이지로 리프레시
+    try {
+      await logout();
+      alert("로그아웃 되었습니다.");
+      navigate("/"); // 로그아웃 후 메인 페이지로 리프레시
+    } catch (error) {
+      console.error("로그아웃 실패:", error);
+    }
   };
 
   const accessToken = localStorage.getItem("accessToken");

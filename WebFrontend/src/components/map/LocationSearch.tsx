@@ -1,30 +1,30 @@
-/** 
+/**
  * src/components/map/LocationSearch.tsx
  * 카카오 REST API를 활용해 장소를 검색하고, 선택된 장소의 좌표를 기반으로
  * 행정 구역 정보를 가져와 상태로 저장하는 컴포넌트입니다.
- * 
+ *
  * 사용 흐름:
  * 1. 사용자가 검색어를 입력 후 "검색" 버튼 클릭
  * 2. 카카오 키워드 검색 API 호출 → 장소 목록 표시
  * 3. 특정 장소 클릭 시 → 좌표 기반 역지오코딩 API 호출
  * 4. 지역 정보 파싱 후 전역 상태 (useLocationStore)에 저장
- * 
-**/
+ *
+ **/
 
-import { useState } from 'react';
-import axios from 'axios';
-import { useLocationStore } from './store/useLocationStore';
+import { useState } from "react";
+import axios from "axios";
+import { useLocationStore } from "./store/useLocationStore";
 
 export interface MapLocation {
   place_name: string;
   address_name: string;
   road_address_name: string;
-  x: string;    // longitude
-  y: string;    // latitude
+  x: string; // longitude
+  y: string; // latitude
 }
 
 const LocationSearch = () => {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [results, setResults] = useState<MapLocation[]>([]);
   const setLocation = useLocationStore((state) => state.setLocation);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
@@ -37,15 +37,16 @@ const LocationSearch = () => {
         {
           params: { query },
           headers: {
-            Authorization: `KakaoAK ${import.meta.env.VITE_KAKAO_MAP_REST_API_KEY}`,
+            Authorization: `KakaoAK ${
+              import.meta.env.VITE_KAKAO_MAP_REST_API_KEY
+            }`,
           },
         }
       );
       setResults(res.data.documents);
-    } catch (err:any) {
-      console.error('검색 실패:', err);
-    };
-
+    } catch (err: any) {
+      console.error("검색 실패:", err);
+    }
   };
 
   const handleSelect = async (location: MapLocation) => {
@@ -56,15 +57,17 @@ const LocationSearch = () => {
         {
           params: { x: location.x, y: location.y },
           headers: {
-            Authorization: `KakaoAK ${import.meta.env.VITE_KAKAO_MAP_REST_API_KEY}`,
+            Authorization: `KakaoAK ${
+              import.meta.env.VITE_KAKAO_MAP_REST_API_KEY
+            }`,
           },
         }
       );
 
       const region = reverseRes.data.documents[0];
-      console.log('location.lat:', location.x, 'location.lng:', location.y);
+      console.log("location.lat:", location.x, "location.lng:", location.y);
 
-      console.log('선택된 지역: ', region);
+      console.log("선택된 지역: ", region);
       setLocation({
         ...location,
         region_level1: region.region_1depth_name,
@@ -73,7 +76,7 @@ const LocationSearch = () => {
         address: location.address_name,
       });
     } catch (err) {
-      console.error('역 지오코딩 실패:', err);
+      console.error("역 지오코딩 실패:", err);
     }
   };
 
@@ -88,7 +91,7 @@ const LocationSearch = () => {
           className="flex-1 border border-brand-frame rounded-[10px] px-4 py-2 text-body focus:outline-brand-primary"
         />
         <button
-          type='button'
+          type="button"
           onClick={handleSearch}
           className="bg-brand-blue text-white text-button px-4 py-2 rounded-[10px] hover:bg-blue-600 transition"
         >
@@ -100,7 +103,7 @@ const LocationSearch = () => {
           <li
             key={idx}
             className={`p-3 border border-brand-frame rounded-[10px] cursor-pointer text-body hover:bg-brand-frame hover:text-brand-text-primary transition ${
-              selectedIdx === idx ? 'bg-brand-blue text-white' : 'bg-white'
+              selectedIdx === idx ? "bg-brand-blue text-white" : "bg-white"
             }`}
             onClick={() => {
               handleSelect(place);
@@ -116,8 +119,7 @@ const LocationSearch = () => {
         ))}
       </ul>
     </div>
-  )
-
+  );
 };
 
 export default LocationSearch;

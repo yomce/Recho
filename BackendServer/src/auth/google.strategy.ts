@@ -10,18 +10,18 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     private readonly configService: ConfigService,
     private readonly userService: UserService,
   ) {
-    // [수정] super()를 호출하기 전에 환경 변수를 확인하고 할당합니다.
-    const clientID = configService.get('GOOGLE_CLIENT_ID');
-    const clientSecret = configService.get('GOOGLE_CLIENT_SECRET');
+    const clientID = configService.get<string>('GOOGLE_CLIENT_ID');
+    const clientSecret = configService.get<string>('GOOGLE_CLIENT_SECRET');
+    const callbackURL = configService.get<string>('GOOGLE_CALLBACK_URL');
 
-    if (!clientID || !clientSecret) {
+    if (!clientID || !clientSecret || !callbackURL) {
       throw new Error('구글 로그인에 필요한 환경변수가 설정되지 않았습니다.');
     }
 
     super({
       clientID,
       clientSecret,
-      callbackURL: 'http://localhost:3000/auth/google/callback',
+      callbackURL,
       scope: ['email', 'profile'],
     });
   }

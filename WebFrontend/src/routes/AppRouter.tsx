@@ -36,13 +36,7 @@ const AppRouter: React.FC = () => {
   return (
     <Router>
       <Routes>
-        {/* 인증이 필요 없는 페이지들 */}
-        {/* 최상위 경로(/) 리디렉션을 비활성화하여
-          소셜 로그인 콜백이 정상적으로 처리되도록 합니다.
-          웹사이트의 첫 페이지는 보통 /login 또는 /main으로 직접 지정합니다.
-        */}
-        {/* <Route path="/" element={<Navigate to="/main" replace />} /> */}
-        
+        <Route path="/" element={<Navigate to="/main" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />

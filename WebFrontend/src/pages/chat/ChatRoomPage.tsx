@@ -166,11 +166,7 @@ const ChatRoomPage: React.FC = () => {
                 {msg.senderId === id ? (
                   // 내가 보낸 메시지
                   <div className="flex w-full justify-end">
-                    <MessageBubble
-                      msg={msg}
-                      currentUserId={Number(id)}
-                      dragX={dragX}
-                    />
+                    <MessageBubble msg={msg} currentUserId={id} dragX={dragX} />
                   </div>
                 ) : (
                   // 상대방이 보낸 메시지
@@ -190,7 +186,7 @@ const ChatRoomPage: React.FC = () => {
                       </span>
                       <MessageBubble
                         msg={msg}
-                        currentUserId={Number(id)}
+                        currentUserId={id}
                         dragX={dragX}
                       />
                     </div>

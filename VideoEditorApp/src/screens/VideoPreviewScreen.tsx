@@ -101,13 +101,13 @@ const VideoPreviewScreen: React.FC<VideoPreviewScreenProps> = ({
                 'SideBySide',
               )
             ) {
-              navigation.navigate('SideBySide');
+                navigation.navigate('SideBySide');
             } else {
               console.warn(
                 'SideBySideScreen is not defined in RootStackParamList or cannot navigate.',
               );
-              // 사용자에게 알림을 주거나 홈으로 돌아가는 등의 폴백 처리 가능
-              // Alert.alert("알림", "Side-by-Side 테스트 화면을 찾을 수 없습니다.");
+                // 사용자에게 알림을 주거나 홈으로 돌아가는 등의 폴백 처리 가능
+                // Alert.alert("알림", "Side-by-Side 테스트 화면을 찾을 수 없습니다.");
             }
           }}
         >

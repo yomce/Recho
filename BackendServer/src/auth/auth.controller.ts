@@ -15,6 +15,7 @@ import { LoginDto } from './dto/login.dto';
 import { Response, Request } from 'express';
 import { AuthGuard } from '@nestjs/passport'; // AuthGuard import
 import { User } from './user/user.entity';
+import { ConfigService } from '@nestjs/config';
 
 interface RequestWithUser extends Request {
   user: User;
@@ -22,7 +23,10 @@ interface RequestWithUser extends Request {
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @HttpCode(HttpStatus.OK)
   @Post('login')
@@ -106,7 +110,7 @@ export class AuthController {
 
     // 3. 액세스 토큰은 프론트엔드의 콜백 페이지로 리디렉션하며 전달합니다.
     res.redirect(
-      `http://172.21.102.40:5173/auth/callback?token=${accessToken}`,
+      `${this.configService.get('FRONTEND_CALLBACK_URL')}?token=${accessToken}`,
     );
   }
 
@@ -137,7 +141,7 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7일
     });
     res.redirect(
-      `http://172.21.102.40:5173/auth/callback?token=${accessToken}`,
+      `${this.configService.get('FRONTEND_CALLBACK_URL')}?token=${accessToken}`,
     );
   }
 }

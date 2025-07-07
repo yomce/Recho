@@ -14,8 +14,8 @@ export class PracticeRoom {
   @PrimaryGeneratedColumn()
   postId: number;
 
-  @Column()
-  id: string;
+    @Column()
+    id: string;
 
   @Column()
   title: string;

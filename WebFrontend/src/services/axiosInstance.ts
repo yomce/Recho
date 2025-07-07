@@ -15,8 +15,8 @@ const axiosInstance = axios.create({
 //    - 모든 API 요청이 서버로 전송되기 전에 실행됩니다.
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // localStorage에서 accessToken을 가져옵니다.
-    const accessToken = localStorage.getItem("accessToken");
+    // Zustand 스토어에서 accessToken을 가져옵니다.
+    const accessToken = useAuthStore.getState().accessToken;
 
     // accessToken이 존재하면, 요청 헤더에 'Authorization' 헤더를 추가합니다.
     if (accessToken) {
@@ -88,8 +88,8 @@ axiosInstance.interceptors.response.use(
 
         const { accessToken } = data;
 
-        // 새로 받은 accessToken을 localStorage에 저장합니다.
-        localStorage.setItem("accessToken", accessToken);
+        // 새로 받은 accessToken을 Zustand 스토어에 저장합니다.
+        useAuthStore.getState().setAccessToken(accessToken);
 
         // 실패했던 원래 요청의 헤더도 새로운 토큰으로 업데이트합니다.
         if (originalRequest.headers) {
@@ -101,8 +101,8 @@ axiosInstance.interceptors.response.use(
       } catch (refreshError) {
         // 리프레시 토큰마저 만료되었거나, 갱신에 실패한 경우
         console.error("토큰 갱신 실패:", refreshError);
-        localStorage.removeItem("accessToken");
-        useAuthStore.getState().logout(); // Zustand 스토어를 통해 안전하게 로그아웃
+        // Zustand 스토어를 통해 안전하게 로그아웃
+        useAuthStore.getState().logout();
         processQueue(refreshError as Error, null);
         return Promise.reject(refreshError);
       } finally {

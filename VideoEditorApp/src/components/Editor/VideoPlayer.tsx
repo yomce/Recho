@@ -16,7 +16,7 @@ import { MediaItem } from '../../types'; // MediaItem 임포트
 
 // Styled Components 정의
 const VideoContainer = styled.View`
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
   background-color: #333333;
   aspect-ratio: 16 / 9; /* 16:9 화면 비율 유지 */

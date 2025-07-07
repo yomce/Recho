@@ -31,7 +31,6 @@ import axios from 'axios';
 import { StackNavigationProp } from '@react-navigation/stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import VideoPreviewSlot, {
@@ -588,15 +587,9 @@ const VideoEditScreen: React.FC<{
 
       <ControlsWrapper>
         <GlobalActionsContainer>
-          <IconButton onPress={handleGlobalPlay}>
-            <MaterialCommunityIcons name="play" size={30} color="#3498db" />
-          </IconButton>
-          <IconButton onPress={handleGlobalPause}>
-            <MaterialCommunityIcons name="pause" size={30} color="#3498db" />
-          </IconButton>
-          <IconButton onPress={handleGlobalSeekToStart}>
-            <MaterialCommunityIcons name="refresh" size={30} color="#3498db" />
-          </IconButton>
+          <IconButton onPress={handleGlobalPlay}>플</IconButton>
+          <IconButton onPress={handleGlobalPause}>멈</IconButton>
+          <IconButton onPress={handleGlobalSeekToStart}>첨</IconButton>
         </GlobalActionsContainer>
 
         <ControlsScrollView showsVerticalScrollIndicator={false}>

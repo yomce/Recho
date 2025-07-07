@@ -21,6 +21,7 @@ import {
   PanResponder,
   Animated,
   Dimensions,
+  Text,
 } from 'react-native';
 import { CameraRoll } from '@react-native-camera-roll/camera-roll';
 import RNFS from 'react-native-fs';
@@ -174,7 +175,7 @@ const ControlsScrollView = styled.ScrollView`
 const GlobalActionsContainer = styled.View`
   flex-direction: row;
   justify-content: space-around;
-  padding: 8px;
+  padding: 16px;
   background-color: #000000;
   align-items: center; /* 아이콘 정렬을 위해 추가 */
 `;
@@ -587,9 +588,11 @@ const VideoEditScreen: React.FC<{
 
       <ControlsWrapper>
         <GlobalActionsContainer>
-          <IconButton onPress={handleGlobalPlay}>플</IconButton>
-          <IconButton onPress={handleGlobalPause}>멈</IconButton>
-          <IconButton onPress={handleGlobalSeekToStart}>첨</IconButton>
+          <GlobalButtonText onPress={handleGlobalPlay}>▶</GlobalButtonText>
+          <GlobalButtonText onPress={handleGlobalPause}>⏸</GlobalButtonText>
+          <GlobalButtonText onPress={handleGlobalSeekToStart}>
+            ⏮
+          </GlobalButtonText>
         </GlobalActionsContainer>
 
         <ControlsScrollView showsVerticalScrollIndicator={false}>

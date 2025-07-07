@@ -582,7 +582,8 @@ const VideoEditScreen: React.FC<{
       const decodedToken = jwtDecode<CustomJwtPayload>(token);
       const userId = decodedToken.id;
 
-      const response = await axiosInstance.post('/video-insert/presigned-url', {
+      // 서버의 실제 엔드포인트인 'upload-urls'로 경로를 수정
+      const response = await axiosInstance.post('/video-insert/upload-urls', {
         filename: video.name,
         filetype: video.type,
       });

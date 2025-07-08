@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, createRef, useMemo } from 'react';
 import {
   PanGestureHandler,
   State,
@@ -71,6 +71,19 @@ const Handle = styled(Animated.View)`
   z-index: 10;
 `;
 
+const MoveHandle = styled(Animated.View)`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background-color: rgba(80, 80, 80, 0.7);
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+  justify-content: center;
+  align-items: center;
+`;
+
 const TrackText = styled.Text`
   color: white;
   font-weight: bold;
@@ -102,11 +115,12 @@ const Timeline: React.FC<TimelineProps> = ({
 }) => {
   const [containerWidth, setContainerWidth] = useState(0);
   const [localTrimmers, setLocalTrimmers] = useState(trimmers);
-  const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
   // --- Refs for simultaneous gesture handling ---
-  const trackGestureRefs = useRef(
-    trimmers.map(() => React.createRef()),
-  ).current;
+  const trackGestureRefs = useMemo(
+    () => trimmers.map(() => [createRef(), createRef(), createRef()]),
+    [trimmers.length],
+  );
+  const flattenedGestureRefs = trackGestureRefs.flat();
 
   // --- 통합된 제스처 상태 ---
   const [activeGesture, setActiveGesture] = useState<{
@@ -198,49 +212,28 @@ const Timeline: React.FC<TimelineProps> = ({
     { useNativeDriver: false },
   );
 
-  const handleTrimHandleStateChange = (
+  const handleGenericStateChange = (
     { nativeEvent }: PanGestureHandlerStateChangeEvent,
     trimmer: TrimmerState,
-    handleType: 'start' | 'end',
+    handleType: 'start' | 'end' | 'track',
   ) => {
     if (nativeEvent.state === State.BEGAN) {
       setActiveGesture({ type: handleType, trimmerId: trimmer.id });
       dragStartTrimmerState.current = { ...trimmer };
     } else if (
-      nativeEvent.state === State.END ||
-      nativeEvent.state === State.FAILED ||
-      nativeEvent.state === State.CANCELLED
+      [State.END, State.FAILED, State.CANCELLED].includes(
+        nativeEvent.state as any,
+      )
     ) {
-      const finalTrimmer = localTrimmers.find(t => t.id === trimmer.id);
-      if (finalTrimmer) {
-        onTrimmerUpdate(finalTrimmer.id, {
-          startTime: finalTrimmer.startTime,
-          endTime: finalTrimmer.endTime,
-          timelinePosition: finalTrimmer.timelinePosition,
-        });
-      }
-      setActiveGesture(null);
-    }
-  };
-
-  const handleTrackGestureStateChange = (
-    { nativeEvent }: LongPressGestureHandlerStateChangeEvent,
-    trimmer: TrimmerState,
-  ) => {
-    if (nativeEvent.state === State.ACTIVE) {
-      if (!activeGesture) {
-        setActiveGesture({ type: 'track', trimmerId: trimmer.id });
-        dragStartTrimmerState.current = { ...trimmer };
-      }
-    } else if (
-      nativeEvent.state === State.END ||
-      nativeEvent.state === State.FAILED ||
-      nativeEvent.state === State.CANCELLED
-    ) {
-      if (activeGesture?.type === 'track') {
+      if (
+        activeGesture?.trimmerId === trimmer.id &&
+        activeGesture?.type === handleType
+      ) {
         const finalTrimmer = localTrimmers.find(t => t.id === trimmer.id);
         if (finalTrimmer) {
           onTrimmerUpdate(finalTrimmer.id, {
+            startTime: finalTrimmer.startTime,
+            endTime: finalTrimmer.endTime,
             timelinePosition: finalTrimmer.timelinePosition,
           });
         }
@@ -342,7 +335,7 @@ const Timeline: React.FC<TimelineProps> = ({
         enabled={activeGesture === null || activeGesture?.type === 'pan'}
         onGestureEvent={onTimelinePanGestureEvent}
         onHandlerStateChange={onTimelinePanStateChange}
-        waitFor={trackGestureRefs} // [수정] simultaneousHandlers 대신 waitFor 사용
+        waitFor={flattenedGestureRefs} // [수정] 모든 자식 핸들러 ref를 전달
       >
         <TracksContainer
           style={{
@@ -372,6 +365,8 @@ const Timeline: React.FC<TimelineProps> = ({
             const isTrackActive =
               isGestureActiveOnThis && activeGesture?.type === 'track';
 
+            const [startRef, endRef, moveRef] = trackGestureRefs[index];
+
             return (
               <TrackWrapper key={trimmer.id}>
                 <TrackContent
@@ -382,30 +377,10 @@ const Timeline: React.FC<TimelineProps> = ({
                   }}
                 >
                   {/* [수정] 트랙 이동을 위한 제스처 핸들러 단순화 */}
-                  <LongPressGestureHandler
-                    ref={trackGestureRefs[index]} // [추가]
-                    minDurationMs={300}
-                    maxDist={100}
-                    onHandlerStateChange={e =>
-                      handleTrackGestureStateChange(e, trimmer)
-                    }
-                    onGestureEvent={e => onDragGestureEvent(e, trimmer.id)}
-                  >
-                    <Animated.View
-                      style={{
-                        flex: 1,
-                        width: '100%',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <TrackText>Track {index + 1}</TrackText>
-                    </Animated.View>
-                  </LongPressGestureHandler>
-
                   <PanGestureHandler
+                    ref={startRef}
                     onHandlerStateChange={e =>
-                      handleTrimHandleStateChange(e, trimmer, 'start')
+                      handleGenericStateChange(e, trimmer, 'start')
                     }
                     onGestureEvent={e => onDragGestureEvent(e, trimmer.id)}
                   >
@@ -417,8 +392,9 @@ const Timeline: React.FC<TimelineProps> = ({
                     />
                   </PanGestureHandler>
                   <PanGestureHandler
+                    ref={endRef}
                     onHandlerStateChange={e =>
-                      handleTrimHandleStateChange(e, trimmer, 'end')
+                      handleGenericStateChange(e, trimmer, 'end')
                     }
                     onGestureEvent={e => onDragGestureEvent(e, trimmer.id)}
                   >
@@ -428,6 +404,17 @@ const Timeline: React.FC<TimelineProps> = ({
                         backgroundColor: isEndHandleActive ? 'red' : 'white',
                       }}
                     />
+                  </PanGestureHandler>
+
+                  {/* 이동 전용 핸들 추가 */}
+                  <PanGestureHandler
+                    ref={moveRef}
+                    onHandlerStateChange={e =>
+                      handleGenericStateChange(e, trimmer, 'track')
+                    }
+                    onGestureEvent={e => onDragGestureEvent(e, trimmer.id)}
+                  >
+                    <MoveHandle />
                   </PanGestureHandler>
                 </TrackContent>
               </TrackWrapper>

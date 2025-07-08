@@ -401,11 +401,15 @@ const VideoEditScreen: React.FC<{
     setIsProcessing(true);
 
     try {
-      // --- FFmpeg 처리 로직을 비활성화하고 직접 업로드 로직으로 대체 ---
-
-      // 기존 FFmpeg 콜라주 생성 로직 전체 주석 처리
-      /*
       console.log('[VideoEditScreen] Starting collage creation...');
+      // 편집할 비디오가 하나 이상 있는지 확인합니다.
+      const activeTrimmers = trimmers.filter(t => t.sourceVideo);
+      if (activeTrimmers.length === 0) {
+        Alert.alert('오류', '편집할 비디오가 없습니다.');
+        setIsProcessing(false); // 처리 중 상태를 해제해야 합니다.
+        return;
+      }
+
       const editData: EditData = {
         trimmers: activeTrimmers.map(t => ({
           startTime: t.startTime,
@@ -430,16 +434,16 @@ const VideoEditScreen: React.FC<{
         .map(v => `-i "${cleanUri(v.uri)}"`)
         .join(' ');
 
-      const outputPath = `${
+      const collageOutputPath = `${
         RNFS.DocumentDirectoryPath
       }/collage_${Date.now()}.mp4`;
       const hasAudio = activeTrimmers.some(t => t.volume > 0);
-      const audioMapCommand = hasAudio ? '-map "[a]"' : '';
+      const mapCommand = hasAudio ? '-map "[v]" -map "[a]"' : '-map "[v]"';
 
       const encoder =
         Platform.OS === 'ios' ? 'h264_videotoolbox' : 'h264_mediacodec';
 
-      const command = `${inputCommands} -filter_complex "${filterComplexString}" ${audioMapCommand} -c:v ${encoder} -c:a aac -b:a 192k -movflags +faststart "${outputPath}"`;
+      const command = `${inputCommands} -filter_complex "${filterComplexString}" ${mapCommand} -c:v ${encoder} -c:a aac -b:a 192k -movflags +faststart "${collageOutputPath}"`;
 
       console.log('[VideoEditScreen] Executing FFmpeg command:', command);
 
@@ -448,114 +452,313 @@ const VideoEditScreen: React.FC<{
 
       if (ReturnCode.isSuccess(returnCode)) {
         Alert.alert('성공', '비디오 콜라주가 성공적으로 생성되었습니다.');
-        console.log(`[VideoEditScreen] Collage video saved to: ${outputPath}`);
+        console.log(
+          `[VideoEditScreen] Collage video saved to: ${collageOutputPath}`,
+        );
 
-        const videoToUpload = {
-          uri: `file://${outputPath}`,
-          name: outputPath.split('/').pop()!,
-          type: 'video/mp4',
-        };
+        // --- 썸네일 추출 로직 추가 ---
+        console.log('[VideoEditScreen] Starting thumbnail extraction...');
+        const thumbnailOutputPath = `${
+          RNFS.DocumentDirectoryPath
+        }/thumbnail_${Date.now()}.jpg`;
+        const thumbnailCommand = `-i "${collageOutputPath}" -ss 00:00:01.000 -vframes 1 -q:v 2 "${thumbnailOutputPath}"`;
 
-        await getPresignedUrlAndUpload(videoToUpload);
-        await CameraRoll.save(outputPath, { type: 'video' });
+        const thumbnailSession = await FFmpegKit.execute(thumbnailCommand);
+        const thumbnailReturnCode = await thumbnailSession.getReturnCode();
 
-        navigation.navigate('Home');
+        if (ReturnCode.isSuccess(thumbnailReturnCode)) {
+          Alert.alert('성공', '썸네일도 성공적으로 생성되었습니다.');
+          console.log(
+            `[VideoEditScreen] Thumbnail saved to: ${thumbnailOutputPath}`,
+          );
+
+          // --- 소스 비디오 최적화 로직 추가 ---
+          console.log(
+            '[VideoEditScreen] Starting source video optimization...',
+          );
+          const lastVideo =
+            activeTrimmers[activeTrimmers.length - 1].sourceVideo;
+          if (lastVideo) {
+            const optimizedSourceOutputPath = `${
+              RNFS.DocumentDirectoryPath
+            }/optimized_source_${Date.now()}.mp4`;
+            const optimizedSourceCommand = `-i "${cleanUri(
+              lastVideo.uri,
+            )}" -c:v ${encoder} -vf "scale=540:-2" -c:a aac -b:a 128k -y "${optimizedSourceOutputPath}"`;
+
+            const optimizedSession = await FFmpegKit.execute(
+              optimizedSourceCommand,
+            );
+            const optimizedReturnCode = await optimizedSession.getReturnCode();
+
+            if (ReturnCode.isSuccess(optimizedReturnCode)) {
+              Alert.alert(
+                '성공',
+                '소스 비디오 최적화도 완료되었습니다. 모든 준비가 끝났습니다!',
+              );
+              console.log(
+                `[VideoEditScreen] Optimized source video saved to: ${optimizedSourceOutputPath}`,
+              );
+
+              // --- 확인용: 생성된 파일들을 디바이스에 저장 ---
+              try {
+                console.log(
+                  '[VideoEditScreen] Saving generated files to device gallery for verification...',
+                );
+                await CameraRoll.save(`file://${collageOutputPath}`, {
+                  type: 'video',
+                });
+                await CameraRoll.save(`file://${thumbnailOutputPath}`, {
+                  type: 'photo',
+                });
+                await CameraRoll.save(`file://${optimizedSourceOutputPath}`, {
+                  type: 'video',
+                });
+                Alert.alert(
+                  '저장 완료',
+                  '생성된 파일들이 갤러리에 저장되었습니다.',
+                );
+                console.log(
+                  '[VideoEditScreen] All files saved to device gallery.',
+                );
+              } catch (saveError) {
+                console.error(
+                  '[VideoEditScreen] Failed to save files to device:',
+                  saveError,
+                );
+                Alert.alert(
+                  '저장 실패',
+                  '파일을 갤러리에 저장하는 중 오류가 발생했습니다.',
+                );
+              }
+              // --- 확인용 로직 종료 ---
+
+              // --- Presigned URL 일괄 요청 ---
+              try {
+                console.log(
+                  '[VideoEditScreen] Requesting presigned URLs for 3 files...',
+                );
+
+                // JWT 토큰에서 사용자 ID 추출
+                const token = await AsyncStorage.getItem('accessToken');
+                if (!token) {
+                  throw new Error('로그인 토큰을 찾을 수 없습니다.');
+                }
+                const decodedToken = jwtDecode<CustomJwtPayload>(token);
+                const userId = decodedToken.id;
+
+                // 업로드할 파일 정보 준비 (3개 파일 모두 요청)
+                const filesToUpload = [
+                  {
+                    purpose: 'RESULT_VIDEO',
+                    fileType: 'video/mp4',
+                    localPath: collageOutputPath,
+                  },
+                  {
+                    purpose: 'THUMBNAIL',
+                    fileType: 'image/jpeg',
+                    localPath: thumbnailOutputPath,
+                  },
+                  {
+                    purpose: 'SOURCE_VIDEO',
+                    fileType: 'video/mp4',
+                    localPath: optimizedSourceOutputPath,
+                  },
+                ];
+
+                // 백엔드에 Presigned URL 요청 (3개 파일)
+                const presignedUrlResponse = await axiosInstance.post(
+                  '/video-insert/upload-urls',
+                  {
+                    purposes: filesToUpload.map(f => ({
+                      purpose: f.purpose,
+                      fileType: f.fileType,
+                    })),
+                  },
+                );
+
+                console.log(
+                  '[VideoEditScreen] Full response:',
+                  presignedUrlResponse.data,
+                );
+                const responseData = presignedUrlResponse.data;
+
+                // 응답 구조를 자세히 로깅
+                console.log(
+                  '[VideoEditScreen] Response keys:',
+                  Object.keys(responseData),
+                );
+                console.log(
+                  '[VideoEditScreen] RESULT_VIDEO exists:',
+                  !!responseData.RESULT_VIDEO,
+                );
+                console.log(
+                  '[VideoEditScreen] THUMBNAIL exists:',
+                  !!responseData.THUMBNAIL,
+                );
+                console.log(
+                  '[VideoEditScreen] SOURCE_VIDEO exists:',
+                  !!responseData.SOURCE_VIDEO,
+                );
+
+                // 백엔드 응답 구조 확인 및 매핑
+                if (
+                  !responseData.RESULT_VIDEO ||
+                  !responseData.THUMBNAIL ||
+                  !responseData.SOURCE_VIDEO
+                ) {
+                  console.error('[VideoEditScreen] Missing URLs in response:', {
+                    hasResultVideo: !!responseData.RESULT_VIDEO,
+                    hasThumbnail: !!responseData.THUMBNAIL,
+                    hasSourceVideo: !!responseData.SOURCE_VIDEO,
+                    actualKeys: Object.keys(responseData),
+                  });
+                  throw new Error(
+                    '백엔드에서 필요한 URL을 모두 받지 못했습니다.',
+                  );
+                }
+
+                // 올바른 응답 구조에 맞춰 매핑
+                const urlMappings = [
+                  {
+                    purpose: 'RESULT_VIDEO',
+                    presignedUrl: responseData.RESULT_VIDEO.url,
+                    s3Key: responseData.RESULT_VIDEO.key,
+                    localPath: collageOutputPath,
+                    fileType: 'video/mp4',
+                  },
+                  {
+                    purpose: 'THUMBNAIL',
+                    presignedUrl: responseData.THUMBNAIL.url,
+                    s3Key: responseData.THUMBNAIL.key,
+                    localPath: thumbnailOutputPath,
+                    fileType: 'image/jpeg',
+                  },
+                  {
+                    purpose: 'SOURCE_VIDEO',
+                    presignedUrl: responseData.SOURCE_VIDEO.url,
+                    s3Key: responseData.SOURCE_VIDEO.key,
+                    localPath: optimizedSourceOutputPath,
+                    fileType: 'video/mp4',
+                  },
+                ];
+
+                console.log(
+                  '[VideoEditScreen] Mapped URLs for upload:',
+                  urlMappings,
+                );
+
+                Alert.alert('성공', 'S3 업로드 URL을 성공적으로 받아왔습니다.');
+
+                // --- 병렬 업로드 진행 ---
+                console.log(
+                  '[VideoEditScreen] Starting parallel upload to S3...',
+                );
+                setUploading(true);
+
+                const uploadPromises = urlMappings.map(
+                  (urlData: {
+                    presignedUrl: string;
+                    purpose: string;
+                    s3Key: string;
+                    localPath: string;
+                    fileType: string;
+                  }) => {
+                    console.log(
+                      `[VideoEditScreen] Uploading ${urlData.purpose} from ${urlData.localPath}...`,
+                    );
+                    return uploadFile(urlData.presignedUrl, {
+                      uri: urlData.localPath,
+                      type: urlData.fileType,
+                    });
+                  },
+                );
+
+                await Promise.all(uploadPromises);
+                console.log(
+                  '[VideoEditScreen] All files uploaded successfully to S3!',
+                );
+                Alert.alert(
+                  '업로드 완료',
+                  '모든 파일이 S3에 성공적으로 업로드되었습니다.',
+                );
+                setUploading(false);
+                // --- 병렬 업로드 종료 ---
+
+                // --- DB에 메타데이터 저장 ---
+                console.log(
+                  '[VideoEditScreen] Saving video metadata to database...',
+                );
+
+                const directParent =
+                  serverVideos.length > 0
+                    ? serverVideos[serverVideos.length - 1]
+                    : null;
+                const parent_video_id = directParent ? directParent.id : null;
+                const depth = directParent ? directParent.depth + 1 : 1;
+
+                const s3Keys: Record<string, string> = {};
+                urlMappings.forEach(mapping => {
+                  s3Keys[mapping.purpose] = mapping.s3Key;
+                });
+
+                await axiosInstance.post('/video-insert/complete', {
+                  user_id: userId,
+                  results_video_key: s3Keys['RESULT_VIDEO'],
+                  source_video_key: s3Keys['SOURCE_VIDEO'],
+                  thumbnail_key: s3Keys['THUMBNAIL'],
+                  parent_video_id,
+                  depth,
+                });
+
+                console.log(
+                  '[VideoEditScreen] Video metadata saved successfully!',
+                );
+                Alert.alert(
+                  '완료',
+                  '모든 작업이 완료되었습니다. 비디오가 성공적으로 저장되었습니다.',
+                );
+
+                // 성공적으로 완료되었으므로 이전 화면으로 이동
+                navigation.popToTop();
+                // --- DB 저장 종료 ---
+              } catch (urlError: any) {
+                console.error(
+                  '[VideoEditScreen] Failed to get presigned URLs:',
+                  urlError,
+                );
+                Alert.alert(
+                  '오류',
+                  `업로드 URL 요청 중 오류가 발생했습니다: ${urlError.message}`,
+                );
+                setUploading(false);
+              }
+              // --- Presigned URL 요청 종료 ---
+            } else {
+              const optimizedLogs = await optimizedSession.getLogsAsString();
+              console.error(
+                '[VideoEditScreen] Source optimization failed. Logs:',
+                optimizedLogs,
+              );
+              Alert.alert('오류', '소스 비디오 최적화 중 오류가 발생했습니다.');
+            }
+          } else {
+            Alert.alert('오류', '최적화할 원본 비디오를 찾지 못했습니다.');
+          }
+          // --- 소스 비디오 최적화 로직 종료 ---
+        } else {
+          const thumbnailLogs = await thumbnailSession.getLogsAsString();
+          console.error(
+            '[VideoEditScreen] Thumbnail extraction failed. Logs:',
+            thumbnailLogs,
+          );
+          Alert.alert('오류', '썸네일 추출 중 오류가 발생했습니다.');
+        }
+        // --- 썸네일 추출 로직 종료 ---
       } else {
         const logs = await session.getLogsAsString();
         console.error('[VideoEditScreen] FFmpeg process failed. Logs:', logs);
         Alert.alert('오류', 'FFmpeg 처리 중 오류가 발생했습니다.');
-      }
-      */
-
-      // FFmpeg를 건너뛰고 직접 업로드하는 로직 (이전 버전에서 복원)
-      const directUpload = async (video: MediaItem) => {
-        if (!video) {
-          Alert.alert('오류', '업로드할 비디오가 선택되지 않았습니다.');
-          return;
-        }
-        setUploading(true);
-        try {
-          // 1. Presigned URL 요청
-          const urlsResponse = await axiosInstance.post(
-            '/video-insert/upload-urls',
-            {
-              fileType: video.type || 'video/mp4',
-            },
-          );
-          const { videoUrl, thumbnailUrl, videoKey, thumbnailKey } =
-            urlsResponse.data;
-
-          // 2. S3로 파일 업로드 (이전 버전의 fetch 로직으로 복원)
-          const uploadWithFetch = async (url: string, file: MediaItem) => {
-            const videoPayload = {
-              uri: cleanUri(file.uri),
-              type: file.type || 'video/mp4',
-              name: file.filename,
-            };
-
-            const response = await fetch(url, {
-              method: 'PUT',
-              headers: { 'Content-Type': videoPayload.type },
-              body: videoPayload,
-            });
-
-            if (!response.ok) {
-              const responseText = await response.text();
-              throw new Error(
-                `S3 Upload Failed: ${response.status} ${responseText}`,
-              );
-            }
-            return response;
-          };
-
-          await Promise.all([
-            uploadWithFetch(videoUrl, video),
-            uploadWithFetch(thumbnailUrl, video), // 썸네일도 임시로 비디오 사용
-          ]);
-
-          // 3. 메타데이터 저장
-          const token = await AsyncStorage.getItem('accessToken');
-          if (!token) throw new Error('No access token found.');
-          const decodedToken = jwtDecode<CustomJwtPayload>(token);
-          const userId = decodedToken.id;
-
-          const parentVideo =
-            serverVideos.length > 0
-              ? serverVideos[serverVideos.length - 1]
-              : null;
-          const parentVideoId = parentVideo ? parentVideo.id : null;
-          const depth = serverVideos.length > 0 ? serverVideos.length + 1 : 1;
-
-          await axiosInstance.post('/video-insert/complete', {
-            user_id: userId,
-            results_video_key: videoKey,
-            source_video_key: videoKey,
-            thumbnail_key: thumbnailKey,
-            parent_video_id: parentVideoId,
-            depth: depth,
-            total_slots: total_slots,
-          });
-
-          Alert.alert('성공', '비디오가 성공적으로 업로드되었습니다.');
-          navigation.reset({ index: 0, routes: [{ name: 'Web' }] });
-        } catch (uploadError: any) {
-          const errorMessage =
-            uploadError.response?.data?.message ||
-            uploadError.message ||
-            'An unknown error occurred';
-          console.error('Upload failed:', errorMessage, uploadError.stack);
-          Alert.alert('오류', `업로드 중 오류가 발생했습니다: ${errorMessage}`);
-        } finally {
-          setUploading(false);
-        }
-      };
-
-      // 마지막 슬롯의 비디오를 원본 그대로 업로드
-      const lastTrimmer = trimmers[trimmers.length - 1];
-      if (lastTrimmer?.sourceVideo) {
-        await directUpload(lastTrimmer.sourceVideo);
-      } else {
-        Alert.alert('오류', '업로드할 비디오 정보를 찾을 수 없습니다.');
       }
     } catch (error: any) {
       console.error('[VideoEditScreen] Error during video processing:', error);
@@ -582,7 +785,8 @@ const VideoEditScreen: React.FC<{
       const decodedToken = jwtDecode<CustomJwtPayload>(token);
       const userId = decodedToken.id;
 
-      const response = await axiosInstance.post('/video-insert/presigned-url', {
+      // 서버의 실제 엔드포인트인 'upload-urls'로 경로를 수정
+      const response = await axiosInstance.post('/video-insert/upload-urls', {
         filename: video.name,
         filetype: video.type,
       });
@@ -618,12 +822,25 @@ const VideoEditScreen: React.FC<{
     file: { uri: string; type: string },
   ) => {
     try {
-      const response = await RNFS.readFile(cleanUri(file.uri), 'base64');
-      const fileBuffer = Buffer.from(response, 'base64');
+      const fileUri = file.uri.startsWith('file://')
+        ? file.uri
+        : `file://${file.uri}`;
 
-      await axios.put(url, fileBuffer, {
-        headers: { 'Content-Type': file.type },
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file.type,
+        },
+        body: {
+          uri: fileUri,
+          type: file.type,
+          name: 'upload',
+        } as any,
       });
+
+      if (!response.ok) {
+        throw new Error(`Upload failed with status: ${response.status}`);
+      }
 
       console.log('File uploaded successfully!');
     } catch (error) {

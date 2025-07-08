@@ -2,10 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../services/axiosInstance';
-import { socket } from '../../services/socket';
-import { useAuthStore } from '../../stores/authStore'; // ❗️ 1. 인증 스토어 임포트
+// import { socket } from '../../services/socket'; // ⬅️ 직접 사용하지 않으므로 삭제해도 무방
+import { useAuthStore } from '../../stores/authStore';
 
-// --- 타입 정의 (이전과 동일) ---
+// --- 타입 정의 ---
 interface ChatUser {
   id: string;
   username: string;
@@ -20,7 +20,7 @@ interface ChatRoom {
   type: 'PRIVATE' | 'GROUP';
   userRooms: UserRoom[];
 }
-// --- Avatar 컴포넌트 (이전과 동일) ---
+// --- Avatar 컴포넌트 ---
 const Avatar: React.FC<{
   src?: string | null;
   alt?: string;
@@ -48,16 +48,12 @@ const ChatListPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ❗️ 2. user 객체 전체를 가져옵니다.
   const { user } = useAuthStore();
 
-  // ❗️ 3. useEffect의 의존성 배열에 user를 추가합니다.
+  // ❗️ useEffect에서 socket 직접 제어 로직 제거
   useEffect(() => {
-    // user 정보가 없으면 API를 호출하지 않습니다. (로그인 상태가 아님)
     if (!user) {
       setLoading(false);
-      // 필요 시 로그인 페이지로 리디렉션
-      // navigate('/login'); 
       return;
     }
 
@@ -65,8 +61,6 @@ const ChatListPage: React.FC = () => {
       setLoading(true);
       try {
         const response = await axiosInstance.get<ChatRoom[]>('/chat/my-rooms');
-        console.log('✅ 서버로부터 받은 데이터:', response.data); 
-
         setRooms(response.data);
       } catch (err) {
         console.error('채팅방 목록을 불러오는 데 실패했습니다.', err);
@@ -77,13 +71,13 @@ const ChatListPage: React.FC = () => {
     };
 
     fetchChatRooms();
+    
+    // ❗️ socket.connect() 와 socket.disconnect()를 여기서 호출하지 않습니다.
+    // 소켓 관리는 App.tsx와 chatStore가 전역으로 담당합니다.
 
-    socket.connect();
-    return () => {
-      socket.disconnect();
-    };
-  }, [user]); // ⬅️ user가 변경될 때 (로그인 완료 시) 이 useEffect가 실행됩니다.
+  }, [user]);
 
+  // ... (이하 핸들러 및 렌더링 코드는 모두 동일)
   const handleCreateRoom = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!newRoomName.trim()) return alert('채팅방 이름을 입력해주세요.');
@@ -95,7 +89,6 @@ const ChatListPage: React.FC = () => {
       });
       setNewRoomName('');
       alert(`'${response.data.name}' 방이 생성되었습니다!`);
-      // 방 생성 후 목록을 다시 불러옵니다.
       const roomsResponse = await axiosInstance.get<ChatRoom[]>('/chat/my-rooms');
       setRooms(roomsResponse.data);
     } catch (err) {
@@ -103,25 +96,20 @@ const ChatListPage: React.FC = () => {
       alert('채팅방 생성에 실패했습니다.');
     }
   };
-
-  // ... (handleEnterRoom, handleGoBack 등 나머지 핸들러는 동일)
   const handleEnterRoom = (roomId: string) => {
     navigate(`/chat/${roomId}`);
   };
-
   const handleGoBack = () => {
     navigate(-1);
   };
 
-  if (loading) return <div style={styles.container}><h2>로딩 중...</h2></div>;
+  if (loading) return <div style={styles.container}><h2>채팅방 정보를 불러오고 있습니다...</h2></div>;
   if (error) return <div style={styles.container}><h2>에러: {error}</h2></div>;
-  
-  // ❗️ 4. 렌더링 로직에서 user.id를 사용합니다.
+
   return (
     <div style={styles.container}>
-      {/* ... (방 만들기 UI 등은 동일) ... */}
-       <h1 style={styles.header}>채팅</h1>
-       <form onSubmit={handleCreateRoom} style={styles.createForm}>
+      <h1 style={styles.header}>채팅</h1>
+      <form onSubmit={handleCreateRoom} style={styles.createForm}>
         <input
           type="text"
           value={newRoomName}
@@ -138,16 +126,15 @@ const ChatListPage: React.FC = () => {
         {rooms.length > 0 ? (
           rooms.map((room) => {
             const isPrivate = room.type === 'PRIVATE';
-            const participants = room.userRooms.map((ur) => ur.user) || [];
+            const participants = room.userRooms?.map((ur) => ur.user) || [];
             const chatPartner = isPrivate
-              ? participants.find((p) => p.id !== user?.id) // user.id 사용
+              ? participants.find((p) => p.id !== user?.id)
               : null;
             const participantNamesString = participants
-            .map(p => p.username)
-        .join(', ');
+              .map(p => p.username)
+              .join(', ');
             return (
               <div key={room.id} style={styles.roomItem} onClick={() => handleEnterRoom(room.id)}>
-                {/* ... (이하 렌더링 로직은 이전 답변과 동일) ... */}
                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   {isPrivate ? (
                     <Avatar
@@ -167,9 +154,11 @@ const ChatListPage: React.FC = () => {
                     <p style={styles.roomName}>
                       {isPrivate ? chatPartner?.username || '개인 채팅' : room.name}
                     </p>
-                    <p style={styles.participantCount}>
-                      {participantNamesString}
-                    </p>
+                    {!isPrivate && (
+                        <p style={styles.participantCount}>
+                        {participantNamesString}
+                        </p>
+                    )}
                   </div>
                 </div>
                 <span style={styles.roomType}>{room.type}</span>

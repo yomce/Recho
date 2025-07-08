@@ -29,11 +29,13 @@ interface ChatPartner {
 // 스토어의 상태와 액션을 정의하는 타입
 interface ChatState {
   // --- 상태 (State) ---
+  isConnected: boolean; // ⬅️ 소켓 연결 상태 추가
   roomId: string | null;
   messages: Message[];
   chatPartner: ChatPartner;
   isModalOpen: boolean;
   modalType: 'invite' | 'leave' | null;
+  
 
   // --- 액션 (Actions) ---
   initializeRoom: (roomId: string) => Promise<void>;
@@ -44,40 +46,47 @@ interface ChatState {
   closeModal: () => void;
   cleanupRoom: () => void;
   initializeSocketListeners: () => void;
+  disconnectSocket: () => void; // ⬅️ 추가
+
 }
 
+let isSocketInitialized = false;
 
 export const useChatStore = create<ChatState>((set, get) => ({
-  // --- 초기 상태 값 ---
+  // --- 초기 상태 값 (변경 없음) ---
+  isConnected: false,
   roomId: null,
   messages: [],
   chatPartner: { id: null, username: '대화 상대 로딩...', profileUrl: null },
   isModalOpen: false,
   modalType: null,
-
   /**
    * 소켓 이벤트 리스너를 초기화하는 액션 (앱 실행 시 한 번만 호출)
    */
-  initializeSocketListeners: () => {
-  // 리스너가 이미 등록되었다면 중복 실행 방지
-  if (socket.hasListeners('connect')) {
-    console.log('이미 connect 리스너가 등록되어 있습니다.');
-    return;
-  }
+   initializeSocketListeners: () => {
+    // 이미 초기화되었다면 절대 다시 실행하지 않음
+    if (isSocketInitialized) {
+      return;
+    }
 
-  // 소켓이 서버에 연결되었을 때 모든 이벤트 리스너를 등록
-  socket.on('connect', () => {
-    console.log('✅ 소켓 연결 성공! 이벤트 리스너를 등록합니다.');
+    // --- 모든 이벤트 리스너를 최상위 레벨에서 한 번만 등록 ---
 
-    // --- "새 메시지 수신" 리스너 ---
+    socket.on('connect', () => {
+      console.log('✅ 소켓 연결 성공!');
+      set({ isConnected: true });
+    });
+
+    socket.on('disconnect', () => {
+      console.log('❌ 소켓 연결이 끊어졌습니다.');
+      set({ isConnected: false });
+    });
+
     socket.on('newMessage', (message: Message) => {
-      // console.log('⬅️ [Client] Received newMessage:', message);
       if (get().roomId === message.roomId) {
         set((state) => ({ messages: [...state.messages, message] }));
       }
     });
 
-    // --- "다른 유저 퇴장" 리스너 ---
     socket.on('userLeft', (data: { username: string; roomId: string }) => {
       if (get().roomId === data.roomId) {
         const systemMessage: Message = {
@@ -91,7 +100,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
       }
     });
 
-    // --- ❗️ 지적해주신 "유저 초대 성공" 리스너 ---
     socket.on('userInvited', (data: { username: string; roomId: string }) => {
       if (get().roomId === data.roomId) {
         const systemMessage: Message = {
@@ -105,37 +113,36 @@ export const useChatStore = create<ChatState>((set, get) => ({
       }
     });
 
-  });
+    // --- 리스너 등록 후 연결 시도 ---
+    socket.connect();
+    
+    // 초기화 완료 플래그를 true로 설정하여 다시는 이 함수가 실행되지 않도록 함
+    isSocketInitialized = true;
+  },
   
-  // 소켓 연결 시작
-  socket.connect();
-},
+  disconnectSocket: () => {
+    if (socket?.connected) {
+      socket.disconnect();
+    }
+    // isSocketInitialized는 false로 바꾸지 않습니다. 리스너는 계속 유지되어야 합니다.
+  },
 
-  /**
-   * 특정 채팅방에 들어갈 때 실행되는 초기화 함수
-   */
+  // ... (initializeRoom, sendMessage 등 다른 액션들은 변경 없음) ...
   initializeRoom: async (roomId) => {
     const { user: currentUser } = useAuthStore.getState();
     if (!currentUser) return;
-
-    // 방 상태 초기화
     set({
       roomId,
       messages: [],
       chatPartner: { id: null, username: '로딩 중...', profileUrl: null },
     });
-
-    // 1. HTTP 요청으로 이전 메시지 기록 가져오기
     try {
       const response = await axiosInstance.get(`/chat/rooms/${roomId}/history`);
       const messageHistory: Message[] = response.data;
       set({ messages: messageHistory });
-
-      // 메시지 기록에서 상대방 정보 찾기
       const partner = messageHistory.find(
         (msg) => msg.senderId && msg.senderId !== currentUser.id
       )?.sender;
-
       if (partner) {
         set({
           chatPartner: {
@@ -145,8 +152,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
           },
         });
       } else {
-        // 대화 내역이 없는 경우 (새로운 채팅방)
-        // TODO: 별도 API로 상대방 정보를 가져오는 로직이 필요할 수 있음
         set({
           chatPartner: { id: null, username: '새로운 대화', profileUrl: null },
         });
@@ -157,63 +162,35 @@ export const useChatStore = create<ChatState>((set, get) => ({
         chatPartner: { id: null, username: '정보 없음', profileUrl: null },
       });
     }
-
-    // 2. 소켓 연결 및 방 입장(join) 이벤트 전송
-    if (!socket.connected) socket.connect();
     socket.emit('joinRoom', { id: currentUser.id, roomId });
   },
-
-  /**
-   * 메시지 보내기
-   */
   sendMessage: (content) => {
     const { roomId } = get();
     const { user } = useAuthStore.getState();
     if (!content.trim() || !roomId || !user) return;
-
     socket.emit('sendMessage', {
       roomId,
       senderId: user.id,
-      senderName: user.username, // 백엔드에서 필요 시 사용
+      senderName: user.username,
       content,
     });
   },
-
-  /**
-   * 다른 유저 초대
-   */
   inviteUser: (inviteeId) => {
     const { roomId } = get();
     if (!inviteeId.trim() || !roomId) return;
     socket.emit('inviteUser', { roomId, inviteeId });
-    get().closeModal(); // 초대 후 모달 닫기
+    get().closeModal();
   },
-
-  /**
-   * 현재 채팅방 나가기
-   */
   leaveCurrentRoom: () => {
     const { roomId } = get();
     const { user } = useAuthStore.getState();
     if (!roomId || !user) return;
     socket.emit('leaveRoom', { id: user.id, roomId });
-    get().cleanupRoom(); // 상태 초기화
-    get().closeModal();  // 모달 닫기
+    get().cleanupRoom();
+    get().closeModal();
   },
-
-  /**
-   * 모달 열기
-   */
   openModal: (type) => set({ isModalOpen: true, modalType: type }),
-
-  /**
-   * 모달 닫기
-   */
   closeModal: () => set({ isModalOpen: false, modalType: null }),
-
-  /**
-   * 채팅방 관련 상태 초기화
-   */
   cleanupRoom: () => {
     set({
       roomId: null,
@@ -222,7 +199,3 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
   },
 }));
-
-// 앱 진입점에서 소켓 리스너를 한 번만 초기화합니다.
-// (예: App.tsx 또는 메인 레이아웃 컴포넌트의 useEffect)
-// useChatStore.getState().initializeSocketListeners();

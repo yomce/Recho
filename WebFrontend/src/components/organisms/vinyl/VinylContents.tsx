@@ -88,7 +88,6 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
         width="100%"
         controls={false}
         playsInline
-        muted
         crossOrigin="anonymous"
         style={{ display: "block" }}
         onCanPlay={handleVideoCanPlay}

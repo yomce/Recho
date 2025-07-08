@@ -53,7 +53,7 @@ export class VideosService {
             this.s3,
             new GetObjectCommand({
               Bucket: process.env.AWS_S3_BUCKET,
-              Key: video.source_video_key,
+              Key: video.results_video_key,
             }),
             { expiresIn: 3600 },
           ),
@@ -126,10 +126,10 @@ export class VideosService {
       if (!videoDetails) {
         break;
       }
-      lineage.unshift(videoDetails);
-      currentVideoId = videoDetails.parent ? videoDetails.parent.id : null;
+      lineage.push(videoDetails);
+      currentVideoId = videoDetails.parent_video_id || null;
     }
 
-    return lineage;
+    return lineage.reverse();
   }
 }

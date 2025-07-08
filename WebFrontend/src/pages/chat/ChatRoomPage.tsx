@@ -21,8 +21,11 @@ const ChatRoomPage: React.FC = () => {
   const navigate = useNavigate();
 
   // --- 스토어에서 상태와 액션 가져오기 ---
-  const id = useAuthStore((state) => state.user?.id);
+  const { user } = useAuthStore();
+  const id = user?.id;
+
   const {
+    isConnected,
     messages,
     chatPartner,
     isModalOpen,
@@ -42,60 +45,72 @@ const ChatRoomPage: React.FC = () => {
     }
   };
 
-  // --- 컴포넌트 로컬 상태 (UI에만 한정된 상태) ---
+  // --- 컴포넌트 로컬 상태 ---
   const [newMessage, setNewMessage] = useState("");
   const [inviteeId, setInviteeId] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
   const dragX = useMotionValue(0);
 
   // --- 컴포넌트 생명주기와 스토어 액션 연결 ---
+  // ❗️ useEffect 의존성 배열을 수정합니다.
   useEffect(() => {
-    if (!id) {
-      // authStore가 user 상태를 관리하므로 로그인 확인 로직도 간결해집니다.
-      alert("로그인이 필요합니다.");
-      navigate("/login");
+    // 소켓이 연결되지 않았거나, 유저 또는 roomId 정보가 없으면 실행하지 않고 기다립니다.
+    if (!isConnected || !user || !roomId) {
       return;
     }
-    if (roomId) {
-      // 방에 들어갈 때 스토어의 초기화 액션 호출
-      initializeRoom(roomId);
-    }
+    
+    // 모든 조건이 만족되면 방 초기화 함수를 호출합니다.
+    initializeRoom(roomId);
 
-    // 컴포넌트가 사라질 때(unmount) 정리(cleanup) 액션이 자동으로 호출됩니다.
     return () => {
       cleanupRoom();
     };
-  }, [roomId, id, initializeRoom, cleanupRoom, navigate]);
+    // ❗️ 여기에 isConnected를 추가하는 것이 핵심입니다!
+  }, [isConnected, roomId, user, initializeRoom, cleanupRoom]);
 
   // 메시지 목록이 변경될 때마다 맨 아래로 스크롤
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // --- 핸들러 함수들: 스토어 액션을 호출하는 역할만 수행 ---
+  // --- 핸들러 함수들 ---
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;
     sendMessage(newMessage);
     setNewMessage("");
   };
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.nativeEvent.isComposing) {
-      return;
-    }
+    if (e.nativeEvent.isComposing) return;
     if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault(); // 기본 동작(줄바꿈) 방지
+      e.preventDefault();
       handleSendMessage();
     }
   };
   const confirmLeaveRoom = () => {
     leaveCurrentRoom();
-    navigate("/chat"); // 나가기 후 채팅 목록 페이지로 이동
+    navigate("/chat");
   };
-
   const confirmInviteUser = () => {
     inviteUser(inviteeId);
-    setInviteeId(""); // 입력 필드 초기화
+    setInviteeId("");
   };
+
+  // 로딩 상태를 더 명확하게 표시
+  if (!isConnected || !user) {
+    return (
+        <div className="flex flex-col h-screen max-w-4xl mx-auto bg-brand-default">
+            <header className="flex items-center justify-between p-4 border-b border-gray-200">
+                {/* 헤더 UI는 유지하되, 내용은 로딩 상태로 표시 */}
+                <h2 className="text-subheadline text-brand-text-primary">
+                연결 중...
+                </h2>
+            </header>
+            <main className="flex-1 p-4 overflow-y-auto flex justify-center items-center">
+                <p>채팅방 정보를 불러오고 있습니다...</p>
+            </main>
+        </div>
+    );
+  }
 
   // --- JSX (UI 렌더링) ---
   return (
@@ -111,7 +126,7 @@ const ChatRoomPage: React.FC = () => {
         <button
           onClick={goToUserProfile}
           className="flex items-center gap-3 p-2 -ml-2 rounded-lg hover:bg-gray-100"
-          disabled={!chatPartner.id} // 상대방 ID가 없으면(새 채팅방 등) 버튼 비활성화
+          disabled={!chatPartner.id}
         >
           <Avatar
             src={
@@ -146,10 +161,10 @@ const ChatRoomPage: React.FC = () => {
       {/* 채팅 메시지 목록 */}
       <motion.main
         className="flex-1 p-4 overflow-y-auto bg-brand-frame"
-        style={{ x: dragX }} // 드래그 값을 실제 x 위치에 바인딩
-        drag="x" // x축으로 드래그 가능하게 설정
-        dragConstraints={{ left: -100, right: 0 }} // 왼쪽으로 최대 100px까지만 드래그
-        dragElastic={0.1} // 경계를 넘어서 드래그할 때의 탄성
+        style={{ x: dragX }}
+        drag="x"
+        dragConstraints={{ left: -100, right: 0 }}
+        dragElastic={0.1}
         dragSnapToOrigin
       >
         <div className="flex flex-col gap-2">

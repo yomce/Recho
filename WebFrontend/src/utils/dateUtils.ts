@@ -5,7 +5,7 @@ export const formatToKST = (
   formatStr = 'yyyy-MM-dd HH:mm:ss'
 ): string => {
   // [추가] 함수에 전달된 원본 값을 그대로 출력해봅니다.
-  console.log('formatToKST에 전달된 원본 날짜:', date); 
+  // console.log('formatToKST에 전달된 원본 날짜:', date); 
 
   try {
     const dateObj = typeof date === 'string' ? new Date(date) : date;

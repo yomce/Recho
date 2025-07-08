@@ -73,7 +73,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     // --- "새 메시지 수신" 리스너 ---
     socket.on('newMessage', (message: Message) => {
-      console.log('⬅️ [Client] Received newMessage:', message);
+      // console.log('⬅️ [Client] Received newMessage:', message);
       if (get().roomId === message.roomId) {
         set((state) => ({ messages: [...state.messages, message] }));
       }

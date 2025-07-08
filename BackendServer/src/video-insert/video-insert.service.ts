@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { Video } from '../entities/video.entity';
 import { SaveVideoMetaDto } from '../dto/save-video-meta.dto';
 import { GetUploadUrlDto, TFilePurpose } from './video-insert.controller';
+import { ConfigService } from '@nestjs/config';
 
 dotenv.config();
 
@@ -23,6 +24,8 @@ export class VideoInsertService {
   constructor(
     @InjectRepository(Video)
     private readonly videoRepository: Repository<Video>,
+
+    private readonly configService: ConfigService,
   ) {}
 
   async getUploadUrls(
@@ -37,13 +40,13 @@ export class VideoInsertService {
       let keyPrefix: string;
       switch (purpose) {
         case 'RESULT_VIDEO':
-          keyPrefix = process.env.RESULTS_PATH || 'results_video';
+          keyPrefix = this.configService.get('RESULTS_PATH') || 'results_video';
           break;
         case 'SOURCE_VIDEO':
-          keyPrefix = process.env.SOURCE_PATH || 'source_video';
+          keyPrefix = this.configService.get('SOURCE_PATH') || 'source_video';
           break;
         case 'THUMBNAIL':
-          keyPrefix = process.env.THUMBNAIL_PATH || 'thumbnail';
+          keyPrefix = this.configService.get('THUMBNAIL_PATH') || 'thumbnail';
           break;
         default:
           // 잘못된 purpose에 대한 예외 처리

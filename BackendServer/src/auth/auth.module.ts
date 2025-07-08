@@ -8,7 +8,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './jwt.strategy';
 import { RefreshTokenStrategy } from './refresh-token.strategy';
 import { PasswordController } from './user/password.controller'; // 경로 수정
-import { PasswordService } from './user/password.service';     // 경로 수정
+import { PasswordService } from './user/password.service'; // 경로 수정
 import { MailerModule } from '@nestjs-modules/mailer';
 import { KakaoStrategy } from './kakao.strategy'; // KakaoStrategy 추가
 import { GoogleStrategy } from './google.strategy';
@@ -22,7 +22,7 @@ import { GoogleStrategy } from './google.strategy';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
+      useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
         signOptions: {
           expiresIn: configService.get<string>('JWT_EXPIRATION_TIME'),

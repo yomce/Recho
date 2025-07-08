@@ -110,7 +110,7 @@ export class ChatService {
     // 2. 'room' 관계를 함께 로드하여 각 방의 상세 정보(이름 등)를 가져옵니다.
     const userRooms = await this.userRoomRepo.find({
       where: { id },
-      relations: ['room'], // 'room' 관계를 함께 로드
+      relations: ['room', 'room.userRooms', 'room.userRooms.user'],
     });
 
     // 3. UserRoom 엔티티 배열에서 Room 엔티티만 추출하여 반환합니다.

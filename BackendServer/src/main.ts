@@ -4,6 +4,9 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser'; // cookie-parser 임포트 추가
 import { ConfigService } from '@nestjs/config';
+// import * as dotenv from 'dotenv';
+
+// dotenv.config();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

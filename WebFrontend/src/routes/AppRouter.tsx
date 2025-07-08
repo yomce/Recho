@@ -31,9 +31,10 @@ import UpdatePracticeRoomPage from "@/pages/practiceRoom/UpdatePracticeRoomPage"
 import UpdateRecruitEnsemblePage from '@/pages/ensemble/UpdateRecruitEnsemblePage';
 import MapViewPage from "@/pages/map/MapViewPage";
 import ProtectedRoute from "./ProtectedRoute";
+import CategoryPage from "@/pages/main/CategoryPage";
 
 const AppRouter: React.FC = () => {
-  return (
+  return ( 
     <Router>
       <Routes>
         {/* 인증이 필요 없는 페이지들 */}
@@ -49,6 +50,7 @@ const AppRouter: React.FC = () => {
           <Route path="/chat/:roomId" element={<ChatRoomPage />} />
           <Route path="/users/:id" element={<UserPage />} />
           <Route path="/main" element={<MainPage />} />
+          <Route path="/category" element={<CategoryPage />} />
           <Route path="/vinyl" element={<VinylPage />} />
           <Route path="/used-products" element={<UsedProductPage />} />
           <Route path="/used-products/create" element={<CreateUsedProductPage />} />

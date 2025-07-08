@@ -3,6 +3,7 @@ import AppRouter from "./routes/AppRouter";
 import "./App.css";
 import "./index.css";
 import { useAuthStore } from "./stores/authStore";
+import { Toaster } from "react-hot-toast";
 
 function App() {
   const setToken = useAuthStore((state) => state.setToken);
@@ -37,8 +38,10 @@ function App() {
   }, [setToken]);
 
   return (
-    <div className="">
-      <AppRouter />
+    <div className=""> 
+    <Toaster position="top-center" />
+    
+    <AppRouter /> 
     </div>
   );
 }

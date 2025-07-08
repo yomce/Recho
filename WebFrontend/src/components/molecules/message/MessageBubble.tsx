@@ -1,8 +1,8 @@
-// src/components/molecules/MessageBubble.tsx
+// src/components/molecules/message/MessageBubble.tsx
 
 import React from "react";
 import { motion, useTransform, MotionValue } from "framer-motion";
-import { formatToKST } from "../../utils/dateUtils"; // 경로 확인 필요
+import { formatToKST } from "../../../utils/dateUtils"; // 경로 확인 필요
 
 // 컴포넌트가 받을 props 타입
 interface MessageBubbleProps {

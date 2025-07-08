@@ -3,6 +3,7 @@ import AppRouter from "./routes/AppRouter";
 import "./App.css";
 import "./index.css";
 import { useAuthStore } from "./stores/authStore";
+import { Toaster } from "react-hot-toast";
 import { useChatStore } from "./stores/chatStore";
 
 function App() {
@@ -45,8 +46,10 @@ function App() {
   }, []); // 빈 배열[]: 앱이 처음 실행될 때 딱 한 번만 실행되도록 보장
 
   return (
-    <div className="">
-      <AppRouter />
+    <div className=""> 
+    <Toaster position="top-center" />
+    
+    <AppRouter /> 
     </div>
   );
 }

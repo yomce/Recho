@@ -7,11 +7,11 @@ import { useAuthStore } from "../../stores/authStore";
 import { useChatStore } from "../../stores/chatStore";
 import type { Message } from "../../stores/chatStore";
 // 컴포넌트 임포트
-import MessageBubble from "@/components/molecules/MessageBubble";
+import MessageBubble from "@/components/molecules/message/MessageBubble";
 import PrimaryButton from "@/components/atoms/button/PrimaryButton";
 import SecondaryButton from "@/components/atoms/button/SecondaryButton";
 import TextInput from "@/components/atoms/input/TextInput";
-import MessageInput from "@/components/molecules/MessageInput";
+import MessageInput from "@/components/molecules/message/MessageInput";
 import Modal from "@/components/molecules/modal/Modal";
 import Icon from "@/components/atoms/icon/Icon";
 import Avatar from "@/components/atoms/avatar/Avatar";

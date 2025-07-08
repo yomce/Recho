@@ -7,7 +7,13 @@
 // 참고하여 해결하기
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+} from 'react';
 import styled from 'styled-components/native';
 import {
   SafeAreaView,
@@ -59,6 +65,7 @@ import {
 import CommonButton from '../components/Common/CommonButton';
 import SectionHeader from '../components/Common/SectionHeader';
 import axiosInstance from '../api/axiosInstance';
+import RangeControl from '../components/Editor/RangeControl';
 
 // LayoutAnimation을 Android에서 활성화
 if (
@@ -287,8 +294,6 @@ const VideoEditScreen: React.FC<{
   const [uploading, setUploading] = useState(false);
   const [previewScale, setPreviewScale] = useState(1);
   const [isGloballyPlaying, setIsGloballyPlaying] = useState(false);
-  const [globalStartTime, setGlobalStartTime] = useState(0);
-  const [globalEndTime, setGlobalEndTime] = useState(0);
   const [timelinePosition, setTimelinePosition] = useState(0);
   const [timelineHeight, setTimelineHeight] = useState(100); // [추가] 타임라인의 동적 높이를 위한 상태
   const previewSlotRefs = useRef<
@@ -368,26 +373,23 @@ const VideoEditScreen: React.FC<{
     setPlaybackStates(initialPlaybackStates);
   }, [localVideos, total_slots]);
 
-  useEffect(() => {
-    if (trimmers.length > 0 && trimmers.every(t => t.duration > 0)) {
-      // timelinePosition을 기준으로 실제 트랙의 시작 시간 계산
-      const trackStartTimes = trimmers.map(t => t.timelinePosition);
-      // timelinePosition과 클립의 실제 길이를 더해 실제 트랙의 종료 시간 계산
-      const trackEndTimes = trimmers.map(
-        t => t.timelinePosition + (t.endTime - t.startTime),
-      );
-
-      const maxStart = Math.max(...trackStartTimes);
-      const minEnd = Math.min(...trackEndTimes);
-
-      setGlobalStartTime(maxStart);
-      setGlobalEndTime(minEnd < maxStart ? maxStart : minEnd);
-    } else {
-      setGlobalStartTime(0);
-      setGlobalEndTime(0);
-    }
+  const globalStartTime = useMemo(() => {
+    if (trimmers.length === 0) return 0;
+    // 스타트 포인트: 모든 트랙의 시작점 중 가장 '늦은' 시간
+    return Math.max(...trimmers.map(t => t.timelinePosition));
   }, [trimmers]);
 
+  const globalEndTime = useMemo(() => {
+    if (trimmers.length === 0) return 30;
+    // 엔드 포인트: 모든 트랙의 종료점 중 가장 '빠른' 시간
+    const newEndTime = Math.min(
+      ...trimmers.map(t => t.timelinePosition + (t.endTime - t.startTime)),
+    );
+    // 만약 계산 결과가 논리적으로 맞지 않으면 (예: end < start), 렌더링 구간을 0으로 만듦
+    return newEndTime < globalStartTime ? globalStartTime : newEndTime;
+  }, [trimmers, globalStartTime]);
+
+  // --- 레이아웃 및 핸들러 함수들 ---
   const handlePreviewLayout = (event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;
     if (width > 0 && height > 0) {
@@ -400,12 +402,11 @@ const VideoEditScreen: React.FC<{
     id: string,
     newState: Partial<Omit<TrimmerState, 'id'>>,
   ) => {
-    setTrimmers(prev =>
-      prev.map(trimmer =>
+    setTrimmers(prevTrimmers =>
+      prevTrimmers.map(trimmer =>
         trimmer.id === id ? { ...trimmer, ...newState } : trimmer,
       ),
     );
-    setSeekTrigger(c => c + 1); // [추가] 비디오 위치 조정을 수동으로 트리거
   };
 
   const handlePlaybackUpdate = (
@@ -1120,6 +1121,12 @@ const VideoEditScreen: React.FC<{
           </ControlsScrollView>
         </View>
       </ControlsWrapper>
+
+      <RangeControl
+        startTime={globalStartTime}
+        endTime={globalEndTime}
+        duration={globalEndTime - globalStartTime}
+      />
     </ScreenContainer>
   );
 };

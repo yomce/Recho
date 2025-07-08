@@ -114,7 +114,7 @@ const Timeline: React.FC<TimelineProps> = ({
   isPlaying, // [추가]
 }) => {
   const [containerWidth, setContainerWidth] = useState(0);
-  const [localTrimmers, setLocalTrimmers] = useState(trimmers);
+
   // --- Refs for simultaneous gesture handling ---
   const trackGestureRefs = useMemo(
     () => trimmers.map(() => [createRef(), createRef(), createRef()]),
@@ -132,18 +132,18 @@ const Timeline: React.FC<TimelineProps> = ({
 
   const [maxTotalDuration, setMaxTotalDuration] = useState(0);
   const totalDuration = React.useMemo(() => {
-    if (localTrimmers.length === 0) {
+    if (trimmers.length === 0) {
       return 30; // default minimum duration
     }
 
     // 1. Calculate the end time of the rightmost clip
     const lastClipEndTime = Math.max(
-      ...localTrimmers.map(t => t.timelinePosition + (t.endTime - t.startTime)),
+      ...trimmers.map(t => t.timelinePosition + (t.endTime - t.startTime)),
     );
 
     // 2. Find the duration of the longest single clip
     const longestClipDuration = Math.max(
-      ...localTrimmers.map(t => t.endTime - t.startTime),
+      ...trimmers.map(t => t.endTime - t.startTime),
     );
 
     // 3. The timeline needs to be wide enough for dragging. User suggested 2x longest clip.
@@ -151,7 +151,7 @@ const Timeline: React.FC<TimelineProps> = ({
 
     // The final duration must accommodate both the actual content and the desired drag space
     return Math.max(30, globalEndTime, lastClipEndTime, desiredDragSpace);
-  }, [globalEndTime, localTrimmers]);
+  }, [globalEndTime, trimmers]);
 
   useEffect(() => {
     if (totalDuration > maxTotalDuration) {
@@ -160,20 +160,9 @@ const Timeline: React.FC<TimelineProps> = ({
   }, [totalDuration, maxTotalDuration]);
 
   useEffect(() => {
-    // 부모의 `trimmers` 상태가 변경될 때만 로컬 상태를 동기화합니다.
-    // 사용자의 제스처가 끝난 직후, 부모의 상태가 업데이트되기 전에
-    // 로컬 상태가 과거로 되돌아가는 것을 방지합니다.
-    if (!activeGesture) {
-      setLocalTrimmers(trimmers);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trimmers]);
-
-  useEffect(() => {
-    const requiredHeight =
-      localTrimmers.length * (TRACK_HEIGHT + TRACK_MARGIN) + 20;
+    const requiredHeight = trimmers.length * (TRACK_HEIGHT + TRACK_MARGIN) + 20;
     onHeightChange?.(requiredHeight);
-  }, [localTrimmers.length, onHeightChange]);
+  }, [trimmers.length, onHeightChange]);
 
   // --- 통합된 Pan 로직 ---
   const pan = useRef(new Animated.Value(0)).current;
@@ -229,7 +218,8 @@ const Timeline: React.FC<TimelineProps> = ({
         activeGesture?.trimmerId === trimmer.id &&
         activeGesture?.type === handleType
       ) {
-        const finalTrimmer = localTrimmers.find(t => t.id === trimmer.id);
+        // 드래그가 끝나면, 최종 상태를 한번 더 확실하게 알려줌
+        const finalTrimmer = trimmers.find(t => t.id === trimmer.id);
         if (finalTrimmer) {
           onTrimmerUpdate(finalTrimmer.id, {
             startTime: finalTrimmer.startTime,
@@ -277,11 +267,11 @@ const Timeline: React.FC<TimelineProps> = ({
         timelinePosition: Math.max(0, startState.timelinePosition + timeChange),
       };
     }
-    setLocalTrimmers(currentTrimmers =>
-      currentTrimmers.map(t =>
-        t.id === trimmerId ? { ...t, ...newState } : t,
-      ),
-    );
+
+    // 부모에게 실시간으로 업데이트를 전송하여 global 계산을 유도
+    if (Object.keys(newState).length > 0) {
+      onTrimmerUpdate(trimmerId, newState);
+    }
   };
 
   // --- 통합된 Listener 및 자동 스크롤 ---
@@ -314,8 +304,7 @@ const Timeline: React.FC<TimelineProps> = ({
     isPlaying,
   ]);
 
-  const tracksHeight =
-    localTrimmers.length * (TRACK_HEIGHT + TRACK_MARGIN) + 20;
+  const tracksHeight = trimmers.length * (TRACK_HEIGHT + TRACK_MARGIN) + 20;
 
   return (
     <TimelineContainer
@@ -351,7 +340,7 @@ const Timeline: React.FC<TimelineProps> = ({
               tracksContainerWidth - globalEndTime * PIXELS_PER_SECOND,
             )}
           />
-          {localTrimmers.map((trimmer, index) => {
+          {trimmers.map((trimmer, index) => {
             const trackWidth =
               (trimmer.endTime - trimmer.startTime) * PIXELS_PER_SECOND;
             const trackLeft = trimmer.timelinePosition * PIXELS_PER_SECOND;

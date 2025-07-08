@@ -30,6 +30,7 @@ export interface TrimmerState {
   volume: number; // 볼륨 설정 (0.0 ~ 2.0)
   aspectRatio: string; // 현재 적용될 화면 비율 (예: "16:9", "1:1", "original")
   originalAspectRatioValue?: string; // 원본 비디오의 화면 비율 (예: "1.777")
+  timelinePosition: number;
 }
 
 // FFmpeg 필터에 전달될 트리머 데이터

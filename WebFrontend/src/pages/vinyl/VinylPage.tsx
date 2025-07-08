@@ -38,9 +38,8 @@ const VinylPage: React.FC = () => {
     const fetchVideos = async () => {
       // 5초 후 강제로 로딩을 종료하는 타임아웃 설정
       loadingTimeoutRef.current = setTimeout(() => {
-        console.warn("로딩 타임아웃. UI를 강제로 업데이트합니다.");
         setIsLoading(false);
-      }, 5000);
+      }, 7000);
 
       try {
         const videoData = await getVideos(1, 10);

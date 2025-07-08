@@ -46,8 +46,6 @@ interface ChatState {
   initializeSocketListeners: () => void;
 }
 
-// 리스너 중복 등록을 방지하기 위한 플래그
-let areListenersInitialized = false;
 
 export const useChatStore = create<ChatState>((set, get) => ({
   // --- 초기 상태 값 ---

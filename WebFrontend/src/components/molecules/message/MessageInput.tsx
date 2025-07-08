@@ -1,4 +1,4 @@
-// src/components/molecules/MessageInput.tsx
+// src/components/molecules/message/MessageInput.tsx
 
 import React from 'react';
 import TextareaAutosize from 'react-textarea-autosize';

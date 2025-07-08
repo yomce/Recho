@@ -28,6 +28,15 @@ import {
   IoSettingsOutline,
   IoMenuOutline,
   IoDiscOutline,
+  IoMusicalNotesOutline, 
+  IoStorefrontOutline, 
+  IoCalendarOutline, 
+  IoMegaphoneOutline, 
+  IoImageOutline,
+  IoNotificationsOutline,
+  IoDocumentTextOutline,
+  IoListOutline,
+  IoCameraOutline,
 } from 'react-icons/io5';
 
 // 아이콘 이름을 키로, 실제 컴포넌트를 값으로 매핑합니다.
@@ -58,6 +67,15 @@ const iconMap = {
   settings: IoSettingsOutline, // 설정
   menu: IoMenuOutline, // 메뉴
   vinyl: IoDiscOutline, // 바이닐
+  music: IoMusicalNotesOutline,        // 음악 (합주모집)
+  store: IoStorefrontOutline,        // 상점 (악기거래)
+  calendar: IoCalendarOutline,         // 캘린더 (합주예약)
+  megaphone: IoMegaphoneOutline,       // 확성기 (공연홍보)
+  image: IoImageOutline,           // 이미지 (플레이스홀더)
+  notification: IoNotificationsOutline,// 알림
+  memo: IoDocumentTextOutline, // 커뮤니티
+  category: IoListOutline, // 카테고리
+  camera: IoCameraOutline, // 카메라
 };
 
 // Icon 컴포넌트가 받을 props 타입을 정의합니다.

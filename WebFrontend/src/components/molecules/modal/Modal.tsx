@@ -13,12 +13,12 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
   return (
     // 배경 (Backdrop)
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       onClick={onClose}
     >
       {/* 모달 컨테이너 */}
       <div
-        className="relative w-full max-w-sm p-6 bg-brand-default rounded-[var(--radius-card)] shadow-lg"
+        className="relative w-full max-w-sm p-6 bg-brand-default rounded-[var(--radius-card)]"
         onClick={(e) => e.stopPropagation()} // 모달 내부 클릭 시 전파 방지
       >
         {/* 타이틀 */}

@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, useAnimation, type PanInfo } from "framer-motion";
 import VinylContents from "../../components/organisms/vinyl/VinylContents";
-import Navigation from "../../components/layout/Navigation";
 import { getVideos } from "../../api";
 import type { Video } from "../../types/video";
 import Loading from "@/components/loading/Loading";
@@ -233,7 +232,6 @@ const VinylPage: React.FC = () => {
             })}
         </motion.div>
       </div>
-      <Navigation />
 
       <Modal isOpen={isModalOpen} onClose={closeModal} title="VINYL 합주하기">
         <div className="flex flex-col gap-3 mt-4">

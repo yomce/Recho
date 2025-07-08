@@ -28,7 +28,7 @@ import PracticeRoomPage from "@/pages/practiceRoom/PracticeRoomPage";
 import CreatePracticeRoom from "@/pages/practiceRoom/CreatePracticeRoomPage";
 import PracticeRoomDetailPage from "@/pages/practiceRoom/PracticeRoomDetailPage";
 import UpdatePracticeRoomPage from "@/pages/practiceRoom/UpdatePracticeRoomPage";
-import UpdateRecruitEnsemblePage from '@/pages/ensemble/UpdateRecruitEnsemblePage';
+import UpdateRecruitEnsemblePage from "@/pages/ensemble/UpdateRecruitEnsemblePage";
 import MapViewPage from "@/pages/map/MapViewPage";
 import ProtectedRoute from "./ProtectedRoute";
 import CategoryPage from "@/pages/main/CategoryPage";
@@ -37,7 +37,6 @@ const AppRouter: React.FC = () => {
   return ( 
     <Router>
       <Routes>
-        {/* 인증이 필요 없는 페이지들 */}
         <Route path="/" element={<Navigate to="/main" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -46,6 +45,11 @@ const AppRouter: React.FC = () => {
 
         {/* 인증이 필요한 페이지들 */}
         <Route element={<ProtectedRoute />}>
+          {/* 사용자가 직접 / 로 접근했을 때, 로그인 여부에 따라 적절한 페이지를 보여주기 위해
+              MainPage를 / 와 /main 두 경로에 연결할 수 있습니다. */}
+          <Route path="/" element={<MainPage />} />
+          <Route path="/main" element={<MainPage />} />
+
           <Route path="/chat" element={<ChatListPage />} />
           <Route path="/chat/:roomId" element={<ChatRoomPage />} />
           <Route path="/users/:id" element={<UserPage />} />
@@ -53,17 +57,44 @@ const AppRouter: React.FC = () => {
           <Route path="/category" element={<CategoryPage />} />
           <Route path="/vinyl" element={<VinylPage />} />
           <Route path="/used-products" element={<UsedProductPage />} />
-          <Route path="/used-products/create" element={<CreateUsedProductPage />} />
-          <Route path="/used-products/:id" element={<UsedProductDetailPage />} />
-          <Route path="/used-products/edit/:id" element={<UpdateUsedProductPage />} />
+          <Route
+            path="/used-products/create"
+            element={<CreateUsedProductPage />}
+          />
+          <Route
+            path="/used-products/:id"
+            element={<UsedProductDetailPage />}
+          />
+          <Route
+            path="/used-products/edit/:id"
+            element={<UpdateUsedProductPage />}
+          />
           <Route path="/ensembles" element={<RecruitEnsembleListPage />} />
-          <Route path="/ensembles/create" element={<CreateRecruitEnsemblePage />} />
-          <Route path="/ensembles/edit/:id" element={<UpdateRecruitEnsemblePage />} />
-          <Route path="/ensembles/:id" element={<RecruitEnsembleDetailPage />} />
+          <Route
+            path="/ensembles/create"
+            element={<CreateRecruitEnsemblePage />}
+          />
+          <Route
+            path="/ensembles/edit/:id"
+            element={<UpdateRecruitEnsemblePage />}
+          />
+          <Route
+            path="/ensembles/:id"
+            element={<RecruitEnsembleDetailPage />}
+          />
           <Route path="/practice-room" element={<PracticeRoomPage />} />
-          <Route path="/practice-room/create" element={<CreatePracticeRoom />} />
-          <Route path="/practice-room/:id" element={<PracticeRoomDetailPage />} />
-          <Route path="/practice-room/edit/:id" element={<UpdatePracticeRoomPage />} />
+          <Route
+            path="/practice-room/create"
+            element={<CreatePracticeRoom />}
+          />
+          <Route
+            path="/practice-room/:id"
+            element={<PracticeRoomDetailPage />}
+          />
+          <Route
+            path="/practice-room/edit/:id"
+            element={<UpdatePracticeRoomPage />}
+          />
           <Route path="/map-view" element={<MapViewPage />} />
           <Route path="/style-guide" element={<StyleGuideTest />} />
         </Route>

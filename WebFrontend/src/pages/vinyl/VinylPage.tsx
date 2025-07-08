@@ -190,6 +190,7 @@ const VinylPage: React.FC = () => {
     <>
       {isLoading && <Loading />}
       <div
+        className=" bg-black h-screen "
         ref={containerRef}
         style={{
           width: "100%",
@@ -234,12 +235,7 @@ const VinylPage: React.FC = () => {
       </div>
       <Navigation />
 
-      <Modal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        title="VINYL 합주하기"
-
-      >
+      <Modal isOpen={isModalOpen} onClose={closeModal} title="VINYL 합주하기">
         <div className="flex flex-col gap-3 mt-4">
           <p className="text-body text-brand-text-secondary mb-2">
             선택한 비디오에 합주할 새로운 영상을 추가합니다.

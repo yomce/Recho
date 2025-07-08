@@ -109,8 +109,7 @@ export const generateCollageFilterComplex = (editData: EditData): string[] => {
   filterComplex.push(
     `color=c=black:s=${OUTPUT_WIDTH}x${OUTPUT_HEIGHT}:d=${shortestDuration}[bg]`,
   );
-  let lastOverlayNode = '[bg]';
-
+  let lastOverlayNode = 'bg'; 
   trimmers.forEach((trimmer, i) => {
     const isLastVideo = i === videoCount - 1;
     let frameW = FRAME_WIDTH;
@@ -136,7 +135,7 @@ export const generateCollageFilterComplex = (editData: EditData): string[] => {
         `[mask${i}_base]geq=lum='if(gt(hypot(X-max(${cornerRadius},min(W-${cornerRadius},X)),Y-max(${cornerRadius},min(H-${cornerRadius},Y))),${cornerRadius}),0,255)':a=255[mask${i}]`,
       );
       filterComplex.push(
-        `[v${i}_processed][mask${i}]alphamerge[v${i}_rounded]`,
+        `[${videoStream.slice(1, -1)}][mask${i}]alphamerge[v${i}_rounded]`,
       );
       videoStream = `[v${i}_rounded]`;
     }
@@ -156,12 +155,22 @@ export const generateCollageFilterComplex = (editData: EditData): string[] => {
     }
 
     // 4. 배경 위에 오버레이
-    const currentOverlayOutput = i === videoCount - 1 ? '[v]' : `[tmp${i}]`;
+    const currentOverlayOutput = isLastVideo ? 'v_final' : `tmp${i}`;
     filterComplex.push(
-      `${lastOverlayNode}${videoStream}overlay=x=${x}:y=${y}:shortest=1${currentOverlayOutput}`,
+      `[${lastOverlayNode}]${videoStream}overlay=x=${x}:y=${y}:shortest=1[${currentOverlayOutput}]`,
     );
     lastOverlayNode = currentOverlayOutput;
   });
+
+  // 5. 최종 비디오 및 오디오 스트림 결합
+  if (audioOutputs.length > 0) {
+    // 최종 비디오 스트림의 이름을 '[v]'로, 오디오 스트림은 '[a]'로 명시적으로 지정
+    // FFmpeg 명령의 -map 옵션에서 사용 가능
+    filterComplex.push(`[${lastOverlayNode}]null[v]`);
+  } else {
+    // 오디오가 없는 경우, 마지막 비디오 노드를 최종 출력 'v'로 지정
+    filterComplex.push(`[${lastOverlayNode}]null[v]`);
+  }
 
   return filterComplex;
 };

@@ -6,6 +6,7 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+import Navigation from "@/components/layout/Navigation";
 import LoginPage from "../pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
 import MainPage from "../pages/main/MainPage";
@@ -21,7 +22,6 @@ import RecruitEnsembleListPage from "../pages/ensemble/RecruitEnsemblePage";
 import CreateRecruitEnsemblePage from "../pages/ensemble/CreateRecruitEnsemblePage";
 import RecruitEnsembleDetailPage from "../pages/ensemble/RecruitEnsembleDetailPage";
 import VinylPage from "@/pages/vinyl/VinylPage";
-import Navigation from "@/components/layout/Navigation";
 import StyleGuideTest from "@/components/StyleGuideTest";
 import AuthCallbackPage from "../pages/auth/AuthCallbackPage";
 import PracticeRoomPage from "@/pages/practiceRoom/PracticeRoomPage";

@@ -102,9 +102,10 @@ export class ChatGateway {
     client.leave(payload.roomId);
 
     // 3. 방에 남아있는 다른 사용자들에게 'username'을 포함하여 이벤트를 전송합니다.
-    this.server.to(payload.roomId).emit('userLeft', {
+   this.server.to(payload.roomId).emit('userLeft', {
       id: payload.id,
-      username: user ? user.username : '알 수 없는 사용자', // 유저가 존재하면 username, 없으면 기본값
+      username: user ? user.username : '알 수 없는 사용자',
+      roomId: payload.roomId, // ⬅️ 이 부분을 추가해주세요!
     });
   }
 

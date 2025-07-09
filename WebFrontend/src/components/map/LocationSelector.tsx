@@ -25,23 +25,11 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({ locationId }) => {
     }
   }, [pathname, resetLocation]);
 
-  // -- 수정 페이지 진입 시: locationId를 누락하지 않도록 최초 1회 새로고침 유도 (없이 작동 완료) -- 
-  /*
-  useEffect(() => {
-    if (pathname.includes('/edit') && !sessionStorage.getItem('editRefreshed')) {
-      sessionStorage.setItem('editRefreshed', 'true');
-      window.location.reload();
-    } else if (!pathname.includes('/edit')) {
-      sessionStorage.removeItem('editRefreshed');
-    }
-  }, [pathname]);
-  */
-  // -- 수정 페이지에서 locationId로 주소 정보 요청 (전역 상태가 없을 경우만) -- 
   useEffect(() => {
     const fetchLocation = async () => {
       if (locationId && !location) {
         try {
-          const response = await axiosInstance.get(`/api/locations/${locationId}`);
+          const response = await axiosInstance.get(`locations/${locationId}`);
           setAddressName(response.data.address);
         } catch (err) {
           console.error('지역 정보 조회 실패:', err);

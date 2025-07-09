@@ -39,7 +39,7 @@ import loadConfig from './config/env.config';
       inject: [ConfigService],
       useFactory: (cs: ConfigService) => ({
         type: 'postgres',
-        host: cs.get<string>('DB_HOST'),
+        host: cs.get<string>('IP'),
         port: cs.get<number>('DB_PORT'),
         username: cs.get<string>('DB_USERNAME'),
         password: cs.get<string>('DB_PASSWORD'),

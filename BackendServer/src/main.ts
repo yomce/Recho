@@ -16,12 +16,10 @@ async function bootstrap() {
 
   app.use(cookieParser()); // cookie-parser를 전역 미들웨어로 설정
 
-  const frontendUrlLocal = configService.get<string>('FRONTEND_URL_LOCAL');
-  const frontendUrlIp = configService.get<string>('FRONTEND_URL_IP');
+  const frontendUrl = configService.get<string>('FRONTEND_URL');
 
   const allowedOrigins: string[] = [];
-  if (frontendUrlLocal) allowedOrigins.push(frontendUrlLocal);
-  if (frontendUrlIp) allowedOrigins.push(frontendUrlIp);
+  if (frontendUrl) allowedOrigins.push(frontendUrl);
 
   app.enableCors({
     origin: allowedOrigins,

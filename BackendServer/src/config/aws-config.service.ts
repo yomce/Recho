@@ -58,8 +58,6 @@ export class AwsConfigService {
           });
 
           const response = await this.ssmClient.send(command);
-          console.log('response');
-          console.log(response);
           if (response.Parameters) {
             parameters = parameters.concat(response.Parameters);
           }
@@ -71,16 +69,18 @@ export class AwsConfigService {
       };
 
       const result = await getAllParameters(path);
-      console.log('get end');
-      console.log('server parameters');
-      console.log(result);
 
       if (result) {
         for (const param of result) {
-          // param이 Parameter 타입이므로 Name과 Value 속성에 안전하게 접근
           if (param.Name && param.Value) {
-            const key = param.Name.replace(path, '');
-            this.config[key] = param.Value.replace(/\\\\n/g, '\\n');
+            const keyPath = param.Name.split('/');
+            const finalKey = keyPath[keyPath.length - 1]; // 1. 경로의 마지막 부분 추출 (예: 'jwt-secret')
+
+            const transformedKey = finalKey
+              .replace(/-/g, '_') // 2. 대시(-)를 언더스코어(_)로 변경
+              .toUpperCase(); // 3. 모두 대문자로 변경 (예: 'JWT_SECRET')
+
+            this.config[transformedKey] = param.Value.replace(/\\\\n/g, '\\n');
           }
         }
       }
@@ -92,8 +92,9 @@ export class AwsConfigService {
   }
 
   get(key: string): string {
-    // 로컬에서 실행할 경우
-    if (process.env.ENV_LOCAL === 'true') {
+    console.log('get check');
+    console.log(process.env.APP_ENV);
+    if (process.env.APP_ENV === 'LOCAL' || process.env.APP_ENV === 'LOCAL_IP') {
       return process.env[key] || this.config[key];
     }
 
@@ -101,34 +102,47 @@ export class AwsConfigService {
   }
 
   getConfig() {
-    const LOCALHOST = process.env.ENV_LOCALHOST;
-    const LOCAL_IP = process.env.ENV_LOCAL_IP;
-    const DEV_IP = this.get('dev-ip');
-    const FRONT_PORT = this.get('ports/front');
-    const BACK_PORT = this.get('ports/back');
-    const DB_PORT = this.get('ports/db');
+    // 1. 로컬 환경일 경우, process.env 값으로 AWS 설정값을 덮어씁니다.
+    if (process.env.APP_ENV === 'LOCAL' || process.env.APP_ENV === 'LOCAL_IP') {
+      // this.config 객체(AWS에서 로드된 값)의 모든 키에 대해 반복합니다.
+      for (const key in this.config) {
+        // 해당 키가 process.env에도 존재하고, 빈 값이 아닐 경우
+        if (process.env[key] && process.env[key] !== '') {
+          // AWS에서 가져온 값을 로컬 .env 값으로 덮어씁니다.
+          this.config[key] = process.env[key];
+          console.log(
+            `[Config Override] Key '${key}' was overridden by local .env value.`,
+          );
+        }
+      }
+    }
 
+    if (process.env.APP_ENV === 'LOCAL') {
+      this.config['IP'] = process.env.ENV_LOCALHOST || 'localhost';
+    } else if (process.env.APP_ENV === 'LOCAL_IP') {
+      this.config['IP'] = process.env.ENV_LOCAL_IP || 'localhost';
+    } else {
+      this.config['IP'] = this.config['DEV_IP'];
+    }
 
+    this.config['FRONTEND_URL'] =
+      `${this.config['PROTOCOL']}${this.config['IP']}:${this.config['FRONT_PORT']}`;
+    this.config['BACKEND_URL'] =
+      `${this.config['PROTOCOL']}${this.config['IP']}:${this.config['BACK_PORT']}`;
+    this.config['DB_URL'] =
+      `${this.config['PROTOCOL']}${this.config['IP']}:${this.config['DB_PORT']}`;
 
-    return {
-      DATABASE_URL: this.get('backend/database-url'),
-      FRONTEND_URL_IP: this.get('backend/frontend-url-ip'),
+    this.config['KAKAO_CALLBACK_URL'] =
+      this.config['BACKEND_URL'] + this.config['KAKAO_CALLBACK'];
 
-      AWS_ACCESS_KEY_ID: this.get('backend/aws-s3-configuration/aws-access-key-id'),
-      AWS_SECRET_ACCESS_KEY: this.get('backend/aws-s3-configuration/aws-secret-access-key'),
-      AWS_REGION: this.get('backend/aws-s3-configuration/aws-region'),
-      AWS_S3_BUCKET: this.get('backend/aws-s3-configuration/aws-s3-bucket'),
+    this.config['GOOGLE_CALLBACK_URL'] =
+      this.config['FRONTEND_URL'] + this.config['GOOGLE_CALLBACK'];
 
-      STORAGE_TYPE: this.get('backend/storage-type'),
+    this.config['FRONTEND_CALLBACK_URL'] =
+      this.config['FRONTEND_URL'] + this.config['FRONTEND_CALLBACK'];
 
-      RESULTS_PATH: this.get('backend/video/results-path'),
-      SOURCE_PATH: this.get('backend/video/source-path'),
-      THUMBNAIL_PATH: this.get('backend/video/thumbnail-path'),
-
-      JWT_SECRET: this.get('backend/jwt/jwt-secret'),
-      JWT_EXPIRATION_TIME: this.get('backend/jwt/jwt-expiration-time'),
-      JWT_REFRESH_SECRET: this.get('backend/jwt/jwt-refresh-secret'),
-      JWT_REFRESH_EXPIRATION_TIME: this.get('backend/jwt/jwt-refresh-expiration-time'),
-    };
+    //config 변수 확인용
+    console.log(this.config);
+    return this.config;
   }
 }

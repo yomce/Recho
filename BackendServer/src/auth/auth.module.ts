@@ -20,21 +20,13 @@ import { GoogleStrategy } from './google.strategy';
     MailerModule,
     ConfigModule, // ConfigService를 사용하기 위해 ConfigModule을 import
     JwtModule.registerAsync({
-      imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => {
-        const jwtSecret = configService.get<string>('JWT_SECRET');
-        const jwtExpirationTime = configService.get<string>('JWT_EXPIRATION_TIME');
-
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        return {
-          secret: jwtSecret,
-          signOptions: {
-            expiresIn: jwtExpirationTime,
-          },
-        };
-      },
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: {
+          expiresIn: configService.get<string>('JWT_EXPIRATION_TIME'),
+        },
+      }),
     }),
   ],
   controllers: [AuthController, PasswordController],

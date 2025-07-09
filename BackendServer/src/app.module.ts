@@ -50,6 +50,7 @@ import { ConfigController } from './config/config.controller';
         logging: true,
         dropSchema: false,
         timezone: 'UTC',
+        ssl: true,
       }),
     }),
 

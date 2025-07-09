@@ -1,19 +1,18 @@
 /**
  * src/components/map/LocationSearch.tsx
- * 카카오 REST API를 활용해 장소를 검색하고, 선택된 장소의 좌표를 기반으로
- * 행정 구역 정보를 가져와 상태로 저장하는 컴포넌트입니다.
+ * [수정됨] 카카오 REST API 호출을 백엔드 프록시를 통해 수행합니다.
  *
  * 사용 흐름:
  * 1. 사용자가 검색어를 입력 후 "검색" 버튼 클릭
- * 2. 카카오 키워드 검색 API 호출 → 장소 목록 표시
- * 3. 특정 장소 클릭 시 → 좌표 기반 역지오코딩 API 호출
+ * 2. NestJS 백엔드의 검색 API(/api/locations/search) 호출 → 장소 목록 표시
+ * 3. 특정 장소 클릭 시 → 백엔드의 역지오코딩 API(/api/locations/reverse-geocode) 호출
  * 4. 지역 정보 파싱 후 전역 상태 (useLocationStore)에 저장
  *
  **/
 
 import { useState } from "react";
-import axios from "axios";
 import { useLocationStore } from "./store/useLocationStore";
+import axiosInstance from '@/services/axiosInstance';
 
 export interface MapLocation {
   place_name: string;
@@ -31,17 +30,10 @@ const LocationSearch = () => {
 
   const handleSearch = async () => {
     try {
-      //-- 검색 키워드 기반 지도 API 호출하여 장소를 검색하고 UI에 띄웁니다 --
-      const res = await axios.get(
-        `https://dapi.kakao.com/v2/local/search/keyword.json`,
-        {
-          params: { query },
-          headers: {
-            Authorization: `KakaoAK ${
-              import.meta.env.VITE_KAKAO_MAP_REST_API_KEY
-            }`,
-          },
-        }
+      // [수정] 카카오 API 대신 우리 백엔드 서버의 검색 엔드포인트를 호출합니다.
+      const res = await axiosInstance.get(
+        `locations/search`, // URL 변경
+        { params: { query } } // 헤더 제거
       );
       setResults(res.data.documents);
     } catch (err: any) {
@@ -51,17 +43,10 @@ const LocationSearch = () => {
 
   const handleSelect = async (location: MapLocation) => {
     try {
-      //-- DB 저장을 위해 행정구역 별로 파싱된 정보를 위도/경도 기반으로 역지오코딩된 API 데이터를 불러옵니다 --
-      const reverseRes = await axios.get(
-        `https://dapi.kakao.com/v2/local/geo/coord2regioncode.json`,
-        {
-          params: { x: location.x, y: location.y },
-          headers: {
-            Authorization: `KakaoAK ${
-              import.meta.env.VITE_KAKAO_MAP_REST_API_KEY
-            }`,
-          },
-        }
+      // [수정] 카카오 API 대신 우리 백엔드 서버의 역지오코딩 엔드포인트를 호출합니다.
+      const reverseRes = await axiosInstance.get(
+        `locations/reverse-geocode`, // URL 변경
+        { params: { x: location.x, y: location.y } } // 헤더 제거
       );
 
       const region = reverseRes.data.documents[0];

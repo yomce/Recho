@@ -55,7 +55,7 @@ import loadConfig from './config/env.config';
     // MailerModule도 마찬가지입니다.
     MailerModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService) => ({
         transport: {
           host: configService.get<string>('MAIL_HOST'), // .env 또는 AWS 값
           port: 587,

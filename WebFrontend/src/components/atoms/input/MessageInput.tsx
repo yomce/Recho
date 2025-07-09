@@ -26,7 +26,7 @@ const MessageInputForm: React.FC<MessageInputFormProps> = ({ onSubmit, onDmClick
   return (
     <form
       onSubmit={handleSubmit}
-      className="fixed bottom-20 left-1/2 translate-x-[-50%] w-full max-w-[410px] flex gap-2 z-20"
+      className="fixed bottom-20 left-1/2 translate-x-[-50%] w-full max-w-[410px] flex gap-2 z-20 px-2 mb-0 mt-16"
     >
       {/* 찜 버튼 */}
       <button
@@ -43,7 +43,7 @@ const MessageInputForm: React.FC<MessageInputFormProps> = ({ onSubmit, onDmClick
         value={message}
         onFocus={handleFocus}
         onChange={(e) => setMessage(e.target.value)}
-        className="flex-1 border border-gray-400 rounded-[10px] px-3 py-1 text-caption focus:outline-none focus:ring focus:border-[#8e4df6]"
+        className="flex-1 border border-gray-400 rounded-[10px] px-3 py-1 text-caption bg-brand-inverse focus:outline-none focus:ring focus:border-[#8e4df6]"
       />
 
       {/* 전송 버튼 */}

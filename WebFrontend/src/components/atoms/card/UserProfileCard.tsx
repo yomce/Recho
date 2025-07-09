@@ -43,7 +43,7 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
         {/* 텍스트 정보 */}
         <div className="flex flex-col">
           <p className="text-base text-left font-semibold text-gray-900">{name}</p>
-          <p className="text-sm text-gray-500">{location}</p>
+          <p className="text-sm text-left text-gray-500">{location}</p>
         </div>
       </div>
       <span

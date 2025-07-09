@@ -141,7 +141,7 @@ const UsedProductDetailPage: React.FC = () => {
 
   return (
     <PostLayout bgClassName="bg-white">
-      <div className="mx-auto max-w-6xl px-4">
+      <div className="mx-auto max-w-6xl px-4 mb-8">
         <div className="flex flex-col">
           {/* 이미지 섹션 */}
           <div className="md:flex-1 md:max-w-md my-8">
@@ -160,7 +160,7 @@ const UsedProductDetailPage: React.FC = () => {
             status="판매중"
           />
           {/* 정보 섹션 */}
-          <div className="mt-6 md:mt-0 md:flex-1 flex flex-col">
+          <div className="mt-6 md:mt-0 md:flex-1 flex flex-col mb-32">
             <ProductInfoCard
               title={product.title}
               price={product.price}
@@ -175,13 +175,13 @@ const UsedProductDetailPage: React.FC = () => {
                 lng={product.location.lng}
               />
             )}
-          </div>
-          {isOwner && (
+            {isOwner && (
             <div className="flex justify-end items-center gap-1">
               <IconButton iconName="edit" iconSize={20} onClick={handleEdit} />
               <IconButton iconName="delete" iconSize={20} onClick={handleDelete} />
             </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
       <MessageInputForm

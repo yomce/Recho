@@ -1,14 +1,24 @@
-import React, { useRef, forwardRef, useImperativeHandle, useEffect } from 'react'; // useEffect 임포트
+import React, {
+  useRef,
+  forwardRef,
+  useImperativeHandle,
+  useEffect,
+} from 'react'; // useEffect 임포트
 import styled from 'styled-components/native';
 import { View } from 'react-native';
-import Video, { OnLoadData, OnProgressData,  ReactVideoSourceProperties,  VideoRef } from 'react-native-video';
+import Video, {
+  OnLoadData,
+  OnProgressData,
+  ReactVideoSourceProperties,
+  VideoRef,
+} from 'react-native-video';
 import { MediaItem } from '../../types'; // MediaItem 임포트
 
 // Styled Components 정의
 const VideoContainer = styled.View`
   border-radius: 8px;
   overflow: hidden;
-  background-color: #000;
+  background-color: #333333;
   aspect-ratio: 16 / 9; /* 16:9 화면 비율 유지 */
 `;
 
@@ -23,7 +33,7 @@ const PlaybackControls = styled.View`
   align-items: center;
   margin-top: 5px;
   height: 40px;
-  background-color: rgba(0,0,0,0.2);
+  background-color: rgba(0, 0, 0, 0.2);
   border-radius: 8px;
 `;
 
@@ -57,7 +67,21 @@ interface Props {
 }
 
 const VideoPlayer = forwardRef<VideoPlayerHandles, Props>(
-  ({ source, volume, isPaused, startTime, endTime, onLoad, onProgress, onPlay, onPause, onStop }, ref) => {
+  (
+    {
+      source,
+      volume,
+      isPaused,
+      startTime,
+      endTime,
+      onLoad,
+      onProgress,
+      onPlay,
+      onPause,
+      onStop,
+    },
+    ref,
+  ) => {
     const videoRef = useRef<VideoRef>(null);
 
     // useImperativeHandle을 사용하여 상위 컴포넌트에 seek 함수 노출
@@ -70,9 +94,9 @@ const VideoPlayer = forwardRef<VideoPlayerHandles, Props>(
     // 비디오가 로드되면 시작 시간으로 이동합니다.
     // 또한, startTime이 변경될 때마다 비디오를 해당 위치로 이동시킵니다.
     useEffect(() => {
-        if (videoRef.current && startTime !== undefined && startTime !== null) {
-            videoRef.current.seek(startTime);
-        }
+      if (videoRef.current && startTime !== undefined && startTime !== null) {
+        videoRef.current.seek(startTime);
+      }
     }, [startTime]); // startTime이 변경될 때마다 실행
 
     // onProgress 핸들러를 확장하여 endTime에 도달하면 일시정지 또는 중지 로직을 추가할 수 있습니다.
@@ -97,14 +121,18 @@ const VideoPlayer = forwardRef<VideoPlayerHandles, Props>(
           <StyledVideo
             ref={videoRef}
             source={{ uri: source.uri }} // 비디오 URI 소스
-            resizeMode="contain" // 비디오 크기 조정 모드
+            resizeMode="cover" // 비디오 크기 조정 모드
             paused={isPaused} // 재생/일시정지 상태
-            onLoad={(data) => {
-                onLoad(data); // 원래의 onLoad 함수 호출
-                // 비디오가 로드된 직후에 시작 시간으로 시크(seek)합니다.
-                if (startTime !== undefined && startTime !== null && videoRef.current) {
-                    videoRef.current.seek(startTime);
-                }
+            onLoad={data => {
+              onLoad(data); // 원래의 onLoad 함수 호출
+              // 비디오가 로드된 직후에 시작 시간으로 시크(seek)합니다.
+              if (
+                startTime !== undefined &&
+                startTime !== null &&
+                videoRef.current
+              ) {
+                videoRef.current.seek(startTime);
+              }
             }}
             onProgress={handleProgress} // 확장된 진행 이벤트 핸들러
             volume={volume} // 볼륨
@@ -112,21 +140,6 @@ const VideoPlayer = forwardRef<VideoPlayerHandles, Props>(
             // 대신 onLoad에서 초기 seek하고 onProgress에서 endTime을 모니터링합니다.
           />
         </VideoContainer>
-
-        <PlaybackControls>
-          {/* 재생 버튼 */}
-          <ButtonContainer onPress={onPlay}>
-            <ButtonText>▶</ButtonText>
-          </ButtonContainer>
-          {/* 일시정지 버튼 */}
-          <ButtonContainer onPress={onPause}>
-            <ButtonText>❚❚</ButtonText>
-          </ButtonContainer>
-          {/* 중지 버튼 */}
-          <ButtonContainer onPress={onStop}>
-            <ButtonText>■</ButtonText>
-          </ButtonContainer>
-        </PlaybackControls>
       </View>
     );
   },

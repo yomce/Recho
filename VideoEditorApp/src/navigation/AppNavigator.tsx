@@ -10,6 +10,7 @@ import VideoPreviewScreen from '../screens/VideoPreviewScreen';
 import NewVideoTestScreen from '../screens/NewVideoTestScreen';
 import FFmpegTestScreen from '../screens/FFmpegTestScreen'; // FFmpegTestScreen 임포트
 import WebScreen from '../screens/WebScreen'; // WebScreen 임포트
+import ProcessingScreen from '../screens/ProcessingScreen'; // ProcessingScreen 임포트
 
 import { RootStackParamList } from '../types'; // RootStackParamList를 types에서 임포트
 
@@ -40,7 +41,7 @@ const AppNavigator = () => {
           name="Home"
           component={HomeScreen}
           options={{
-            title: '🎬 비디오 편집 앱',
+            title: '비디오 편집 앱',
             headerShown: false, // 홈 화면에서는 헤더 숨김
           }}
         />
@@ -48,35 +49,36 @@ const AppNavigator = () => {
           name="Camera"
           component={CameraScreen}
           options={{
-            title: '📷 카메라',
+            title: '카메라',
           }}
         />
         <Stack.Screen
           name="VideoEdit"
           component={VideoEditScreen}
           options={{
-            title: '✂️ 비디오 편집',
+            title: '비디오 편집',
+            headerShown: false,
           }}
         />
         <Stack.Screen
           name="MediaLibrary"
           component={MediaLibraryScreen}
           options={{
-            title: '📁 파일 선택',
+            title: '파일 선택',
           }}
         />
         <Stack.Screen
           name="VideoPreview"
           component={VideoPreviewScreen}
           options={{
-            title: '👁️ 비디오 미리보기',
+            title: '비디오 미리보기',
           }}
         />
         <Stack.Screen
           name="NewVideoTest"
           component={NewVideoTestScreen}
           options={{
-            title: '🎤 합주 녹화',
+            title: '합주 녹화',
             headerShown: false, // 합주 녹화 화면에서는 헤더 숨김
           }}
         />
@@ -84,7 +86,7 @@ const AppNavigator = () => {
           name="FFmpegTest"
           component={FFmpegTestScreen}
           options={{
-            title: '🛠️ FFmpeg 테스트',
+            title: 'FFmpeg 테스트',
           }}
         />
         <Stack.Screen
@@ -92,6 +94,14 @@ const AppNavigator = () => {
           component={WebScreen}
           options={{
             title: '웹뷰',
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="Processing"
+          component={ProcessingScreen}
+          options={{
+            title: '준비 중...',
             headerShown: false,
           }}
         />

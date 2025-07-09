@@ -1,149 +1,127 @@
-// src/pages/MainPage.tsx (수정 완료)
-import React from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "../../stores/authStore"; // Zustand 스토어 import
-import { jwtDecode, type JwtPayload } from "jwt-decode";
+// src/pages/main/MainPage.tsx
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
+import { useUiStore } from '@/stores/uiStore';
 
-interface CustomJwtPayload extends JwtPayload {
-  userId: number;
-}
+// Zustand 스토어 및 아토믹 컴포넌트 import
+import { useAuthStore } from '@/stores/authStore';
+import Layout from '@/components/layout/MainLayout';
+import Icon from '@/components/atoms/icon/Icon';
+import Modal from '@/components/molecules/modal/Modal';
+import PrimaryButton from '@/components/atoms/button/PrimaryButton';
+import SecondaryButton from '@/components/atoms/button/SecondaryButton';
+import CategoryIcon from '@/components/organisms/CategoryIcon';
+import PromotionCarousel from '@/components/organisms/PromotionCarousel';
+
+// --- Helper Components ---
+const QuickAction: React.FC<{ icon: React.ReactNode; label: string; onClick?: () => void }> = ({ icon, label, onClick }) => (
+  <div className="group flex cursor-pointer flex-col items-center gap-2" onClick={onClick}>
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-default">
+          {icon}
+      </div>
+      <span className="text-caption font-medium text-brand-gray transition-colors group-hover:text-brand-primary">{label}</span>
+  </div>
+);
 
 const MainPage: React.FC = () => {
-  const navigate = useNavigate();
-  // 스토어에서 user 정보와 logout 함수를 가져옵니다.
-  const { user, logout } = useAuthStore();
+    const navigate = useNavigate();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const user = useAuthStore((state) => state.user);
+    const accessToken = localStorage.getItem('accessToken');
+    const { isVinylCreateModalOpen, actions: { closeVinylCreateModal } } = useUiStore();
+    // --- 페이지 컨텐츠에 필요한 핸들러들만 남깁니다 ---
+    const handleGoToUsedProducts = () => navigate('/used-products');
+    const handleGoToEnsemble = () => navigate('/ensembles');
+    const handleGoToPracticeRoom = () => navigate('/practice-room');
+    const handleGoToPromotions = () => navigate('/promotions');
 
-  /**
-   * 로그아웃 처리 함수
-   */
-  const handleLogout = async () => {
-    await logout(); // 스토어의 통합 로그아웃 함수 호출
-    alert("로그아웃 되었습니다.");
-    navigate("/"); // 로그아웃 후 메인 페이지로 리프레시
-  };
+    const openModal = () => setIsModalOpen(true);
+    const closeModal = () => setIsModalOpen(false);
 
-  const accessToken = localStorage.getItem("accessToken");
-  /**
-   * 페이지 이동 함수들
-   */
-  const handleGoToLogin = () => navigate("/login");
-  const handleGoToChat = () => navigate("/chat");
-  const handleGoToUsedProducts = () => navigate("/used-products");
-  const handleGoToEnsemble = () => navigate("/ensembles");
-  const handleCreateVideo = () => {
-    // RN의 비디오 편집 컴포넌트로 전환
-    const message = {
-      // RN에게 넘길 정보
-      type: "CREATE_VIDEO",
-      token: accessToken,
+    const handleSelectVideoFromGallery = () => {
+        if (!accessToken) {
+            toast.error('로그인이 필요합니다.');
+            return;
+        }
+        window.ReactNativeWebView?.postMessage(
+            JSON.stringify({
+                type: 'CREATE_VIDEO_FROM_GALLERY',
+                payload: { token: accessToken },
+            })
+        );
+        toast.success('앱에서 갤러리를 확인해주세요!');
+        closeVinylCreateModal();
     };
-    // React Native WebView 환경인지 확인, postMessage를 호출
-    if (window.ReactNativeWebView) {
-      window.ReactNativeWebView.postMessage(JSON.stringify(message));
-      console.log("Sent message to React Native: CREATE_VIDEO");
-    } else {
-      // 웹 브라우저 환경일 때의 대체 동작
-      // 나중에 버튼을 없애는 쪽으로 바꾸는 게 좋을 듯??
-      alert("비디오 생성은 앱에서만 가능합니다.");
-    }
-  };
+    // 캐러셀에 표시할 임시 데이터
+    const promotionData = [
+      { id: 1, imageUrl: 'https://placehold.co/600x800/FFD700/000000?text=Let\'s+Rock', title: '렛츠락 페스티벌', subtitle: '2025.9.6 - 2025.9.7' },
+      { id: 2, imageUrl: 'https://placehold.co/600x800/87CEEB/FFFFFF?text=Concert', title: 'yomce 단독 콘서트', subtitle: '서울, 대한민국' },
+      { id: 3, imageUrl: 'https://placehold.co/600x800/32CD32/FFFFFF?text=Musical', title: '새로운 뮤지컬', subtitle: '2025.10.1 - 2025.12.31' },
+    ];
 
-  const handleGoToMyPage = () => {
-    // localStorage에서 토큰을 가져와 userId를 추출
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-      try {
-        const decodedToken = jwtDecode<CustomJwtPayload>(token);
-        const userId = decodedToken.userId;
-        navigate(`/users/${userId}`);
-      } catch (error) {
-        console.error("마이페이지 이동 실패: 유효하지 않은 토큰입니다.", error);
-        alert("세션이 만료되었습니다. 다시 로그인해주세요.");
-        handleLogout();
-      }
-    } else {
-      alert("로그인이 필요합니다.");
-      navigate("/login");
-    }
-  };
+    return (
+        <Layout>
+            <div className="p-4">
+                <h1 className="text-subheadline text-left font-bold text-brand-text-primary">
+                    {user?.username}님, 환영합니다!
+                </h1>
+            </div>
+            
+            <div className="mx-4 mt-2 rounded-card bg-brand-default p-4">
+                <PromotionCarousel items={promotionData} />
+            </div>
 
-  // 공통 버튼 스타일
-  const buttonBaseStyle =
-    "py-2 px-5 text-lg font-semibold text-white rounded-md cursor-pointer transition-colors";
+            <CategoryIcon>
+                <QuickAction 
+                    icon={<Icon name="camera" size={28} className="text-gray-600 transition-colors group-hover:text-brand-primary" />} 
+                    label="바이닐제작" 
+                    onClick={openModal} 
+                />
+                <QuickAction 
+                    icon={<Icon name="store" size={28} className="text-gray-600 transition-colors group-hover:text-brand-primary" />} 
+                    label="악기거래" 
+                    onClick={handleGoToUsedProducts} 
+                />
+                <QuickAction 
+                    icon={<Icon name="music" size={28} className="text-gray-600 transition-colors group-hover:text-brand-primary" />} 
+                    label="세션모집" 
+                    onClick={handleGoToEnsemble} 
+                />
+                <QuickAction 
+                    icon={<Icon name="calendar" size={28} className="text-gray-600 transition-colors group-hover:text-brand-primary" />} 
+                    label="합주실 예약" 
+                    onClick={handleGoToPracticeRoom} 
+                />
+                <QuickAction 
+                    icon={<Icon name="megaphone" size={28} className="text-gray-600 transition-colors group-hover:text-brand-primary" />} 
+                    label="공연홍보" 
+                    onClick={handleGoToPromotions} 
+                />
+            </CategoryIcon> 
 
-  return (
-    <div className="p-5">
-      {/* --- 1. user 객체 유무에 따라 다른 UI 렌더링 --- */}
-      {user ? (
-        // --- 로그인 상태일 때의 UI ---
-        <div>
-          <h1 className="text-3xl font-bold">{user.username}님, 환영합니다!</h1>
-          <p className="text-lg mt-2">무엇을 도와드릴까요?</p>
-
-          <div className="mt-5 flex gap-3 flex-col">
-            <button
-              onClick={handleGoToChat}
-              className={`${buttonBaseStyle} bg-blue-500 hover:bg-blue-600`}
+            <Modal
+                isOpen={isVinylCreateModalOpen}
+                onClose={closeVinylCreateModal}
+                title="새로운 Vinyl 만들기"
             >
-              채팅하기
-            </button>
-            <button
-              onClick={handleGoToUsedProducts}
-              className={`${buttonBaseStyle} bg-green-600 hover:bg-green-700`}
-            >
-              중고거래하기
-            </button>
-            <button
-              onClick={handleGoToEnsemble}
-              className={`${buttonBaseStyle} bg-yellow-600 hover:bg-yellow-700`}
-            >
-              합주인원 모집하기
-            </button>
-            <button
-              onClick={handleLogout}
-              className={`${buttonBaseStyle} bg-red-600 hover:bg-red-700`}
-            >
-              로그아웃
-            </button>
-            <button
-              onClick={handleGoToMyPage}
-              className={`${buttonBaseStyle} bg-gray-600`}
-            >
-              마이페이지
-            </button>
-            <button
-              onClick={handleCreateVideo}
-              className={`${buttonBaseStyle} bg-brand-primary`}
-            >
-              비디오 생성
-            </button>
-          </div>
-        </div>
-      ) : (
-        // --- 로그아웃 상태일 때의 UI ---
-        <div>
-          <h1 className="text-3xl font-bold">
-            메인 페이지에 오신 것을 환영합니다!
-          </h1>
-          <p className="text-lg mt-2">로그인하고 모든 기능을 이용해보세요.</p>
-          <div className="mt-5 flex gap-2">
-            <button
-              onClick={handleGoToUsedProducts}
-              className={`${buttonBaseStyle} bg-green-600 hover:bg-green-700`}
-            >
-              중고거래하기
-            </button>
-            <button
-              onClick={handleGoToLogin}
-              className={`${buttonBaseStyle} bg-blue-500 hover:bg-blue-600`}
-            >
-              로그인하기
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+                <div className="mt-4 flex flex-col gap-3">
+                    <p className="text-body text-brand-text-secondary mb-2">
+                        새로운 비디오를 만들기 위한 소스를 선택해주세요.
+                    </p>
+                    <PrimaryButton onClick={handleSelectVideoFromGallery}>
+                        갤러리에서 선택
+                    </PrimaryButton>
+                    <PrimaryButton
+                        onClick={() => toast('📹 촬영하기 기능은 앱에서 실행해 주세요.')}
+                    >
+                        촬영하기
+                    </PrimaryButton>
+                    <SecondaryButton onClick={closeVinylCreateModal}>닫기</SecondaryButton>
+                </div>
+            </Modal>
+        </Layout>
+    );
 };
 
 export default MainPage;

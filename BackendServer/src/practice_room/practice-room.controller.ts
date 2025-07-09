@@ -1,24 +1,28 @@
 import {
-    Body,
-    Controller,
-    Delete,
-    Get,
-    HttpCode,
-    Logger,
-    Param,
-    ParseIntPipe,
-    Patch,
-    Post,
-    Query,
+  Body,
+  Controller,
+  Delete,
+  ForbiddenException,
+  Get,
+  HttpCode,
+  Logger,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 
 import { CreatePracticeRoomDto } from './dto/create-practice-room.dto';
 import { UpdatePracticeRoomDto } from './dto/update-practice-room.dto';
 import { PracticeRoom } from './entities/practice-room.entity';
 import { PracticeRoomService } from './practice-room.service';
-import { PaginationQueryPracticeRoomDto } from './dto/pagination-query-practice-room.dto'
+import { PaginationQueryPracticeRoomDto } from './dto/pagination-query-practice-room.dto';
 import { PaginatedPracticeRoomResponse } from './dto/paginated-practice-room.response.dto';
-
+import { Request } from 'express';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('practice-room')
 export class PracticeRoomController {
@@ -40,12 +44,21 @@ export class PracticeRoomController {
   }
 
   @Post()
+  @UseGuards(AuthGuard('jwt'))
   async enrollPracticeRoom(
     @Body() CreatePracticeRoomDto: CreatePracticeRoomDto,
+    @Req() req: Request,
   ): Promise<PracticeRoom> {
-    this.logger.log(`Enrolling a new practice room: ${CreatePracticeRoomDto.title}`);
-  return await this.practiceRoomService.enrollPracticeRoom(
-    CreatePracticeRoomDto,
+    if (!req.user || !req.user.id) {
+      this.logger.log(
+        `Enrolling a new practice room: ${CreatePracticeRoomDto.title}`,
+      );
+      throw new ForbiddenException('사용자 인증 정보를 찾을 수 없습니다.');
+    }
+    const id = req.user.id;
+    return await this.practiceRoomService.enrollPracticeRoom(
+      CreatePracticeRoomDto,
+      id,
     );
   }
 
@@ -57,11 +70,11 @@ export class PracticeRoomController {
     return await this.practiceRoomService.detailPracticeRoom(id);
   }
 
-
   @Delete(':id')
   @HttpCode(204)
-  async deletePracticeRoom(@Param('id', ParseIntPipe) id: number) :
-  Promise<void> {
+  async deletePracticeRoom(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<void> {
     this.logger.log(`Delete Post ID: ${id}`);
     await this.practiceRoomService.deletePracticeRoom(id);
   }
@@ -72,6 +85,6 @@ export class PracticeRoomController {
     @Body() UpdatePracticeRoomDto: UpdatePracticeRoomDto,
   ): Promise<PracticeRoom> {
     this.logger.log(`Patching Post Id: ${id}`);
-    return this.practiceRoomService.pathPracticeRoom(id, UpdatePracticeRoomDto)
+    return this.practiceRoomService.pathPracticeRoom(id, UpdatePracticeRoomDto);
   }
 }

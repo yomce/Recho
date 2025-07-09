@@ -4,13 +4,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { TRADE_TYPE, type UsedProductForm, type UsedProduct } from '../../types/product';
-import { ProductForm } from '../../components/ProductForm'; // 재사용 폼 컴포넌트 import
+import { ProductForm } from '../../components/layout/pages/usedProduct/ProductForm'; // 재사용 폼 컴포넌트 import
 import { useAuthStore } from '@/stores/authStore';
 import axiosInstance from '@/services/axiosInstance';
+import { useLocationStore } from '@/components/map/store/useLocationStore';
+import { saveLocationToDB } from '@/components/map/LocationSaveHandler';
 
 const UpdateUsedProductPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const location = useLocationStore((state) => state.location);
 
   const [form, setForm] = useState<UsedProductForm>({
     title: '', description: '', price: '', categoryId: '',
@@ -38,7 +41,7 @@ const UpdateUsedProductPage: React.FC = () => {
           price: String(product.price),
           categoryId: String(product.categoryId),
           tradeType: product.tradeType,
-          locationId: product.location.locationId,
+          locationId: String(product.location.locationId),
         });
       } catch (err) {
         if (axios.isAxiosError(err)) { // err가 Axios 에러인지 확인하면 더 안전합니다.
@@ -60,13 +63,28 @@ const UpdateUsedProductPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (!location) {
+      setError('지역을 선택해주세요.');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     try {
+      // 1. locationId 먼저 저장
+      const locationId = await saveLocationToDB(location);
+
+      // 2. 게시글 수정 요청
       const priceAsNumber = parseInt(form.price, 10);
       if (isNaN(priceAsNumber) || priceAsNumber < 0) throw new Error('가격은 0 이상의 숫자로 입력해야 합니다.');
 
-      const payload = { ...form, price: priceAsNumber, categoryId: parseInt(form.categoryId, 10) };
+      const payload = {
+        ...form,
+        price: priceAsNumber,
+        categoryId: parseInt(form.categoryId, 10),
+        locationId: locationId,
+      };
       await axiosInstance.patch(`used-products/${id}`, payload);
       alert('상품이 성공적으로 수정되었습니다!');
       navigate(`/used-products/${id}`);

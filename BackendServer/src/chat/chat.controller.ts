@@ -65,9 +65,9 @@ export class ChatController {
     @Query() query: HistoryQueryDto,
     @Req() req: RequestWithUser, // [수정] 요청 객체에서 사용자 정보를 가져옴
   ): Promise<Message[]> {
-    const userId = req.user.id; // [수정] 현재 로그인한 사용자의 ID
-    // [수정] 서비스 호출 시 userId를 함께 전달
-    return this.chatService.getHistory(roomId, userId, query.page, query.limit);
+    const id = req.user.id; // [수정] 현재 로그인한 사용자의 ID
+    // [수정] 서비스 호출 시 id를 함께 전달
+    return this.chatService.getHistory(roomId, id, query.page, query.limit);
   }
 
   @Get('my-rooms')

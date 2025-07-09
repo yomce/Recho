@@ -64,7 +64,7 @@ export class UsedProductService {
 
   async enrollUsedProduct(
     createDto: CreateUsedProductDto,
-    userId: string,
+    id: string,
   ): Promise<UsedProduct> {
     const { locationId, ...restOfDto } = createDto;
 
@@ -75,7 +75,9 @@ export class UsedProductService {
     // }
 
     // 실제로 locationRepo를 사용해 ID로 지역 정보를 조회
-    const locationEntity = await this.locationRepo.findOneBy({ locationId: Number(locationId) });
+    const locationEntity = await this.locationRepo.findOneBy({
+      locationId: Number(locationId),
+    });
 
     if (!locationEntity) {
       throw new NotFoundException(`Location with ID #${locationId} not found.`);
@@ -89,48 +91,86 @@ export class UsedProductService {
       address: locationEntity.address,
     };
     */
-
     const newProduct = this.usedProductRepo.create({
       ...restOfDto,
       locationId: locationEntity.locationId,
-      userId: userId,
+      id: id,
       status: Status.FOR_SALE,
       viewCount: 0,
     });
     return await this.usedProductRepo.save(newProduct);
   }
 
-  async detailProduct(id: number): Promise<UsedProduct> {
-    const product = await this.usedProductRepo.findOneBy({ productId: id });
+  async detailProduct(productId: number): Promise<UsedProduct> {
+    const product = await this.usedProductRepo.findOne({
+      where: { productId: productId },
+      relations: ['location'],
+    });
     if (!product) {
-      throw new NotFoundException(`Product with ID #${id} not found.`);
+      throw new NotFoundException(`Product with ID #${productId} not found.`);
     }
     return product;
   }
 
-  async deleteProduct(id: number, username: string): Promise<void> {
-    const product = await this.detailProduct(id);
-    if (username !== product?.userId) {
+  async deleteProduct(productId: number, id: string): Promise<void> {
+    const product = await this.detailProduct(productId);
+    if (id !== product?.id) {
       throw new ForbiddenException(`Unauthorized`);
     }
 
-    const result = await this.usedProductRepo.delete({ productId: id });
+    const result = await this.usedProductRepo.delete({ productId: productId });
     if (result.affected === 0) {
       throw new NotFoundException(`Product with ID #${id} not found.`);
     }
   }
 
   async patchProduct(
-    id: number,
+    productId: number,
     updateDto: UpdateUsedProductDto,
-    username: string,
+    id: string,
   ): Promise<UsedProduct> {
-    const product = await this.detailProduct(id);
-    if (username !== product.userId) {
+    const product = await this.detailProduct(productId);
+    if (id !== product.id) {
       throw new ForbiddenException(`Unauthorized`);
     }
 
-    const updatedProduct = this.usedProductRepo.merge(product, updateDto);
+    // -- 장소를 수정할 수 있도록 변경합니다.
+    // locationId가 있으면 Location 엔티티를 찾아서 연결
+    let locationEntity = product.location;
+    if (updateDto.locationId) {
+      const found = await this.locationRepo.findOneBy({
+        locationId: Number(updateDto.locationId),
+      });
+      if (!found) {
+        throw new NotFoundException(
+          `Location with ID #${updateDto.locationId} not found.`,
+        );
+      }
+      locationEntity = found;
+    }
+
+    // 나머지 필드 병합
+    const updatedProduct = this.usedProductRepo.merge(product, {
+      ...updateDto,
+      location: locationEntity,
+      locationId: locationEntity?.locationId,
+    });
+
     return this.usedProductRepo.save(updatedProduct);
+  }
+
+  // 참조하는 locationId를 반환합니다
+  // locationService에서 호출되어 참조하지 않는 locatonId를 hard delete 합니다
+  async getUsedLocationIds(): Promise<number[]> {
+    const results = await this.usedProductRepo
+      .createQueryBuilder('used')
+      .select('DISTINCT used.locationId', 'locationId')
+      .getRawMany();
+
+    return results.map((row) => row.locationId);
+  }
+
+  async incrementViewCount(id: number): Promise<void> {
+    await this.usedProductRepo.increment({ productId: id }, 'viewCount', 1);
   }
 }

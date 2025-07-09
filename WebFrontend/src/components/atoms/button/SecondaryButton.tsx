@@ -1,3 +1,5 @@
+// src/components/atoms/button/SecondaryButton.tsx
+
 import React from 'react';
 
 // PrimaryButton과 동일한 props 구조를 사용합니다.

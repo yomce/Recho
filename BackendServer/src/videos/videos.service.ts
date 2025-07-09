@@ -15,9 +15,9 @@ export class VideosService {
     private readonly videoRepository: Repository<Video>,
   ) {}
 
-  async getThumbnailsByUser(userId: string): Promise<string[]> {
+  async getThumbnailsByUser(id: string): Promise<string[]> {
     const videos = await this.videoRepository.find({
-      where: { user_id: parseInt(userId, 10) },
+      where: { user_id: id },
       select: ['thumbnail_key'],
     });
 
@@ -40,7 +40,7 @@ export class VideosService {
     limit: number,
     sortBy: 'likes' | 'createdAt',
   ): Promise<any[]> {
-    const [videos, total] = await this.videoRepository.findAndCount({
+    const videos = await this.videoRepository.find({
       order: { [sortBy === 'likes' ? 'like_count' : 'created_at']: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
@@ -53,7 +53,7 @@ export class VideosService {
             this.s3,
             new GetObjectCommand({
               Bucket: process.env.AWS_S3_BUCKET,
-              Key: video.video_key,
+              Key: video.results_video_key,
             }),
             { expiresIn: 3600 },
           ),
@@ -82,5 +82,54 @@ export class VideosService {
       }),
       { expiresIn: 3600 },
     );
+  }
+
+  async getVideoDetails(id: string): Promise<Video> {
+    const video = await this.videoRepository.findOne({
+      where: { id },
+      relations: ['user', 'parent'],
+    });
+    if (!video) {
+      throw new Error('Video not found');
+    }
+
+    const [videoUrl, thumbnailUrl] = await Promise.all([
+      getSignedUrl(
+        this.s3,
+        new GetObjectCommand({
+          Bucket: process.env.AWS_S3_BUCKET,
+          Key: video.source_video_key,
+        }),
+        { expiresIn: 3600 },
+      ),
+      getSignedUrl(
+        this.s3,
+        new GetObjectCommand({
+          Bucket: process.env.AWS_S3_BUCKET,
+          Key: video.thumbnail_key,
+        }),
+        { expiresIn: 3600 },
+      ),
+    ]);
+    video.video_url = videoUrl;
+    video.thumbnail_url = thumbnailUrl;
+
+    return video;
+  }
+
+  async findVideoLineage(id: string): Promise<Video[]> {
+    const lineage: Video[] = [];
+    let currentVideoId: string | null = id;
+
+    while (currentVideoId) {
+      const videoDetails = await this.getVideoDetails(currentVideoId);
+      if (!videoDetails) {
+        break;
+      }
+      lineage.push(videoDetails);
+      currentVideoId = videoDetails.parent_video_id || null;
+    }
+
+    return lineage.reverse();
   }
 }

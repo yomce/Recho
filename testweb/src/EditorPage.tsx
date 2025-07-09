@@ -110,7 +110,8 @@ const EditorPage: React.FC = () => {
     formData.append('editData', JSON.stringify(editData));
 
     try {
-      const response = await fetch('http://localhost:3000/videos/collage', {
+      const apiUrl = process.env.REACT_APP_API_URL;
+      const response = await fetch(`${apiUrl}/videos/collage`, {
         method: 'POST',
         body: formData,
       });

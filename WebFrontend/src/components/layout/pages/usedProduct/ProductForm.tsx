@@ -1,8 +1,8 @@
 // src/components/ProductForm.tsx (새로 생성)
 
 import React from 'react';
-import { TRADE_TYPE, type UsedProductForm } from '../types/product';
-import LocationSearch from '@/components/map/LocationSearch';
+import { TRADE_TYPE, type UsedProductForm } from '../../../../types/product'
+import LocationSelector from '../../../map/LocationSelector';
 
 // 목업 데이터도 props로 받도록 하여 컴포넌트의 재사용성을 높입니다.
 const mockCategories = [
@@ -70,8 +70,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
       <div className="mb-6">
         <label htmlFor="locationId" className="block font-semibold mb-3 text-base text-gray-700">지역</label>
-        {/* 실제 위치 값을 반환하는 함수를 import 합니다 */}
-        <LocationSearch />
+        <LocationSelector 
+          locationId={formState.locationId}
+        />
       </div>
 
       <div className="mb-6">

@@ -2,8 +2,8 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "../stores/authStore";
 
-// 백엔드 서버의 기본 URL을 설정합니다.
-const API_BASE_URL = "http://localhost:3000";
+// 백엔드 서버의 기본 URL을 환경 변수에서 가져옵니다.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -15,11 +15,12 @@ const axiosInstance = axios.create({
 //    - 모든 API 요청이 서버로 전송되기 전에 실행됩니다.
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // localStorage에서 accessToken을 가져옵니다.
-    const accessToken = localStorage.getItem("accessToken");
+    // localStorage에서 직접 토큰을 가져오는 대신, authStore의 상태를 사용합니다.
+    const { accessToken } = useAuthStore.getState();
 
-    // accessToken이 존재하면, 요청 헤더에 'Authorization' 헤더를 추가합니다.
-    if (accessToken) {
+    // accessToken이 존재하고, 헤더에 이미 Authorization이 설정되지 않은 경우에만 추가합니다.
+    // (이 조건은 토큰 갱신 로직과의 충돌을 방지합니다)
+    if (accessToken && !config.headers.Authorization) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
     return config;
@@ -86,23 +87,23 @@ axiosInstance.interceptors.response.use(
         // 백엔드의 /auth/refresh 엔드포인트로 새 accessToken을 요청합니다.
         const { data } = await axiosInstance.post("/auth/refresh");
 
-        const { accessToken } = data;
+        const { accessToken: newAccessToken } = data;
 
-        // 새로 받은 accessToken을 localStorage에 저장합니다.
-        localStorage.setItem("accessToken", accessToken);
+        // Zustand 스토어의 setToken 액션을 호출하여 상태를 업데이트합니다.
+        // 이제 이 액션이 localStorage와 user 상태까지 모두 관리합니다.
+        useAuthStore.getState().actions.setToken(newAccessToken);
 
         // 실패했던 원래 요청의 헤더도 새로운 토큰으로 업데이트합니다.
         if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         }
 
-        processQueue(null, accessToken);
+        processQueue(null, newAccessToken);
         return axiosInstance(originalRequest);
       } catch (refreshError) {
         // 리프레시 토큰마저 만료되었거나, 갱신에 실패한 경우
         console.error("토큰 갱신 실패:", refreshError);
-        localStorage.removeItem("accessToken");
-        useAuthStore.getState().logout(); // Zustand 스토어를 통해 안전하게 로그아웃
+        useAuthStore.getState().actions.logout();
         processQueue(refreshError as Error, null);
         return Promise.reject(refreshError);
       } finally {

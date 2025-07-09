@@ -1,11 +1,12 @@
+// src/pages/user/UsedProductDetailPage.tsx
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { type UsedProduct, STATUS, TRADE_TYPE } from '../../types/product';
 import { useAuthStore } from '@/stores/authStore';
 import axiosInstance from '@/services/axiosInstance';
-
-// CSS 파일을 import 하던 코드는 삭제합니다.
+import useViewCounter from '@/hooks/useViewCounter';
 
 // Enum 값에 따른 한글 텍스트 매핑
 const STATUS_TEXT = {
@@ -35,7 +36,9 @@ const UsedProductDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const isOwner = (product && user && product.userId === user.username)
+  const isOwner = product && user && product.id === user.id;
+
+  useViewCounter({ type: 'used-products' });
 
   useEffect(() => {
     if (!id) {
@@ -70,7 +73,7 @@ const UsedProductDetailPage: React.FC = () => {
       return;
     }
     navigate(`/used-products/edit/${id}`);
-  }
+  };
 
   const handleDelete = async () => {
     if (window.confirm('정말로 이 상품을 삭제하시겠습니까?')) {
@@ -83,7 +86,7 @@ const UsedProductDetailPage: React.FC = () => {
         alert('상품이 성공적으로 삭제되었습니다.');
         navigate('/used-products');
       } catch (err) {
-        if (axios.isAxiosError(err)) { // err가 Axios 에러인지 확인하면 더 안전합니다.
+        if (axios.isAxiosError(err)) {
           const messages = err.response?.data?.message;
           setError(Array.isArray(messages) ? messages.join('\n') : messages || err.message || '상품 삭제 중 오류 발생');
         } else {
@@ -92,8 +95,27 @@ const UsedProductDetailPage: React.FC = () => {
       }
     }
   };
-  
-  // 로딩 및 에러 UI
+
+  /**
+   * [신규] DM 보내기 버튼 클릭 시 실행되는 함수
+   */
+  const handleSendDm = async () => {
+    if (!product) return; // 상품 정보가 없으면 실행하지 않음
+    try {
+      // 백엔드의 POST /chat/dm API를 호출합니다.
+      const response = await axiosInstance.post("/chat/dm", {
+        partnerId: product.id, // 판매자의 ID를 전송
+      });
+
+      const room = response.data;
+      // 성공적으로 방이 생성/조회되면 해당 채팅방으로 이동합니다.
+      navigate(`/chat/${room.id}`);
+    } catch (err) {
+      console.error("DM 채팅방 생성에 실패했습니다.", err);
+      alert("DM을 시작할 수 없습니다.");
+    }
+  };
+
   const renderStatusMessage = (message: string, isError: boolean = false) => (
     <div className="flex justify-center items-center h-screen">
       {isError ? (
@@ -130,11 +152,10 @@ const UsedProductDetailPage: React.FC = () => {
               {STATUS_TEXT[product.status]}
             </span>
           </div>
-
+          
           <div className="my-4 text-base text-gray-600 leading-relaxed">
-            <p className="my-2"><strong>판매자:</strong> {product.userId}</p>
+            <p className="my-2"><strong>판매자:</strong> {product.id}</p>
             <p className="my-2"><strong>거래 방식:</strong> {TRADE_TYPE_TEXT[product.tradeType]}</p>
-            {/* <p className="my-2"><strong>거래 지역:</strong> {product.location.regionLevel1} {product.location.regionLevel2}</p> */}
             <p className="my-2"><strong>거래 지역:</strong> {product.location?.address}</p>
             <p className="my-2"><strong>등록일:</strong> {new Date(product.createdAt).toLocaleDateString()}</p>
           </div>
@@ -145,7 +166,7 @@ const UsedProductDetailPage: React.FC = () => {
               {product.description}
             </pre>
           </div>
-
+          
           {/* 버튼 섹션 */}
           <div className="mt-auto pt-6 flex justify-between items-center border-t border-gray-200">
             <Link
@@ -155,21 +176,33 @@ const UsedProductDetailPage: React.FC = () => {
               목록으로
             </Link>
             
-            {/* TODO: 현재 로그인한 사용자가 판매자일 경우에만 보이도록 처리 */}
-            <div className="flex gap-2">
+            {/* 내가 주인일 경우 수정/삭제 버튼 표시 */}
+            {isOwner && (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleEdit}
+                  className="py-2 px-5 rounded-md font-semibold text-white bg-blue-500 cursor-pointer transition-colors hover:bg-blue-700"
+                >
+                  수정
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="py-2 px-5 rounded-md font-semibold text-white bg-red-600 cursor-pointer transition-colors hover:bg-red-700"
+                >
+                  삭제
+                </button>
+              </div>
+            )}
+            
+            {/* 내가 주인이 아닐 경우 DM 보내기 버튼 표시 */}
+            {!isOwner && (
               <button
-                onClick={handleEdit}
-                className="py-2 px-5 rounded-md font-semibold text-white bg-blue-500 cursor-pointer transition-colors hover:bg-blue-700"
+                onClick={handleSendDm}
+                className="py-2 px-5 rounded-md font-semibold text-white bg-green-500 cursor-pointer transition-colors hover:bg-green-700"
               >
-                수정
+                DM 보내기
               </button>
-              <button
-                onClick={handleDelete}
-                className="py-2 px-5 rounded-md font-semibold text-white bg-red-600 cursor-pointer transition-colors hover:bg-red-700"
-              >
-                삭제
-              </button>
-            </div>
+            )}
           </div>
         </div>
       </div>

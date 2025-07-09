@@ -42,7 +42,8 @@ const VideoUploader: React.FC = () => {
     formData.append('video2', video2);
 
     try {
-      const response = await axios.post('http://localhost:3000/videos/collage', formData, {
+      const apiUrl = process.env.REACT_APP_API_URL;
+      const response = await axios.post(`${apiUrl}/videos/collage`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

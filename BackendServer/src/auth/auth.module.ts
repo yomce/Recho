@@ -11,6 +11,7 @@ import { PasswordController } from './user/password.controller'; // 경로 수�
 import { PasswordService } from './user/password.service';     // 경로 수정
 import { MailerModule } from '@nestjs-modules/mailer';
 import { KakaoStrategy } from './kakao.strategy'; // KakaoStrategy 추가
+import { GoogleStrategy } from './google.strategy';
 
 @Module({
   imports: [
@@ -19,15 +20,24 @@ import { KakaoStrategy } from './kakao.strategy'; // KakaoStrategy 추가
     MailerModule,
     ConfigModule, // ConfigService를 사용하기 위해 ConfigModule을 import
     JwtModule.registerAsync({
-        imports: [ConfigModule],
-        inject: [ConfigService],
-        useFactory: (configService: ConfigService) => ({
-            secret: configService.get<string>('JWT_SECRET'),
-            signOptions: { expiresIn: configService.get<string>('JWT_EXPIRATION_TIME') },
-        }),
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: {
+          expiresIn: configService.get<string>('JWT_EXPIRATION_TIME'),
+        },
+      }),
     }),
   ],
   controllers: [AuthController, PasswordController],
-  providers: [AuthService, JwtStrategy, RefreshTokenStrategy, PasswordService, KakaoStrategy], // KakaoStrategy 추가
+  providers: [
+    AuthService,
+    JwtStrategy,
+    RefreshTokenStrategy,
+    PasswordService,
+    KakaoStrategy,
+    GoogleStrategy,
+  ], // KakaoStrategy 추가
 })
 export class AuthModule {}

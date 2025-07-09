@@ -40,8 +40,8 @@ export class ChatService {
   }
 
   // 2) 방 참여 (UserRoom 레코드 생성)
-  async joinRoom(userId: string, roomId: string): Promise<UserRoom> {
-    const ur = this.urRepo.create({ userId, roomId });
+  async joinRoom(id: string, roomId: string): Promise<UserRoom> {
+    const ur = this.urRepo.create({ id, roomId });
     return this.urRepo.save(ur);
   }
 
@@ -57,9 +57,9 @@ export class ChatService {
   }
 
   // 4) 방 내 대화 이력 조회 (페이징) - 수정된 함수
-  async getHistory(roomId: string, userId: string, page = 1, limit = 20): Promise<Message[]> {
+  async getHistory(roomId: string, id: string, page = 1, limit = 20): Promise<Message[]> {
     // 1. 현재 사용자가 이 방에 참여한 정보를 찾습니다.
-    const userRoom = await this.userRoomRepo.findOneBy({ roomId, userId });
+    const userRoom = await this.userRoomRepo.findOneBy({ roomId, id });
 
     // 2. 만약 어떤 이유로든 참여 정보가 없다면, 빈 배열을 반환합니다.
     if (!userRoom) {
@@ -80,10 +80,10 @@ export class ChatService {
   }
 
   // 5) 방 나가기
-  async leaveRoom(userId: string, roomId: string): Promise<void> {
+  async leaveRoom(id: string, roomId: string): Promise<void> {
     // 1. 사용자를 방에서 내보냅니다 (UserRoom 레코드 삭제).
-    await this.urRepo.delete({ userId, roomId });
-    this.logger.log(`User ${userId} left room ${roomId}`);
+    await this.urRepo.delete({ id, roomId });
+    this.logger.log(`User ${id} left room ${roomId}`);
 
     // 2. 방에 남은 인원 수를 확인합니다.
     const remainingCount = await this.urRepo.count({ where: { roomId } });
@@ -105,12 +105,12 @@ export class ChatService {
   }
 
 
-  async getRoomsForUser(userId: string): Promise<Room[]> {
+  async getRoomsForUser(id: string): Promise<Room[]> {
     // 1. user_room 테이블에서 해당 유저가 속한 모든 방의 정보를 찾습니다.
     // 2. 'room' 관계를 함께 로드하여 각 방의 상세 정보(이름 등)를 가져옵니다.
     const userRooms = await this.userRoomRepo.find({
-      where: { userId },
-      relations: ['room'], // 'room' 관계를 함께 로드
+      where: { id },
+      relations: ['room', 'room.userRooms', 'room.userRooms.user'],
     });
 
     // 3. UserRoom 엔티티 배열에서 Room 엔티티만 추출하여 반환합니다.
@@ -118,8 +118,8 @@ export class ChatService {
   }
 
   async getOrCreatePrivateRoom(user1Id: string, user2Id: string): Promise<Room> {
-    const sortedUserIds = [user1Id, user2Id].sort();
-    const privateRoomId = `private-${sortedUserIds[0]}-${sortedUserIds[1]}`;
+    const sortedids = [user1Id, user2Id].sort();
+    const privateRoomId = `private-${sortedids[0]}-${sortedids[1]}`;
 
     let room = await this.roomRepo.findOneBy({ id: privateRoomId });
 
@@ -138,13 +138,13 @@ export class ChatService {
       // [수정] 방이 이미 존재할 경우, 각 사용자가 방에 참여해있는지 확인하고, 없다면 다시 참여시킵니다.
       
       // user1이 방에 참여해있는지 확인
-      const user1InRoom = await this.userRoomRepo.findOneBy({ userId: user1Id, roomId: room.id });
+      const user1InRoom = await this.userRoomRepo.findOneBy({ id: user1Id, roomId: room.id });
       if (!user1InRoom) {
         await this.joinRoom(user1Id, room.id);
       }
 
       // user2가 방에 참여해있는지 확인
-      const user2InRoom = await this.userRoomRepo.findOneBy({ userId: user2Id, roomId: room.id });
+      const user2InRoom = await this.userRoomRepo.findOneBy({ id: user2Id, roomId: room.id });
       if (!user2InRoom) {
         await this.joinRoom(user2Id, room.id);
       }

@@ -4,6 +4,7 @@ import { Module } from '@nestjs/common';
 import { MulterModule } from '@nestjs/platform-express';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { VideosModule } from './videos/videos.module';
@@ -13,18 +14,19 @@ import { VideoInsertModule } from './video-insert/video-insert.module';
 import { ChatModule } from './chat/chat.module';
 import { UsedProductModule } from './used_product/used-product.module';
 
-
 import { PracticeRoomModule } from './practice_room/practice-room.module';
 import { EnsembleModule } from './ensemble/ensemble.module';
 
-
 import { MailerModule } from '@nestjs-modules/mailer';
 import { LocationModule } from './map/location.module';
+import { ApplicationModule } from './application/application.module';
+import { ViewCountModule } from './hooks/view_count/view-count.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     MulterModule,
+    ScheduleModule.forRoot(),
 
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -72,6 +74,8 @@ import { LocationModule } from './map/location.module';
     PracticeRoomModule,
     EnsembleModule,
     LocationModule,
+    ApplicationModule,
+    ViewCountModule,
   ],
   controllers: [AppController],
   providers: [AppService],

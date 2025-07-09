@@ -57,7 +57,7 @@ const UpdateRecruitEnsemblePage: React.FC = () => {
         const ensemble = response.data;
 
         // --- 작성자 본인 확인 ---
-        if (user?.username !== ensemble.userId) {
+        if (user?.id !== ensemble.user.id) {
           alert('수정 권한이 없습니다.');
           navigate(`/ensembles/${id}`);
           return;
@@ -138,7 +138,7 @@ const UpdateRecruitEnsemblePage: React.FC = () => {
     setError(null);
 
     try {
-      // payload 생성 (Create 페이지와 유사하나, userId는 보내지 않음)
+      // payload 생성 (Create 페이지와 유사하나, id는 보내지 않음)
       const sessionListPayLoad: UpdateSessionEnsemblePayload[] = sessionFormList.map((item) => ({
         sessionId: Number(item.sessionId),
         instrument: item.instrument,

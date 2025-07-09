@@ -10,6 +10,7 @@ import {
 import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
+import { WEB_FRONTEND_URL } from '@env';
 
 import { RootStackParamList } from '../types'; // RootStackParamList 임포트
 import CommonButton from '../components/Common/CommonButton'; // CommonButton 임포트 (수정됨)
@@ -88,7 +89,7 @@ const InfoText = styled.Text`
 `;
 
 interface CustomJwtPayload {
-  userId: number;
+  id: number;
 }
 
 /**
@@ -195,7 +196,7 @@ const HomeScreen: React.FC = () => {
               const token = await AsyncStorage.getItem('accessToken');
               if (token) {
                 const decodedToken = jwtDecode<CustomJwtPayload>(token);
-                const userId = decodedToken.userId;
+                const id = decodedToken.id;
                 // 뒤로가기 제한
                 navigation.reset({
                   index: 0,
@@ -203,7 +204,7 @@ const HomeScreen: React.FC = () => {
                     {
                       name: 'Web',
                       params: {
-                        url: `http://localhost:5173/users/${userId}`,
+                        url: `${WEB_FRONTEND_URL}/users/${id}?token=${token}`,
                       },
                     },
                   ],
@@ -216,7 +217,7 @@ const HomeScreen: React.FC = () => {
                     {
                       name: 'Web',
                       params: {
-                        url: 'http://localhost:5173/login',
+                        url: `${WEB_FRONTEND_URL}/login`,
                       },
                     },
                   ],

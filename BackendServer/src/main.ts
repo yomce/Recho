@@ -1,22 +1,33 @@
 // src/main.ts
-import 'reflect-metadata'; // <-- 가장 중요! 이 코드를 최상단에 추가하세요.
+import 'reflect-metadata'; // <-- 중요! 이 코드를 최상단에...
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser'; // cookie-parser 임포트 추가
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService); // ConfigService 인스턴스를 가져옵니다.
+
   process.env.TZ = 'UTC';
 
   app.use(cookieParser()); // cookie-parser를 전역 미들웨어로 설정
 
-  // 👇 옵션을 포함하여 CORS 설정 (이 방법을 권장합니다)
+  const frontendUrlLocal = configService.get<string>('FRONTEND_URL_LOCAL');
+  const frontendUrlIp = configService.get<string>('FRONTEND_URL_IP');
+
+  const allowedOrigins: string[] = [];
+  if (frontendUrlLocal) allowedOrigins.push(frontendUrlLocal);
+  if (frontendUrlIp) allowedOrigins.push(frontendUrlIp);
+
   app.enableCors({
-    origin: 'http://localhost:5173', // React 앱의 출처를 명시합니다.
+    origin: allowedOrigins,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true, // 쿠키나 인증 헤더 등을 주고받을 때 필요합니다.
+    credentials: true, // 쿠키나 인증 헤더 등을 주고받을 때 필요
+    allowedHeaders: 'Content-Type, Accept, Authorization', // 허용할 헤더 목록에 Authorization 추가
+    exposedHeaders: 'Authorization', // 클라이언트에서 접근할 수 있도록 헤더 노출
   });
 
-  await app.listen(3000);
+  await app.listen(3000, '0.0.0.0');
 }
 bootstrap();

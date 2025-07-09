@@ -29,20 +29,18 @@
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
-		<false/>
-		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
 	<key>NSCameraUsageDescription</key>
 	<string>밴드 합주 영상을 녹화하기 위해 카메라 권한이 필요합니다.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string></string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Access to the microphone is required to record audio for your videos.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Access to the photo library is required to select videos for editing and to save your creations.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>녹화된 합주 영상을 갤러리에 저장하기 위해 사진첩 접근 권한이 필요합니다.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Access to the photo library is required to select videos for editing and to save your creations.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UIFileSharingEnabled</key>

@@ -5,28 +5,32 @@ import { PracticeRoom } from './entities/practice-room.entity';
 import { CreatePracticeRoomDto } from './dto/create-practice-room.dto';
 import { UpdatePracticeRoomDto } from './dto/update-practice-room.dto';
 import { PaginatedPracticeRoomResponse } from './dto/paginated-practice-room.response.dto';
-
+import { Location } from 'src/map/entities/location.entity';
 
 @Injectable()
-export class PracticeRoomService{
+export class PracticeRoomService {
   constructor(
     @InjectRepository(PracticeRoom)
-    private readonly practiceRoomRepo:
-    Repository<PracticeRoom>,
+    private readonly practiceRoomRepo: Repository<PracticeRoom>,
+
+    @InjectRepository(Location)
+    private readonly locationRepo: Repository<Location>,
   ) {}
 
-  async findPracticeRoomWithPagination (
+  async findPracticeRoomWithPagination(
     limit: number,
     lastProductId?: number,
     lastCreatedAt?: Date,
-  ): Promise<PaginatedPracticeRoomResponse>{
+  ): Promise<PaginatedPracticeRoomResponse> {
     const realLimit = limit + 1;
-    const queryBuilder = this.practiceRoomRepo.createQueryBuilder('practiceRoom');
+    const queryBuilder =
+      this.practiceRoomRepo.createQueryBuilder('practiceRoom');
 
-    if(lastProductId && lastCreatedAt) {
+    if (lastProductId && lastCreatedAt) {
       const lastCreatedAtDate = new Date(lastCreatedAt);
       queryBuilder.where(
-        '(practiceRoom.createdAt < :lastCreatedAtDate) OR (practiceRoom.createdAt = :lastCreatedAtDate AND practiceRoom.postId < :lastProductId)',{ lastCreatedAtDate, lastProductId },
+        '(practiceRoom.createdAt < :lastCreatedAtDate) OR (practiceRoom.createdAt = :lastCreatedAtDate AND practiceRoom.postId < :lastProductId)',
+        { lastCreatedAtDate, lastProductId },
       );
     }
 
@@ -40,10 +44,13 @@ export class PracticeRoomService{
     const data = hasNextPage ? results.slice(0, limit) : results;
 
     const lastItem = data[data.length - 1];
-    const nextCursor = hasNextPage && lastItem ? {
-      lastProductId: lastItem.postId,
-      lastCreatedAt: lastItem.createdAt.toISOString(),
-    } : undefined;
+    const nextCursor =
+      hasNextPage && lastItem
+        ? {
+            lastProductId: lastItem.postId,
+            lastCreatedAt: lastItem.createdAt.toISOString(),
+          }
+        : undefined;
 
     return {
       data,
@@ -54,39 +61,44 @@ export class PracticeRoomService{
 
   async enrollPracticeRoom(
     createDto: CreatePracticeRoomDto,
+    id: string,
   ): Promise<PracticeRoom> {
     const { locationId, ...restofDto } = createDto;
 
     // TODO: 실제 프로젝트에서는 주입받은 locationRepo를 사용해 ID로 지역 정보를 조회해야 합니다.
 
-    const locationDataForDb = {
-      location_id: locationId,
-      region_level_1: '경기도', // 임시 데이터
-      region_level_2: '용인시', // 임시 데이터
-    };
+    const locationEntity = await this.locationRepo.findOneBy({
+      locationId: Number(locationId),
+    });
+
+    if (!locationEntity) {
+      throw new NotFoundException(`Location with ID #${locationId} not found.`);
+    }
 
     const newPracticeRoom = this.practiceRoomRepo.create({
       ...restofDto,
-      location: locationDataForDb,
-      userId: 1, // 실제 유저 ID를 사용해야 합니다
+      locationId: locationEntity.locationId,
+      id: id, // 실제 유저 ID를 사용해야 합니다
       viewCount: 0,
-    })
+    });
     return await this.practiceRoomRepo.save(newPracticeRoom);
   }
 
   async detailPracticeRoom(id: number): Promise<PracticeRoom> {
-    const post = await this.practiceRoomRepo.findOneBy({ postId: id });
-    if (!post){
-      throw new NotFoundException(`Post withID #${id} not found`)
-    };
+    const post = await this.practiceRoomRepo.findOne({
+      where: { postId: id },
+      relations: ['location'], // ← location 조인!
+    });
+    if (!post) {
+      throw new NotFoundException(`Post withID #${id} not found`);
+    }
     return post;
   }
 
-
   async deletePracticeRoom(id: number): Promise<void> {
     const post = await this.practiceRoomRepo.delete({ postId: id });
-    if (post.affected === 0){
-      throw new NotFoundException(`Post withID #${id} not found`)
+    if (post.affected === 0) {
+      throw new NotFoundException(`Post withID #${id} not found`);
     }
   }
 
@@ -97,5 +109,9 @@ export class PracticeRoomService{
     const post = await this.detailPracticeRoom(id);
     const updatedPost = this.practiceRoomRepo.merge(post, updateDto);
     return this.practiceRoomRepo.save(updatedPost);
+  }
+
+  async incrementViewCount(id: number): Promise<void> {
+    await this.practiceRoomRepo.increment({ postId: id }, 'viewCount', 1);
   }
 }

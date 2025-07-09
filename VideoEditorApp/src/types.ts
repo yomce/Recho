@@ -58,15 +58,24 @@ export interface SingleEditorHandles {
 
 // Root Stack Navigator의 모든 가능한 라우트 및 해당 파라미터
 export type RootStackParamList = {
-  Home: undefined; // 파라미터 없음
+  Home: undefined;
   Camera: undefined;
-  VideoEdit: { videos?: MediaItem[]; parentVideoId?: string }; // MediaItem 배열 또는 parentVideoId를 파라미터로 받음
+  VideoEdit: {
+    videos?: MediaItem[];
+    total_slots?: number;
+    parentVideoId?: string;
+    sourceVideos?: Video[];
+  };
+  Processing: {
+    sourceVideos: Video[];
+    localVideos: MediaItem[];
+  };
   MediaLibrary: undefined;
   FFmpegTest: undefined;
-  Web: { url?: string } | undefined;
-  SideBySide: undefined; // 향후 사용될 수 있는 라우트
-  VideoPreview: undefined;
-  NewVideoTest: undefined;
+  Web: { url?: string };
+  SideBySide: { videoUris: string[] };
+  VideoPreview: { videoUri: string };
+  NewVideoTest: { localVideoPath: string };
 };
 
 // VideoEditScreen의 라우트 prop 타입
@@ -74,6 +83,22 @@ export type VideoEditScreenRouteProp = RouteProp<
   RootStackParamList,
   'VideoEdit'
 >;
+
+// Video 타입을 RootStackParamList 위에 정의하거나 별도 파일로 분리
+export interface Video {
+  id: string;
+  user_id: string;
+  parent_video_id?: string;
+  depth: number;
+  results_video_key: string;
+  source_video_key: string;
+  thumbnail_key: string;
+  like_count: number;
+  comment_count: number;
+  created_at: string;
+  video_url: string;
+  thumbnail_url: string;
+}
 
 // --- 유틸리티 함수 (여기서 직접 정의하거나 별도 파일로 분리 가능) ---
 

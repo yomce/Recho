@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { TRADE_TYPE, type UsedProductForm, type CreateUsedProductPayload } from '../../types/product';
-import { ProductForm } from '../../components/ProductForm';
+import { ProductForm } from '../../components/layout/pages/usedProduct/ProductForm';
 import { useAuthStore } from '../../stores/authStore'; // Zustand 스토어 import
 import axiosInstance from '@/services/axiosInstance';
 import { useLocationStore } from '@/components/map/store/useLocationStore';
@@ -30,7 +30,7 @@ const CreateUsedProductPage: React.FC = () => {
     }
     setForm(prev => ({
       ...prev,
-      userId: user?.username as string,
+      id: user?.id,
     }))
   }, [user, navigate]);
 

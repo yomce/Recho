@@ -9,7 +9,7 @@ import { EnsembleForm, type RecruitEnsembleFormState, SKILL_LEVEL } from '@/page
 import axios from 'axios';
 import type { SessionEnsembleFormState } from './components/SessionForm';
 
-// 서버에 전송할 데이터 타입 (userId 포함)
+// 서버에 전송할 데이터 타입 (id 포함)
 interface CreateSessionEnsemblePayload {
   instrument: string;
   recruitCount: number;
@@ -118,8 +118,6 @@ const CreateRecruitEnsemblePage: React.FC = () => {
         totalRecruitCnt: Number(form.totalRecruitCnt),
         sessionList: sessionListPayLoad,
       };
-
-      console.log(payload)
 
       const response = await axiosInstance.post('ensembles', payload);
       alert('모집 공고가 성공적으로 등록되었습니다!');

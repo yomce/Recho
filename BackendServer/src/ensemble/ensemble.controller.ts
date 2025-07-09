@@ -19,9 +19,9 @@ import { PaginationQueryRecruitEnsembleDto } from './dto/pagination-query-recrui
 import { PaginatedRecruitEnsembleResponse } from './dto/paginated-recruit-ensemble.response.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { CreateRecruitEnsembleDto } from './dto/create-recruit-ensemble.dto';
-import { RecruitEnsemble } from './entities/recruit-ensemble.entity';
 import { Request } from 'express';
 import { UpdateRecruitEnsembleDto } from './dto/update-recruit-ensemble.dto';
+import { RecruitEnsembleResponseDto } from './dto/recruit-ensemble.response.dto';
 
 @Controller('ensembles')
 export class EnsembleController {
@@ -48,37 +48,35 @@ export class EnsembleController {
   async enrollEnsemble(
     @Body() createRecruitEnsembleDto: CreateRecruitEnsembleDto,
     @Req() req: Request,
-  ): Promise<RecruitEnsemble> {
+  ): Promise<RecruitEnsembleResponseDto> {
     if (!req.user || !req.user.id) {
       this.logger.error(
         'Authentication information missing from request user object.',
       );
       throw new ForbiddenException('사용자 인증 정보가 없습니다.');
     }
-    const userId = req.user.id;
-
-    console.log(createRecruitEnsembleDto);
+    const username = req.user.id;
 
     this.logger.log(`Enrolling a new post: ${createRecruitEnsembleDto.title}`);
     return await this.ensembleService.enrollEnsemble(
       createRecruitEnsembleDto,
-      userId,
+      username,
     );
   }
 
-  @Get(':id')
+  @Get(':postId')
   async detailEnsemble(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<RecruitEnsemble> {
-    this.logger.log(`Fetching detail for product ID: ${id}`);
-    return await this.ensembleService.detailEnsemble(id);
+    @Param('postId', ParseIntPipe) postId: number,
+  ): Promise<RecruitEnsembleResponseDto> {
+    this.logger.log(`Fetching detail for post ID: ${postId}`);
+    return await this.ensembleService.detailEnsemble(postId);
   }
 
-  @Delete(':id')
+  @Delete(':postId')
   @UseGuards(AuthGuard('jwt'))
   @HttpCode(204)
   async deleteEnsemble(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('postId', ParseIntPipe) postId: number,
     @Req() req: Request,
   ): Promise<void> {
     if (!req.user || !req.user.id) {
@@ -87,36 +85,37 @@ export class EnsembleController {
       );
       throw new ForbiddenException('사용자 인증 정보가 없습니다.');
     }
-    const userId = req.user.id; // JwtStrategy에서 반환된 user.id 사용 가능
+    const id = req.user.id; // JwtStrategy에서 반환된 user.id 사용 가능
     this.logger.log(
-      `Received delete request for product ID: ${id} from user ID: ${userId}`,
+      `Received delete request for product ID: ${postId} from user ID: ${id}`,
     );
 
-    await this.ensembleService.deleteEnsemble(id, userId);
+    await this.ensembleService.deleteEnsemble(postId, id);
   }
 
-  @Patch(':id')
+  @Patch(':postId')
   @UseGuards(AuthGuard('jwt'))
   async patchEnsemble(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('postId', ParseIntPipe) postId: number,
     @Body() updateRecruitEnsembleDto: UpdateRecruitEnsembleDto,
     @Req() req: Request,
-  ): Promise<RecruitEnsemble> {
+  ): Promise<RecruitEnsembleResponseDto> {
     if (!req.user || !req.user.id) {
       this.logger.error(
         'Authentication information missing from request user object.',
       );
       throw new ForbiddenException('사용자 인증 정보가 없습니다.');
     }
-    const userId = req.user.id; // JwtStrategy에서 반환된 user.id 사용 가능
+    const id = req.user.id; // JwtStrategy에서 반환된 user.id 사용 가능
+    console.log('patch user', req.user);
     this.logger.log(
-      `Received patch request for post ID: ${id} from user ID: ${userId}`,
+      `Received patch request for post ID: ${postId} from user ID: ${id}`,
     );
 
     return this.ensembleService.patchEnsemble(
-      id,
+      postId,
       updateRecruitEnsembleDto,
-      userId,
+      id,
     );
   }
 }

@@ -16,23 +16,33 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
 
-  async login(loginDto: LoginDto): Promise<{ accessToken: string; refreshToken: string }> {
+  async login(
+    loginDto: LoginDto,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     const { id, password } = loginDto;
     const user = await this.userService.findById(id);
 
-    if (!user || !user.password || !(await bcrypt.compare(password, user.password))) {
+    if (
+      !user ||
+      !user.password ||
+      !(await bcrypt.compare(password, user.password))
+    ) {
       throw new UnauthorizedException('아이디 또는 비밀번호를 확인해주세요.');
     }
-    
+
     return this._issueTokens(user);
   }
 
-  async socialLogin(user: User): Promise<{ accessToken: string; refreshToken: string }> {
+  async socialLogin(
+    user: User,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     return this._issueTokens(user);
   }
 
-  private async _issueTokens(user: User): Promise<{ accessToken: string; refreshToken: string }> {
-    const payload = { userId: user.id, username: user.username };
+  private async _issueTokens(
+    user: User,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const payload = { id: user.id, username: user.username };
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
@@ -45,13 +55,13 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  async refreshAccessToken(user: User): Promise<{ accessToken: string }> {
-    const payload = { userId: user.id, username: user.username };
-    const newAccessToken = this.jwtService.sign(payload);
-    return { accessToken: newAccessToken };
+  async refreshAccessToken(
+    user: User,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    return this._issueTokens(user);
   }
 
-  async logout(userId: string): Promise<void> {
-    await this.userService.setCurrentRefreshToken(userId, null);
+  async logout(id: string): Promise<void> {
+    await this.userService.setCurrentRefreshToken(id, null);
   }
 }

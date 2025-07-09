@@ -10,9 +10,11 @@ declare global {
 interface KakaoMapApiProps {
   lat: number;
   lng: number;
+  className?: string;
+  style?: React.CSSProperties;
 }
 
-const KakaoMapApi = ({ lng, lat }: KakaoMapApiProps) => {
+const KakaoMapApi = ({ lng, lat, className, style }: KakaoMapApiProps) => {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const kakaoMapAppKey = useConfigStore((state) => state.config?.kakaoMapAppKey);
 
@@ -49,9 +51,7 @@ const KakaoMapApi = ({ lng, lat }: KakaoMapApiProps) => {
   }, [lng, lat]);
 
   return (
-    <div>
-      <div ref={mapRef} style={{ width: '500px', height: '400px' }} ></div>
-    </div>
+    <div ref={mapRef} className={`relative ${className}`} style={style} />
   )
 };
 

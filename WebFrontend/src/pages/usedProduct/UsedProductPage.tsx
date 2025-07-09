@@ -6,7 +6,6 @@ import UsedProductCard from '@/components/atoms/card/UsedProductCard';
 import CategoryList from '@/components/layout/CategoryList';
 import ImageCard from '@/components/atoms/card/ImageCard';
 import FloatingWriteButton from '@/components/atoms/button/FloatingWriteButton';
-import Layout from '@/components/layout/MainLayout';
 import PostLayout from '@/components/layout/PostLayout';
 
 interface Cursor {
@@ -57,7 +56,7 @@ const UsedProductPage: React.FC = () => {
 
   useEffect(() => {
     fetchItems(true);
-  }, [fetchItems]);
+  }, []);
 
   const handleLoadMore = () => {
     fetchItems(false);
@@ -75,34 +74,49 @@ const UsedProductPage: React.FC = () => {
               onClickCategory={(c) => setSelected(c)}
             />
               {/* 게시물 그리드 */}
-            <div className="grid grid-cols-1 gap-[16px] max-w-[410px] mx-auto mt-[40px]">
-              {/* 예시 카드 */}
-              {items.map(item => (
-                <UsedProductCard
-                  key={item.productId}
-                  productId={item.productId}
-                  title={item.title}
-                  description={item.description}
-                  price={item.price}
-                  imageUrl={item.imageUrl}
-                />
-              ))}
-
+            <div className="grid grid-cols-1 gap-[16px] max-w-[410px] mx-auto mt-[40px] mb-[52px]">
               {/* --- 에러 메시지 --- */}
               {error && (
                 <div className="flex justify-center items-center">
                   <p className="text-body text-brand-error-text">{error}</p>
                 </div>
               )}
-              {/* --- 상품 없음 메시지 --- */}
-              {!loading && items.length === 0 && !error && (
-                <div className="flex justify-center items-center text-body">
-                  <p>등록된 상품이 없습니다.</p>
+              {/* 예시 카드 */}
+              {items.length > 0 ? (
+                items.map(item => (
+                  <UsedProductCard
+                    key={item.productId}
+                    productId={item.productId}
+                    title={item.title}
+                    description={item.description}
+                    price={item.price}
+                    imageUrl={item.imageUrl}
+                  />
+                ))
+              ) : (
+                !loading && (
+                  <div className="flex justify-center items-center text-body">
+                    <p>등록된 상품이 없습니다.</p>
+                  </div>
+                )
+              )}
+              {/* --- 로딩 중 --- */}
+              {loading && (
+                <div className="message-container">
+                  <div className="spinner"></div>
+                </div>
+              )}
+              {/* --- 더보기 버튼 --- */}
+              {!loading && hasNextPage && (
+                <div className="load-more-container">
+                  <button className="load-more-button" onClick={handleLoadMore}>
+                    더보기
+                  </button>
                 </div>
               )}
             </div>
-            <FloatingWriteButton />
           </div>
+          <FloatingWriteButton />
         </div>  
       </div>
     </PostLayout>

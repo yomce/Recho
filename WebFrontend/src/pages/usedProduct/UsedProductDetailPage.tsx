@@ -45,7 +45,9 @@ const UsedProductDetailPage: React.FC = () => {
 
   const isOwner = product && user && product.id === user.id;
 
-  useViewCounter({ type: 'used-products' });
+  if(id) {
+    useViewCounter({ type: 'used-products', id });
+  }
 
   useEffect(() => {
     if (!id) {
@@ -187,6 +189,7 @@ const UsedProductDetailPage: React.FC = () => {
           console.log('보낼 메시지:', msg);
           // 여기서 서버로 전송하거나 상태 업데이트 가능
         }}
+        onDmClick={handleSendDm}
       />
     </PostLayout>
   );

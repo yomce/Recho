@@ -21,6 +21,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { LocationModule } from './map/location.module';
 import { ApplicationModule } from './application/application.module';
 import { ViewCountModule } from './hooks/view_count/view-count.module';
+import { PostsModule } from './community/posts/posts.module';
 
 @Module({
   imports: [
@@ -76,6 +77,7 @@ import { ViewCountModule } from './hooks/view_count/view-count.module';
     LocationModule,
     ApplicationModule,
     ViewCountModule,
+    PostsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

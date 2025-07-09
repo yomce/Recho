@@ -21,7 +21,6 @@ import RecruitEnsembleListPage from "../pages/ensemble/RecruitEnsemblePage";
 import CreateRecruitEnsemblePage from "../pages/ensemble/CreateRecruitEnsemblePage";
 import RecruitEnsembleDetailPage from "../pages/ensemble/RecruitEnsembleDetailPage";
 import VinylPage from "@/pages/vinyl/VinylPage";
-import Navigation from "@/components/layout/Navigation";
 import StyleGuideTest from "@/components/StyleGuideTest";
 import AuthCallbackPage from "../pages/auth/AuthCallbackPage";
 import PracticeRoomPage from "@/pages/practiceRoom/PracticeRoomPage";
@@ -31,9 +30,10 @@ import UpdatePracticeRoomPage from "@/pages/practiceRoom/UpdatePracticeRoomPage"
 import UpdateRecruitEnsemblePage from "@/pages/ensemble/UpdateRecruitEnsemblePage";
 import MapViewPage from "@/pages/map/MapViewPage";
 import ProtectedRoute from "./ProtectedRoute";
+import CategoryPage from "@/pages/main/CategoryPage";
 
 const AppRouter: React.FC = () => {
-  return (
+  return ( 
     <Router>
       <Routes>
         <Route path="/" element={<Navigate to="/main" replace />} />
@@ -52,6 +52,8 @@ const AppRouter: React.FC = () => {
           <Route path="/chat" element={<ChatListPage />} />
           <Route path="/chat/:roomId" element={<ChatRoomPage />} />
           <Route path="/users/:id" element={<UserPage />} />
+          <Route path="/main" element={<MainPage />} />
+          <Route path="/category" element={<CategoryPage />} />
           <Route path="/vinyl" element={<VinylPage />} />
           <Route path="/used-products" element={<UsedProductPage />} />
           <Route
@@ -96,7 +98,6 @@ const AppRouter: React.FC = () => {
           <Route path="/style-guide" element={<StyleGuideTest />} />
         </Route>
       </Routes>
-      <Navigation />
     </Router>
   );
 };

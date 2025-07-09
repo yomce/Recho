@@ -1,33 +1,28 @@
 import path from "path";
-import { defineConfig, loadEnv } from "vite";
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 // https://vite.dev/config/
 
-export default defineConfig(({ mode }) => { // 👈 함수형으로 변경합니다.
-  // 현재 작업 디렉터리의 .env 파일을 로드합니다.
-  const env = loadEnv(mode, process.cwd(), '');
-
-  return {
-    plugins: [react(), tailwindcss(), tsconfigPaths()],
-    resolve: {
-      alias: {
-        "@": path.resolve(__dirname, "./src"),
+export default defineConfig({
+  plugins: [react(), tailwindcss(), tsconfigPaths()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  // 프론트엔드 개발 서버에서 /api로 시작하는 요청을 백엔드 서버로 프록시합니다.
+  server: {
+    proxy: {
+      "/api": {
+        target: process.env.VITE_API_URL,
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ""),
+        secure: false,
+        ws: true,
       },
     },
-    server: {
-      proxy: {
-        "/api": {
-          // 👇 env 객체에서 VITE_API_BASE_URL을 가져와 사용합니다.
-          target: env.VITE_API_BASE_URL,
-          changeOrigin: true,
-          // rewrite: (path) => path.replace(/^\/api/, ""),
-          secure: false,
-          ws: true,
-        },
-      },
-    },
-  };
+  },
 });

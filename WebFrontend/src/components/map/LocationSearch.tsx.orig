@@ -1,0 +1,114 @@
+/**
+ * src/components/map/LocationSearch.tsx
+ * [수정됨] 카카오 REST API 호출을 백엔드 프록시를 통해 수행합니다.
+ *
+ * 사용 흐름:
+ * 1. 사용자가 검색어를 입력 후 "검색" 버튼 클릭
+ * 2. NestJS 백엔드의 검색 API(/api/locations/search) 호출 → 장소 목록 표시
+ * 3. 특정 장소 클릭 시 → 백엔드의 역지오코딩 API(/api/locations/reverse-geocode) 호출
+ * 4. 지역 정보 파싱 후 전역 상태 (useLocationStore)에 저장
+ *
+ **/
+
+import { useState } from "react";
+import { useLocationStore } from "./store/useLocationStore";
+<<<<<<< HEAD
+import axiosInstance from '@/services/axiosInstance';
+=======
+import TextInputForm from "../atoms/input/TextInputForm";
+>>>>>>> 83539d4d518a90ece57e918a979e0e71f3ae307d
+
+export interface MapLocation {
+  place_name: string;
+  address_name: string;
+  road_address_name: string;
+  x: string; // longitude
+  y: string; // latitude
+}
+
+const LocationSearch = () => {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<MapLocation[]>([]);
+  const setLocation = useLocationStore((state) => state.setLocation);
+  const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+
+  const handleSearch = async () => {
+    try {
+      // [수정] 카카오 API 대신 우리 백엔드 서버의 검색 엔드포인트를 호출합니다.
+      const res = await axiosInstance.get(
+        `locations/search`, // URL 변경
+        { params: { query } } // 헤더 제거
+      );
+      setResults(res.data.documents);
+    } catch (err: any) {
+      console.error("검색 실패:", err);
+    }
+  };
+
+  const handleSelect = async (location: MapLocation) => {
+    try {
+      // [수정] 카카오 API 대신 우리 백엔드 서버의 역지오코딩 엔드포인트를 호출합니다.
+      const reverseRes = await axiosInstance.get(
+        `locations/reverse-geocode`, // URL 변경
+        { params: { x: location.x, y: location.y } } // 헤더 제거
+      );
+
+      const region = reverseRes.data.documents[0];
+      console.log("location.lat:", location.x, "location.lng:", location.y);
+
+      console.log("선택된 지역: ", region);
+      setLocation({
+        ...location,
+        region_level1: region.region_1depth_name,
+        region_level2: region.region_2depth_name,
+        region_level3: region.region_3depth_name,
+        address: location.address_name,
+      });
+    } catch (err) {
+      console.error("역 지오코딩 실패:", err);
+    }
+  };
+
+  return (
+    <div className="w-full">
+      <div className="flex gap-2 mb-2">
+        <div className="flex-[4]">
+          <TextInputForm
+            type="text"
+            placeholder="장소를 검색하세요"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
+        <button
+          type="button"
+          onClick={handleSearch}
+          className="inline-block bg-brand-primary text-white text-caption rounded-md hover:opacity-70 transition px-4 py-3"
+        >
+          검색
+        </button>
+      </div>
+      <ul className="space-y-2 max-h-[200px] overflow-y-auto">
+        {results.map((place, idx) => (
+          <li
+            key={idx}
+            className={`p-3 max-h-[80px] border border-gray-200 bg-brand-inverse rounded-[10px] cursor-pointer transition
+              ${selectedIdx === idx ? "bg-brand-blue" : "hover:bg-gray-100 hover:border-[#8E4DF6]" }`}
+            onClick={() => {
+              handleSelect(place);
+              setSelectedIdx(idx);
+            }}
+          >
+            <strong className="text-[16px]">{place.place_name}</strong>
+            <br />
+            <span className="text-caption text-brand-gray">
+              {place.road_address_name || place.address_name}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+export default LocationSearch;

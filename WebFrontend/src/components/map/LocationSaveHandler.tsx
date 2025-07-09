@@ -7,11 +7,11 @@
  * 게시글 작성 등에서 위치 정보가 필요할 경우 아래처럼 사용하세요:
  * const locationId = await saveLocationToDB(location);
  */
-import axios from 'axios';
 import { type Location } from '@/components/map/store/useLocationStore';
+import axiosInstance from '@/services/axiosInstance';
 
 export const saveLocationToDB = async (location: Location): Promise<number> => {
-  const res = await axios.post('/api/locations', {
+  const res = await axiosInstance.post('/api/locations', {
     place_name: location.place_name,
     address: location.road_address_name,
     lat: parseFloat(location.x),

@@ -11,7 +11,7 @@ import { CreateLocationDto } from './dto/create-location.dto';
 import { Location } from './entities/location.entity';
 import { Not } from 'typeorm';
 
-@Controller('/locations')
+@Controller('/api/locations')
 export class LocationController {
   constructor(private readonly locationService: LocationService) {}
 

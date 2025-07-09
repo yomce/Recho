@@ -1,3 +1,5 @@
+// src/pages/user/UsedProductDetailPage.tsx
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
@@ -12,8 +14,6 @@ import ProductInfoCard from '@/components/atoms/card/ProductInfoCard';
 import MapPreviewCard from '@/components/atoms/card/MapViewCard';
 import MessageInputForm from '@/components/atoms/input/MessageInput';
 import IconButton from '@/components/atoms/button/IconButton';
-
-// CSS 파일을 import 하던 코드는 삭제합니다.
 
 // Enum 값에 따른 한글 텍스트 매핑
 const STATUS_TEXT = {
@@ -43,7 +43,7 @@ const UsedProductDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const isOwner = (product && user && product.id === user.id)
+  const isOwner = product && user && product.id === user.id;
 
   useViewCounter({ type: 'used-products' });
 
@@ -59,7 +59,6 @@ const UsedProductDetailPage: React.FC = () => {
       setError(null);
       try {
         const response = await axiosInstance.get<UsedProduct>(`used-products/${id}`);
-        console.log(response.data);
         setProduct(response.data);
       } catch (err) {
         if (axios.isAxiosError(err) && err.response?.status === 404) {
@@ -81,7 +80,7 @@ const UsedProductDetailPage: React.FC = () => {
       return;
     }
     navigate(`/used-products/edit/${id}`);
-  }
+  };
 
   const handleDelete = async () => {
     if (window.confirm('정말로 이 상품을 삭제하시겠습니까?')) {
@@ -94,7 +93,7 @@ const UsedProductDetailPage: React.FC = () => {
         alert('상품이 성공적으로 삭제되었습니다.');
         navigate('/used-products');
       } catch (err) {
-        if (axios.isAxiosError(err)) { // err가 Axios 에러인지 확인하면 더 안전합니다.
+        if (axios.isAxiosError(err)) {
           const messages = err.response?.data?.message;
           setError(Array.isArray(messages) ? messages.join('\n') : messages || err.message || '상품 삭제 중 오류 발생');
         } else {
@@ -103,8 +102,27 @@ const UsedProductDetailPage: React.FC = () => {
       }
     }
   };
-  
-  // 로딩 및 에러 UI
+
+  /**
+   * [신규] DM 보내기 버튼 클릭 시 실행되는 함수
+   */
+  const handleSendDm = async () => {
+    if (!product) return; // 상품 정보가 없으면 실행하지 않음
+    try {
+      // 백엔드의 POST /chat/dm API를 호출합니다.
+      const response = await axiosInstance.post("/chat/dm", {
+        partnerId: product.id, // 판매자의 ID를 전송
+      });
+
+      const room = response.data;
+      // 성공적으로 방이 생성/조회되면 해당 채팅방으로 이동합니다.
+      navigate(`/chat/${room.id}`);
+    } catch (err) {
+      console.error("DM 채팅방 생성에 실패했습니다.", err);
+      alert("DM을 시작할 수 없습니다.");
+    }
+  };
+
   const renderStatusMessage = (message: string, isError: boolean = false) => (
     <div className="flex justify-center items-center h-screen">
       {isError ? (

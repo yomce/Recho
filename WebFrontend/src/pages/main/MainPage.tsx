@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { useUiStore } from '@/stores/uiStore';
 
 // Zustand 스토어 및 아토믹 컴포넌트 import
 import { useAuthStore } from '@/stores/authStore';
@@ -28,7 +29,7 @@ const MainPage: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const user = useAuthStore((state) => state.user);
     const accessToken = localStorage.getItem('accessToken');
-
+    const { isVinylCreateModalOpen, actions: { closeVinylCreateModal } } = useUiStore();
     // --- 페이지 컨텐츠에 필요한 핸들러들만 남깁니다 ---
     const handleGoToUsedProducts = () => navigate('/used-products');
     const handleGoToEnsemble = () => navigate('/ensembles');
@@ -50,7 +51,7 @@ const MainPage: React.FC = () => {
             })
         );
         toast.success('앱에서 갤러리를 확인해주세요!');
-        closeModal();
+        closeVinylCreateModal();
     };
     // 캐러셀에 표시할 임시 데이터
     const promotionData = [
@@ -99,12 +100,24 @@ const MainPage: React.FC = () => {
                 />
             </CategoryIcon> 
 
-            <Modal isOpen={isModalOpen} onClose={closeModal} title="새로운 Vinyl 만들기">
+            <Modal
+                isOpen={isVinylCreateModalOpen}
+                onClose={closeVinylCreateModal}
+                title="새로운 Vinyl 만들기"
+            >
                 <div className="mt-4 flex flex-col gap-3">
-                    <p className="text-body text-brand-text-secondary mb-2">새로운 비디오를 만들기 위한 소스를 선택해주세요.</p>
-                    <PrimaryButton onClick={handleSelectVideoFromGallery}>갤러리에서 선택</PrimaryButton>
-                    <PrimaryButton onClick={() => toast('📹 촬영하기 기능은 앱에서 실행해 주세요.')}>촬영하기</PrimaryButton>
-                    <SecondaryButton onClick={closeModal}>닫기</SecondaryButton>
+                    <p className="text-body text-brand-text-secondary mb-2">
+                        새로운 비디오를 만들기 위한 소스를 선택해주세요.
+                    </p>
+                    <PrimaryButton onClick={handleSelectVideoFromGallery}>
+                        갤러리에서 선택
+                    </PrimaryButton>
+                    <PrimaryButton
+                        onClick={() => toast('📹 촬영하기 기능은 앱에서 실행해 주세요.')}
+                    >
+                        촬영하기
+                    </PrimaryButton>
+                    <SecondaryButton onClick={closeVinylCreateModal}>닫기</SecondaryButton>
                 </div>
             </Modal>
         </Layout>

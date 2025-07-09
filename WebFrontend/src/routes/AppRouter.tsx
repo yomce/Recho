@@ -6,6 +6,7 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+import Navigation from "@/components/layout/Navigation";
 import LoginPage from "../pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
 import MainPage from "../pages/main/MainPage";
@@ -98,6 +99,7 @@ const AppRouter: React.FC = () => {
           <Route path="/style-guide" element={<StyleGuideTest />} />
         </Route>
       </Routes>
+      <Navigation />
     </Router>
   );
 };

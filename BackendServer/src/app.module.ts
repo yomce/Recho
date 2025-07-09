@@ -21,6 +21,7 @@ import { LocationModule } from './map/location.module';
 import { ApplicationModule } from './application/application.module';
 import { ViewCountModule } from './hooks/view_count/view-count.module';
 import loadConfig from './config/env.config';
+import { ConfigController } from './config/config.controller';
 
 @Module({
   imports: [
@@ -84,7 +85,7 @@ import loadConfig from './config/env.config';
     ApplicationModule,
     ViewCountModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, ConfigController],
   providers: [AppService],
 })
 export class AppModule {}

@@ -1,8 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
 import { type UsedProduct, type PaginatedUsedProductResponse } from '../../types/product';
 import { useAuthStore } from '@/stores/authStore';
 import axiosInstance from '@/services/axiosInstance';
+import UsedProductCard from '@/components/atoms/card/UsedProductCard';
+import CategoryList from '@/components/layout/CategoryList';
+import ImageCard from '@/components/atoms/card/ImageCard';
+import FloatingWriteButton from '@/components/atoms/button/FloatingWriteButton';
+import Layout from '@/components/layout/MainLayout';
+import PostLayout from '@/components/layout/PostLayout';
 
 interface Cursor {
   lastProductId: number;
@@ -15,6 +20,7 @@ const UsedProductPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [nextCursor, setNextCursor] = useState<Cursor | null>(null);
   const [hasNextPage, setHasNextPage] = useState(true);
+  const [selected, setSelected] = useState("전체");
   const { user } = useAuthStore();
 
   const fetchItems = useCallback(async (isInitialFetch: boolean) => {
@@ -58,80 +64,48 @@ const UsedProductPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto my-8 px-4">
-      {/* --- 페이지 헤더 --- */}
-      <header className="flex justify-between items-center mb-8">
-        <h2 className="m-0 text-3xl font-bold text-left">상품 목록</h2>
-        { user && <Link 
-          to="/used-products/create" 
-          className="inline-block py-2.5 px-5 text-base font-semibold text-white bg-blue-500 rounded-md no-underline text-center transition-colors hover:bg-blue-700"
-        >
-          상품 등록하기
-        </Link>}
-      </header>
-
-      {/* --- 에러 메시지 --- */}
-      {error && (
-        <div className="flex justify-center items-center py-16 px-4 text-center">
-          <p className="text-lg text-red-600 font-medium">{error}</p>
-        </div>
-      )}
-
-      {/* --- 상품 목록 그리드 --- */}
-      {items.length > 0 && (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-6">
-          {items.map((item) => (
-            <Link
-              key={`${item.productId}-${item.createdAt}`}
-              to={`/used-products/${item.productId}`}
-              className="block bg-white border border-gray-200 rounded-lg overflow-hidden no-underline text-slate-800 shadow-md transition-all duration-200 ease-in-out hover:-translate-y-1 hover:shadow-lg"
-            >
-              <div className="aspect-square overflow-hidden">
-                <img 
-                  src={item.imageUrl || 'https://placehold.co/600x400'} 
-                  alt={item.title}
-                  className="w-full h-full object-cover" 
+    <PostLayout>
+      <div>
+        <div className="relative w-full max-w-[410px] mx-auto min-h-screen bg-brand-frame">
+          <div className="py-4 px-16">
+            <ImageCard src="https://placehold.co/398x270" />
+            {/* 카테고리 */}
+            <CategoryList
+              selectedCategory={selected}
+              onClickCategory={(c) => setSelected(c)}
+            />
+              {/* 게시물 그리드 */}
+            <div className="grid grid-cols-1 gap-[16px] max-w-[410px] mx-auto mt-[40px]">
+              {/* 예시 카드 */}
+              {items.map(item => (
+                <UsedProductCard
+                  key={item.productId}
+                  productId={item.productId}
+                  title={item.title}
+                  description={item.description}
+                  price={item.price}
+                  imageUrl={item.imageUrl}
                 />
-              </div>
-              <div className="p-4">
-                <h3 className="text-lg font-bold mb-2 whitespace-nowrap overflow-hidden text-ellipsis">
-                  {item.title}
-                </h3>
-                <p className="text-xl font-semibold m-0">
-                  {item.price.toLocaleString()}원
-                </p>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+              ))}
 
-      {/* --- 상품 없음 메시지 --- */}
-      {!loading && items.length === 0 && !error && (
-        <div className="flex justify-center items-center py-16 px-4 text-center text-lg text-gray-600">
-          <p>등록된 상품이 없습니다.</p>
-        </div>
-      )}
-
-      {/* --- 로딩 스피너 --- */}
-      {loading && (
-        <div className="flex justify-center items-center py-16">
-          <div className="w-9 h-9 border-4 border-gray-200 border-l-blue-500 rounded-full animate-spin"></div>
-        </div>
-      )}
-
-      {/* --- 더보기 버튼 --- */}
-      {!loading && hasNextPage && (
-        <div className="text-center mt-12">
-          <button
-            onClick={handleLoadMore}
-            className="py-3 px-8 text-lg font-semibold text-white bg-blue-500 rounded-md cursor-pointer transition-colors hover:bg-blue-700 disabled:bg-gray-500 disabled:cursor-not-allowed"
-          >
-            더보기
-          </button>
-        </div>
-      )}
-    </div>
+              {/* --- 에러 메시지 --- */}
+              {error && (
+                <div className="flex justify-center items-center">
+                  <p className="text-body text-brand-error-text">{error}</p>
+                </div>
+              )}
+              {/* --- 상품 없음 메시지 --- */}
+              {!loading && items.length === 0 && !error && (
+                <div className="flex justify-center items-center text-body">
+                  <p>등록된 상품이 없습니다.</p>
+                </div>
+              )}
+            </div>
+            <FloatingWriteButton />
+          </div>
+        </div>  
+      </div>
+    </PostLayout>
   );
 };
 

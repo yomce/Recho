@@ -5,6 +5,13 @@ import { type UsedProduct, STATUS, TRADE_TYPE } from '../../types/product';
 import { useAuthStore } from '@/stores/authStore';
 import axiosInstance from '@/services/axiosInstance';
 import useViewCounter from '@/hooks/useViewCounter';
+import PostLayout from '@/components/layout/PostLayout';
+import ImageCard from '@/components/atoms/card/ImageCard';
+import UserProfileCard from '@/components/atoms/card/UserProfileCard';
+import ProductInfoCard from '@/components/atoms/card/ProductInfoCard';
+import MapPreviewCard from '@/components/atoms/card/MapViewCard';
+import MessageInputForm from '@/components/atoms/input/MessageInput';
+import IconButton from '@/components/atoms/button/IconButton';
 
 // CSS 파일을 import 하던 코드는 삭제합니다.
 
@@ -113,73 +120,57 @@ const UsedProductDetailPage: React.FC = () => {
   if (!product) return renderStatusMessage('상품 정보가 없습니다.', true);
 
   return (
-    <div className="max-w-5xl mx-auto my-8 p-8 bg-white rounded-lg shadow-lg text-slate-800">
-      <div className="flex flex-col md:flex-row md:gap-12">
-        {/* 이미지 섹션 */}
-        <div className="md:flex-1 md:max-w-md">
-          <img
-            src={product.imageUrl || 'https://placehold.co/600x400'}
-            alt={product.title}
-            className="w-full h-auto rounded-lg border border-gray-200"
+    <PostLayout bgClassName="bg-white">
+      <div className="mx-auto max-w-6xl px-4">
+        <div className="flex flex-col">
+          {/* 이미지 섹션 */}
+          <div className="md:flex-1 md:max-w-md my-8">
+            <ImageCard
+              src={product.imageUrl || 'https://placehold.co/400x300'}
+              alt={product.title}
+              width={600}
+              height={400}
+            />
+          </div>
+
+          <UserProfileCard
+            imageUrl={product.imageUrl || 'https://placehold.co/40x40'}
+            name={product.id}
+            location={product.location.address}
+            status="판매중"
           />
-        </div>
+          {/* 정보 섹션 */}
+          <div className="mt-6 md:mt-0 md:flex-1 flex flex-col">
+            <ProductInfoCard
+              title={product.title}
+              price={product.price}
+              tradeType={TRADE_TYPE_TEXT[product.tradeType]}
+              createdAt={new Date(product.createdAt).toLocaleDateString()}
+              description={product.description}
+            />
 
-        {/* 정보 섹션 */}
-        <div className="mt-6 md:mt-0 md:flex-1 flex flex-col">
-          <h1 className="text-3xl font-bold mb-2">{product.title}</h1>
-
-          <div className="flex items-center gap-4 mb-4">
-            <p className="text-2xl font-semibold text-gray-800 m-0">{product.price.toLocaleString()}원</p>
-            <span className={`py-1 px-3 rounded-full text-xs font-semibold ${STATUS_CLASSES[product.status]}`}>
-              {STATUS_TEXT[product.status]}
-            </span>
+            {product.location?.lat && product.location?.lng && (
+              <MapPreviewCard
+                lat={product.location.lat}
+                lng={product.location.lng}
+              />
+            )}
           </div>
-
-          <div className="my-4 text-base text-gray-600 leading-relaxed">
-            <p className="my-2"><strong>판매자:</strong> {product.id}</p>
-            <p className="my-2"><strong>거래 방식:</strong> {TRADE_TYPE_TEXT[product.tradeType]}</p>
-            {/* <p className="my-2"><strong>거래 지역:</strong> {product.location.regionLevel1} {product.location.regionLevel2}</p> */}
-            <p className="my-2"><strong>거래 지역:</strong> {product.location?.address}</p>
-            <p className="my-2"><strong>등록일:</strong> {new Date(product.createdAt).toLocaleDateString()}</p>
-          </div>
-
-          <div className="mt-4">
-            <h2 className="text-lg font-bold border-b-2 border-gray-100 pb-2 mb-4">상품 설명</h2>
-            <pre className="whitespace-pre-wrap break-words text-base leading-relaxed text-gray-800 bg-gray-50 p-4 rounded">
-              {product.description}
-            </pre>
-          </div>
-
-          {/* 버튼 섹션 */}
-          <div className="mt-auto pt-6 flex justify-between items-center border-t border-gray-200">
-            <Link
-              to="/used-products"
-              className="py-3 px-6 border border-gray-400 rounded-md font-semibold bg-white text-gray-700 no-underline transition-all hover:bg-gray-50 hover:text-black"
-            >
-              목록으로
-            </Link>
-            
-            {
-              isOwner && <div className="flex gap-2">
-              <button
-                onClick={handleEdit}
-                className="py-2 px-5 rounded-md font-semibold text-white bg-blue-500 cursor-pointer transition-colors hover:bg-blue-700"
-              >
-                수정
-              </button>
-              <button
-                onClick={handleDelete}
-                className="py-2 px-5 rounded-md font-semibold text-white bg-red-600 cursor-pointer transition-colors hover:bg-red-700"
-              >
-                삭제
-              </button>
+          {isOwner && (
+            <div className="flex justify-end items-center gap-1">
+              <IconButton iconName="edit" iconSize={20} onClick={handleEdit} />
+              <IconButton iconName="delete" iconSize={20} onClick={handleDelete} />
             </div>
-            }
-            
-          </div>
+          )}
         </div>
       </div>
-    </div>
+      <MessageInputForm
+        onSubmit={(msg) => {
+          console.log('보낼 메시지:', msg);
+          // 여기서 서버로 전송하거나 상태 업데이트 가능
+        }}
+      />
+    </PostLayout>
   );
 };
 

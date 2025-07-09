@@ -14,6 +14,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { useLocationStore } from "./store/useLocationStore";
+import TextInputForm from "../atoms/input/TextInputForm";
 
 export interface MapLocation {
   place_name: string;
@@ -81,36 +82,36 @@ const LocationSearch = () => {
   };
 
   return (
-    <div className="w-full max-w-md bg-white rounded-[10px] p-2">
+    <div className="w-full">
       <div className="flex gap-2 mb-2">
-        <input
-          type="text"
-          placeholder="장소를 검색하세요"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="flex-1 border border-brand-frame rounded-[10px] px-4 py-2 text-body focus:outline-brand-primary"
-        />
+        <div className="flex-[4]">
+          <TextInputForm
+            type="text"
+            placeholder="장소를 검색하세요"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
         <button
           type="button"
           onClick={handleSearch}
-          className="bg-brand-blue text-white text-button px-4 py-2 rounded-[10px] hover:bg-blue-600 transition"
+          className="inline-block bg-brand-primary text-white text-caption rounded-md hover:opacity-70 transition px-4 py-3"
         >
           검색
         </button>
       </div>
-      <ul className="space-y-2">
+      <ul className="space-y-2 max-h-[200px] overflow-y-auto">
         {results.map((place, idx) => (
           <li
             key={idx}
-            className={`p-3 border border-brand-frame rounded-[10px] cursor-pointer text-body hover:bg-brand-frame hover:text-brand-text-primary transition ${
-              selectedIdx === idx ? "bg-brand-blue text-white" : "bg-white"
-            }`}
+            className={`p-3 max-h-[80px] border border-gray-200 bg-brand-inverse rounded-[10px] cursor-pointer transition
+              ${selectedIdx === idx ? "bg-brand-blue" : "hover:bg-gray-100 hover:border-[#8E4DF6]" }`}
             onClick={() => {
               handleSelect(place);
               setSelectedIdx(idx);
             }}
           >
-            <strong className="text-subheadline">{place.place_name}</strong>
+            <strong className="text-[16px]">{place.place_name}</strong>
             <br />
             <span className="text-caption text-brand-gray">
               {place.road_address_name || place.address_name}

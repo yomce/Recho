@@ -12,25 +12,7 @@ export class AwsConfigService {
   private logger = new Logger(AwsConfigService.name);
 
   constructor() {
-    // 환경 변수 유효성 검사 추가 (필수)
-    if (!process.env.AWS_REGION) {
-      throw new Error('AWS_REGION environment variable is not set.');
-    }
-    if (!process.env.AWS_ENV_KEY) {
-      throw new Error('AWS_ACCESS_KEY_ID environment variable is not set.');
-    }
-    if (!process.env.AWS_ENV_SECRET_KEY) {
-      throw new Error('AWS_SECRET_ACCESS_KEY environment variable is not set.');
-    }
-
-    const clientConfig: SSMClientConfig = {
-      region: process.env.AWS_REGION,
-      credentials: {
-        accessKeyId: process.env.AWS_ENV_KEY,
-        secretAccessKey: process.env.AWS_ENV_SECRET_KEY,
-      },
-    };
-
+    const clientConfig: SSMClientConfig = { region: process.env.AWS_REGION };
     this.ssmClient = new SSMClient(clientConfig);
   }
 

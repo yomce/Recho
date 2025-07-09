@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, useAnimation, type PanInfo } from "framer-motion";
 import VinylContents from "../../components/organisms/vinyl/VinylContents";
-import Navigation from "../../components/layout/Navigation";
 import { getVideos } from "../../api";
 import type { Video } from "../../types/video";
 import Loading from "@/components/loading/Loading";
 import Modal from "@/components/molecules/modal/Modal";
 import PrimaryButton from "@/components/atoms/button/PrimaryButton";
 import SecondaryButton from "@/components/atoms/button/SecondaryButton";
+import Navigation from "@/components/layout/Navigation";
 
 const SWIPE_VELOCITY_THRESHOLD = 500;
 const DRAG_THRESHOLD = 100;
@@ -234,7 +234,7 @@ const VinylPage: React.FC = () => {
         </motion.div>
       </div>
       <Navigation />
-
+      
       <Modal isOpen={isModalOpen} onClose={closeModal} title="VINYL 합주하기">
         <div className="flex flex-col gap-3 mt-4">
           <p className="text-body text-brand-text-secondary mb-2">

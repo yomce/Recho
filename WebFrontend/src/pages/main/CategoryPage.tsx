@@ -38,7 +38,7 @@ const CategoryPage: React.FC = () => {
                 <QuickAction 
                     icon={<Icon name="vinyl" size={28} className="text-gray-600 transition-colors group-hover:text-brand-primary" />} 
                     label="바이닐" 
-                    onClick={() => navigate('/vinyls')} 
+                    onClick={() => navigate('/vinyl')} 
                 />
                 <QuickAction 
                     icon={<Icon name="store" size={28} className="text-gray-600 transition-colors group-hover:text-brand-primary" />} 

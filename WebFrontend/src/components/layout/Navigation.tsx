@@ -1,10 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useUiStore } from "@/stores/uiStore";
+import { toast } from "react-hot-toast";
 
 const Navigation: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+  const openVinylCreateModal = useUiStore((state) => state.actions.openVinylCreateModal);
 
   const navItems = [
     { path: "/main", label: "홈", icon: "🏠" },
@@ -23,6 +26,18 @@ const Navigation: React.FC = () => {
   const shouldHideNavigation = () => {
     const hidePaths = ["/login", "/register"];
     return hidePaths.includes(location.pathname);
+  };
+
+  const handleCreateVideo = () => {
+    const accessToken = localStorage.getItem("accessToken");
+    if (window.ReactNativeWebView) {
+      window.ReactNativeWebView.postMessage(
+        JSON.stringify({ type: "CREATE_VIDEO", token: accessToken })
+      );
+    } else {
+      toast.error("비디오 생성은 앱에서만 가능합니다.");
+    }
+    setIsOpen(false); // 메뉴 닫기
   };
 
   // 로그인/회원가입 페이지에서는 네비게이션을 렌더링하지 않음
@@ -91,6 +106,25 @@ const Navigation: React.FC = () => {
             title="뒤로가기"
           >
             {"⬅️"}
+          </button>
+          <button
+            key="create-video-rn"
+            onClick={handleCreateVideo}
+            style={{ width: "50px", height: "50px", borderRadius: "50%", border: "none", backgroundColor: "#ff9800", color: "white", cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,0.1)" }}
+            title="RN 컴포넌트 테스트"
+          >
+            RN
+          </button>
+          <button
+            key="create-video-modal"
+            onClick={() => {
+              openVinylCreateModal();
+              setIsOpen(false);
+            }}
+            style={{ width: "50px", height: "50px", borderRadius: "50%", border: "none", backgroundColor: "#9c27b0", color: "white", cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,0.1)" }}
+            title="진짜 비디오 생성 테스트"
+          >
+            📹
           </button>
           {navItems.map((item) => (
             <button

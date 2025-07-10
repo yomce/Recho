@@ -4,9 +4,6 @@ import axiosInstance from '@/services/axiosInstance';
 import { useLocationStore } from '@/components/map/store/useLocationStore';
 import LocationSearch from '@/components/map/LocationSearch';
 
-// 공통 입력 필드 스타일
-const inputStyles = "w-full py-3 px-4 text-base border border-gray-400 rounded-md box-border transition-all duration-200 text-gray-800 bg-gray-50 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/50";
-
 interface LocationSelectorProps {
   locationId?: string;
 }
@@ -25,6 +22,7 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({ locationId }) => {
     }
   }, [pathname, resetLocation]);
 
+  // -- 수정 페이지에서 locationId로 주소 정보 요청 (전역 상태가 없을 경우만) -- 
   useEffect(() => {
     const fetchLocation = async () => {
       if (locationId && !location) {
@@ -46,16 +44,18 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({ locationId }) => {
 
   if (effectiveAddress && !showSearch) {
     return (
-      <div className={inputStyles}>
-        <div>
-          <strong>선택된 지역:</strong> {effectiveAddress}
+      <div className="w-full flex flex-row items-center gap-2">
+        <div className="border border-gray-300 rounded-md bg-white flex-1 shrink-0 flex-row justify-center py-3 px-4">
+          <span className="text-caption">
+            {effectiveAddress}
+          </span>
         </div>
         <button
-          className="mt-2 px-4 py-2 bg-brand-blue text-white rounded"
           onClick={() => {
             resetLocation();
             setShowSearch(true);
           }}
+          className="inline-block bg-brand-primary text-white text-caption-bold rounded-md hover:opacity-70 transition py-3 px-4"
         >
           다른 장소 선택
         </button>

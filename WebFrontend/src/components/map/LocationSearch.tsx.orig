@@ -12,8 +12,11 @@
 
 import { useState } from "react";
 import { useLocationStore } from "./store/useLocationStore";
-import TextInputForm from "../atoms/input/TextInputForm";
+<<<<<<< HEAD
 import axiosInstance from '@/services/axiosInstance';
+=======
+import TextInputForm from "../atoms/input/TextInputForm";
+>>>>>>> 83539d4d518a90ece57e918a979e0e71f3ae307d
 
 export interface MapLocation {
   place_name: string;

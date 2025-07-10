@@ -12,25 +12,9 @@ export class AwsConfigService {
   private logger = new Logger(AwsConfigService.name);
 
   constructor() {
-    // 환경 변수 유효성 검사 추가 (필수)
-    if (!process.env.AWS_REGION) {
-      throw new Error('AWS_REGION environment variable is not set.');
-    }
-    if (!process.env.AWS_ENV_KEY) {
-      throw new Error('AWS_ACCESS_KEY_ID environment variable is not set.');
-    }
-    if (!process.env.AWS_ENV_SECRET_KEY) {
-      throw new Error('AWS_SECRET_ACCESS_KEY environment variable is not set.');
-    }
-
     const clientConfig: SSMClientConfig = {
-      region: process.env.AWS_REGION,
-      credentials: {
-        accessKeyId: process.env.AWS_ENV_KEY,
-        secretAccessKey: process.env.AWS_ENV_SECRET_KEY,
-      },
+      region: process.env.AWS_REGION || 'ap-northeast-2',
     };
-
     this.ssmClient = new SSMClient(clientConfig);
   }
 
@@ -110,17 +94,16 @@ export class AwsConfigService {
         if (process.env[key] && process.env[key] !== '') {
           // AWS에서 가져온 값을 로컬 .env 값으로 덮어씁니다.
           this.config[key] = process.env[key];
-          console.log(
-            `[Config Override] Key '${key}' was overridden by local .env value.`,
-          );
         }
       }
     }
 
     if (process.env.APP_ENV === 'LOCAL') {
       this.config['IP'] = process.env.ENV_LOCALHOST || 'localhost';
+      this.config['DB_HOST'] = this.config['IP'];
     } else if (process.env.APP_ENV === 'LOCAL_IP') {
       this.config['IP'] = process.env.ENV_LOCAL_IP || 'localhost';
+      this.config['DB_HOST'] = this.config['IP'];
     } else {
       this.config['IP'] = this.config['DEV_IP'];
     }

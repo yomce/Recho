@@ -123,6 +123,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandles, Props>(
             source={{ uri: source.uri }} // 비디오 URI 소스
             resizeMode="cover" // 비디오 크기 조정 모드
             paused={isPaused} // 재생/일시정지 상태
+            progressUpdateInterval={50} // [추가] 50ms마다 진행상황 업데이트
             onLoad={data => {
               onLoad(data); // 원래의 onLoad 함수 호출
               // 비디오가 로드된 직후에 시작 시간으로 시크(seek)합니다.

@@ -38,9 +38,8 @@ const VinylPage: React.FC = () => {
     const fetchVideos = async () => {
       // 5초 후 강제로 로딩을 종료하는 타임아웃 설정
       loadingTimeoutRef.current = setTimeout(() => {
-        console.warn("로딩 타임아웃. UI를 강제로 업데이트합니다.");
         setIsLoading(false);
-      }, 5000);
+      }, 7000);
 
       try {
         const videoData = await getVideos(1, 10);
@@ -170,17 +169,8 @@ const VinylPage: React.FC = () => {
 
   const getRotationAngle = (index: number) => {
     const distance = index - currentIndex;
-    if (distance === 0) return 0;
-    if (Math.abs(distance) === 1) return distance * 45;
-    return distance * 0;
+    return distance * 30;
   };
-
-  const RENDER_BUFFER = 2;
-  const renderWindowStart = Math.max(0, currentIndex - RENDER_BUFFER);
-  const renderWindowEnd = Math.min(
-    videos.length,
-    currentIndex + RENDER_BUFFER + 1
-  );
 
   if (isLoading) {
     return <Loading />;
@@ -203,38 +193,33 @@ const VinylPage: React.FC = () => {
           animate={controls}
           style={{ display: "flex", cursor: "grab" }}
         >
-          {videos
-            .slice(renderWindowStart, renderWindowEnd)
-            .map((video, index) => {
-              const actualIndex = renderWindowStart + index;
-              return (
-                <div
-                  key={actualIndex}
-                  style={{
-                    flex: "0 0 100%",
-                    minWidth: "100%",
-                  }}
-                >
-                  <VinylContents
-                    likes={video.like_count}
-                    comments={video.comment_count}
-                    videoInfo={video.id}
-                    videoSrc={video.video_url}
-                    isVisible={isCurrentlyVisible(actualIndex)}
-                    rotationAngle={getRotationAngle(actualIndex)}
-                    depth={video.depth}
-                    onStartEnsemble={() => openModal(video.id)}
-                    onVideoReady={
-                      actualIndex === 0 ? handleFirstVideoReady : undefined
-                    }
-                  />
-                </div>
-              );
-            })}
+          {videos.map((video, index) => {
+            return (
+              <div
+                key={index}
+                style={{
+                  flex: "0 0 100%",
+                  minWidth: "100%",
+                }}
+              >
+                <VinylContents
+                  likes={video.like_count}
+                  comments={video.comment_count}
+                  videoInfo={video.id}
+                  videoSrc={video.video_url}
+                  isVisible={isCurrentlyVisible(index)}
+                  rotationAngle={getRotationAngle(index)}
+                  depth={video.depth}
+                  onStartEnsemble={() => openModal(video.id)}
+                  onVideoReady={index === 0 ? handleFirstVideoReady : undefined}
+                />
+              </div>
+            );
+          })}
         </motion.div>
       </div>
       <Navigation />
-      
+
       <Modal isOpen={isModalOpen} onClose={closeModal} title="VINYL 합주하기">
         <div className="flex flex-col gap-3 mt-4">
           <p className="text-body text-brand-text-secondary mb-2">

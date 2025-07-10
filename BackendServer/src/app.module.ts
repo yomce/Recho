@@ -21,6 +21,10 @@ import { LocationModule } from './map/location.module';
 import { ApplicationModule } from './application/application.module';
 import { ViewCountModule } from './hooks/view_count/view-count.module';
 import loadConfig from './config/env.config';
+import { ConfigController } from './config/config.controller';
+
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Module({
   imports: [
@@ -39,7 +43,7 @@ import loadConfig from './config/env.config';
       inject: [ConfigService],
       useFactory: (cs: ConfigService) => ({
         type: 'postgres',
-        host: cs.get<string>('IP'),
+        host: cs.get<string>('DB_HOST'),
         port: cs.get<number>('DB_PORT'),
         username: cs.get<string>('DB_USERNAME'),
         password: cs.get<string>('DB_PASSWORD'),
@@ -49,6 +53,13 @@ import loadConfig from './config/env.config';
         logging: true,
         dropSchema: false,
         timezone: 'UTC',
+        ssl: cs.get('APP_ENV') === 'DEV' && {
+          rejectUnauthorized: true,
+          ca: fs
+            .readFileSync(
+              path.join(__dirname, '../certs/ap-northeast-2-bundle.pem'),
+            )
+        },
       }),
     }),
 
@@ -84,7 +95,7 @@ import loadConfig from './config/env.config';
     ApplicationModule,
     ViewCountModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, ConfigController],
   providers: [AppService],
 })
 export class AppModule {}

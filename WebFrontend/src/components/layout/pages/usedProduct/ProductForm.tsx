@@ -9,6 +9,7 @@ import CategorySelector from '@/components/atoms/input/CategorySelector';
 import TextInputForm from '@/components/atoms/input/TextInputForm';
 import TextAreaInput from '@/components/atoms/input/TextAreaInput';
 import PrimaryButton from '@/components/atoms/button/PrimaryButton';
+import ImageUploadPreview from '@/components/atoms/input/ImageUploadPreveiw';
 
 
 const productCategories = [
@@ -49,8 +50,18 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   return (
     <form onSubmit={onFormSubmit}>
       <div className="mb-6">
+        <ImageUploadPreview />
+      </div>
+      <div className="mb-6">
         <InputLabel htmlFor="title">상품명</InputLabel>
-        <TextInputForm type="text" id="title" name="title" value={formState.title} onChange={onFormChange} required />
+        <TextInputForm 
+          type="text" 
+          id="title" 
+          name="title" 
+          value={formState.title} 
+          onChange={onFormChange} 
+          required 
+        />
       </div>
 
       <div className="mb-6">

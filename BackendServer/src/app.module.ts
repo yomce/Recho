@@ -53,7 +53,7 @@ import * as path from 'path';
         logging: true,
         dropSchema: false,
         timezone: 'UTC',
-        ssl: cs.get('APP_EVN') === 'DEV' && {
+        ssl: cs.get('APP_ENV') === 'DEV' && {
           rejectUnauthorized: true,
           ca: fs
             .readFileSync(path.join(__dirname, '../ap-northeast-2-bundle.pem'))

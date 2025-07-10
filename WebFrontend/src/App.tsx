@@ -1,13 +1,20 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import AppRouter from "./routes/AppRouter";
 import "./App.css";
 import "./index.css";
 import { useAuthStore } from "./stores/authStore";
 import { Toaster } from "react-hot-toast";
 import { useChatStore } from "./stores/chatStore";
+import { useConfigStore } from './stores/useConfigStore';
 
 function App() {
+  const fetchConfig = useConfigStore((state) => state.fetchConfig);
   const setToken = useAuthStore((state) => state.setToken);
+
+  // 환경변수 설정
+  useEffect(() => {
+    fetchConfig();
+  }, [fetchConfig]);
 
   // 1. React Native 등 외부로부터 토큰을 받기 위한 useEffect (유지)
   useEffect(() => {

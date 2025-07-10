@@ -72,13 +72,12 @@ console.log();
           logging: true,
           dropSchema: false,
           timezone: 'UTC',
-          ssl: false,
-        //   cs.get('APP_ENV') === 'DEV' && {
-        //     rejectUnauthorized: true,
-        //     ca: fs
-        //       .readFileSync(path.join(__dirname, './ap-northeast-2-bundle.pem'))
-        //       .toString(),
-        // },
+          ssl: cs.get('APP_ENV') === 'DEV' && {
+            rejectUnauthorized: true,
+            ca: fs
+              .readFileSync(path.join(__dirname, './ap-northeast-2-bundle.pem'))
+              .toString(),
+          },
       }},
     }),
 

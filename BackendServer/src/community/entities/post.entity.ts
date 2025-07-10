@@ -5,7 +5,12 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany, // ⭐️ OneToMany 임포트
+
 } from 'typeorm';
+import { Comment } from './comment.entity';
+
+
 
 @Entity('posts') // 데이터베이스 테이블 이름을 'posts'로 지정
 export class Post {
@@ -34,11 +39,14 @@ export class Post {
   likes: number;
 
   @Column({ type: 'int', default: 0 })
-  comments: number;
+  commentCount: number; 
 
   @CreateDateColumn()
   createdAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @OneToMany(() => Comment, (comment) => comment.post) // ⭐️ 1:N 관계 추가
+  comments: Comment[];
 }

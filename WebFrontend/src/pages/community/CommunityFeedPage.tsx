@@ -13,7 +13,7 @@ export interface Post {
   content: string;
   thumbnailUrl?: string;
   likes: number;
-  comments: number;
+  commentCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -125,7 +125,7 @@ const CommunityFeedPage: React.FC = () => {
               </div>
               <div className="post-footer">
                 <span>❤️ 좋아요 {post.likes}</span>
-                <span>💬 댓글 {post.comments}</span>
+                <span>💬 댓글 {post.commentCount}</span>
               </div>
             </article>
           ))

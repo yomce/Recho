@@ -5,15 +5,25 @@ import {
   Get,
   Param,
   NotFoundException,
+  Query,
 } from '@nestjs/common';
 import { LocationService } from './location.service';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { Location } from './entities/location.entity';
-import { Not } from 'typeorm';
 
-@Controller('/api/locations')
+@Controller('locations')
 export class LocationController {
   constructor(private readonly locationService: LocationService) {}
+
+  @Get('search')
+  search(@Query('query') query: string) {
+    return this.locationService.searchByKeyword(query);
+  }
+
+  @Get('reverse-geocode')
+  reverseGeocode(@Query('x') x: string, @Query('y') y: string) {
+    return this.locationService.reverseGeocode(x, y);
+  }
 
   @Post()
   async create(

@@ -1,3 +1,4 @@
+import { useConfigStore } from '@/stores/useConfigStore';
 import { useEffect, useRef } from "react";
 
 declare global {
@@ -15,6 +16,7 @@ interface KakaoMapApiProps {
 
 const KakaoMapApi = ({ lng, lat, className, style }: KakaoMapApiProps) => {
   const mapRef = useRef<HTMLDivElement | null>(null);
+  const kakaoMapAppKey = useConfigStore((state) => state.config?.kakaoMapAppKey);
 
   useEffect(() => {
     const renderMap = () => {
@@ -41,7 +43,7 @@ const KakaoMapApi = ({ lng, lat, className, style }: KakaoMapApiProps) => {
       return;
     }
     const script = document.createElement("script");
-    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${import.meta.env.VITE_KAKAO_MAP_APP_KEY}&autoload=false`;
+    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoMapAppKey}&autoload=false`;
     script.async = true;
     script.onload = () => window.kakao.maps.load(renderMap);
     document.head.appendChild(script);

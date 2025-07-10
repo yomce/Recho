@@ -27,7 +27,7 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({ locationId }) => {
     const fetchLocation = async () => {
       if (locationId && !location) {
         try {
-          const response = await axiosInstance.get(`/api/locations/${locationId}`);
+          const response = await axiosInstance.get(`locations/${locationId}`);
           setAddressName(response.data.address);
         } catch (err) {
           console.error('지역 정보 조회 실패:', err);

@@ -169,17 +169,8 @@ const VinylPage: React.FC = () => {
 
   const getRotationAngle = (index: number) => {
     const distance = index - currentIndex;
-    // 거리에 비례하여 30도씩 부드럽게 회전하도록 수정
     return distance * 30;
   };
-
-  const RENDER_BUFFER = 2;
-  const renderWindowStart = Math.max(0, currentIndex - RENDER_BUFFER);
-  // `slice` 대신 인덱스 비교를 위해 마지막 인덱스를 정확히 계산
-  const renderWindowEnd = Math.min(
-    videos.length - 1,
-    currentIndex + RENDER_BUFFER
-  );
 
   if (isLoading) {
     return <Loading />;
@@ -203,17 +194,12 @@ const VinylPage: React.FC = () => {
           style={{ display: "flex", cursor: "grab" }}
         >
           {videos.map((video, index) => {
-            // 렌더링 창 내에 있는지 확인
-            const isWithinRenderWindow =
-              index >= renderWindowStart && index <= renderWindowEnd;
             return (
               <div
                 key={index}
                 style={{
                   flex: "0 0 100%",
                   minWidth: "100%",
-                  // 컴포넌트를 DOM에서 제거하는 대신 보이지 않게 처리
-                  display: isWithinRenderWindow ? "block" : "none",
                 }}
               >
                 <VinylContents

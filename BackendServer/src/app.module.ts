@@ -26,8 +26,6 @@ import { ConfigController } from './config/config.controller';
 import * as fs from 'fs';
 import * as path from 'path';
 
-console.log();
-
 @Module({
   imports: [
     // ⭐️ 핵심: ConfigModule이 loadConfig를 실행하고 완료될 때까지 기다립니다.
@@ -61,7 +59,6 @@ console.log();
             .readFileSync(
               path.join(__dirname, '../certs/ap-northeast-2-bundle.pem'),
             )
-            .toString(),
         },
       }),
     }),

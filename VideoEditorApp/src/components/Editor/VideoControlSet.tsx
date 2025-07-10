@@ -45,7 +45,6 @@ interface VideoControlSetProps {
 }
 
 const VideoControlSet: React.FC<VideoControlSetProps> = ({
-  title,
   videoDuration,
   initialStartTime,
   initialEndTime,
@@ -80,7 +79,7 @@ const VideoControlSet: React.FC<VideoControlSetProps> = ({
   return (
     <GestureHandlerRootView>
       <ControlsContainer>
-        <SectionTitle>{title}</SectionTitle>
+        {/* <SectionTitle>{title}</SectionTitle> */}
         <ControlsSection>
           <RangeControl
             startTime={initialStartTime}

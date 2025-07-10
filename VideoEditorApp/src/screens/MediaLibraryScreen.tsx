@@ -47,7 +47,7 @@ const ButtonContainer = styled.View`
 
 // CommonButton을 확장하여 PickButton 정의
 const PickButton = styled(CommonButton)`
-  background-color: #3498db; /* 단일 파일 선택 버튼 색상 */
+  background-color: #333333; /* 단일 파일 선택 버튼 색상 */
 `;
 
 // CommonButton을 확장하여 PickMultipleButton 정의

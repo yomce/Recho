@@ -7,9 +7,18 @@ const apiClient = axios.create({
   baseURL: API_URL,
 });
 
-/** 모든 게시물을 불러옵니다. */
-export const fetchPosts = async (): Promise<Post[]> => {
-  const response = await apiClient.get('/posts');
+
+
+/** * 게시물을 불러옵니다. 카테고리 필터링을 지원합니다.
+ * @param category - 조회할 카테고리. '전체' 또는 특정 카테고리 이름.
+ */
+export const fetchPosts = async (category: string): Promise<Post[]> => {
+  // ⭐️ API 요청 시 params 옵션으로 쿼리 파라미터를 전달합니다.
+  const response = await apiClient.get('/api/posts', {
+    params: {
+      category: category,
+    },
+  });
   return response.data;
 };
 

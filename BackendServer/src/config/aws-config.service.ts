@@ -12,7 +12,9 @@ export class AwsConfigService {
   private logger = new Logger(AwsConfigService.name);
 
   constructor() {
-    const clientConfig: SSMClientConfig = { region: process.env.AWS_REGION };
+    const clientConfig: SSMClientConfig = {
+      region: process.env.AWS_REGION || 'ap-northeast-2',
+    };
     this.ssmClient = new SSMClient(clientConfig);
   }
 

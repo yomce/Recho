@@ -5,6 +5,13 @@ import {
   type PracticeRoom,
   type PaginatedPracticeRoomResponse,
 } from "@/types/practiceRoom";
+import PostLayout from "@/components/layout/PostLayout";
+import FloatingWriteButton from "@/components/atoms/button/FloatingWriteButton";
+import ImageCard from "@/components/atoms/card/ImageCard";
+import Icon from '@/components/atoms/icon/Icon'
+import SecondaryButton from "@/components/atoms/button/SecondaryButton";
+import PostCard from "@/components/atoms/card/PostCard";
+import SwiperTabs from "@/components/organisms/PostNavigationTabs";
 
 interface Cursor {
   lastProductId: number;
@@ -19,6 +26,10 @@ const PracticeRoomPage: React.FC = () => {
   // --- 커서 기반 페이지네이션 상태 관리 ---
   const [nextCursor, setNextCursor] = useState<Cursor | null>(null);
   const [hasNextPage, setHasNextPage] = useState(true);
+
+  // --- 탭 전환 ---
+  const tabs = ['추천공간', '즐겨찾기', '검색결과'];
+  // const tabContents: PracticeRoom[][] = [recommendations, bookmark, searchResults];
 
   // 데이터를 불러오는 함수
   const fetchItems = useCallback(
@@ -82,78 +93,67 @@ const PracticeRoomPage: React.FC = () => {
   };
 
   return (
-    <div className="app-container">
-      <div className="centered-card-container">
-        <div className="w-full max-w-6xl mx-auto px-4 py-8">
-          <div className="flex-row items-center justify-between mb-8">
-            <h2 className="text-title">합주실 목록</h2>
-            <Link to="/practice-room/create" className="button-brand-primary">
-              합주실 등록하기
-            </Link>
+    <PostLayout>
+      <div className="relative">
+        <ImageCard 
+          src="https://placehold.co/390x314/F4EDFE/ffffff?text=.."
+          width={430}
+          className="rounded-b-[20px] border-1 border-white"
+        />
+        {/* Text Overlay */}
+        <div className="absolute inset-0 w-full p-4 ml-4 flex flex-col gap-2 items-start justify-center">
+          <div className="flex flex-row gap-2 items-center">
+            <Icon name="mapPin" size={24} className="text-brand-gray"/>
+            <span className="text-caption-bold text-brand-gray">4km</span>
           </div>
-          {error && (
-            <div className="button-brand-gray mb-4">
-              <p className="text-brand-error-text">{error}</p>
-            </div>
-          )}
-
-          {post.length > 0 ? (
-            <div className="item-list">
-              {post.map((post) => (
-                <div key={`${post.postId}-${post.createdAt}`} className="flex">
-                  <a
-                    href={`/practice-room/${post.postId}`}
-                    className="item-card w-full"
-                  >
-                    <div className="item-image-container">
-                      <img
-                        src={post.imageUrl || "https://placehold.co/600x400"}
-                        alt={post.title}
-                      />
-                    </div>
-                    <div className="item-info flex flex-col gap-2">
-                      <h3 className="text-subheadline mb-1 truncate">
-                        {post.title}
-                      </h3>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="date text-footnote text-brand-text-disabled ml-auto">
-                          {new Date(post.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <div className="location text-caption text-brand-gray mb-2">
-                        {post.location?.address}
-                        {post.location?.regionLevel1}{" "}
-                        {post.location?.regionLevel2}
-                      </div>
-                    </div>
-                  </a>
-                </div>
-              ))}
-            </div>
-          ) : (
-            !loading && (
-              <div className="message-container">
-                <p>등록된 연습실이 없습니다.</p>
-              </div>
-            )
-          )}
-
-          {loading && (
-            <div className="message-container">
-              <div className="spinner"></div>
-            </div>
-          )}
-
-          {!loading && hasNextPage && (
-            <div className="load-more-container">
-              <button className="load-more-button" onClick={handleLoadMore}>
-                더보기
-              </button>
-            </div>
-          )}
+          <h2 className="text-headline text-brand-gray mb-1">정글합주실 용인 동백점</h2>
+          <SecondaryButton
+          style={{ backgroundColor: "#aaaaaa" }}
+          >
+            바로 이용하기
+          </SecondaryButton>
         </div>
       </div>
-    </div>
+      <div className="grid grid-cols-1 p-4 mb-[52px]">
+        {error && (
+          <div className="button-brand-gray mb-4">
+            <p className="text-brand-error-text">{error}</p>
+          </div>
+        )}
+        {/* SwiperTabs 내부에서 게시글을 렌더링합니다 */}
+        <SwiperTabs
+        tabs={tabs}
+        contents={[post, [], []]}
+        loading={loading}
+        renderItem={(item) => (
+          <PostCard
+            key={item.postId}
+            id={item.postId}
+            title={item.title}
+            address={item.location?.place_name || "주소 미제공"}
+            textWrapperClassName="flex flex-col items-start justify-center w-full h-full gap-2 pl-16"
+            imagePosition="left"
+            imageWrapperClassName="min-w-[170px] rounded-l-[10px]"
+            containerClassName="py-1 mt-2"
+          />
+        )}
+        />
+        {loading && (
+          <div className="message-container">
+            <div className="spinner"></div>
+          </div>
+        )}
+
+        {!loading && hasNextPage && (
+          <div className="load-more-container">
+            <button className="load-more-button" onClick={handleLoadMore}>
+              더보기
+            </button>
+          </div>
+        )}
+      </div>
+      <FloatingWriteButton />
+    </PostLayout>
   );
 };
 

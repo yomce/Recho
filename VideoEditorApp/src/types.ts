@@ -101,6 +101,11 @@ export interface Video {
   thumbnail_url: string;
 }
 
+export interface PlaybackState {
+  currentTime: number;
+  isPaused: boolean;
+}
+
 // --- 유틸리티 함수 (여기서 직접 정의하거나 별도 파일로 분리 가능) ---
 
 // 주파수 포매팅 함수 (예: 60 -> "60Hz", 1000 -> "1kHz")
@@ -111,9 +116,10 @@ export const formatFrequency = (freq: number): string => {
 
 // 시간 포매팅 함수 (초를 "MM:SS.S" 형식으로)
 export const formatTime = (seconds: number): string => {
-  const minutes = Math.floor(seconds / 60);
+  const floorSeconds = Math.floor(seconds);
+  const min = Math.floor(floorSeconds / 60);
   const remainingSeconds = seconds % 60;
-  return `${minutes.toFixed(0).padStart(2, '0')}:${remainingSeconds
+  return `${min.toFixed(0).padStart(2, '0')}:${remainingSeconds
     .toFixed(1)
     .padStart(4, '0')}`;
 };

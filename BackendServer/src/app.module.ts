@@ -56,7 +56,7 @@ import * as path from 'path';
         ssl: cs.get('APP_ENV') === 'DEV' && {
           rejectUnauthorized: true,
           ca: fs
-            .readFileSync(path.join(__dirname, '../ap-northeast-2-bundle.pem'))
+            .readFileSync(path.join(__dirname, './ap-northeast-2-bundle.pem'))
             .toString(),
         },
       }),

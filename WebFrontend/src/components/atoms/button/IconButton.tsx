@@ -18,7 +18,7 @@ const IconButton: React.FC<IconButtonProps> = ({
     <button
       {...props}
       // 기본 스타일과 외부에서 받은 스타일을 함께 적용
-      className={`p-2 text-brand-gray transition-colors hover:text-brand-primary disabled:opacity-50 ${className || ''}`}
+      className={`p-2 text-brand-gray transition-colors hover:text-brand-primary active:text-brand-primary disabled:opacity-50 ${className || ''}`}
     >
       <Icon name={iconName} size={iconSize} />
     </button>

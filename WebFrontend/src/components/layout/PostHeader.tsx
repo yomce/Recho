@@ -34,7 +34,7 @@ const PostHeader: React.FC<HeaderProps> = ({
 
   return (
     <header
-      className="fixed top-0 left-1/2 z-10 h-14 w-full max-w-[430px] -translate-x-1/2 
+      className="fixed top-0 left-1/2 z-50 h-14 w-full max-w-[430px] -translate-x-1/2 
              flex items-center justify-between bg-brand-default px-4"
     >
       {/* 왼쪽 아이콘 */}

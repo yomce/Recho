@@ -8,12 +8,13 @@ import { useAuthStore } from '@/stores/authStore';
 import axiosInstance from '@/services/axiosInstance';
 import useViewCounter from '@/hooks/useViewCounter';
 import PostLayout from '@/components/layout/PostLayout';
-import ImageCard from '@/components/atoms/card/ImageCard';
 import UserProfileCard from '@/components/atoms/card/UserProfileCard';
 import ProductInfoCard from '@/components/atoms/card/ProductInfoCard';
 import MapPreviewCard from '@/components/atoms/card/MapViewCard';
 import MessageInputForm from '@/components/atoms/input/MessageInput';
 import IconButton from '@/components/atoms/button/IconButton';
+import SwiperImageCard from '@/components/atoms/card/SwipeImageCard';
+import { ToastMenu } from '@/components/atoms/button/ToastMenu';
 
 // Enum 값에 따른 한글 텍스트 매핑
 const STATUS_TEXT = {
@@ -144,13 +145,32 @@ const UsedProductDetailPage: React.FC = () => {
       <div className="mx-auto max-w-6xl px-4 mb-8">
         <div className="flex flex-col">
           {/* 이미지 섹션 */}
-          <div className="md:flex-1 md:max-w-md my-8">
-            <ImageCard
-              src={product.imageUrl || 'https://placehold.co/400x300'}
-              alt={product.title}
-              width={600}
-              height={400}
-            />
+          <div className="relative">
+            <SwiperImageCard
+              images={[
+                "https://placehold.co/400x270/EEE/333?text=1",
+                "https://placehold.co/400x270/DDD/333?text=2",
+                "https://placehold.co/400x270/CCC/333?text=3"
+              ]}
+              width={400}
+              height={300}
+              slideClassName="py-4"
+              imgClassName='rounded-[var(--radius-card)]'
+              showPagination={true}
+              />
+            {isOwner && (
+              <div className="absolute top-5 right-2 z-10">
+                <IconButton
+                iconName="moreFill"
+                onClick={() =>
+                  ToastMenu({
+                    onEdit: () => handleEdit?.(),
+                    onDelete: () => handleDelete?.(),
+                  })
+                  }
+                />
+              </div>
+            )}
           </div>
 
           <UserProfileCard
@@ -174,12 +194,6 @@ const UsedProductDetailPage: React.FC = () => {
                 lat={product.location.lat}
                 lng={product.location.lng}
               />
-            )}
-            {isOwner && (
-            <div className="flex justify-end items-center gap-1">
-              <IconButton iconName="edit" iconSize={20} onClick={handleEdit} />
-              <IconButton iconName="delete" iconSize={20} onClick={handleDelete} />
-            </div>
             )}
           </div>
         </div>

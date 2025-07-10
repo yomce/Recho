@@ -100,7 +100,7 @@ const ChatListPage: React.FC = () => {
     navigate(`/chat/${roomId}`);
   };
   const handleGoBack = () => {
-    navigate(-1);
+    navigate('/main');
   };
 
   if (loading) return <div style={styles.container}><h2>채팅방 정보를 불러오고 있습니다...</h2></div>;

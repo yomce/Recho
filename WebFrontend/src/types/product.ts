@@ -14,6 +14,8 @@ export interface Location {
   regionLevel1: string;
   regionLevel2: string;
   address: string;
+  lat: number;
+  lng: number;
 }
 
 /**

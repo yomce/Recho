@@ -7,6 +7,7 @@ import { useAuthStore } from '../../stores/authStore'; // Zustand 스토어 impo
 import axiosInstance from '@/services/axiosInstance';
 import { useLocationStore } from '@/components/map/store/useLocationStore';
 import { saveLocationToDB } from '@/components/map/LocationSaveHandler';
+import PostLayout from '@/components/layout/PostLayout';
 
 const CreateUsedProductPage: React.FC = () => {
   const navigate = useNavigate();
@@ -91,18 +92,19 @@ const CreateUsedProductPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-3xl mx-auto my-8 p-10 bg-white rounded-lg shadow-xl">
-      <h2 className="text-center mt-0 mb-8 text-2xl font-bold text-gray-800">중고 상품 등록</h2>
-      <ProductForm
-        formState={form}
-        onFormChange={handleChange}
-        onFormSubmit={handleSubmit}
-        isLoading={loading}
-        errorMessage={error}
-        submitButtonText="상품 등록하기"
-        loadingButtonText="등록 중..."
-      />
-    </div>
+    <PostLayout>
+      <div className="bg-brand-frame p-4">
+        <ProductForm
+          formState={form}
+          onFormChange={handleChange}
+          onFormSubmit={handleSubmit}
+          isLoading={loading}
+          errorMessage={error}
+          submitButtonText="상품 등록하기"
+          loadingButtonText="등록 중..."
+        />
+      </div>
+    </PostLayout>
   );
 };
 

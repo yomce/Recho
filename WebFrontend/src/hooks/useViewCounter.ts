@@ -8,14 +8,15 @@ export type ViewCountableType = 'practice-room' | 'used-products' | 'ensembles' 
 
 interface useViewCounterOptions {
   type: ViewCountableType;
+  id: string | number;
 }
 
-const useViewCounter = ({ type }: useViewCounterOptions) => {
-  const location = useLocation();
+const useViewCounter = ({ type, id }: useViewCounterOptions) => {
+  // const location = useLocation();
 
   useEffect(() => {
-    const match = location.pathname.match(/\/[^/]+\/(\d+)/);
-    const id = match?.[1];
+    // const match = location.pathname.match(/\/[^/]+\/(\d+)/);
+    // const id = match?.[1];
 
     if(!id) return;
 
@@ -34,7 +35,7 @@ const useViewCounter = ({ type }: useViewCounterOptions) => {
         localStorage.setItem(storageKey, 'true');
       })
       .catch(console.error);
-  }, [location.pathname, type])
+  }, [id, type])
 };
 
 export default useViewCounter;

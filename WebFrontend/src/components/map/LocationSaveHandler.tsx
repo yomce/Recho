@@ -11,7 +11,7 @@ import { type Location } from '@/components/map/store/useLocationStore';
 import axiosInstance from '@/services/axiosInstance';
 
 export const saveLocationToDB = async (location: Location): Promise<number> => {
-  const res = await axiosInstance.post('/api/locations', {
+  const res = await axiosInstance.post('locations', {
     place_name: location.place_name,
     address: location.road_address_name,
     lat: parseFloat(location.x),

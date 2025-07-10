@@ -52,6 +52,7 @@ export class PostsService {
   async findOne(id: number): Promise<Post> {
     const post = await this.postsRepository.findOneBy({ id });
     if (!post) {
+      // 게시물이 없으면 404 에러를 던집니다.
       throw new NotFoundException(`ID가 ${id}인 게시물을 찾을 수 없습니다.`);
     }
     return post;

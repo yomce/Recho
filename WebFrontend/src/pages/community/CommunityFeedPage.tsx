@@ -100,7 +100,11 @@ const CommunityFeedPage: React.FC = () => {
         ) : (
           posts.map((post) => (
             // ⭐️ PostCard 컴포넌트 대신 JSX를 직접 렌더링
-            <article key={post.id} className="post-card">
+            <article 
+            key={post.id} 
+            className="post-card cursor-pointer" // cursor-pointer로 클릭 가능함을 표시
+            onClick={() => navigate(`/community/${post.id}`)}
+            >
               <div className="post-header">
                 <img
                   src={post.authorProfileUrl || 'https://i.pravatar.cc/50'}

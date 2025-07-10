@@ -17,6 +17,7 @@ export class VideosController {
 
   @Get('thumbnails')
   async getThumbnails(@Query('id') id: string) {
+    console.log(id);
     if (!id) {
       throw new NotFoundException('User not found');
     }

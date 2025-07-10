@@ -55,7 +55,7 @@ export class VideosService {
         getSignedUrl(
           this.s3,
           new GetObjectCommand({
-            Bucket: process.env.AWS_S3_BUCKET,
+            Bucket: this.configService.get('AWS_S3_BUCKET'),
             Key: video.thumbnail_key,
           }),
           { expiresIn: 3600 },

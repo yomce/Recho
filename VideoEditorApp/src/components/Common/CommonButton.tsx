@@ -9,13 +9,16 @@ interface Props {
   buttonStyle?: ViewStyle;
   textStyle?: TextStyle;
   children?: React.ReactNode;
+  backgroundColor?: string;
 }
 
 // 텍스트 색상을 상수로 정의합니다.
 const BUTTON_TEXT_COLOR = '#ffffff'; // <-- 이 상수를 추가하세요.
 
-const ButtonContainer = styled.TouchableOpacity<Pick<Props, 'buttonStyle' | 'disabled' | 'isLoading'>>`
-  background-color: #4a90e2; /* 기본 배경 색상 */
+const ButtonContainer = styled.TouchableOpacity<
+  Pick<Props, 'buttonStyle' | 'disabled' | 'isLoading'>
+>`
+  background-color: #000000; /* 기본 배경 색상 */
   padding-vertical: 15px;
   padding-horizontal: 20px;
   border-radius: 10px;
@@ -24,7 +27,7 @@ const ButtonContainer = styled.TouchableOpacity<Pick<Props, 'buttonStyle' | 'dis
   margin-bottom: 10px;
 
   /* 비활성화 또는 로딩 시 투명도 적용 */
-  opacity: ${props => (props.disabled || props.isLoading ? 0.6 : 1)};
+  backgrou: ${props => (props.disabled || props.isLoading ? 0.6 : 1)};
 `;
 
 const ButtonText = styled.Text`
@@ -41,9 +44,11 @@ const CommonButton: React.FC<Props> = ({
   buttonStyle,
   textStyle,
   children,
+  backgroundColor,
 }) => {
   return (
     <ButtonContainer
+      style={{ backgroundColor: backgroundColor }}
       onPress={onPress}
       disabled={disabled || isLoading}
       isLoading={isLoading} // 조건부 스타일링을 위해 isLoading 프롭을 스타일드 컴포넌트에 전달

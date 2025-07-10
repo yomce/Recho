@@ -109,7 +109,7 @@ export const generateCollageFilterComplex = (editData: EditData): string[] => {
   filterComplex.push(
     `color=c=black:s=${OUTPUT_WIDTH}x${OUTPUT_HEIGHT}:d=${shortestDuration}[bg]`,
   );
-  let lastOverlayNode = 'bg'; 
+  let lastOverlayNode = 'bg';
   trimmers.forEach((trimmer, i) => {
     const isLastVideo = i === videoCount - 1;
     let frameW = FRAME_WIDTH;

@@ -7,7 +7,7 @@
 // 참고하여 해결하기
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import styled from 'styled-components/native';
 import {
   SafeAreaView,
@@ -21,6 +21,7 @@ import {
   PanResponder,
   Animated,
   Dimensions,
+  Text,
 } from 'react-native';
 import { CameraRoll } from '@react-native-camera-roll/camera-roll';
 import RNFS from 'react-native-fs';
@@ -32,7 +33,15 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  Play,
+  Pause,
+  Rewind,
+  AlignStartVertical,
+  AlignEndVertical,
+} from 'lucide-react-native';
 
+import Timeline from '../components/Editor/Timeline';
 import VideoPreviewSlot, {
   VideoPreviewSlotHandles,
 } from '../components/Editor/VideoPreviewSlot';
@@ -45,6 +54,7 @@ import {
   MediaItem,
   RootStackParamList,
   Video as ServerVideo,
+  formatTime,
 } from '../types';
 import CommonButton from '../components/Common/CommonButton';
 import SectionHeader from '../components/Common/SectionHeader';
@@ -152,13 +162,15 @@ const ControlsWrapper = styled.View`
 `;
 
 const GlobalActionButton = styled(CommonButton)`
-  background-color: #3498db;
   padding-vertical: 10px;
   padding-horizontal: 12px;
   border-radius: 8px;
   margin-bottom: 0; /* CommonButton의 기본 마진 오버라이드 */
   flex: 1; /* 공간을 균등하게 분배 */
   margin-horizontal: 5px; /* 버튼 간 작은 간격 */
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
 `;
 
 const Dragger = styled.View`
@@ -184,8 +196,9 @@ const ControlsScrollView = styled.ScrollView`
 const GlobalActionsContainer = styled.View`
   flex-direction: row;
   justify-content: space-around;
-  padding: 8px;
   background-color: #000000;
+  max-width: 200px;
+  align-self: center;
   align-items: center; /* 아이콘 정렬을 위해 추가 */
 `;
 
@@ -273,9 +286,53 @@ const VideoEditScreen: React.FC<{
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [previewScale, setPreviewScale] = useState(1);
+  const [isGloballyPlaying, setIsGloballyPlaying] = useState(false);
+  const [globalStartTime, setGlobalStartTime] = useState(0);
+  const [globalEndTime, setGlobalEndTime] = useState(0);
+  const [timelinePosition, setTimelinePosition] = useState(0);
+  const [timelineHeight, setTimelineHeight] = useState(100); // [추가] 타임라인의 동적 높이를 위한 상태
   const previewSlotRefs = useRef<
     Record<string, VideoPreviewSlotHandles | null>
   >({});
+  const [seekTrigger, setSeekTrigger] = useState(0); // [추가] seek useEffect를 수동으로 트리거하기 위한 상태
+
+  // [추가 -> 수정] 타임라인 위치 변경 핸들러 (useCallback으로 최적화)
+  const handleTimelinePositionChange = useCallback((time: number) => {
+    setTimelinePosition(time);
+  }, []);
+
+  // timelinePosition(재생 헤드) 변경에 따라 각 비디오의 재생 위치를 업데이트합니다.
+  useEffect(() => {
+    if (!isGloballyPlaying) {
+      trimmers.forEach(trimmer => {
+        const ref = previewSlotRefs.current[trimmer.id];
+        if (ref && trimmer.sourceVideo) {
+          const clipDuration = trimmer.endTime - trimmer.startTime;
+          const trackStartTime = trimmer.timelinePosition;
+          const trackEndTime = trackStartTime + clipDuration;
+
+          let seekTime;
+
+          if (timelinePosition < trackStartTime) {
+            // 재생 헤드가 클립 시작점보다 앞에 있으면, 클립의 시작 부분으로 이동
+            seekTime = trimmer.startTime;
+          } else if (timelinePosition > trackEndTime) {
+            // 재생 헤드가 클립 끝 지점보다 뒤에 있으면, 클립의 끝 부분으로 이동
+            seekTime = trimmer.endTime;
+          } else {
+            // 재생 헤드가 클립 내에 있으면, 올바른 상대 시간 계산
+            const timeIntoClip = timelinePosition - trackStartTime;
+            seekTime = trimmer.startTime + timeIntoClip;
+          }
+
+          if (ref && isFinite(seekTime)) {
+            ref.seek(seekTime);
+          }
+        }
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timelinePosition, isGloballyPlaying, seekTrigger]); // [수정] seekTrigger 의존성 추가
 
   useEffect(() => {
     const finalVideos = localVideos || [];
@@ -287,11 +344,14 @@ const VideoEditScreen: React.FC<{
       return {
         id,
         sourceVideo: video,
+        duration: 0, // Initially 0, will be updated on load
         startTime: 0,
-        endTime: 0,
-        duration: 0,
-        equalizer: JSON.parse(JSON.stringify(defaultEQBands)),
+        endTime: 0, // Initially 0, will be updated on load
+        timelinePosition: 0,
+        isPlaying: false,
+        isMuted: false,
         volume: 1,
+        equalizer: defaultEQBands,
         aspectRatio: 'original',
         originalAspectRatioValue: '1.777',
       };
@@ -307,6 +367,26 @@ const VideoEditScreen: React.FC<{
     });
     setPlaybackStates(initialPlaybackStates);
   }, [localVideos, total_slots]);
+
+  useEffect(() => {
+    if (trimmers.length > 0 && trimmers.every(t => t.duration > 0)) {
+      // timelinePosition을 기준으로 실제 트랙의 시작 시간 계산
+      const trackStartTimes = trimmers.map(t => t.timelinePosition);
+      // timelinePosition과 클립의 실제 길이를 더해 실제 트랙의 종료 시간 계산
+      const trackEndTimes = trimmers.map(
+        t => t.timelinePosition + (t.endTime - t.startTime),
+      );
+
+      const maxStart = Math.max(...trackStartTimes);
+      const minEnd = Math.min(...trackEndTimes);
+
+      setGlobalStartTime(maxStart);
+      setGlobalEndTime(minEnd < maxStart ? maxStart : minEnd);
+    } else {
+      setGlobalStartTime(0);
+      setGlobalEndTime(0);
+    }
+  }, [trimmers]);
 
   const handlePreviewLayout = (event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;
@@ -325,6 +405,7 @@ const VideoEditScreen: React.FC<{
         trimmer.id === id ? { ...trimmer, ...newState } : trimmer,
       ),
     );
+    setSeekTrigger(c => c + 1); // [추가] 비디오 위치 조정을 수동으로 트리거
   };
 
   const handlePlaybackUpdate = (
@@ -346,12 +427,23 @@ const VideoEditScreen: React.FC<{
   };
 
   const handleProgress = (id: string, data: OnProgressData) => {
-    const trimmer = trimmers.find(t => t.id === id);
-    if (trimmer && data.currentTime >= trimmer.endTime) {
-      previewSlotRefs.current[id]?.seek(trimmer.startTime);
-      handlePlaybackUpdate(id, { isPaused: true });
-    } else {
+    // [수정] 전역 재생 중일 때만 상태를 업데이트하여 무한 루프를 방지합니다.
+    if (isGloballyPlaying) {
+      // 특정 비디오의 현재 시간을 항상 업데이트합니다.
       handlePlaybackUpdate(id, { currentTime: data.currentTime });
+
+      // 타임라인 위치를 결정하는 첫 번째 비디오의 진행 정보일 때만 정지 로직을 실행합니다.
+      if (trimmers.length > 0 && id === trimmers[0].id) {
+        // 부동소수점 오차를 고려하여 아주 작은 허용치(epsilon)를 두고 비교합니다.
+        const epsilon = 0.05; // 50ms
+        if (
+          globalEndTime > 0 &&
+          data.currentTime >= globalEndTime - epsilon // endTime 직전에 멈추도록 조건 변경
+        ) {
+          handleGlobalPause(); // 모든 비디오를 일시 정지시킵니다.
+          setIsGloballyPlaying(false); // 재생/일시정지 버튼 상태를 업데이트합니다.
+        }
+      }
     }
   };
 
@@ -383,11 +475,45 @@ const VideoEditScreen: React.FC<{
     trimmers.forEach(t => handlePlaybackUpdate(t.id, { isPaused: true }));
   };
 
+  const handleToggleGlobalPlay = () => {
+    const shouldPlay = !isGloballyPlaying;
+
+    if (shouldPlay) {
+      // [수정] 재생 시작 시, 모든 비디오를 globalStartTime으로 직접 이동시키고 상태를 업데이트합니다.
+      trimmers.forEach(t => {
+        if (previewSlotRefs.current[t.id]) {
+          previewSlotRefs.current[t.id]?.seek(globalStartTime);
+          handlePlaybackUpdate(t.id, {
+            currentTime: globalStartTime,
+            isPaused: false, // 즉시 재생할 것이므로 false
+          });
+        }
+      });
+      // 타임라인 위치도 동기화합니다.
+      setTimelinePosition(globalStartTime);
+    } else {
+      // 정지 시에는 모든 비디오를 단순히 일시정지시킵니다.
+      handleGlobalPause();
+    }
+    // 최종적으로 재생 상태를 업데이트합니다.
+    setIsGloballyPlaying(shouldPlay);
+  };
+
   const handleGlobalSeekToStart = () => {
+    // [수정] 이 함수는 이제 '처음으로' 버튼을 눌렀을 때만 사용되며,
+    // 항상 비디오를 멈추고 globalStartTime으로 이동시킵니다.
     trimmers.forEach(t => {
-      previewSlotRefs.current[t.id]?.seek(t.startTime);
-      handlePlaybackUpdate(t.id, { currentTime: t.startTime, isPaused: true });
+      if (previewSlotRefs.current[t.id]) {
+        previewSlotRefs.current[t.id]?.seek(globalStartTime);
+        handlePlaybackUpdate(t.id, {
+          currentTime: globalStartTime,
+          isPaused: true,
+        });
+      }
     });
+    // 타임라인 위치도 동기화합니다.
+    setTimelinePosition(globalStartTime);
+    setIsGloballyPlaying(false);
   };
 
   const setPreviewSlotRef = (
@@ -905,47 +1031,94 @@ const VideoEditScreen: React.FC<{
 
       <ControlsWrapper>
         <GlobalActionsContainer>
-          <GlobalActionButton onPress={handleGlobalSeekToStart}>
-            <GlobalButtonText>위치 초기화</GlobalButtonText>
+          <GlobalActionButton
+            backgroundColor={'#000000'}
+            onPress={handleGlobalSeekToStart}
+          >
+            <AlignStartVertical color="#ffffff" size={18} />
           </GlobalActionButton>
-          <GlobalActionButton onPress={handleGlobalPlay}>
-            <GlobalButtonText>동시 재생</GlobalButtonText>
-          </GlobalActionButton>
-          <GlobalActionButton onPress={handleGlobalPause}>
-            <GlobalButtonText>동시 정지</GlobalButtonText>
+          {isGloballyPlaying ? (
+            <GlobalActionButton
+              backgroundColor={'#000000'}
+              onPress={handleToggleGlobalPlay}
+            >
+              <Pause color="#ffffff" size={18} />
+            </GlobalActionButton>
+          ) : (
+            <GlobalActionButton
+              backgroundColor={'#000000'}
+              onPress={handleToggleGlobalPlay}
+            >
+              <Play color="#ffffff" size={18} />
+            </GlobalActionButton>
+          )}
+          {/* 나중에 수정 */}
+          <GlobalActionButton
+            backgroundColor={'#000000'}
+            onPress={handleGlobalSeekToStart}
+          >
+            <AlignEndVertical color="#ffffff" size={18} />
           </GlobalActionButton>
         </GlobalActionsContainer>
 
-        <ControlsScrollView showsVerticalScrollIndicator={false}>
-          {trimmers.map((trimmer, index) => (
-            <VideoControlSet
-              key={trimmer.id}
-              title={`비디오 ${index + 1} 컨트롤`}
-              videoDuration={trimmer.duration}
-              initialStartTime={trimmer.startTime}
-              initialEndTime={trimmer.endTime}
-              initialVolume={trimmer.volume}
-              initialEqualizer={trimmer.equalizer}
-              currentTime={playbackStates[trimmer.id]?.currentTime ?? 0}
-              onUpdate={newState => handleTrimmerUpdate(trimmer.id, newState)}
-              onSeek={time => handleSeek(trimmer.id, time)}
+        <Text
+          style={{
+            color: 'white',
+            textAlign: 'center',
+            fontSize: 16,
+            marginVertical: 10,
+          }}
+        >
+          {formatTime(timelinePosition)}
+        </Text>
+
+        <View style={{ flex: 1 }}>
+          {/* [수정] 고정 높이 대신 상태값으로 동적 높이 조절 */}
+          <View style={{ height: timelineHeight, minHeight: 100 }}>
+            <Timeline
+              trimmers={trimmers}
+              globalStartTime={globalStartTime}
+              globalEndTime={globalEndTime}
+              currentTime={
+                playbackStates[trimmers[0]?.id]?.currentTime ?? timelinePosition
+              }
+              onPositionChange={handleTimelinePositionChange}
+              onTrimmerUpdate={handleTrimmerUpdate}
+              onHeightChange={setTimelineHeight} // [추가] 높이 변경 콜백 전달
+              isPlaying={isGloballyPlaying} // [추가]
             />
-          ))}
-          <CreateCollageSection>
-            <CreateCollageButton
-              onPress={processVideoForUpload}
-              disabled={isProcessing || uploading}
-            >
-              <GlobalButtonText>
+          </View>
+
+          <ControlsScrollView showsVerticalScrollIndicator={false}>
+            {trimmers.map((trimmer, index) => (
+              <VideoControlSet
+                key={trimmer.id}
+                title={`비디오 ${index + 1} 컨트롤`}
+                videoDuration={trimmer.duration}
+                initialStartTime={trimmer.startTime}
+                initialEndTime={trimmer.endTime}
+                initialVolume={trimmer.volume}
+                initialEqualizer={trimmer.equalizer}
+                currentTime={playbackStates[trimmer.id]?.currentTime ?? 0}
+                onUpdate={newState => handleTrimmerUpdate(trimmer.id, newState)}
+                onSeek={time => handleSeek(trimmer.id, time)}
+              />
+            ))}
+            <CreateCollageSection>
+              <CreateCollageButton
+                backgroundColor={'#333333'}
+                onPress={processVideoForUpload}
+                disabled={isProcessing || uploading}
+              >
                 {isProcessing
                   ? '콜라주 생성 중...'
                   : uploading
                   ? '업로드 중...'
                   : '콜라주 생성 및 업로드'}
-              </GlobalButtonText>
-            </CreateCollageButton>
-          </CreateCollageSection>
-        </ControlsScrollView>
+              </CreateCollageButton>
+            </CreateCollageSection>
+          </ControlsScrollView>
+        </View>
       </ControlsWrapper>
     </ScreenContainer>
   );

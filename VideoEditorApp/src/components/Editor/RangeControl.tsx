@@ -91,7 +91,7 @@ const MarkerStyle = styled.View`
   height: 20px;
   width: 20px;
   border-radius: 10px;
-  background-color: #3498db;
+  background-color: #000000;
   border-width: 2px;
   border-color: #ecf0f1;
   z-index: 2;

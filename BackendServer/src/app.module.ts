@@ -45,7 +45,7 @@ console.log();
       inject: [ConfigService],
       useFactory: (cs: ConfigService) => {
         // 1. 확인할 파일의 전체 경로를 변수에 저장합니다.
-        const pemFilePath = path.join(__dirname, 'rds-combined-ca-bundle.pem');
+        const pemFilePath = path.join(__dirname, 'ap-northeast-2-bundle.pem');
 
         // 2. fs.existsSync로 파일 존재 여부를 확인하고 콘솔에 출력합니다.
         console.log(`>>>> Checking for certificate file at: ${pemFilePath}`);

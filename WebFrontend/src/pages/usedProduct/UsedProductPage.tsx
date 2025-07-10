@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { type UsedProduct, type PaginatedUsedProductResponse } from '../../types/product';
 import { useAuthStore } from '@/stores/authStore';
 import axiosInstance from '@/services/axiosInstance';
-import UsedProductCard from '@/components/atoms/card/UsedProductCard';
+
 import CategoryList from '@/components/layout/CategoryList';
 import ImageCard from '@/components/atoms/card/ImageCard';
 import FloatingWriteButton from '@/components/atoms/button/FloatingWriteButton';

@@ -32,8 +32,6 @@ const CategoryPage: React.FC = () => {
     };
     return (
         <Layout>
-            <h1>카테고리 목록</h1>
-
             <CategoryIcon>
                 <QuickAction 
                     icon={<Icon name="vinyl" size={28} className="text-gray-600 transition-colors group-hover:text-brand-primary" />} 

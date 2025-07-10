@@ -1,5 +1,6 @@
-// src/components/layout/Header.tsx
+// src/components/layout/MainHeader.tsx
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import IconButton from '../atoms/button/IconButton';
 
 // Header가 받을 props 타입을 정의
@@ -10,27 +11,51 @@ interface HeaderProps {
     onNotificationClick?: () => void;
   }
   
-  const Header: React.FC<HeaderProps> = ({
+  const MainHeader: React.FC<HeaderProps> = ({
     currentPath,
     onCategoryClick,
     onSearchClick,
     onNotificationClick,
   }) => {
-    const isCategoryActive = currentPath === '/category';
+    const navigate = useNavigate();
+    
+    const purePath = currentPath.split('?')[0];
+    const isCategoryPage = purePath === '/category';
+
+    const getTitle = () => {
+      if (isCategoryPage) {
+        return '카테고리';
+      }
+      // 기본 페이지에서는 로고나 다른 제목을 표시할 수 있습니다.
+      // 예: return <img src="/logo.png" alt="Logo" className="h-6" />;
+      return ''; // 기본 헤더는 제목 없음
+    };
     
     return (
-    <header 
-      className="fixed top-0 left-1/2 z-10 h-14 w-full max-w-[430px] -translate-x-1/2 
-                 flex items-center justify-between bg-brand-default px-4"
+    <header
+      className="fixed top-0 left-1/2 z-50 h-14 w-full max-w-[430px] -translate-x-1/2 
+             flex items-center justify-between bg-brand-default px-4"
     >
-      <IconButton
-        iconName="category"
-        iconSize={24}
-        onClick={onCategoryClick}
-        className={isCategoryActive ? '!text-brand-primary' : ''}
-      />
+      {/* 왼쪽 아이콘: 카테고리 페이지에서는 '뒤로가기' 버튼 표시 */}
+      <div className="flex-shrink-0" style={{ width: '56px' }}>
+        {isCategoryPage ? (
+          <IconButton iconName="back" iconSize={24} onClick={() => navigate(-1)} />
+        ) : (
+          <IconButton
+            iconName="category"
+            iconSize={24}
+            onClick={onCategoryClick}
+          />
+        )}
+      </div>
 
-      <div className="flex items-center gap-4">
+      {/* 중앙: 제목 또는 로고 */}
+      <div className="flex-1 text-center text-base font-semibold text-brand-text-primary">
+        {getTitle()}
+      </div>
+
+      {/* 오른쪽 아이콘들 */}
+      <div className="flex flex-shrink-0 items-center justify-end gap-4" style={{ width: '56px' }}>
         <IconButton iconName="search" iconSize={24} onClick={onSearchClick} />
         <IconButton iconName="notification" iconSize={24} onClick={onNotificationClick} />
       </div>
@@ -38,4 +63,4 @@ interface HeaderProps {
   );
 };
 
-export default Header;
+export default MainHeader;

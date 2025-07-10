@@ -1,7 +1,7 @@
-// src/posts/dto/create-post.dto.ts
 export class CreatePostDto {
-  author: string;
-  authorProfileUrl?: string;
+  // ⭐️ author, authorProfileUrl 속성을 제거합니다.
+  // author: string;
+  // authorProfileUrl?: string;
   category: string;
   title: string;
   content: string;

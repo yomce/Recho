@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { type Post, type CreatePostData } from '../types/post'; 
+import axiosInstance from './axiosInstance'; // ⭐️ 인증 인스턴스 임포트
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -24,8 +25,9 @@ export const fetchPosts = async (category: string): Promise<Post[]> => {
 
 /** ⭐️ 새 게시물을 생성하는 함수 추가 */
 export const createPost = async (newPostData: CreatePostData): Promise<Post> => {
-  const response = await apiClient.post('/posts', newPostData);
+  // ⭐️ 인증이 필요한 요청이므로 axiosInstance를 사용합니다.
+  const response = await axiosInstance.post('/posts', newPostData);
   return response.data;
-}
+};
 
 // ... (fetchPostById 등)

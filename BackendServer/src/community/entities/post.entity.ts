@@ -9,6 +9,7 @@ import {
 
 } from 'typeorm';
 import { Comment } from './comment.entity';
+import { PostLike } from './post-like.entity';
 
 
 
@@ -36,7 +37,7 @@ export class Post {
   thumbnailUrl?: string;
 
   @Column({ type: 'int', default: 0 })
-  likes: number;
+  likeCount: number;
 
   @Column({ type: 'int', default: 0 })
   commentCount: number; 
@@ -49,4 +50,6 @@ export class Post {
 
   @OneToMany(() => Comment, (comment) => comment.post) // ⭐️ 1:N 관계 추가
   comments: Comment[];
+   @OneToMany(() => PostLike, (like) => like.post)
+  likes: PostLike[];
 }

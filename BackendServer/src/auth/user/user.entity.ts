@@ -10,6 +10,7 @@ import { Exclude } from 'class-transformer';
 import { Message } from '../../chat/entities/message.entity';
 import { UserRoom } from '../../chat/entities/user-room.entity';
 import { RecruitEnsemble } from 'src/ensemble/entities/recruit-ensemble.entity';
+import { PostLike } from '../../community/entities/post-like.entity';
 
 @Entity('Users')
 export class User {
@@ -103,4 +104,7 @@ export class User {
   /** 이 사용자의 합주 포스터 */
   @OneToMany(() => RecruitEnsemble, (recruitEnsemble) => recruitEnsemble.user)
   recruitEnsemble: RecruitEnsemble[];
+
+  @OneToMany(() => PostLike, (like) => like.user)
+  postLikes: PostLike[];
 }

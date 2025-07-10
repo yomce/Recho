@@ -1,14 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { createPost } from '../../services/postService';
-import { type CreatePostData } from '../../types/post';
-import { useAuthStore } from '../../stores/authStore'; // ⭐️ authStore 임포트
+import { useAuthStore } from '../../stores/authStore';
+import axiosInstance from '../../services/axiosInstance';
+import { type Post } from '../../types/post'; // Post 타입은 재사용할 수 있으므로 그대로 둡니다.
+
+// ⭐️ 1. CreatePostData 타입을 이 파일 안으로 가져옵니다.
+interface CreatePostData {
+  title: string;
+  content: string;
+  category: string;
+}
+
+// ⭐️ 2. createPost 함수를 파일 내에 직접 정의하고 axiosInstance를 사용합니다.
+const createPost = async (newPostData: CreatePostData): Promise<Post> => {
+    const response = await axiosInstance.post('/posts', newPostData);
+    return response.data;
+};
 
 const NewPostPage: React.FC = () => {
     const navigate = useNavigate();
-    
-    // ⭐️ authStore에서 현재 로그인된 사용자 정보를 가져옵니다.
     const currentUser = useAuthStore((state) => state.user);
 
     const [title, setTitle] = useState('');
@@ -16,16 +27,14 @@ const NewPostPage: React.FC = () => {
     const [content, setContent] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
 
-        // ⭐️ authStore의 user 상태로 로그인 여부를 확인합니다.
         if (!currentUser) {
             toast.error('글을 작성하려면 로그인이 필요합니다.');
-            navigate('/login'); // 로그인 페이지로 리디렉션
+            navigate('/login');
             return;
         }
-
         if (!title.trim() || !content.trim()) {
             toast.error('제목과 내용을 모두 입력해주세요.');
             return;
@@ -37,14 +46,13 @@ const NewPostPage: React.FC = () => {
                 title,
                 category,
                 content,
-                // ⭐️ 스토어에서 가져온 사용자 이름으로 작성자를 설정합니다.
-                author: currentUser.username, 
             };
             
+            // ⭐️ 3. 파일 내에 새로 정의된 createPost 함수를 호출합니다.
             await createPost(newPostData);
 
             toast.success('게시글이 성공적으로 등록되었습니다!');
-            navigate('/community'); // 등록 후 커뮤니티 피드로 이동
+            navigate('/community');
         } catch (error) {
             toast.error('게시글 등록에 실패했습니다. 다시 시도해주세요.');
             console.error('Post creation failed:', error);
@@ -70,7 +78,7 @@ const NewPostPage: React.FC = () => {
                     >
                         <option>자유게시판</option>
                         <option>질문/답변</option>
-                        <option>밴드모집</option>
+                        <option>피드백</option>
                         <option>공연홍보</option>
                     </select>
                 </div>

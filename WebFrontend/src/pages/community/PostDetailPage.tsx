@@ -1,43 +1,67 @@
 import React, { useEffect, useState, type FormEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { useAuthStore } from '../../stores/authStore'; // authStore 임포트
+import { useAuthStore } from '../../stores/authStore';
+import axiosInstance from '../../services/axiosInstance'; // 인증이 필요한 요청을 위한 Axios 인스턴스
 
 // --- 타입 정의 ---
+// User 타입은 authStore 또는 user.entity.ts를 기반으로 정의합니다.
+interface User {
+    id: string;
+    username: string;
+}
+
+// 게시물 타입
 interface Post {
   id: number;
-  author: string;
+  author: string; // 게시물 작성자는 문자열 이름으로 가정
   category: string;
   title: string;
   content: string;
   createdAt: string;
 }
+
+// 댓글 타입 (백엔드와 일치하도록 author를 User 객체로 변경)
 interface Comment {
   id: number;
-  author: string;
   content: string;
   createdAt: string;
+  author: User; 
 }
+
+// 댓글 생성 시 API로 보낼 데이터 타입
+interface CreateCommentData {
+    postId: number;
+    content: string;
+}
+
 
 // --- API 통신 함수 ---
-const API_URL = import.meta.env.VITE_API_URL;
-const apiClient = axios.create({ baseURL: API_URL });
-
+// 인증이 필요한 요청은 모두 axiosInstance를 사용합니다.
 const fetchPostById = async (id: string): Promise<Post> => {
-  const response = await apiClient.get(`/posts/${id}`);
+  const response = await axiosInstance.get(`/posts/${id}`);
   return response.data;
 };
+
 const fetchCommentsByPostId = async (postId: string): Promise<Comment[]> => {
-  const response = await apiClient.get(`/comments/post/${postId}`);
+  const response = await axiosInstance.get(`/comments/post/${postId}`);
   return response.data;
 };
-const createComment = async (data: { postId: number; author: string; content: string }): Promise<Comment> => {
-    const response = await apiClient.post('/comments', data);
+
+const createComment = async (data: CreateCommentData): Promise<Comment> => {
+    const response = await axiosInstance.post('/comments', data);
     return response.data;
-}
+};
+
+const deleteComment = async (id: number): Promise<void> => {
+    await axiosInstance.delete(`/comments/${id}`);
+};
+
 
 // --- 날짜 포맷 함수 ---
-const formatDate = (dateString: string) => new Date(dateString).toLocaleString('ko-KR');
+const formatDate = (dateString: string) => new Date(dateString).toLocaleString('ko-KR', {
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+});
+
 
 // --- 상세 페이지 컴포넌트 ---
 const PostDetailPage: React.FC = () => {
@@ -52,11 +76,14 @@ const PostDetailPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id) {
+        setError('유효하지 않은 게시물 ID입니다.');
+        setIsLoading(false);
+        return;
+    }
     const loadData = async () => {
       try {
         setIsLoading(true);
-        // 게시물과 댓글을 동시에 불러옵니다.
         const [postData, commentsData] = await Promise.all([
             fetchPostById(id),
             fetchCommentsByPostId(id)
@@ -65,6 +92,7 @@ const PostDetailPage: React.FC = () => {
         setComments(commentsData);
       } catch (err) {
         setError('데이터를 불러오는 데 실패했습니다.');
+        console.error(err);
       } finally {
         setIsLoading(false);
       }
@@ -74,28 +102,43 @@ const PostDetailPage: React.FC = () => {
 
   const handleCommentSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim() || !currentUser || !id) return;
+    if (!newComment.trim() || !currentUser || !id) {
+        alert('댓글 내용을 입력해주세요.');
+        return;
+    }
 
     try {
         const createdComment = await createComment({
             postId: parseInt(id, 10),
-            author: currentUser.username,
             content: newComment,
         });
-        setComments([...comments, createdComment]); // 새 댓글을 목록에 추가
-        setNewComment(''); // 입력창 비우기
+        setComments(prevComments => [...prevComments, createdComment]);
+        setNewComment('');
     } catch (error) {
         alert('댓글 등록에 실패했습니다.');
+        console.error(error);
     }
-  }
+  };
 
-  if (isLoading) return <div className="p-4">로딩 중...</div>;
-  if (error) return <div className="p-4">{error}</div>;
-  if (!post) return <div className="p-4">게시물을 찾을 수 없습니다.</div>;
+  const handleDeleteComment = async (commentId: number) => {
+    if (window.confirm('정말로 이 댓글을 삭제하시겠습니까?')) {
+        try {
+            await deleteComment(commentId);
+            setComments(prevComments => prevComments.filter(comment => comment.id !== commentId));
+            alert('댓글이 삭제되었습니다.');
+        } catch (error) {
+            alert('댓글 삭제에 실패했습니다. 권한이 없거나 오류가 발생했습니다.');
+            console.error(error);
+        }
+    }
+  };
+
+  if (isLoading) return <div className="p-4 text-center">로딩 중...</div>;
+  if (error) return <div className="p-4 text-center text-red-500">{error}</div>;
+  if (!post) return <div className="p-4 text-center">게시물을 찾을 수 없습니다.</div>;
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
-      {/* ... (게시물 상세 내용 렌더링 부분) ... */}
       <header className="mb-4 pb-4 border-b">
         <span className="text-sm text-blue-600 font-semibold">{post.category}</span>
         <h1 className="text-3xl font-bold my-2">{post.title}</h1>
@@ -104,26 +147,33 @@ const PostDetailPage: React.FC = () => {
           <span>{formatDate(post.createdAt)}</span>
         </div>
       </header>
+      
       <main className="py-8 prose max-w-none" dangerouslySetInnerHTML={{ __html: post.content.replace(/\n/g, '<br />') }} />
       
-      {/* --- 댓글 섹션 --- */}
       <section className="mt-10 pt-6 border-t">
         <h2 className="text-xl font-bold mb-4">댓글 ({comments.length})</h2>
-        
-        {/* 댓글 목록 */}
         <div className="space-y-4 mb-6">
             {comments.map(comment => (
                 <div key={comment.id} className="p-3 bg-gray-50 rounded-lg">
                     <div className="flex justify-between items-center mb-1">
-                        <span className="font-semibold text-sm">{comment.author}</span>
-                        <span className="text-xs text-gray-400">{formatDate(comment.createdAt)}</span>
+                        <span className="font-semibold text-sm">{comment.author.username}</span>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-400">{formatDate(comment.createdAt)}</span>
+                            {currentUser && currentUser.id === comment.author.id && (
+                                <button 
+                                    onClick={() => handleDeleteComment(comment.id)} 
+                                    className="text-xs text-red-500 hover:underline"
+                                >
+                                    삭제
+                                </button>
+                            )}
+                        </div>
                     </div>
-                    <p className="text-gray-800 text-sm">{comment.content}</p>
+                    <p className="text-gray-800 text-sm whitespace-pre-wrap">{comment.content}</p>
                 </div>
             ))}
         </div>
 
-        {/* 댓글 작성 폼 */}
         {currentUser && (
             <form onSubmit={handleCommentSubmit} className="flex gap-2">
                 <input
@@ -133,7 +183,7 @@ const PostDetailPage: React.FC = () => {
                     placeholder="댓글을 입력하세요..."
                     className="flex-grow p-2 border rounded-md"
                 />
-                <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded-md">등록</button>
+                <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded-md shrink-0">등록</button>
             </form>
         )}
       </section>

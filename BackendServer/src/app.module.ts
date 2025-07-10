@@ -23,6 +23,9 @@ import { ViewCountModule } from './hooks/view_count/view-count.module';
 import loadConfig from './config/env.config';
 import { ConfigController } from './config/config.controller';
 
+import * as fs from 'fs';
+import * as path from 'path';
+
 @Module({
   imports: [
     // ⭐️ 핵심: ConfigModule이 loadConfig를 실행하고 완료될 때까지 기다립니다.
@@ -50,7 +53,12 @@ import { ConfigController } from './config/config.controller';
         logging: true,
         dropSchema: false,
         timezone: 'UTC',
-        ssl: true,
+        ssl: cs.get('APP_EVN') === 'DEV' && {
+          rejectUnauthorized: true,
+          ca: fs
+            .readFileSync(path.join(__dirname, '../ap-northeast-2-bundle.pem'))
+            .toString(),
+        },
       }),
     }),
 

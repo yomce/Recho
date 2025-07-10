@@ -56,6 +56,7 @@ secrets.json
 credentials.json
 **/secrets/
 **/config/secrets/
+*.pem
 
 # Database
 *.db

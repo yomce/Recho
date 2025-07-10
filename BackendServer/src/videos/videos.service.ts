@@ -81,7 +81,7 @@ export class VideosService {
           getSignedUrl(
             this.s3,
             new GetObjectCommand({
-              Bucket: process.env.AWS_S3_BUCKET,
+              Bucket: this.configService.get('AWS_S3_BUCKET'),
               Key: video.results_video_key,
             }),
             { expiresIn: 3600 },
@@ -89,7 +89,7 @@ export class VideosService {
           getSignedUrl(
             this.s3,
             new GetObjectCommand({
-              Bucket: process.env.AWS_S3_BUCKET,
+              Bucket: this.configService.get('AWS_S3_BUCKET'),
               Key: video.thumbnail_key,
             }),
             { expiresIn: 3600 },
@@ -106,7 +106,7 @@ export class VideosService {
     return getSignedUrl(
       this.s3,
       new GetObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET,
+        Bucket: this.configService.get('AWS_S3_BUCKET'),
         Key: videoKey,
       }),
       { expiresIn: 3600 },
@@ -126,7 +126,7 @@ export class VideosService {
       getSignedUrl(
         this.s3,
         new GetObjectCommand({
-          Bucket: process.env.AWS_S3_BUCKET,
+          Bucket: this.configService.get('AWS_S3_BUCKET'),
           Key: video.source_video_key,
         }),
         { expiresIn: 3600 },
@@ -134,7 +134,7 @@ export class VideosService {
       getSignedUrl(
         this.s3,
         new GetObjectCommand({
-          Bucket: process.env.AWS_S3_BUCKET,
+          Bucket: this.configService.get('AWS_S3_BUCKET'),
           Key: video.thumbnail_key,
         }),
         { expiresIn: 3600 },

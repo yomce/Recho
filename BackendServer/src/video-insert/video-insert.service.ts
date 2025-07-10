@@ -81,7 +81,7 @@ export class VideoInsertService {
 
       const key = `${keyPrefix}/${uuidv4()}`;
       const command = new PutObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET || 'default-bucket',
+        Bucket: this.configService.get('AWS_S3_BUCKET') || 'default-bucket',
         Key: key,
         ContentType: fileType,
       });

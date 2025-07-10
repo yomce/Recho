@@ -4,6 +4,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import axiosInstance from '@/services/axiosInstance';
+import PostLayout from '@/components/layout/PostLayout';
+import SwiperTabs from '@/components/organisms/PostNavigationTabs';
+import PostCard from '@/components/atoms/card/PostCard';
+import FilterButton from '@/components/atoms/button/FilterButton';
+import { toast } from 'react-hot-toast';
+import FilterToast from '@/components/atoms/button/FilterToast';
 
 // 모집 공고 데이터 타입 (서버 응답 기준, 필요에 따라 수정)
 interface RecruitEnsemble {
@@ -48,6 +54,8 @@ const RecruitEnsembleListPage: React.FC = () => {
   const [hasNextPage, setHasNextPage] = useState(true);
   const { user } = useAuthStore();
 
+  const tabs = ['합주모집', '주변모임', '즐겨찾기'];
+
   const fetchItems = useCallback(async (isInitialFetch: boolean) => {
     if (loading || !hasNextPage) return;
 
@@ -85,85 +93,79 @@ const RecruitEnsembleListPage: React.FC = () => {
 
   useEffect(() => {
     fetchItems(true);
-  }, [fetchItems]); // fetchItems가 useCallback으로 감싸져 있으므로 의존성 배열이 안전합니다.
+  }, []); // fetchItems가 useCallback으로 감싸져 있으므로 의존성 배열이 안전합니다.
 
   const handleLoadMore = () => {
     fetchItems(false);
   };
 
+  const handleFilterClick = (tab: string) => {
+    toast.custom((t) => (
+      <FilterToast activeTab={tab} toastId={t.id} />
+    ), {
+      position: "bottom-center",
+      duration: Infinity,
+      id: "filter-toast",
+    })
+  }
+
   return (
-    <div className="max-w-6xl mx-auto my-8 px-4">
-      {/* --- 페이지 헤더 --- */}
-      <header className="flex justify-between items-center mb-8">
-        <h2 className="m-0 text-3xl font-bold text-left">합주단원 모집</h2>
-        { user && <Link 
-          to="/ensembles/create" // 등록 페이지 경로 변경
-          className="inline-block py-2.5 px-5 text-base font-semibold text-white bg-blue-500 rounded-md no-underline text-center transition-colors hover:bg-blue-700"
-        >
-          모집 공고 등록하기
-        </Link>}
-      </header>
+    <PostLayout>
+      <div className="grid grid-cols-1 py-4">
+        {/* --- 에러 메시지 --- */}
+        {error && (
+          <div className="flex justify-center items-center py-16 px-4 text-center">
+            <p className="text-lg text-red-600 font-medium">{error}</p>
+          </div>
+        )}
 
-      {/* --- 에러 메시지 --- */}
-      {error && (
-        <div className="flex justify-center items-center py-16 px-4 text-center">
-          <p className="text-lg text-red-600 font-medium">{error}</p>
+        <div className="flex gap-2 mb-4 px-4">
+          <FilterButton 
+            iconName="options" 
+            iconClassName="rotate-90 text-brand-gray"
+            onClick={() => handleFilterClick("날짜")}
+          />
+          <FilterButton label="날짜" onClick={() => handleFilterClick("날짜")}/>
+          <FilterButton label="지역" onClick={() => handleFilterClick("지역")}/>
+          <FilterButton label="악기" onClick={() => handleFilterClick("악기")}/>
+          <FilterButton label="실력" onClick={() => handleFilterClick("실력")}/>
         </div>
-      )}
+        <SwiperTabs
+          tabs={tabs}
+          contents={[items, [], []]}
+          loading={loading}
+          renderItem={(item) => (
+            <PostCard
+              key={item.postId}
+              id={item.postId}
+              title={item.title}
+              eventDate={item.eventDate.slice(0,10)}
+              recruitStatus={item.recruitStatus}
+              totalRecruitCnt={item.totalRecruitCnt}
+              cardClassName="h-[140px] items-center mt-2"
+              textWrapperClassName="flex flex-col items-start justify-center w-full p-4 ml-2 gap-1"
+              imagePosition="left"
+              imageWrapperClassName="min-h-[140px] min-w-[140px] rounded-[20px]"
+            />
+          )}
+        />
+        {/* --- 로딩 스피너 --- */}
+        {loading && (
+          <div className="message-container">
+            <div className="spinner"></div>
+          </div>
+        )}
 
-      {/* --- 모집 공고 목록 그리드 --- */}
-      {items.length > 0 && (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6">
-          {items.map((item) => (
-            <Link
-              // --- 수정: id를 postId로 변경 ---
-              key={`${item.postId}-${item.createdAt}`}
-              to={`/ensembles/${item.postId}`}
-              className="block bg-white border border-gray-200 rounded-lg p-5 no-underline text-slate-800 shadow-md transition-all duration-200 ease-in-out hover:-translate-y-1 hover:shadow-lg"
-            >
-              <div className="flex flex-col h-full">
-                <h3 className="text-lg font-bold mb-2 text-blue-700 truncate">{item.title}</h3>
-                <div className="text-sm text-gray-600 space-y-1 mt-2">
-                  {/* --- 수정: ID를 텍스트로 변환하여 표시 --- */}
-                  <p><strong>지역:</strong> {item.locationId || '정보 없음'}</p>
-                  <p><strong>요구 실력:</strong> {item.skillLevel || '정보 없음'}</p>
-                  <p><strong>연주 일자:</strong> {new Date(item.eventDate).toLocaleDateString()}</p>
-                </div>
-                <div className="mt-auto pt-3 text-xs text-right text-gray-400">
-                  등록일: {new Date(item.createdAt).toLocaleDateString()}
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
-
-      {/* --- 공고 없음 메시지 --- */}
-      {!loading && items.length === 0 && !error && (
-        <div className="flex justify-center items-center py-16 px-4 text-center text-lg text-gray-600">
-          <p>등록된 모집 공고가 없습니다.</p>
-        </div>
-      )}
-
-      {/* --- 로딩 스피너 --- */}
-      {loading && (
-        <div className="flex justify-center items-center py-16">
-          <div className="w-9 h-9 border-4 border-gray-200 border-l-blue-500 rounded-full animate-spin"></div>
-        </div>
-      )}
-
-      {/* --- 더보기 버튼 --- */}
-      {!loading && hasNextPage && (
-        <div className="text-center mt-12">
-          <button
-            onClick={handleLoadMore}
-            className="py-3 px-8 text-lg font-semibold text-white bg-blue-500 rounded-md cursor-pointer transition-colors hover:bg-blue-700"
-          >
-            더보기
-          </button>
-        </div>
-      )}
-    </div>
+        {/* --- 더보기 버튼 --- */}
+        {!loading && hasNextPage && (
+          <div className="load-more-container">
+            <button className="load-more-button" onClick={handleLoadMore}>
+              더보기
+            </button>
+          </div>
+        )}
+      </div>
+    </PostLayout>
   );
 };
 

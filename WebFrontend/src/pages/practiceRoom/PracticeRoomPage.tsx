@@ -10,7 +10,7 @@ import Icon from '@/components/atoms/icon/Icon'
 import SecondaryButton from "@/components/atoms/button/SecondaryButton";
 import PostCard from "@/components/atoms/card/PostCard";
 import SwiperTabs from "@/components/organisms/PostNavigationTabs";
-import axiosInstance from '@/services/axiosInstance';
+import axiosInstance from "@/services/axiosInstance";
 
 interface Cursor {
   lastProductId: number;
@@ -51,7 +51,7 @@ const PracticeRoomPage: React.FC = () => {
         }
 
         const response = await axiosInstance.get<PaginatedPracticeRoomResponse>(
-          `${apiUrl}/practice-room`,
+          `practice-room`,
           { params }
         );
 

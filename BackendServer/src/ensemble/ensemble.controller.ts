@@ -33,6 +33,7 @@ export class EnsembleController {
     @Query() paginationQuery: PaginationQueryRecruitEnsembleDto,
   ): Promise<PaginatedRecruitEnsembleResponse> {
     this.logger.log('Fetching ensemble with pagination');
+    this.logger.log('paginationQuery:', paginationQuery); // ← 추가
 
     const { limit = 20, lastPostId, lastCreatedAt } = paginationQuery;
 

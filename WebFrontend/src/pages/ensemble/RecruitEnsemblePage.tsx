@@ -36,7 +36,7 @@ interface RecruitEnsemble {
 
 // 페이지네이션 커서 타입
 interface Cursor {
-  lastId: number;
+  lastPostId: number;
   lastCreatedAt: string;
 }
 
@@ -56,7 +56,7 @@ const RecruitEnsembleListPage: React.FC = () => {
   const { user } = useAuthStore();
 
   const tabs = ['합주모집', '주변모임', '즐겨찾기'];
-
+  
   const fetchItems = useCallback(async (isInitialFetch: boolean) => {
     if (loading || !hasNextPage) return;
 
@@ -67,7 +67,7 @@ const RecruitEnsembleListPage: React.FC = () => {
       const params = new URLSearchParams({ limit: '12' });
       // 커서 파라미터 이름을 API 사양에 맞게 변경 (lastId, lastCreatedAt)
       if (!isInitialFetch && nextCursor) {
-        params.append('lastId', String(nextCursor.lastId));
+        params.append('lastPostId', String(nextCursor.lastPostId));
         params.append('lastCreatedAt', nextCursor.lastCreatedAt);
       }
 

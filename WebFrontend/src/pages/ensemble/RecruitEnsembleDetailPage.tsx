@@ -6,7 +6,6 @@ import { useAuthStore } from '@/stores/authStore';
 import axiosInstance from '@/services/axiosInstance';
 import axios from 'axios';
 import type { SessionEnsemble, RecruitEnsemble, ApplicationEnsemble } from './types';
-import { SessionDetail } from './components/SessionDetail';
 import useViewCounter from '@/hooks/useViewCounter';
 import RecruitEnsembleDetail from '@/components/layout/pages/ensemble/EnsembleDetail';
 
@@ -20,7 +19,6 @@ const RecruitEnsembleDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [sessionList, setSessionList] = useState<SessionEnsemble[] | null>(null);
   const [ensemble, setEnsemble] = useState<RecruitEnsemble | null>(null);
   const [applicationList, setApplicationList] = useState<ApplicationEnsemble[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -29,11 +27,6 @@ const RecruitEnsembleDetailPage: React.FC = () => {
 
   // 현재 로그인한 사용자가 게시글 작성자인지 확인하는 변수
   const isOwner = Boolean(ensemble && user && ensemble.user.id === user.id);
-
-  console.log("isOwner?", isOwner); 
-  console.log("ensemble.user.id", ensemble?.user.id);
-  console.log("user.id", user?.id);
-
 
   if(id){
     useViewCounter({ type: 'ensembles', id });
@@ -54,7 +47,6 @@ const RecruitEnsembleDetailPage: React.FC = () => {
         const response = await axiosInstance.get<RecruitEnsemble>(`ensembles/${id}`);
         console.log(response.data);
 
-        setSessionList(response.data.sessionEnsemble)
         setEnsemble(response.data);
       } catch (err) {
         if (axios.isAxiosError(err) && err.response?.status === 404) {
@@ -134,6 +126,8 @@ const RecruitEnsembleDetailPage: React.FC = () => {
       isOwner={isOwner}
       onEdit={handleEdit}
       onDelete={handleDelete}
+      applicationEnsembleList={applicationList || []}
+      isApplied={isApplied}
     />
   );
 };

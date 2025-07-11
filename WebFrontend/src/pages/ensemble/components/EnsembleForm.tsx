@@ -1,7 +1,15 @@
 // src/components/EnsembleForm.tsx
 
-import React from 'react';
+import React, { useState } from 'react';
 import { SessionForm, type SessionEnsembleFormState } from './SessionForm';
+import LocationSelector from '@/components/map/LocationSelector';
+import InputLabel from '@/components/atoms/input/InputLabel';
+import TextInputForm from '@/components/atoms/input/TextInputForm';
+import TextAreaInput from '@/components/atoms/input/TextAreaInput';
+import CustomDatePicker from '@/components/atoms/input/CustomDatePicker';
+import CategorySelector from '@/components/atoms/input/CategorySelector';
+import PrimaryButton from '@/components/atoms/button/PrimaryButton';
+import SecondaryButton from '@/components/atoms/button/SecondaryButton';
 
 // 필요한 타입과 Enum (이전과 동일)
 export enum SKILL_LEVEL {
@@ -43,6 +51,8 @@ interface RecruitEnsembleFormProps {
   onSessionFormRemove: (index: number) => void;
 }
 
+type CategoryOption = { id: string; name: string };
+
 export const EnsembleForm: React.FC<RecruitEnsembleFormProps> = ({
   formState,
   onFormChange,
@@ -56,75 +66,111 @@ export const EnsembleForm: React.FC<RecruitEnsembleFormProps> = ({
   onSessionFormAdd,
   onSessionFormRemove,
 }) => {
-  const inputStyle = "w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition";
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  const handleDateChange = (date: Date | null) => {
+    console.log('selectedDate:', date); // ← 콘솔에 찍힘
+
+    setSelectedDate(date);
+
+    if (date) {
+      const formatted = date.toISOString().split('T')[0]; // "YYYY-MM-DD"
+      onFormChange({
+        target: {
+          name: 'eventDate',
+          value: formatted,
+        },
+      } as React.ChangeEvent<HTMLInputElement>); // 타입 캐스팅
+    }
+  };
+
+  const SKILL_CATEGORIES: CategoryOption[] = Object.entries(SKILL_LEVEL_TEXT).map(
+    ([id, name]) => ({ id: id.toString(), name }) // 👈 key를 string으로 변환
+  );
 
   return (
-    <form onSubmit={onFormSubmit} className="space-y-6">
-      <div>
-        <label htmlFor="title" className="block text-lg font-semibold mb-2 text-gray-700">제목</label>
-        <input type="text" id="title" name="title" value={formState.title} onChange={onFormChange} required className={inputStyle} />
+    <form onSubmit={onFormSubmit}>
+      <div className="mb-6">
+        <InputLabel htmlFor="title">제목</InputLabel>
+        <TextInputForm
+          type="text"
+          id="title"
+          name="title"
+          value={formState.title}
+          onChange={onFormChange}
+          required
+        />
       </div>
 
-      <div>
-        <label htmlFor="content" className="block text-lg font-semibold mb-2 text-gray-700">내용</label>
-        <textarea id="content" name="content" value={formState.content} onChange={onFormChange} required rows={8} className={inputStyle} />
+      <div className="mb-6">
+        <InputLabel htmlFor="content">내용</InputLabel>
+        <TextAreaInput
+          id="content" 
+          name="content" 
+          value={formState.content} 
+          onChange={onFormChange} 
+          rows={8}
+          required 
+        />
+      </div>
+      <div className="mb-6">
+        <InputLabel htmlFor="eventDate">연주 일자</InputLabel>
+        <CustomDatePicker
+          selectedDate={selectedDate}
+          onChange={handleDateChange}
+        />
+        {/* <input type="date" id="eventDate" name="eventDate" value={formState.eventDate} onChange={onFormChange} required /> */}
+      </div>
+      <div className="mb-6">
+        <InputLabel htmlFor="skillLevel">요구 실력</InputLabel>
+        <CategorySelector
+          name="skillLevel"
+          value={formState.skillLevel.toString()} // enum 값 (숫자)을 문자열로 변환
+          onChange={onFormChange}
+          categories={SKILL_CATEGORIES}
+          showSubCategory={false}
+        />
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        <div>
-          <label htmlFor="eventDate" className="block text-lg font-semibold mb-2 text-gray-700">연주 일자</label>
-          <input type="date" id="eventDate" name="eventDate" value={formState.eventDate} onChange={onFormChange} required className={inputStyle} />
-        </div>
-        <div>
-          <label htmlFor="skillLevel" className="block text-lg font-semibold mb-2 text-gray-700">요구 실력</label>
-          <select id="skillLevel" name="skillLevel" value={formState.skillLevel} onChange={onFormChange} required className={inputStyle}>
-            {Object.entries(SKILL_LEVEL_TEXT).map(([value, text]) => (
-              <option key={value} value={value}>{text}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <div className="grid md:grid-cols-3 gap-6">
-        <div>
-          <label htmlFor="locationId" className="block text-lg font-semibold mb-2 text-gray-700">지역 (ID)</label>
-          <input type="number" id="locationId" name="locationId" value={formState.locationId} onChange={onFormChange} required className={inputStyle} />
-        </div>
+      <div className="mb-6">
+        <InputLabel htmlFor="locationId">지역</InputLabel>
+        <LocationSelector
+          locationId={formState.locationId}
+        />
       </div>
       
       {errorMessage && <p className="text-center text-red-500 font-semibold bg-red-100 p-3 rounded-md">{errorMessage}</p>}
 
       {/* 👇 2. 세션 폼을 순회하는 부분 수정 */}
       {sessionFormList.map((item, index) => (
-        <div key={index} className="p-4 border rounded-xl shadow-sm bg-white">
+        <div key={index}>
           <SessionForm
             item={item}
             index={index}
             onSessionFormListChange={onSessionFormListChange}
+            onRemove={() => onSessionFormRemove(index)}
           />
-          <div className="mt-4 text-right"> {/* 버튼을 오른쪽 정렬하기 위한 컨테이너 */}
-            <button
-              type="button"
-              onClick={() => onSessionFormRemove(index)}
-              className="px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
-              aria-label={`${index + 1}번째 세션 삭제`}
-            >
-              삭제
-            </button>
-          </div>
         </div>
       ))}
 
-      <div className="pt-1">
-        <button type="button" onClick={onSessionFormAdd} className="w-full py-2 text-xl font-bold text-white bg-green-600 rounded-md hover:bg-green-700 disabled:bg-gray-400 transition-colors">
+      <div className="py-6">
+        <PrimaryButton
+          type="button"
+          onClick={onSessionFormAdd}
+          style={{ borderRadius: "10px", background: "#4397FD" }}
+        >
           세션 추가하기
-        </button>
+        </PrimaryButton>
       </div>
 
-      <div className="pt-4">
-        <button type="submit" disabled={isLoading} className="w-full py-4 text-xl font-bold text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-400 transition-colors">
+      <div className="">
+        <PrimaryButton
+          type="submit"
+          disabled={isLoading}
+          style={{ borderRadius: "10px" }}
+        >
           {isLoading ? loadingButtonText : submitButtonText}
-        </button>
+        </PrimaryButton>
       </div>
     </form>
   );

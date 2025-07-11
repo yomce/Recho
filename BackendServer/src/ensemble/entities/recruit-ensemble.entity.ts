@@ -12,6 +12,7 @@ import {
 import { SessionEnsemble } from '../session/entities/session-ensemble.entity';
 import { ApplierEnsemble } from 'src/application/entities/applier-ensemble.entity';
 import { User } from 'src/auth/user/user.entity';
+import { Location } from 'src/map/entities/location.entity';
 
 export enum SKILL_LEVEL {
   BEGINNER,
@@ -48,6 +49,10 @@ export class RecruitEnsemble {
 
   @Column()
   skillLevel: SKILL_LEVEL;
+
+  @ManyToOne(() => Location, { eager: true })
+  @JoinColumn({ name: 'locationId' })
+  location: Location;
 
   @Column()
   locationId: number;

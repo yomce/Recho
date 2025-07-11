@@ -1,9 +1,7 @@
 import { useRef, useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import PrimaryButton from "./PrimaryButton";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
-import { isSameDay } from "date-fns";
+import CustomDatePicker from "../input/CustomDatePicker";
 import IconButton from "./IconButton";
 
 interface FilterToastProps {
@@ -70,32 +68,9 @@ const FilterToast: React.FC<FilterToastProps> = ({ activeTab, toastId }) => {
         <div id="filter-section-날짜" className="mb-8">
           <p className="text-caption text-brand-gray">날짜</p>
           {/* 날짜 필터 컴포넌트 또는 내용 */}
-          <DatePicker
-            selected={selectedDate}
-            onChange={(date) => setSelectedDate(date)}
-            placeholderText="날짜 선택"
-            dateFormat="yyyy-MM-dd"
-            inline
-            calendarClassName="mt-4 rounded-[20px] p-4 bg-white w-full border border-gray-100"
-            dayClassName={(date) =>
-              "text-caption w-10 h-10 flex items-center justify-center rounded-full " +
-              (selectedDate && isSameDay(date, selectedDate)
-                ? "bg-[#8E4DF6] text-white font-bold"
-                : "hover:bg-[#F4EDFE]")
-            }
-            renderCustomHeader={({ date, decreaseMonth, increaseMonth }) => (
-              <div className="flex justify-between items-center mb-4 bg-[#8E4DF6] py-2 px-4 rounded-t-[20px]">
-                <button onClick={decreaseMonth} className="px-2 py-1 text-white text-lg">
-                  ◀
-                </button>
-                <span className="text-white font-bold text-base">
-                  {date.getFullYear()}년 {date.getMonth() + 1}월
-                </span>
-                <button onClick={increaseMonth} className="px-2 py-1 text-white text-lg">
-                  ▶
-                </button>
-              </div>
-            )}
+          <CustomDatePicker
+            selectedDate={selectedDate}
+            onChange={setSelectedDate}
           />
         </div>
 

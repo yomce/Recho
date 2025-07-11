@@ -1,4 +1,3 @@
-// src/pages/chat/ChatRoomPage.tsx
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, useMotionValue } from "framer-motion";
@@ -15,14 +14,15 @@ import MessageInput from "@/components/molecules/message/MessageInput";
 import Modal from "@/components/molecules/modal/Modal";
 import Icon from "@/components/atoms/icon/Icon";
 import Avatar from "@/components/atoms/avatar/Avatar";
-
+// Axios 인스턴스 import
+import axiosInstance from "../../services/axiosInstance";
 
 // 시간 포맷팅을 위한 간단한 헬퍼 함수 (컴포넌트 외부에 추가)
 const formatTime = (dateString: string | Date) => {
   const date = new Date(dateString);
-  return date.toLocaleTimeString('ko-KR', {
-    hour: '2-digit',
-    minute: '2-digit',
+  return date.toLocaleTimeString("ko-KR", {
+    hour: "2-digit",
+    minute: "2-digit",
     hour12: true,
   });
 };
@@ -63,21 +63,38 @@ const ChatRoomPage: React.FC = () => {
   const dragX = useMotionValue(0);
 
   // --- 컴포넌트 생명주기와 스토어 액션 연결 ---
-  // ❗️ useEffect 의존성 배열을 수정합니다.
   useEffect(() => {
-    // 소켓이 연결되지 않았거나, 유저 또는 roomId 정보가 없으면 실행하지 않고 기다립니다.
-    if (!isConnected || !user || !roomId) {
+    // 필수 정보가 없으면 실행을 중단합니다.
+    if (!roomId || !user) {
       return;
     }
-    
-    // 모든 조건이 만족되면 방 초기화 함수를 호출합니다.
-    initializeRoom(roomId);
 
+    // ✅ 접근 권한 확인 및 방 초기화를 위한 비동기 함수
+    const validateAndInitialize = async () => {
+      try {
+        // 1. 백엔드 API를 호출하여 현재 유저가 이 채팅방에 접근할 권한이 있는지 확인합니다.
+        await axiosInstance.get(`/chat/rooms/${roomId}`);
+
+        // 2. 권한 확인이 성공하면, 소켓 연결 상태를 확인하고 방 초기화를 진행합니다.
+        if (isConnected) {
+          initializeRoom(roomId);
+        }
+      } catch (error) {
+        // 3. 권한이 없거나 방이 존재하지 않으면 에러가 발생합니다.
+        console.error("접근 권한이 없거나 존재하지 않는 채팅방입니다.", error);
+        alert("접근할 수 없는 채팅방입니다.");
+        navigate("/main"); // 사용자를 메인 페이지로 리다이렉트합니다.
+      }
+    };
+
+    // 위에서 정의한 비동기 함수를 호출합니다.
+    validateAndInitialize();
+
+    // 컴포넌트가 사라질 때 채팅 관련 리소스를 정리하는 cleanup 함수를 반환합니다.
     return () => {
       cleanupRoom();
     };
-    // ❗️ 여기에 isConnected를 추가하는 것이 핵심입니다!
-  }, [isConnected, roomId, user, initializeRoom, cleanupRoom]);
+  }, [roomId, user, isConnected, navigate, initializeRoom, cleanupRoom]); // 의존성 배열에 navigate 추가
 
   // 메시지 목록이 변경될 때마다 맨 아래로 스크롤
   useEffect(() => {
@@ -90,6 +107,7 @@ const ChatRoomPage: React.FC = () => {
     sendMessage(newMessage);
     setNewMessage("");
   };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.nativeEvent.isComposing) return;
     if (e.key === "Enter" && !e.shiftKey) {
@@ -97,10 +115,12 @@ const ChatRoomPage: React.FC = () => {
       handleSendMessage();
     }
   };
+
   const confirmLeaveRoom = () => {
     leaveCurrentRoom();
     navigate("/chat");
   };
+
   const confirmInviteUser = () => {
     inviteUser(inviteeId);
     setInviteeId("");
@@ -109,17 +129,17 @@ const ChatRoomPage: React.FC = () => {
   // 로딩 상태를 더 명확하게 표시
   if (!isConnected || !user) {
     return (
-        <div className="flex flex-col h-screen max-w-4xl mx-auto bg-brand-default">
-            <header className="flex items-center justify-between p-4 border-b border-gray-200">
-                {/* 헤더 UI는 유지하되, 내용은 로딩 상태로 표시 */}
-                <h2 className="text-subheadline text-brand-text-primary">
-                연결 중...
-                </h2>
-            </header>
-            <main className="flex-1 p-4 overflow-y-auto flex justify-center items-center">
-                <p>채팅방 정보를 불러오고 있습니다...</p>
-            </main>
-        </div>
+      <div className="flex flex-col h-screen max-w-4xl mx-auto bg-brand-default">
+        <header className="flex items-center justify-between p-4 border-b border-gray-200">
+          {/* 헤더 UI는 유지하되, 내용은 로딩 상태로 표시 */}
+          <h2 className="text-subheadline text-brand-text-primary">
+            연결 중...
+          </h2>
+        </header>
+        <main className="flex-1 p-4 overflow-y-auto flex justify-center items-center">
+          <p>채팅방 정보를 불러오고 있습니다...</p>
+        </main>
+      </div>
     );
   }
 
@@ -192,7 +212,12 @@ const ChatRoomPage: React.FC = () => {
                 {msg.senderId === id ? (
                   // 내가 보낸 메시지
                   <div className="flex w-full justify-end">
-                    <MessageBubble msg={{ ...msg, time: formatTime(msg.createdAt) }} currentUserId={id} dragX={dragX} />                  </div>
+                    <MessageBubble
+                      msg={{ ...msg, time: formatTime(msg.createdAt) }}
+                      currentUserId={id}
+                      dragX={dragX}
+                    />
+                  </div>
                 ) : (
                   // 상대방이 보낸 메시지
                   <div className="flex items-end gap-2">

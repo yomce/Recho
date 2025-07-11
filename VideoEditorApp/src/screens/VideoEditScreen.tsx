@@ -22,6 +22,7 @@ import {
   Animated,
   Dimensions,
   Text,
+  Easing,
 } from 'react-native';
 import { CameraRoll } from '@react-native-camera-roll/camera-roll';
 import RNFS from 'react-native-fs';
@@ -61,6 +62,8 @@ import CommonButton from '../components/Common/CommonButton';
 import SectionHeader from '../components/Common/SectionHeader';
 import axiosInstance from '../api/axiosInstance';
 import PreviewPanel from '../components/Editor/PreviewPanel';
+import GlobalControls from '../components/Editor/GlobalControls';
+import { useVideoProcessor } from '../hooks/useVideoProcessor';
 
 // LayoutAnimation을 Android에서 활성화
 if (
@@ -127,19 +130,6 @@ const ControlsWrapper = styled.View`
   background-color: #000000; /* 배경색 추가 */
 `;
 
-// 전역 액션 버튼 (재생, 정지 등)
-const GlobalActionButton = styled(CommonButton)`
-  padding-vertical: 10px;
-  padding-horizontal: 12px;
-  border-radius: 8px;
-  margin-bottom: 0; /* CommonButton의 기본 마진 오버라이드 */
-  flex: 1; /* 공간을 균등하게 분배 */
-  margin-horizontal: 5px; /* 버튼 간 작은 간격 */
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-`;
-
 // 프리뷰와 컨트롤 영역 사이의 높이 조절 드래거
 const Dragger = styled.View`
   width: 100%;
@@ -160,16 +150,6 @@ const DragHandle = styled.View`
 // 컨트롤 영역 내 스크롤 가능한 뷰
 const ControlsScrollView = styled.ScrollView`
   flex: 1;
-`;
-
-// 전역 재생/정지 버튼들을 담는 컨테이너
-const GlobalActionsContainer = styled.View`
-  flex-direction: row;
-  justify-content: space-around;
-  background-color: #000000;
-  max-width: 200px;
-  align-self: center;
-  align-items: center; /* 아이콘 정렬을 위해 추가 */
 `;
 
 // 아이콘 버튼 (현재 사용되지 않음)
@@ -209,10 +189,14 @@ const VideoEditScreen: React.FC<{
     sourceVideos: serverVideos = [], // 부모 비디오 정보 (서버에서 옴)
   } = route.params ?? {};
 
+  // 비디오 처리 로직을 커스텀 훅으로 분리
+  const { isProcessing, uploading, startVideoProcessing } = useVideoProcessor();
+
   // --- 3.2. 화면 레이아웃 관련 상태 ---
   const screenHeight = Dimensions.get('window').height;
   const screenWidth = Dimensions.get('window').width;
   const minControlHeight = 120; // 컨트롤 영역의 최소 높이
+  const collapsedPreviewHeight = 60; // [추가] 접혔을 때의 높이
 
   // 프리뷰 영역의 최대/최소 높이 계산
   const maxPreviewHeight =
@@ -223,37 +207,111 @@ const VideoEditScreen: React.FC<{
     DRAGGER_HEIGHT;
   const minPreviewHeight = screenWidth * (3 / 4);
 
-  const [previewHeight, setPreviewHeight] = useState(maxPreviewHeight); // 프리뷰 영역의 현재 높이 (드래그로 조절)
+  // 애니메이션을 위해 Animated.Value 사용
+  const previewHeightAnim = useRef(
+    new Animated.Value(maxPreviewHeight),
+  ).current;
   const dragStartHeight = useRef(0); // 드래그 시작 시점의 높이
-  const heightRef = useRef(previewHeight); // stale state 문제를 피하기 위한 ref
+  const heightRef = useRef(maxPreviewHeight); // stale state 문제를 피하기 위한 ref
+
+  // [추가] 프리뷰의 현재 상태 (max, min, collapsed)
+  const [previewState, setPreviewState] = useState<'max' | 'min' | 'collapsed'>(
+    'max',
+  );
+  const [controlsWrapperHeight, setControlsWrapperHeight] = useState(0);
+  const controlsTopAnim = useRef(new Animated.Value(0)).current;
 
   // --- 3.3. 비디오 편집 및 재생 상태 ---
   // previewHeight 상태가 변경될 때마다 ref의 값도 동기화
   useEffect(() => {
-    heightRef.current = previewHeight;
-  }, [previewHeight]);
+    // 애니메이션 값의 변경을 heightRef에 동기화
+    const listenerId = previewHeightAnim.addListener(({ value }) => {
+      heightRef.current = value;
+    });
+    return () => {
+      previewHeightAnim.removeListener(listenerId);
+    };
+  }, [previewHeightAnim]);
+
+  // [추가] previewState가 바뀌면 GlobalControls의 위치를 애니메이션 처리
+  useEffect(() => {
+    // 아직 컨테이너 높이가 계산되지 않았으면 실행하지 않음
+    if (controlsWrapperHeight === 0) return;
+
+    // 컨트롤의 대략적인 높이와 하단 여백
+    const controlsHeight = 54;
+    const bottomMargin = 16;
+    let targetTop = 0; // 기본 위치는 상단
+
+    // '접힘' 상태일 때만 목표 위치를 하단으로 변경
+    if (previewState === 'collapsed') {
+      targetTop = controlsWrapperHeight - controlsHeight - bottomMargin;
+    }
+
+    Animated.timing(controlsTopAnim, {
+      toValue: targetTop,
+      duration: 250,
+      useNativeDriver: false, // top 속성은 네이티브 드라이버 지원 안함
+      easing: Easing.bezier(0.4, 0, 0.2, 1), // 부드러운 움직임
+    }).start();
+  }, [previewState, controlsWrapperHeight, controlsTopAnim]);
 
   // 드래그하여 프리뷰 높이를 조절하는 PanResponder 설정
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        // stale state인 previewHeight 대신, 항상 최신 값을 가지는 ref를 사용
+      onPanResponderGrant: (e, gestureState) => {
+        // 새 드래그 시작 시 진행중인 애니메이션 정지
+        previewHeightAnim.stopAnimation();
+        // 드래그 시작 시점의 높이를 기록
         dragStartHeight.current = heightRef.current;
       },
       onPanResponderMove: (e, gestureState) => {
+        // 실시간으로 드래그에 따라 높이 변경 (애니메이션 없음)
         const newHeight = dragStartHeight.current + gestureState.dy;
-
-        // 높이 제한 적용
         const clampedHeight = Math.max(
-          minPreviewHeight,
+          collapsedPreviewHeight, // 가장 작은 높이로 제한
           Math.min(newHeight, maxPreviewHeight),
         );
-
-        setPreviewHeight(clampedHeight);
+        previewHeightAnim.setValue(clampedHeight); // 직접 값 설정
       },
-      onPanResponderRelease: () => {
-        // 필요 시 여기에 스냅 로직 추가 가능
+      onPanResponderRelease: (e, gestureState) => {
+        const finalHeight = heightRef.current; // 손을 뗀 최종 높이
+
+        const snapPoints = [
+          { state: 'collapsed', height: collapsedPreviewHeight },
+          { state: 'min', height: minPreviewHeight },
+          { state: 'max', height: maxPreviewHeight },
+        ];
+
+        // 최종 높이에서 가장 가까운 스냅 포인트를 찾음
+        const closestSnapPoint = snapPoints.reduce((prev, curr) => {
+          const prevDist = Math.abs(prev.height - finalHeight);
+          const currDist = Math.abs(curr.height - finalHeight);
+          return currDist < prevDist ? curr : prev;
+        });
+
+        const targetHeight = closestSnapPoint.height;
+        const targetState = closestSnapPoint.state as
+          | 'max'
+          | 'min'
+          | 'collapsed';
+
+        // Animated.timing을 사용하여 부드러운 애니메이션 적용
+        Animated.timing(previewHeightAnim, {
+          toValue: targetHeight,
+          duration: 150, // 애니메이션 지속 시간 (밀리초)
+          useNativeDriver: false, // height 속성은 네이티브 드라이버 지원 안함
+        }).start(({ finished }) => {
+          // 애니메이션이 끝나면 상태 업데이트
+          if (finished) {
+            // 레이아웃 변경에 애니메이션 적용
+            // LayoutAnimation.configureNext(
+            //   LayoutAnimation.Presets.easeInEaseOut,
+            // );
+            setPreviewState(targetState);
+          }
+        });
       },
     }),
   ).current;
@@ -262,8 +320,6 @@ const VideoEditScreen: React.FC<{
   const [playbackStates, setPlaybackStates] = useState<
     Record<string, PlaybackState>
   >({}); // 각 비디오의 재생 상태 (현재 시간, 정지 여부)
-  const [isProcessing, setIsProcessing] = useState(false); // FFmpeg 처리 중 여부
-  const [uploading, setUploading] = useState(false); // S3 업로드 중 여부
   const [previewScale, setPreviewScale] = useState(1); // 가상 캔버스의 스케일 값
   const [isGloballyPlaying, setIsGloballyPlaying] = useState(false); // 전체 동시 재생 여부
   const [globalStartTime, setGlobalStartTime] = useState(0); // 모든 비디오가 동시에 재생될 수 있는 시작 시간
@@ -532,460 +588,8 @@ const VideoEditScreen: React.FC<{
   // =================================================================================
 
   // '콜라주 생성 및 업로드' 버튼 클릭 시 실행되는 메인 함수
-  const processVideoForUpload = async () => {
-    setIsProcessing(true);
-
-    try {
-      console.log('[VideoEditScreen] Starting collage creation...');
-      // 편집할 비디오가 하나 이상 있는지 확인합니다.
-      const activeTrimmers = trimmers.filter(t => t.sourceVideo);
-      if (activeTrimmers.length === 0) {
-        Alert.alert('오류', '편집할 비디오가 없습니다.');
-        setIsProcessing(false); // 처리 중 상태를 해제해야 합니다.
-        return;
-      }
-
-      // 6.1. FFmpeg 필터 및 명령어 생성
-      const editData: EditData = {
-        trimmers: activeTrimmers.map(t => ({
-          startTime: t.startTime,
-          endTime: t.endTime,
-          volume: t.volume,
-          aspectRatio:
-            t.aspectRatio === 'original' && t.originalAspectRatioValue
-              ? t.originalAspectRatioValue
-              : t.aspectRatio,
-          equalizer: t.equalizer.map(({ frequency, gain }) => ({
-            frequency,
-            gain,
-          })),
-        })),
-      };
-
-      const filterComplexArray = generateCollageFilterComplex(editData);
-      const filterComplexString = filterComplexArray.join('; ');
-
-      const inputVideos = activeTrimmers.map(t => t.sourceVideo!);
-      const inputCommands = inputVideos
-        .map(v => `-i "${cleanUri(v.uri)}"`)
-        .join(' ');
-
-      const collageOutputPath = `${
-        RNFS.DocumentDirectoryPath
-      }/collage_${Date.now()}.mp4`;
-      const hasAudio = activeTrimmers.some(t => t.volume > 0);
-      const mapCommand = hasAudio ? '-map "[v]" -map "[a]"' : '-map "[v]"';
-
-      const encoder =
-        Platform.OS === 'ios' ? 'h264_videotoolbox' : 'h264_mediacodec';
-
-      const command = `${inputCommands} -filter_complex "${filterComplexString}" ${mapCommand} -c:v ${encoder} -c:a aac -b:a 192k -movflags +faststart "${collageOutputPath}"`;
-
-      console.log('[VideoEditScreen] Executing FFmpeg command:', command);
-
-      // 6.2. FFmpeg 실행: 콜라주 비디오 생성
-      const session = await FFmpegKit.execute(command);
-      const returnCode = await session.getReturnCode();
-
-      if (ReturnCode.isSuccess(returnCode)) {
-        Alert.alert('성공', '비디오 콜라주가 성공적으로 생성되었습니다.');
-        console.log(
-          `[VideoEditScreen] Collage video saved to: ${collageOutputPath}`,
-        );
-
-        // --- 6.3. FFmpeg 실행: 썸네일 추출 ---
-        console.log('[VideoEditScreen] Starting thumbnail extraction...');
-        const thumbnailOutputPath = `${
-          RNFS.DocumentDirectoryPath
-        }/thumbnail_${Date.now()}.jpg`;
-        const thumbnailCommand = `-i "${collageOutputPath}" -ss 00:00:01.000 -vframes 1 -q:v 2 "${thumbnailOutputPath}"`;
-
-        const thumbnailSession = await FFmpegKit.execute(thumbnailCommand);
-        const thumbnailReturnCode = await thumbnailSession.getReturnCode();
-
-        if (ReturnCode.isSuccess(thumbnailReturnCode)) {
-          Alert.alert('성공', '썸네일도 성공적으로 생성되었습니다.');
-          console.log(
-            `[VideoEditScreen] Thumbnail saved to: ${thumbnailOutputPath}`,
-          );
-
-          // --- 6.4. FFmpeg 실행: 마지막 소스 비디오 최적화 ---
-          console.log(
-            '[VideoEditScreen] Starting source video optimization...',
-          );
-          const lastVideo =
-            activeTrimmers[activeTrimmers.length - 1].sourceVideo;
-          if (lastVideo) {
-            const optimizedSourceOutputPath = `${
-              RNFS.DocumentDirectoryPath
-            }/optimized_source_${Date.now()}.mp4`;
-            const optimizedSourceCommand = `-i "${cleanUri(
-              lastVideo.uri,
-            )}" -c:v ${encoder} -vf "scale=540:-2" -c:a aac -b:a 128k -y "${optimizedSourceOutputPath}"`;
-
-            const optimizedSession = await FFmpegKit.execute(
-              optimizedSourceCommand,
-            );
-            const optimizedReturnCode = await optimizedSession.getReturnCode();
-
-            if (ReturnCode.isSuccess(optimizedReturnCode)) {
-              Alert.alert(
-                '성공',
-                '소스 비디오 최적화도 완료되었습니다. 모든 준비가 끝났습니다!',
-              );
-              console.log(
-                `[VideoEditScreen] Optimized source video saved to: ${optimizedSourceOutputPath}`,
-              );
-
-              // --- (나중에 변환) 확인용으로 생성된 파일들을 갤러리에 저장 ---
-              try {
-                console.log(
-                  '[VideoEditScreen] Saving generated files to device gallery for verification...',
-                );
-                await CameraRoll.save(`file://${collageOutputPath}`, {
-                  type: 'video',
-                });
-                await CameraRoll.save(`file://${thumbnailOutputPath}`, {
-                  type: 'photo',
-                });
-                await CameraRoll.save(`file://${optimizedSourceOutputPath}`, {
-                  type: 'video',
-                });
-                Alert.alert(
-                  '저장 완료',
-                  '생성된 파일들이 갤러리에 저장되었습니다.',
-                );
-                console.log(
-                  '[VideoEditScreen] All files saved to device gallery.',
-                );
-              } catch (saveError) {
-                console.error(
-                  '[VideoEditScreen] Failed to save files to device:',
-                  saveError,
-                );
-                Alert.alert(
-                  '저장 실패',
-                  '파일을 갤러리에 저장하는 중 오류가 발생했습니다.',
-                );
-              }
-              // --- 확인용 로직 종료 ---
-
-              // --- 6.5. 백엔드 통신: Presigned URL 요청 ---
-              try {
-                console.log(
-                  '[VideoEditScreen] Requesting presigned URLs for 3 files...',
-                );
-
-                // JWT 토큰에서 사용자 ID 추출
-                const token = await AsyncStorage.getItem('accessToken');
-                if (!token) {
-                  throw new Error('로그인 토큰을 찾을 수 없습니다.');
-                }
-                const decodedToken = jwtDecode<CustomJwtPayload>(token);
-                const userId = decodedToken.id;
-
-                // 업로드할 파일 정보 준비 (3개 파일 모두 요청)
-                const filesToUpload = [
-                  {
-                    purpose: 'RESULT_VIDEO',
-                    fileType: 'video/mp4',
-                    localPath: collageOutputPath,
-                  },
-                  {
-                    purpose: 'THUMBNAIL',
-                    fileType: 'image/jpeg',
-                    localPath: thumbnailOutputPath,
-                  },
-                  {
-                    purpose: 'SOURCE_VIDEO',
-                    fileType: 'video/mp4',
-                    localPath: optimizedSourceOutputPath,
-                  },
-                ];
-
-                // 백엔드에 Presigned URL 일괄 요청 (3개 파일)
-                const presignedUrlResponse = await axiosInstance.post(
-                  '/video-insert/upload-urls',
-                  {
-                    purposes: filesToUpload.map(f => ({
-                      purpose: f.purpose,
-                      fileType: f.fileType,
-                    })),
-                  },
-                );
-
-                console.log(
-                  '[VideoEditScreen] Full response:',
-                  presignedUrlResponse.data,
-                );
-                const responseData = presignedUrlResponse.data;
-
-                // 응답 구조를 자세히 로깅
-                console.log(
-                  '[VideoEditScreen] Response keys:',
-                  Object.keys(responseData),
-                );
-                console.log(
-                  '[VideoEditScreen] RESULT_VIDEO exists:',
-                  !!responseData.RESULT_VIDEO,
-                );
-                console.log(
-                  '[VideoEditScreen] THUMBNAIL exists:',
-                  !!responseData.THUMBNAIL,
-                );
-                console.log(
-                  '[VideoEditScreen] SOURCE_VIDEO exists:',
-                  !!responseData.SOURCE_VIDEO,
-                );
-
-                // 백엔드 응답 구조 확인 및 매핑
-                if (
-                  !responseData.RESULT_VIDEO ||
-                  !responseData.THUMBNAIL ||
-                  !responseData.SOURCE_VIDEO
-                ) {
-                  console.error('[VideoEditScreen] Missing URLs in response:', {
-                    hasResultVideo: !!responseData.RESULT_VIDEO,
-                    hasThumbnail: !!responseData.THUMBNAIL,
-                    hasSourceVideo: !!responseData.SOURCE_VIDEO,
-                    actualKeys: Object.keys(responseData),
-                  });
-                  throw new Error(
-                    '백엔드에서 필요한 URL을 모두 받지 못했습니다.',
-                  );
-                }
-
-                // 올바른 응답 구조에 맞춰 매핑
-                const urlMappings = [
-                  {
-                    purpose: 'RESULT_VIDEO',
-                    presignedUrl: responseData.RESULT_VIDEO.url,
-                    s3Key: responseData.RESULT_VIDEO.key,
-                    localPath: collageOutputPath,
-                    fileType: 'video/mp4',
-                  },
-                  {
-                    purpose: 'THUMBNAIL',
-                    presignedUrl: responseData.THUMBNAIL.url,
-                    s3Key: responseData.THUMBNAIL.key,
-                    localPath: thumbnailOutputPath,
-                    fileType: 'image/jpeg',
-                  },
-                  {
-                    purpose: 'SOURCE_VIDEO',
-                    presignedUrl: responseData.SOURCE_VIDEO.url,
-                    s3Key: responseData.SOURCE_VIDEO.key,
-                    localPath: optimizedSourceOutputPath,
-                    fileType: 'video/mp4',
-                  },
-                ];
-
-                console.log(
-                  '[VideoEditScreen] Mapped URLs for upload:',
-                  urlMappings,
-                );
-
-                Alert.alert('성공', 'S3 업로드 URL을 성공적으로 받아왔습니다.');
-
-                // --- 6.6. S3에 병렬 업로드 ---
-                console.log(
-                  '[VideoEditScreen] Starting parallel upload to S3...',
-                );
-                setUploading(true);
-
-                const uploadPromises = urlMappings.map(
-                  (urlData: {
-                    presignedUrl: string;
-                    purpose: string;
-                    s3Key: string;
-                    localPath: string;
-                    fileType: string;
-                  }) => {
-                    console.log(
-                      `[VideoEditScreen] Uploading ${urlData.purpose} from ${urlData.localPath}...`,
-                    );
-                    return uploadFile(urlData.presignedUrl, {
-                      uri: urlData.localPath,
-                      type: urlData.fileType,
-                    });
-                  },
-                );
-
-                await Promise.all(uploadPromises);
-                console.log(
-                  '[VideoEditScreen] All files uploaded successfully to S3!',
-                );
-                Alert.alert(
-                  '업로드 완료',
-                  '모든 파일이 S3에 성공적으로 업로드되었습니다.',
-                );
-                setUploading(false);
-                // --- 병렬 업로드 종료 ---
-
-                // --- 6.7. DB에 메타데이터 저장 ---
-                console.log(
-                  '[VideoEditScreen] Saving video metadata to database...',
-                );
-
-                const directParent =
-                  serverVideos.length > 0
-                    ? serverVideos[serverVideos.length - 1]
-                    : null;
-                const parent_video_id = directParent ? directParent.id : null;
-                const depth = directParent ? directParent.depth + 1 : 1;
-
-                const s3Keys: Record<string, string> = {};
-                urlMappings.forEach(mapping => {
-                  s3Keys[mapping.purpose] = mapping.s3Key;
-                });
-
-                await axiosInstance.post('/video-insert/complete', {
-                  user_id: userId,
-                  results_video_key: s3Keys['RESULT_VIDEO'],
-                  source_video_key: s3Keys['SOURCE_VIDEO'],
-                  thumbnail_key: s3Keys['THUMBNAIL'],
-                  parent_video_id,
-                  depth,
-                });
-
-                console.log(
-                  '[VideoEditScreen] Video metadata saved successfully!',
-                );
-                Alert.alert(
-                  '완료',
-                  '모든 작업이 완료되었습니다. 비디오가 성공적으로 저장되었습니다.',
-                );
-
-                // 성공적으로 완료되었으므로 이전 화면으로 이동
-                navigation.popToTop();
-                // --- DB 저장 종료 ---
-              } catch (urlError: any) {
-                console.error(
-                  '[VideoEditScreen] Failed to get presigned URLs:',
-                  urlError,
-                );
-                Alert.alert(
-                  '오류',
-                  `업로드 URL 요청 중 오류가 발생했습니다: ${urlError.message}`,
-                );
-                setUploading(false);
-              }
-              // --- Presigned URL 요청 종료 ---
-            } else {
-              const optimizedLogs = await optimizedSession.getLogsAsString();
-              console.error(
-                '[VideoEditScreen] Source optimization failed. Logs:',
-                optimizedLogs,
-              );
-              Alert.alert('오류', '소스 비디오 최적화 중 오류가 발생했습니다.');
-            }
-          } else {
-            Alert.alert('오류', '최적화할 원본 비디오를 찾지 못했습니다.');
-          }
-          // --- 소스 비디오 최적화 로직 종료 ---
-        } else {
-          const thumbnailLogs = await thumbnailSession.getLogsAsString();
-          console.error(
-            '[VideoEditScreen] Thumbnail extraction failed. Logs:',
-            thumbnailLogs,
-          );
-          Alert.alert('오류', '썸네일 추출 중 오류가 발생했습니다.');
-        }
-        // --- 썸네일 추출 로직 종료 ---
-      } else {
-        const logs = await session.getLogsAsString();
-        console.error('[VideoEditScreen] FFmpeg process failed. Logs:', logs);
-        Alert.alert('오류', 'FFmpeg 처리 중 오류가 발생했습니다.');
-      }
-    } catch (error: any) {
-      console.error('[VideoEditScreen] Error during video processing:', error);
-      Alert.alert(
-        '오류',
-        `비디오 처리 중 오류가 발생했습니다: ${error.message}`,
-      );
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  // Presigned URL을 받아와서 업로드하는 함수 (현재는 processVideoForUpload에 통합되어 사용되지 않는 것으로 보임)
-  const getPresignedUrlAndUpload = async (video: {
-    uri: string;
-    name: string;
-    type: string;
-  }) => {
-    setUploading(true);
-    try {
-      const token = await AsyncStorage.getItem('accessToken');
-      if (!token) {
-        throw new Error('No access token found.');
-      }
-      const decodedToken = jwtDecode<CustomJwtPayload>(token);
-      const userId = decodedToken.id;
-
-      // 서버의 실제 엔드포인트인 'upload-urls'로 경로를 수정
-      const response = await axiosInstance.post('/video-insert/upload-urls', {
-        filename: video.name,
-        filetype: video.type,
-      });
-
-      const { presignedUrl, s3Key } = response.data;
-      await uploadFile(presignedUrl, video);
-
-      const parent_video_id =
-        serverVideos.length > 0 ? serverVideos[0].id : null;
-      const depth = serverVideos.length > 0 ? serverVideos[0].depth + 1 : 1;
-
-      await axiosInstance.post('/video-insert/video-info', {
-        title: '새로운 콜라주 비디오',
-        description: 'FFmpeg로 생성됨',
-        s3_key: s3Key,
-        user_id: userId,
-        parent_video_id,
-        depth,
-        total_slots: trimmers.length,
-      });
-
-      Alert.alert('성공', '비디오가 성공적으로 업로드되었습니다.');
-    } catch (error) {
-      console.error('Upload failed:', error);
-      Alert.alert('오류', '업로드에 실패했습니다.');
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  // Presigned URL을 사용해 S3에 실제 파일을 업로드하는 함수
-  const uploadFile = async (
-    url: string,
-    file: { uri: string; type: string },
-  ) => {
-    try {
-      const fileUri = file.uri.startsWith('file://')
-        ? file.uri
-        : `file://${file.uri}`;
-
-      const response = await fetch(url, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': file.type,
-        },
-        body: {
-          uri: fileUri,
-          type: file.type,
-          name: 'upload',
-        } as any,
-      });
-
-      if (!response.ok) {
-        throw new Error(`Upload failed with status: ${response.status}`);
-      }
-
-      console.log('File uploaded successfully!');
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      throw error;
-    }
+  const handleProcessAndUpload = () => {
+    startVideoProcessing(trimmers, serverVideos);
   };
 
   // =================================================================================
@@ -994,7 +598,7 @@ const VideoEditScreen: React.FC<{
   return (
     <ScreenContainer>
       {/* 7.1. 비디오 미리보기 영역 */}
-      <Animated.View style={{ height: previewHeight }}>
+      <Animated.View style={{ height: previewHeightAnim }}>
         <PreviewPanel
           trimmers={trimmers}
           playbackStates={playbackStates}
@@ -1006,6 +610,7 @@ const VideoEditScreen: React.FC<{
           onPlay={handlePlay}
           onPause={handlePause}
           onStop={handleStop}
+          isCollapsed={previewState === 'collapsed'}
         />
       </Animated.View>
 
@@ -1015,100 +620,118 @@ const VideoEditScreen: React.FC<{
       </Dragger>
 
       {/* 7.3. 하단 컨트롤 영역 */}
-      <ControlsWrapper>
-        {/* 전역 컨트롤 버튼 (처음으로, 재생/정지, 끝으로) */}
-        <GlobalActionsContainer>
-          <GlobalActionButton
-            backgroundColor={'#000000'}
-            onPress={handleGlobalSeekToStart}
+      <ControlsWrapper
+        onLayout={e => setControlsWrapperHeight(e.nativeEvent.layout.height)}
+      >
+        {/* 시간 및 스크롤 가능한 컨트롤 영역 */}
+        <View
+          style={{ flex: 1, marginTop: previewState === 'collapsed' ? 0 : 60 }}
+        >
+          {/* 현재 타임라인 시간 표시 */}
+          <Text
+            style={{
+              color: 'white',
+              textAlign: 'center',
+              fontSize: 16,
+              marginVertical: 10,
+            }}
           >
-            <AlignStartVertical color="#ffffff" size={18} />
-          </GlobalActionButton>
-          {isGloballyPlaying ? (
-            <GlobalActionButton
-              backgroundColor={'#000000'}
-              onPress={handleToggleGlobalPlay}
-            >
-              <Pause color="#ffffff" size={18} />
-            </GlobalActionButton>
-          ) : (
-            <GlobalActionButton
-              backgroundColor={'#000000'}
-              onPress={handleToggleGlobalPlay}
-            >
-              <Play color="#ffffff" size={18} />
-            </GlobalActionButton>
-          )}
-          {/* 나중에 수정 */}
-          <GlobalActionButton
-            backgroundColor={'#000000'}
-            onPress={handleGlobalSeekToStart}
-          >
-            <AlignEndVertical color="#ffffff" size={18} />
-          </GlobalActionButton>
-        </GlobalActionsContainer>
+            {formatTime(timelinePosition)}
+          </Text>
 
-        {/* 현재 타임라인 시간 표시 */}
-        <Text
+          <View style={{ flex: 1 }}>
+            {/* 타임라인 컴포넌트 */}
+            <View style={{ height: timelineHeight, minHeight: 100 }}>
+              <Timeline
+                trimmers={trimmers}
+                globalStartTime={globalStartTime}
+                globalEndTime={globalEndTime}
+                currentTime={
+                  playbackStates[trimmers[0]?.id]?.currentTime ??
+                  timelinePosition
+                }
+                onPositionChange={handleTimelinePositionChange}
+                onTrimmerUpdate={handleTrimmerUpdate}
+                onHeightChange={setTimelineHeight} // [추가] 높이 변경 콜백 전달
+                isPlaying={isGloballyPlaying} // [추가]
+              />
+            </View>
+
+            {/* 각 비디오별 컨트롤러 (스크롤) */}
+            <ControlsScrollView
+              showsVerticalScrollIndicator={false}
+              style={{
+                paddingBottom: previewState === 'collapsed' ? 60 : 0,
+              }}
+            >
+              {trimmers.map((trimmer, index) => (
+                <VideoControlSet
+                  key={trimmer.id}
+                  title={`비디오 ${index + 1} 컨트롤`}
+                  videoDuration={trimmer.duration}
+                  initialStartTime={trimmer.startTime}
+                  initialEndTime={trimmer.endTime}
+                  initialVolume={trimmer.volume}
+                  initialEqualizer={trimmer.equalizer}
+                  currentTime={playbackStates[trimmer.id]?.currentTime ?? 0}
+                  onUpdate={newState =>
+                    handleTrimmerUpdate(trimmer.id, newState)
+                  }
+                  onSeek={time => handleSeek(trimmer.id, time)}
+                />
+              ))}
+              {/* 최종 생성/업로드 버튼 */}
+              <CreateCollageSection>
+                <CreateCollageButton
+                  backgroundColor={'#333333'}
+                  onPress={handleProcessAndUpload}
+                  disabled={isProcessing || uploading}
+                >
+                  {isProcessing
+                    ? '콜라주 생성 중...'
+                    : uploading
+                    ? '업로드 중...'
+                    : '콜라주 생성 및 업로드'}
+                </CreateCollageButton>
+              </CreateCollageSection>
+            </ControlsScrollView>
+          </View>
+        </View>
+
+        {/* GlobalControls를 오버레이로 렌더링 */}
+        <Animated.View
           style={{
-            color: 'white',
-            textAlign: 'center',
-            fontSize: 16,
-            marginVertical: 10,
+            position: 'absolute',
+            top: controlsTopAnim,
+            left: 0,
+            right: 0,
+            zIndex: 10,
           }}
         >
-          {formatTime(timelinePosition)}
-        </Text>
-
-        <View style={{ flex: 1 }}>
-          {/* 타임라인 컴포넌트 */}
-          <View style={{ height: timelineHeight, minHeight: 100 }}>
-            <Timeline
-              trimmers={trimmers}
-              globalStartTime={globalStartTime}
-              globalEndTime={globalEndTime}
-              currentTime={
-                playbackStates[trimmers[0]?.id]?.currentTime ?? timelinePosition
-              }
-              onPositionChange={handleTimelinePositionChange}
-              onTrimmerUpdate={handleTrimmerUpdate}
-              onHeightChange={setTimelineHeight} // [추가] 높이 변경 콜백 전달
-              isPlaying={isGloballyPlaying} // [추가]
-            />
-          </View>
-
-          {/* 각 비디오별 컨트롤러 (스크롤) */}
-          <ControlsScrollView showsVerticalScrollIndicator={false}>
-            {trimmers.map((trimmer, index) => (
-              <VideoControlSet
-                key={trimmer.id}
-                title={`비디오 ${index + 1} 컨트롤`}
-                videoDuration={trimmer.duration}
-                initialStartTime={trimmer.startTime}
-                initialEndTime={trimmer.endTime}
-                initialVolume={trimmer.volume}
-                initialEqualizer={trimmer.equalizer}
-                currentTime={playbackStates[trimmer.id]?.currentTime ?? 0}
-                onUpdate={newState => handleTrimmerUpdate(trimmer.id, newState)}
-                onSeek={time => handleSeek(trimmer.id, time)}
-              />
-            ))}
-            {/* 최종 생성/업로드 버튼 */}
-            <CreateCollageSection>
-              <CreateCollageButton
-                backgroundColor={'#333333'}
-                onPress={processVideoForUpload}
-                disabled={isProcessing || uploading}
-              >
-                {isProcessing
-                  ? '콜라주 생성 중...'
-                  : uploading
-                  ? '업로드 중...'
-                  : '콜라주 생성 및 업로드'}
-              </CreateCollageButton>
-            </CreateCollageSection>
-          </ControlsScrollView>
-        </View>
+          <GlobalControls
+            isGloballyPlaying={isGloballyPlaying}
+            onToggleGlobalPlay={handleToggleGlobalPlay}
+            onGlobalSeekToStart={handleGlobalSeekToStart}
+            style={
+              previewState === 'collapsed'
+                ? {
+                    /* [수정] 접힘 상태일 때 적용할 커스텀 스타일 */
+                    alignSelf: 'center',
+                    width: '50%',
+                    maxWidth: '100%',
+                    paddingHorizontal: 10,
+                    backgroundColor: '#333333',
+                    borderRadius: 50,
+                    paddingVertical: 5,
+                  }
+                : {
+                    /* [추가] 기본 상태일 때의 스타일 */
+                    alignSelf: 'center',
+                    maxWidth: 200,
+                  }
+            }
+          />
+        </Animated.View>
       </ControlsWrapper>
     </ScreenContainer>
   );

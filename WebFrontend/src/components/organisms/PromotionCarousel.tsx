@@ -21,8 +21,8 @@ const PromotionCarousel: React.FC<PromotionCarouselProps> = ({ items }) => {
     <Swiper
       slidesPerView={'auto'} // 슬라이드가 콘텐츠 너비만큼 차지하도록 설정
       spaceBetween={16}      // 슬라이드 사이의 간격 (16px)
-      slidesOffsetBefore={16} // 첫 슬라이드 시작 전 여백
-      slidesOffsetAfter={16}  // 마지막 슬라이드 끝난 후 여백
+      slidesOffsetBefore={0} // 첫 슬라이드 시작 전 여백
+      slidesOffsetAfter={0}  // 마지막 슬라이드 끝난 후 여백
     >
       {items.map((item) => (
         <SwiperSlide key={item.id} style={{ width: '80%' }}> {/* 각 슬라이드의 너비 */}

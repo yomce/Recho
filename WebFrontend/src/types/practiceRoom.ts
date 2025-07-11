@@ -2,6 +2,7 @@ export interface Location {
   locationId: string;
   regionLevel1: string;
   regionLevel2: string;
+  place_name: string;
   address: string;
   lat: number;
   lng: number;

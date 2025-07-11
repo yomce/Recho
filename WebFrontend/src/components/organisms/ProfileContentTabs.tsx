@@ -1,3 +1,4 @@
+// src/components/organisms/ProfileContentTabs.tsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -86,10 +87,10 @@ const ProfileContentTabs: React.FC<ProfileContentTabsProps> = ({ shorts, usedPro
       </Swiper>
 
       {/* 플러스 버튼 (Floating Action Button) */}
-      <div className="fixed bottom-26 right-4 z-10 sm:right-[calc(50vw-215px+16px)]">
+      <div className="fixed bottom-20 right-4 z-10 sm:right-[calc(50vw-215px+16px)]">
         <button
           onClick={handleFabClick}
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-primary text-white transition-transform hover:scale-105"
+          className="w-14 h-14 bg-brand-primary text-brand-inverse rounded-full flex items-center justify-center hover:scale-105 transition-all"
         >
           <IconButton iconName="plus" iconSize={32} className="!p-0 !text-white" />
         </button>

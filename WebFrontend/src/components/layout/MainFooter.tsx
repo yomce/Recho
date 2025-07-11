@@ -43,7 +43,7 @@ const MainFooter: React.FC<MainFooterProps> = ({
         >
           {/* 👇 모든 active 조건을 올바르게 수정합니다. */}
           <NavItem iconName="home" label="홈" active={currentPath === '/main' || currentPath === '/'} onClick={onHomeClick} />
-          <NavItem iconName="memo" label="커뮤니티" active={currentPath === '/category'} onClick={onCommunityClick} />   
+          <NavItem iconName="memo" label="커뮤니티" active={currentPath === '/community'} onClick={onCommunityClick} />   
           <NavItem iconName="vinyl" label="바이닐" active={currentPath.startsWith('/vinyl')} onClick={onVinylClick} />
           <NavItem iconName="chat" label="채팅" active={currentPath.startsWith('/chat')} onClick={onChatClick} />
           <NavItem iconName="user" label="마이" active={currentPath.startsWith('/users')} onClick={onMyPageClick} />

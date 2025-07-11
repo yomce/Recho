@@ -25,6 +25,8 @@ import { ConfigController } from './config/config.controller';
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { PostsModule } from './community/posts/posts.module';
+import { CommentsModule } from './community/comments/comments.module';
 
 @Module({
   imports: [
@@ -94,6 +96,8 @@ import * as path from 'path';
     LocationModule,
     ApplicationModule,
     ViewCountModule,
+    PostsModule,
+    CommentsModule,
   ],
   controllers: [AppController, ConfigController],
   providers: [AppService],

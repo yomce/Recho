@@ -67,8 +67,8 @@ const UserPage: React.FC = () => {
       setLoading(true);
       try {
         const [userResponse, thumbnailsResponse] = await Promise.all([
-          axiosInstance.get<UserProfile>(`/users/${id}`),
-          axiosInstance.get<string[]>(`/videos/thumbnails?id=${id}`),
+          axiosInstance.get<UserProfile>(`api/users/${id}`),
+          axiosInstance.get<string[]>(`api/videos/thumbnails?id=${id}`),
         ]);
         setUser(userResponse.data);
         const formattedThumbnails = thumbnailsResponse.data.map((url, index) => ({

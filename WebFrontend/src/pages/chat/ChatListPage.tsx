@@ -60,7 +60,7 @@ const ChatListPage: React.FC = () => {
     const fetchChatRooms = async () => {
       setLoading(true);
       try {
-        const response = await axiosInstance.get<ChatRoom[]>('/chat/my-rooms');
+        const response = await axiosInstance.get<ChatRoom[]>('api/chat/my-rooms');
         setRooms(response.data);
       } catch (err) {
         console.error('채팅방 목록을 불러오는 데 실패했습니다.', err);
@@ -89,7 +89,7 @@ const ChatListPage: React.FC = () => {
       });
       setNewRoomName('');
       alert(`'${response.data.name}' 방이 생성되었습니다!`);
-      const roomsResponse = await axiosInstance.get<ChatRoom[]>('/chat/my-rooms');
+      const roomsResponse = await axiosInstance.get<ChatRoom[]>('api/chat/my-rooms');
       setRooms(roomsResponse.data);
     } catch (err) {
       console.error('채팅방 생성에 실패했습니다.', err);

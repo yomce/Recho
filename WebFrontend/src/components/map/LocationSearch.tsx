@@ -33,7 +33,7 @@ const LocationSearch = () => {
     try {
       // [수정] 카카오 API 대신 우리 백엔드 서버의 검색 엔드포인트를 호출합니다.
       const res = await axiosInstance.get(
-        `locations/search`, // URL 변경
+        `api/locations/search`, // URL 변경
         { params: { query } } // 헤더 제거
       );
       setResults(res.data.documents);
@@ -46,7 +46,7 @@ const LocationSearch = () => {
     try {
       // [수정] 카카오 API 대신 우리 백엔드 서버의 역지오코딩 엔드포인트를 호출합니다.
       const reverseRes = await axiosInstance.get(
-        `locations/reverse-geocode`, // URL 변경
+        `api/locations/reverse-geocode`, // URL 변경
         { params: { x: location.x, y: location.y } } // 헤더 제거
       );
 

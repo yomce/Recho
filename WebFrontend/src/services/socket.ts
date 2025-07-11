@@ -1,7 +1,6 @@
 // src/services/socket.ts
 import { io } from "socket.io-client";
 
-// const SOCKET_URL = 'http://localhost:3000';
 const SOCKET_URL = import.meta.env.VITE_API_URL;
 
 // socket.io 클라이언트 인스턴스를 생성합니다.

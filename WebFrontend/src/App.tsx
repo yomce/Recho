@@ -9,7 +9,7 @@ import { useConfigStore } from './stores/useConfigStore';
 
 function App() {
   const fetchConfig = useConfigStore((state) => state.fetchConfig);
-  const setToken = useAuthStore((state) => state.setToken);
+  const setToken = useAuthStore((state) => state.actions.setToken);
 
   // 환경변수 설정
   useEffect(() => {

@@ -26,7 +26,7 @@ const QuickAction: React.FC<{ icon: React.ReactNode; label: string; onClick?: ()
 
 const MainPage: React.FC = () => {
     const navigate = useNavigate();
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [, setIsModalOpen] = useState(false);
     const user = useAuthStore((state) => state.user);
     const accessToken = localStorage.getItem('accessToken');
     const { isVinylCreateModalOpen, actions: { closeVinylCreateModal } } = useUiStore();
@@ -37,7 +37,7 @@ const MainPage: React.FC = () => {
     const handleGoToPromotions = () => navigate('/promotions');
 
     const openModal = () => setIsModalOpen(true);
-    const closeModal = () => setIsModalOpen(false);
+    // const closeModal = () => setIsModalOpen(false);
 
     const handleSelectVideoFromGallery = () => {
         if (!accessToken) {

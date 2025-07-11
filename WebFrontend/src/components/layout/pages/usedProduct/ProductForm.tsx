@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useState } from 'react';
-import { TRADE_TYPE, type UsedProductForm } from '../../../../types/product'
+import { type UsedProductForm } from '../../../../types/product'
 import LocationSelector from '../../../map/LocationSelector';
 import InputLabel from '@/components/atoms/input/InputLabel';
 import CategorySelector from '@/components/atoms/input/CategorySelector';

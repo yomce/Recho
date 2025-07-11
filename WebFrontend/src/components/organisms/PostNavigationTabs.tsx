@@ -53,7 +53,7 @@ function SwiperTabs<T>({
         onSlideChange={(s) => setActiveIndex(s.activeIndex)}
         className="w-full"
       >
-        {contents.map((items, idx) => (
+        {contents && contents.map((items, idx) => (
           <SwiperSlide key={idx}>
             <div className="grid grid-cols-1 gap-4 p-4">
               {loading ? (

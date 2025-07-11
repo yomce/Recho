@@ -29,9 +29,9 @@ const AppNavigator = () => {
         screenOptions={{
           // headerStyle은 View 컴포넌트에 직접 적용되므로 styled-components로 감싸서 사용
           headerStyle: {
-            backgroundColor: '#2c3e50', // StyledHeader의 배경색과 일치
+            backgroundColor: '#000000', // StyledHeader의 배경색과 일치
           },
-          headerTintColor: '#ecf0f1', // 뒤로가기 버튼 등의 색상
+          headerTintColor: '#ffffff', // 뒤로가기 버튼 등의 색상
           headerTitleStyle: {
             fontWeight: 'bold', // StyledHeaderTitle과 일치
           },
@@ -56,8 +56,8 @@ const AppNavigator = () => {
           name="VideoEdit"
           component={VideoEditScreen}
           options={{
-            title: '비디오 편집',
-            headerShown: false,
+            title: 'VINYL',
+            headerShown: true,
           }}
         />
         <Stack.Screen
@@ -93,7 +93,7 @@ const AppNavigator = () => {
           name="Web"
           component={WebScreen}
           options={{
-            title: '웹뷰',
+            title: '',
             headerShown: false,
           }}
         />

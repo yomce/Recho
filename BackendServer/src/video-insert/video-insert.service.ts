@@ -48,6 +48,7 @@ export class VideoInsertService {
         accessKeyId: accessKeyId,
         secretAccessKey: secretAccessKey,
       },
+      forcePathStyle: true,
     };
 
     // 3. 생성된 설정 객체를 사용해 S3 클라이언트 초기화

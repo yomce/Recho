@@ -53,7 +53,7 @@ const UpdateRecruitEnsemblePage: React.FC = () => {
     const fetchEnsemble = async () => {
       setLoading(true);
       try {
-        const response = await axiosInstance.get<RecruitEnsemble>(`api/ensembles/${id}`);
+        const response = await axiosInstance.get<RecruitEnsemble>(`ensembles/${id}`);
         const ensemble = response.data;
 
         // --- 작성자 본인 확인 ---

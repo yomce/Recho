@@ -35,7 +35,7 @@ const UpdatePracticeRoomPage: React.FC = () => {
       setLoading(true);
 
       try {
-        const response = await axiosInstance.get<PracticeRoom>(`api/practice-room/${id}`);
+        const response = await axiosInstance.get<PracticeRoom>(`practice-room/${id}`);
         const post = response.data;
 
         setForm({

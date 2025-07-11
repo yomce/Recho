@@ -31,7 +31,7 @@ const PracticeRoomDetailPage: React.FC = () =>
 
       try{
         const response = await axiosInstance.get<PracticeRoom>(
-          `api/practice-room/${id}`
+          `practice-room/${id}`
         );
         setPost(response.data);
       } catch (err: any) {

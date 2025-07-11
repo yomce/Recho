@@ -13,6 +13,7 @@ async function bootstrap() {
   const configService = app.get(ConfigService); // ConfigService 인스턴스를 가져옵니다.
 
   process.env.TZ = 'UTC';
+  app.setGlobalPrefix('api');
 
   app.use(cookieParser()); // cookie-parser를 전역 미들웨어로 설정
 

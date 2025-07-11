@@ -137,7 +137,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       chatPartner: { id: null, username: '로딩 중...', profileUrl: null },
     });
     try {
-      const response = await axiosInstance.get(`api/chat/rooms/${roomId}/history`);
+      const response = await axiosInstance.get(`chat/rooms/${roomId}/history`);
       const messageHistory: Message[] = response.data;
       set({ messages: messageHistory });
       const partner = messageHistory.find(

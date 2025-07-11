@@ -6,7 +6,7 @@ import type { Video } from "../types/video";
 
 export const getVideos = async (page = 1, limit = 10): Promise<Video[]> => {
   try {
-    const response = await axiosInstance.get<Video[]>('api/videos', {
+    const response = await axiosInstance.get<Video[]>('videos', {
       params: {
         sortBy: "createdAt",
         page,

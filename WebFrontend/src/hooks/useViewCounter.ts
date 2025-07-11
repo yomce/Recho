@@ -29,7 +29,7 @@ const useViewCounter = ({ type, id }: useViewCounterOptions) => {
     console.log(`[ViewCounter] Sending view count request for ${type}/${id}`);
 
     axiosInstance
-      .post(`/api/count-view/${type}/${id}`)
+      .post(`count-view/${type}/${id}`)
       .then(() => {
         localStorage.setItem(storageKey, 'true');
       })

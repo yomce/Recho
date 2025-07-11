@@ -24,7 +24,7 @@ export const useConfigStore = create<ConfigState>((set) => ({
     set({ isLoading: true, error: null });
     try {
       // 백엔드의 공개 설정 엔드포인트를 호출합니다.
-      const response = await axiosInstance.get<AppConfig>(`api/config/public`);
+      const response = await axiosInstance.get<AppConfig>(`config/public`);
       
       // 성공 시, 받아온 설정값을 상태에 저장합니다.
       set({ config: response.data, isLoading: false });

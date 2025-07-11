@@ -64,7 +64,7 @@ const RecruitEnsembleListPage: React.FC = () => {
 
       // API 엔드포인트를 모집 공고 목록으로 변경
       const response = await axiosInstance.get<PaginatedEnsembleResponse>(
-        `api/ensembles`,
+        `ensembles`,
         { params }
       );
 

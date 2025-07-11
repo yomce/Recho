@@ -139,7 +139,7 @@ const WebScreen: React.FC = () => {
           );
           try {
             const response = await axiosInstance.get<ServerVideo[]>(
-              `/videos/${childVideoId}/lineage`,
+              `api/videos/${childVideoId}/lineage`,
             );
             sourceItems = response.data;
             console.log('[WebScreen] Fetched lineage data:', sourceItems);

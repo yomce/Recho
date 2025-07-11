@@ -57,10 +57,9 @@ import { CommentsModule } from './community/comments/comments.module';
         timezone: 'UTC',
         ssl: cs.get('APP_ENV') === 'DEV' && {
           rejectUnauthorized: true,
-          ca: fs
-            .readFileSync(
-              path.join(__dirname, '../certs/ap-northeast-2-bundle.pem'),
-            )
+          ca: fs.readFileSync(
+            path.join(__dirname, '../certs/ap-northeast-2-bundle.pem'),
+          ),
         },
       }),
     }),

@@ -37,7 +37,7 @@ const UsedProductPage: React.FC = () => {
       }
 
       const response = await axiosInstance.get<PaginatedUsedProductResponse>(
-        `used-products`,
+        `api/used-products`,
         { params }
       );
 

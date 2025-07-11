@@ -242,7 +242,7 @@ const WebScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: '#FFFFFF' }]}>
       <WebView
         ref={webviewRef}
         source={{ uri: webFrontendUrl }}

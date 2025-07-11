@@ -4,6 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser'; // cookie-parser 임포트 추가
 import { ConfigService } from '@nestjs/config';
+import { Server } from 'https';
 // import * as dotenv from 'dotenv';
 
 // dotenv.config();
@@ -17,19 +18,18 @@ async function bootstrap() {
 
   app.use(cookieParser()); // cookie-parser를 전역 미들웨어로 설정
 
-  const frontendUrl = configService.get<string>('FRONTEND_URL');
+  const prodUrl = configService.get<string>('FRONTEND_URL');
+  const devUrl = 'http://localhost:5173'; // 개발용 프론트엔드 주소 (포트 확인)
 
-  const allowedOrigins: string[] = [];
-  if (frontendUrl) allowedOrigins.push(frontendUrl);
+  const allowedOrigins = [prodUrl, devUrl];
 
   app.enableCors({
-    origin: allowedOrigins,
+    origin: allowedOrigins, // ⬅️ origin을 배열로 전달
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true, // 쿠키나 인증 헤더 등을 주고받을 때 필요
-    allowedHeaders: 'Content-Type, Accept, Authorization', // 허용할 헤더 목록에 Authorization 추가
-    exposedHeaders: 'Authorization', // 클라이언트에서 접근할 수 있도록 헤더 노출
+    credentials: true, 
+    allowedHeaders: 'Content-Type, Accept, Authorization',
+    exposedHeaders: 'Authorization',
   });
-
   await app.listen(3000, '0.0.0.0');
 }
 bootstrap();

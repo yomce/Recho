@@ -24,7 +24,6 @@ const ButtonContainer = styled.TouchableOpacity<
   border-radius: 10px;
   align-items: center;
   justify-content: center;
-  margin-bottom: 10px;
 
   /* 비활성화 또는 로딩 시 투명도 적용 */
   backgrou: ${props => (props.disabled || props.isLoading ? 0.6 : 1)};

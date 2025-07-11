@@ -4,6 +4,7 @@ import axiosInstance from '@/services/axiosInstance';
 // 백엔드의 PublicConfigDto와 일치하는 타입
 interface AppConfig {
   kakaoMapAppKey: string;
+  kakaoCallbackUrl: string;
 }
 
 // 스토어의 상태와 액션을 정의하는 타입

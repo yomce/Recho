@@ -75,7 +75,7 @@ graph TD
     end
 
     subgraph Database
-        C[PostgreSQL / MySQL]
+        C[PostgreSQL]
     end
 
     subgraph Cloud Storage
@@ -91,9 +91,11 @@ graph TD
 
 | 이름 | 역할 | GitHub |
 | :---: | :---: | :---: |
-| **** | **Full-Stack / Team Lead** | **[GitHub Profile](https://github.com/your-username)** |
-| 팀원 2 | Frontend | [GitHub Profile](https://github.com/teammate2) |
-| 팀원 3 | Backend | [GitHub Profile](https://github.com/teammate3) |
+| 이시우 | **Full-Stack / Team Lead** | **[GitHub Profile](https://github.com/dltldn333)** |
+| 김경연 | Frontend | [GitHub Profile](https://github.com/teammate2) |
+| 노기윤 | Backend | [GitHub Profile](https://github.com/teammate3) |
+| 신동주 | Backend | [GitHub Profile](https://github.com/teammate3) |
+| 장예지 | Backend | [GitHub Profile](https://github.com/teammate3) |
 
 ## 📜 라이선스 (License)
 

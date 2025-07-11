@@ -16,6 +16,17 @@ import Modal from "@/components/molecules/modal/Modal";
 import Icon from "@/components/atoms/icon/Icon";
 import Avatar from "@/components/atoms/avatar/Avatar";
 
+
+// 시간 포맷팅을 위한 간단한 헬퍼 함수 (컴포넌트 외부에 추가)
+const formatTime = (dateString: string | Date) => {
+  const date = new Date(dateString);
+  return date.toLocaleTimeString('ko-KR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+};
+
 const ChatRoomPage: React.FC = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
@@ -181,8 +192,7 @@ const ChatRoomPage: React.FC = () => {
                 {msg.senderId === id ? (
                   // 내가 보낸 메시지
                   <div className="flex w-full justify-end">
-                    <MessageBubble msg={msg} currentUserId={id} dragX={dragX} />
-                  </div>
+                    <MessageBubble msg={{ ...msg, time: formatTime(msg.createdAt) }} currentUserId={id} dragX={dragX} />                  </div>
                 ) : (
                   // 상대방이 보낸 메시지
                   <div className="flex items-end gap-2">
@@ -200,7 +210,7 @@ const ChatRoomPage: React.FC = () => {
                         {msg.sender?.username}
                       </span>
                       <MessageBubble
-                        msg={msg}
+                        msg={{ ...msg, time: formatTime(msg.createdAt) }}
                         currentUserId={id}
                         dragX={dragX}
                       />

@@ -12,6 +12,11 @@ import { CreateRoomDto } from './dto/create-room.dto';
 import { CreateUserDto } from '../auth/user/dto/create-user.dto';
 import { UserService } from '../auth/user/user.service'; // 경로 확인
 
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm'; 
+import { Message } from './entities/message.entity';
+
+
 @WebSocketGateway({ cors: true })
 export class ChatGateway {
   @WebSocketServer()
@@ -20,6 +25,8 @@ export class ChatGateway {
   constructor(
     private readonly chatService: ChatService,
     private readonly userService: UserService, // ← 추가
+    @InjectRepository(Message) 
+    private readonly msgRepo: Repository<Message>,
   ) {}
 
   @SubscribeMessage('createRoom')
@@ -48,23 +55,20 @@ export class ChatGateway {
     payload: {
       roomId: string;
       senderId: string;
-      senderName: string; // 보낸 사람의 이름을 함께 받습니다.
       content: string;
     },
   ) {
-    // 1. 받은 메시지를 DB에 저장합니다.
-    const message = await this.chatService.saveMessage(payload);
+     // 1. 받은 메시지를 DB에 저장합니다.
+    const savedMessage = await this.chatService.saveMessage(payload);
 
-    // 2. DB에 저장된 message 객체에 보낸 사람의 이름을 추가합니다.
-    //    이렇게 하면 다른 클라이언트들이 누가 보냈는지 쉽게 알 수 있습니다.
-    const messageWithSenderName = {
-      ...message,
-      senderName: payload.senderName,
-    };
+    // 2. [수정] 저장된 메시지를 id로 다시 조회하여 sender 관계를 포함시킵니다.
+    const messageWithSender = await this.msgRepo.findOne({
+      where: { id: savedMessage.id },
+      relations: ['sender'], // 'sender' 관계(User 정보)를 함께 로드
+    });
 
-    // 3. 'to(roomId)'를 사용해 메시지를 보낸 사람을 포함한
-    //    해당 방의 모든 클라이언트에게 'newMessage' 이벤트를 보냅니다.
-    this.server.to(payload.roomId).emit('newMessage', messageWithSenderName);
+    // 3. 해당 방의 모든 클라이언트에게 'sender' 정보가 포함된 메시지 객체를 보냅니다.
+    this.server.to(payload.roomId).emit('newMessage', messageWithSender);
   }
 
   @SubscribeMessage('getHistory')

@@ -6,6 +6,7 @@ import { useLocationStore } from '@/components/map/store/useLocationStore';
 import { saveLocationToDB } from '@/components/map/LocationSaveHandler';
 import { useAuthStore } from '@/stores/authStore';
 import { PracticeRoomForm } from '@/components/layout/pages/practiceRoom/PracticeRoomForm';
+import PostLayout from '@/components/layout/PostLayout';
 
 const UpdatePracticeRoomPage: React.FC = () => {
   const navigate = useNavigate();
@@ -104,18 +105,19 @@ const UpdatePracticeRoomPage: React.FC = () => {
   if (error) return <div className="message-container error-message">{error}</div>;
 
   return (
-    <div className="max-w-3xl mx-auto my-8 p-10 bg-white rounded-lg shadow-xl">
-      <h2 className="text-center mt-0 mb-8 text-2xl font-bold text-gray-800">합주실 예약</h2>
-      <PracticeRoomForm
-        formState={form}
-        onFormChange={handleChange}
-        onFormSubmit={handleSubmit}
-        isLoading={loading}
-        errorMessage={error}
-        submitButtonText="상품 등록하기"
-        loadingButtonText="등록 중..."
-      />
-    </div>
+    <PostLayout>
+      <div className="bg-brand-frame p-4">
+        <PracticeRoomForm
+          formState={form}
+          onFormChange={handleChange}
+          onFormSubmit={handleSubmit}
+          isLoading={loading}
+          errorMessage={error}
+          submitButtonText="상품 등록하기"
+          loadingButtonText="등록 중..."
+        />
+      </div>
+    </PostLayout>
   )
 }
 

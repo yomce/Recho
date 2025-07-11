@@ -19,6 +19,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const handleGoToHome = () => navigate('/');
   const handleGoToChat = () => navigate('/chat');
   const handleGoToVinyl = () => navigate('/vinyl');
+  const handleGoToCommunity = () => navigate('/community');
   
   // '마이페이지' 이동 로직을 Layout이 직접 처리
   const handleGoToMyPage = () => {
@@ -45,7 +46,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <MainFooter 
         currentPath={location.pathname}
         onHomeClick={handleGoToHome}
-        onCommunityClick={() => toast('커뮤니티 페이지는 준비 중입니다.')}
+        onCommunityClick={handleGoToCommunity}
         onVinylClick={handleGoToVinyl}
         onChatClick={handleGoToChat}
         onMyPageClick={handleGoToMyPage}

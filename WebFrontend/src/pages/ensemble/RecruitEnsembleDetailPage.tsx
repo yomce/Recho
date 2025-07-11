@@ -18,7 +18,6 @@ const RecruitEnsembleDetailPage: React.FC = () => {
   // URL 파라미터에서 게시글 ID를 가져옵니다.
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  useViewCounter({ type: 'ensembles' });
 
   const [sessionList, setSessionList] = useState<SessionEnsemble[] | null>(null);
   const [ensemble, setEnsemble] = useState<RecruitEnsemble | null>(null);
@@ -32,6 +31,10 @@ const RecruitEnsembleDetailPage: React.FC = () => {
 
   console.log("ensemble", ensemble?.user.id);
   console.log("auth store", user);
+
+  if(id){
+    useViewCounter({ type: 'ensembles', id });
+  }
 
   useEffect(() => {
     if (!id) {

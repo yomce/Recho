@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
 import axiosInstance from "@/services/axiosInstance";
 
 // 조회수 증가가 필요한 페이지에서 아래처럼 호출하세요.
@@ -30,7 +29,7 @@ const useViewCounter = ({ type, id }: useViewCounterOptions) => {
     console.log(`[ViewCounter] Sending view count request for ${type}/${id}`);
 
     axiosInstance
-      .post(`/api/count-view/${type}/${id}`)
+      .post(`count-view/${type}/${id}`)
       .then(() => {
         localStorage.setItem(storageKey, 'true');
       })

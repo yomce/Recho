@@ -139,7 +139,7 @@ const WebScreen: React.FC = () => {
           );
           try {
             const response = await axiosInstance.get<ServerVideo[]>(
-              `/videos/${childVideoId}/lineage`,
+              `videos/${childVideoId}/lineage`,
             );
             sourceItems = response.data;
             console.log('[WebScreen] Fetched lineage data:', sourceItems);
@@ -242,7 +242,7 @@ const WebScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: '#FFFFFF' }]}>
       <WebView
         ref={webviewRef}
         source={{ uri: webFrontendUrl }}

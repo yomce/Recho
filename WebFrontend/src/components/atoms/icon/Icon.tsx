@@ -8,6 +8,7 @@ import {
   IoPersonAddOutline,
   IoHeartOutline,
   IoEllipsisHorizontalOutline,
+  IoEllipsisHorizontalSharp,
   IoCloseOutline,
   IoCheckmarkOutline,
   IoTrashOutline,
@@ -37,6 +38,8 @@ import {
   IoDocumentTextOutline,
   IoListOutline,
   IoCameraOutline,
+  IoLocationSharp,
+  IoHeart,
 } from 'react-icons/io5';
 
 // 아이콘 이름을 키로, 실제 컴포넌트를 값으로 매핑합니다.
@@ -46,7 +49,9 @@ const iconMap = {
   exit: IoExitOutline, // 나가기
   addUser: IoPersonAddOutline, // 초대
   like: IoHeartOutline, // 좋아요
+  likeFill: IoHeart,
   more: IoEllipsisHorizontalOutline, // 더보기
+  moreFill: IoEllipsisHorizontalSharp, // 더보기
   close: IoCloseOutline, // 닫기
   check: IoCheckmarkOutline, // 체크
   delete: IoTrashOutline, // 삭제       
@@ -76,6 +81,7 @@ const iconMap = {
   memo: IoDocumentTextOutline, // 커뮤니티
   category: IoListOutline, // 카테고리
   camera: IoCameraOutline, // 카메라
+  mapPin: IoLocationSharp, // 지도 핀
 };
 
 // Icon 컴포넌트가 받을 props 타입을 정의합니다.

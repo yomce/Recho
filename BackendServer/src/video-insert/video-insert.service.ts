@@ -48,6 +48,7 @@ export class VideoInsertService {
         accessKeyId: accessKeyId,
         secretAccessKey: secretAccessKey,
       },
+      forcePathStyle: true,
     };
 
     // 3. 생성된 설정 객체를 사용해 S3 클라이언트 초기화
@@ -81,7 +82,7 @@ export class VideoInsertService {
 
       const key = `${keyPrefix}/${uuidv4()}`;
       const command = new PutObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET || 'default-bucket',
+        Bucket: this.configService.get('AWS_S3_BUCKET') || 'default-bucket',
         Key: key,
         ContentType: fileType,
       });

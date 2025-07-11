@@ -5,10 +5,13 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import PrimaryButton from "@/components/atoms/button/PrimaryButton";
 import TextInput from "@/components/atoms/input/TextInput";
+import { useConfigStore } from '@/stores/useConfigStore';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.actions.login);
+  const kakaoCallbackUrl = useConfigStore((state) => state.config?.kakaoCallbackUrl);
+  console.log(kakaoCallbackUrl);
 
   const [id, setId] = useState("");
   const [password, setPassword] = useState("");
@@ -217,7 +220,7 @@ const LoginPage: React.FC = () => {
                 Google
               </a>
               <a
-                href={import.meta.env.VITE_KAKAO_LOGIN_URL}
+                href={kakaoCallbackUrl}
                 className="inline-flex w-full justify-center rounded-[var(--radius-button)] bg-[#FEE500] py-2 px-4 text-navigation font-medium text-black hover:opacity-90"
               >
                 <svg

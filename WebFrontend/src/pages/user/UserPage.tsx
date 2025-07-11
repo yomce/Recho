@@ -1,3 +1,4 @@
+// src/pages/user/UserPage.tsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axiosInstance from '../../services/axiosInstance';
@@ -67,8 +68,8 @@ const UserPage: React.FC = () => {
       setLoading(true);
       try {
         const [userResponse, thumbnailsResponse] = await Promise.all([
-          axiosInstance.get<UserProfile>(`/users/${id}`),
-          axiosInstance.get<string[]>(`/videos/thumbnails?id=${id}`),
+          axiosInstance.get<UserProfile>(`users/${id}`),
+          axiosInstance.get<string[]>(`videos/thumbnails?id=${id}`),
         ]);
         setUser(userResponse.data);
         const formattedThumbnails = thumbnailsResponse.data.map((url, index) => ({
@@ -119,16 +120,10 @@ const UserPage: React.FC = () => {
   }
 
   return (
-    <MyPageLayout onSettingsClick={() => setIsSettingsModalOpen(true)}>
-      <button
-        onClick={() => setIsSearchOverlayOpen(true)}
-        className="absolute right-12 top-4 z-10 rounded-full p-2 text-gray-600 hover:bg-gray-200"
-        aria-label="사용자 검색"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-6 w-6">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-        </svg>
-      </button>
+    <MyPageLayout 
+    onSettingsClick={() => setIsSettingsModalOpen(true)}
+    onSearchClick={() => setIsSearchOverlayOpen(true)}
+    >
       <div className="p-4 pt-12">
         {user ? (
           <div className="flex flex-col items-center">

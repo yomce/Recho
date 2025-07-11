@@ -1,33 +1,20 @@
 // src/pages/user/UsedProductDetailPage.tsx
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { type UsedProduct, STATUS, TRADE_TYPE } from '../../types/product';
+import { type UsedProduct, TRADE_TYPE } from '../../types/product';
 import { useAuthStore } from '@/stores/authStore';
 import axiosInstance from '@/services/axiosInstance';
 import useViewCounter from '@/hooks/useViewCounter';
 import PostLayout from '@/components/layout/PostLayout';
-import ImageCard from '@/components/atoms/card/ImageCard';
 import UserProfileCard from '@/components/atoms/card/UserProfileCard';
 import ProductInfoCard from '@/components/atoms/card/ProductInfoCard';
 import MapPreviewCard from '@/components/atoms/card/MapViewCard';
 import MessageInputForm from '@/components/atoms/input/MessageInput';
 import IconButton from '@/components/atoms/button/IconButton';
-
-// Enum 값에 따른 한글 텍스트 매핑
-const STATUS_TEXT = {
-  [STATUS.FOR_SALE]: '판매중',
-  [STATUS.IN_PROGRESS]: '예약중',
-  [STATUS.SOLD]: '판매완료',
-};
-
-// Enum 값에 따른 Tailwind 클래스 매핑
-const STATUS_CLASSES = {
-  [STATUS.FOR_SALE]: 'bg-green-500 text-white',
-  [STATUS.IN_PROGRESS]: 'bg-yellow-400 text-black',
-  [STATUS.SOLD]: 'bg-gray-500 text-white',
-};
+import SwiperImageCard from '@/components/atoms/card/SwipeImageCard';
+import { ToastMenu } from '@/components/atoms/button/ToastMenu';
 
 const TRADE_TYPE_TEXT = {
   [TRADE_TYPE.IN_PERSON]: '직거래',
@@ -141,16 +128,35 @@ const UsedProductDetailPage: React.FC = () => {
 
   return (
     <PostLayout bgClassName="bg-white">
-      <div className="mx-auto max-w-6xl px-4">
+      <div className="mx-auto max-w-6xl px-4 mb-8">
         <div className="flex flex-col">
           {/* 이미지 섹션 */}
-          <div className="md:flex-1 md:max-w-md my-8">
-            <ImageCard
-              src={product.imageUrl || 'https://placehold.co/400x300'}
-              alt={product.title}
-              width={600}
-              height={400}
-            />
+          <div className="relative">
+            <SwiperImageCard
+              images={[
+                "https://placehold.co/400x270/EEE/333?text=1",
+                "https://placehold.co/400x270/DDD/333?text=2",
+                "https://placehold.co/400x270/CCC/333?text=3"
+              ]}
+              width={400}
+              height={300}
+              slideClassName="py-4"
+              imgClassName='rounded-[var(--radius-card)]'
+              showPagination={true}
+              />
+            {isOwner && (
+              <div className="absolute top-5 right-2 z-10">
+                <IconButton
+                iconName="moreFill"
+                onClick={() =>
+                  ToastMenu({
+                    onEdit: () => handleEdit?.(),
+                    onDelete: () => handleDelete?.(),
+                  })
+                  }
+                />
+              </div>
+            )}
           </div>
 
           <UserProfileCard
@@ -160,7 +166,7 @@ const UsedProductDetailPage: React.FC = () => {
             status="판매중"
           />
           {/* 정보 섹션 */}
-          <div className="mt-6 md:mt-0 md:flex-1 flex flex-col">
+          <div className="mt-6 md:mt-0 md:flex-1 flex flex-col mb-32">
             <ProductInfoCard
               title={product.title}
               price={product.price}
@@ -176,12 +182,6 @@ const UsedProductDetailPage: React.FC = () => {
               />
             )}
           </div>
-          {isOwner && (
-            <div className="flex justify-end items-center gap-1">
-              <IconButton iconName="edit" iconSize={20} onClick={handleEdit} />
-              <IconButton iconName="delete" iconSize={20} onClick={handleDelete} />
-            </div>
-          )}
         </div>
       </div>
       <MessageInputForm

@@ -101,6 +101,16 @@ export interface Video {
   thumbnail_url: string;
 }
 
+export interface CustomJwtPayload {
+  id: string;
+  [key: string]: any;
+}
+
+export interface PlaybackState {
+  currentTime: number;
+  isPaused: boolean;
+}
+
 // --- 유틸리티 함수 (여기서 직접 정의하거나 별도 파일로 분리 가능) ---
 
 // 주파수 포매팅 함수 (예: 60 -> "60Hz", 1000 -> "1kHz")
@@ -109,13 +119,18 @@ export const formatFrequency = (freq: number): string => {
   return `${freq}Hz`;
 };
 
-// 시간 포매팅 함수 (초를 "MM:SS.S" 형식으로)
+// 시간 포매팅 함수 (초를 "MM:SS.SS" 형식으로)
 export const formatTime = (seconds: number): string => {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes.toFixed(0).padStart(2, '0')}:${remainingSeconds
-    .toFixed(1)
-    .padStart(4, '0')}`;
+  const sign = seconds < 0 ? '-' : '';
+  const absTime = Math.abs(seconds);
+
+  const minutes = Math.floor(absTime / 60);
+  const secs = absTime - minutes * 60;
+
+  const paddedMinutes = minutes.toString().padStart(2, '0');
+  const paddedSeconds = secs.toFixed(2).padStart(5, '0');
+
+  return `${sign}${paddedMinutes}:${paddedSeconds}`;
 };
 
 // 파일 크기 포매팅 함수 (바이트를 "KB", "MB", "GB" 등으로)

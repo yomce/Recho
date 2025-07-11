@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { type UsedProduct, type PaginatedUsedProductResponse } from '../../types/product';
-import { useAuthStore } from '@/stores/authStore';
 import axiosInstance from '@/services/axiosInstance';
-import UsedProductCard from '@/components/atoms/card/UsedProductCard';
+
 import CategoryList from '@/components/layout/CategoryList';
 import ImageCard from '@/components/atoms/card/ImageCard';
 import FloatingWriteButton from '@/components/atoms/button/FloatingWriteButton';
 import PostLayout from '@/components/layout/PostLayout';
+import PostCard from '@/components/atoms/card/PostCard';
 
 interface Cursor {
   lastProductId: number;
@@ -20,7 +20,6 @@ const UsedProductPage: React.FC = () => {
   const [nextCursor, setNextCursor] = useState<Cursor | null>(null);
   const [hasNextPage, setHasNextPage] = useState(true);
   const [selected, setSelected] = useState("전체");
-  const { user } = useAuthStore();
 
   const fetchItems = useCallback(async (isInitialFetch: boolean) => {
     if (loading || !hasNextPage) return;
@@ -66,7 +65,7 @@ const UsedProductPage: React.FC = () => {
     <PostLayout>
       <div>
         <div className="relative w-full max-w-[410px] mx-auto min-h-screen bg-brand-frame">
-          <div className="py-4 px-16">
+          <div className="py-4 px-4">
             <ImageCard src="https://placehold.co/398x270" />
             {/* 카테고리 */}
             <CategoryList
@@ -84,13 +83,15 @@ const UsedProductPage: React.FC = () => {
               {/* 예시 카드 */}
               {items.length > 0 ? (
                 items.map(item => (
-                  <UsedProductCard
+                  <PostCard
                     key={item.productId}
-                    productId={item.productId}
+                    id={item.productId}
                     title={item.title}
                     description={item.description}
                     price={item.price}
                     imageUrl={item.imageUrl}
+                    imageWrapperClassName="rounded-r-[10px]"
+                    cardClassName="bg-white"
                   />
                 ))
               ) : (

@@ -17,8 +17,10 @@ const PracticeRoomDetailPage: React.FC = () =>
 
   const isOwner = Boolean(post && user && post.id === user.id);
 
-  useViewCounter({ type: 'practice-room' });
-
+  if(id){
+    useViewCounter({ type: 'practice-room', id });
+  }
+  
   useEffect (() => {
     if(!id){
       setError('게시글을 찾을 수 없습니다');

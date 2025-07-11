@@ -25,6 +25,8 @@ import { ConfigController } from './config/config.controller';
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { PostsModule } from './community/posts/posts.module';
+import { CommentsModule } from './community/comments/comments.module';
 
 @Module({
   imports: [
@@ -55,9 +57,9 @@ import * as path from 'path';
         timezone: 'UTC',
         ssl: cs.get('APP_ENV') === 'DEV' && {
           rejectUnauthorized: true,
-          ca: fs
-            .readFileSync(path.join(__dirname, './ap-northeast-2-bundle.pem'))
-            .toString(),
+          ca: fs.readFileSync(
+            path.join(__dirname, '../certs/ap-northeast-2-bundle.pem'),
+          ),
         },
       }),
     }),
@@ -93,6 +95,8 @@ import * as path from 'path';
     LocationModule,
     ApplicationModule,
     ViewCountModule,
+    PostsModule,
+    CommentsModule,
   ],
   controllers: [AppController, ConfigController],
   providers: [AppService],

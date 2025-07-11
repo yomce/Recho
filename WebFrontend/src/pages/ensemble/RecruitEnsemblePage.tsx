@@ -10,6 +10,7 @@ import PostCard from '@/components/atoms/card/PostCard';
 import FilterButton from '@/components/atoms/button/FilterButton';
 import { toast } from 'react-hot-toast';
 import FilterToast from '@/components/atoms/button/FilterToast';
+import FloatingWriteButton from '@/components/atoms/button/FloatingWriteButton';
 
 // 모집 공고 데이터 타입 (서버 응답 기준, 필요에 따라 수정)
 interface RecruitEnsemble {
@@ -165,6 +166,7 @@ const RecruitEnsembleListPage: React.FC = () => {
           </div>
         )}
       </div>
+      <FloatingWriteButton />
     </PostLayout>
   );
 };

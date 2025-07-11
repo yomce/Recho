@@ -114,7 +114,7 @@ const PracticeRoomPage: React.FC = () => {
           </SecondaryButton>
         </div>
       </div>
-      <div className="grid grid-cols-1 p-4 mb-[52px]">
+      <div className="grid grid-cols-1 mb-[52px]">
         {error && (
           <div className="button-brand-gray mb-4">
             <p className="text-brand-error-text">{error}</p>

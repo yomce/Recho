@@ -77,6 +77,7 @@ interface PreviewPanelProps {
   onPlay: (id: string) => void;
   onPause: (id: string) => void;
   onStop: (id: string) => void;
+  onSeekComplete: () => void; // [추가]
   setPreviewSlotRef: (id: string, ref: VideoPreviewSlotHandles | null) => void;
   isCollapsed: boolean;
 }
@@ -95,6 +96,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
   onPlay,
   onPause,
   onStop,
+  onSeekComplete, // [추가]
   setPreviewSlotRef,
   isCollapsed,
 }) => {
@@ -150,6 +152,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
                     onPlay={() => onPlay(trimmer.id)}
                     onPause={() => onPause(trimmer.id)}
                     onStop={() => onStop(trimmer.id)}
+                    onSeekComplete={onSeekComplete} // [추가]
                   />
                 </SlotContainer>
               );

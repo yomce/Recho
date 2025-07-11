@@ -34,6 +34,15 @@ export class Video {
   @Column({ default: 0 })
   depth: number;
 
+  @Column({ type: 'float', default: 0 })
+  startTime: number;
+
+  @Column({ type: 'float', default: 0 })
+  endTime: number;
+
+  @Column({ type: 'float', default: 0 })
+  timelinePosition: number;
+
   @Column()
   results_video_key: string;
 

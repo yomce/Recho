@@ -53,7 +53,7 @@ import {
   SlidersHorizontal,
 } from 'lucide-react-native';
 
-import Timeline from '../components/Editor/Timeline';
+import Timeline, { TimelineHandles } from '../components/Editor/Timeline';
 import VideoPreviewSlot, {
   VideoPreviewSlotHandles,
 } from '../components/Editor/VideoPreviewSlot';
@@ -225,6 +225,7 @@ const VideoEditScreen: React.FC<{
   const controlsTopAnim = useRef(new Animated.Value(0)).current;
 
   // --- 3.3. 비디오 편집 및 재생 상태 ---
+
   // previewHeight 상태가 변경될 때마다 ref의 값도 동기화
   useEffect(() => {
     // 애니메이션 값의 변경을 heightRef에 동기화
@@ -326,16 +327,31 @@ const VideoEditScreen: React.FC<{
   const [previewScale, setPreviewScale] = useState(1); // 가상 캔버스의 스케일 값
   const [isGloballyPlaying, setIsGloballyPlaying] = useState(false); // 전체 동시 재생 여부
   const [globalStartTime, setGlobalStartTime] = useState(0); // 모든 비디오가 동시에 재생될 수 있는 시작 시간
-  const [globalEndTime, setGlobalEndTime] = useState(0); // 모든 비디오가 동시에 재생될 수 있는 끝 시간
-  const [timelinePosition, setTimelinePosition] = useState(0); // 타임라인의 현재 재생 헤드 위치
+  const [globalEndTime, setGlobalEndTime] = useState(38);
+  const [timelinePosition, setTimelinePosition] = useState(0);
   const [timelineHeight, setTimelineHeight] = useState(100); // 타임라인의 동적 높이
   const [isSheetVisible, setSheetVisible] = useState(false);
   const [selectedTrack, setSelectedTrack] = useState<TrimmerState | null>(null);
   const [isSettingsButtonVisible, setSettingsButtonVisible] = useState(false);
+
+  // [수정] 재생 요청 상태 관리 리팩토링
+  const [seekAndPlayRequest, setSeekAndPlayRequest] = useState<number | null>(
+    null,
+  );
+  const [playRequest, setPlayRequest] = useState<boolean>(false);
+
   const previewSlotRefs = useRef<
     Record<string, VideoPreviewSlotHandles | null>
   >({}); // 각 비디오 프리뷰 컴포넌트의 ref 모음 (seek 등 직접 조작용)
+  const timelineRef = useRef<TimelineHandles>(null);
   const [seekTrigger, setSeekTrigger] = useState(0); // [추가] seek useEffect를 수동으로 트리거하기 위한 상태
+  // [수정] boolean 상태 대신 재생을 요청한 시간(숫자) 또는 null을 저장
+  const [playbackRequestTime, setPlaybackRequestTime] = useState<number | null>(
+    null,
+  );
+  const seekCompleteCallback = useRef<(() => void) | null>(null);
+
+  const endPointThreshold = trimmers[0]?.duration ?? Infinity;
 
   // =================================================================================
   // 6. 핵심 로직: 비디오 처리 및 업로드
@@ -382,7 +398,8 @@ const VideoEditScreen: React.FC<{
 
   // 타임라인 재생 헤드 위치가 바뀌면, 각 비디오의 재생 위치(seek)를 동기화
   useEffect(() => {
-    if (!isGloballyPlaying) {
+    // [수정] 재생이 요청된 동안에는 이 로직이 실행되지 않도록 하여 경합 조건을 방지
+    if (!isGloballyPlaying && playbackRequestTime === null) {
       trimmers.forEach(trimmer => {
         const ref = previewSlotRefs.current[trimmer.id];
         if (ref && trimmer.sourceVideo) {
@@ -411,7 +428,7 @@ const VideoEditScreen: React.FC<{
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timelinePosition, isGloballyPlaying, seekTrigger]); // [수정] seekTrigger 의존성 추가
+  }, [timelinePosition, isGloballyPlaying, seekTrigger, playbackRequestTime]); // [수정] 의존성 추가
 
   // 컴포넌트 마운트 시, 전달받은 비디오 정보로 Trimmer 초기 상태 설정
   useEffect(() => {
@@ -502,21 +519,21 @@ const VideoEditScreen: React.FC<{
     setSeekTrigger(c => c + 1); // [추가] 비디오 위치 조정을 수동으로 트리거
   };
 
-  // 개별 비디오의 재생 상태(현재 시간, 일시정지) 업데이트
-  const handlePlaybackUpdate = (
-    id: string,
-    newState: Partial<PlaybackState>,
-  ) => {
-    setPlaybackStates(prev => ({
-      ...prev,
-      [id]: { ...prev[id], ...newState },
-    }));
-  };
+  const handlePlaybackUpdate = useCallback(
+    (id: string, newState: Partial<PlaybackState>) => {
+      setPlaybackStates(prev => ({
+        ...prev,
+        [id]: { ...(prev[id] ?? {}), ...newState },
+      }));
+    },
+    [],
+  );
 
   // 비디오 로딩 완료 시 (onLoad), 비디오 길이(duration) 상태 업데이트
   const handleVideoLoad = (id: string, data: OnLoadData) => {
     handleTrimmerUpdate(id, {
       duration: data.duration,
+      startTime: 0,
       endTime: data.duration,
     });
     handlePlaybackUpdate(id, { currentTime: 0 });
@@ -526,20 +543,33 @@ const VideoEditScreen: React.FC<{
   const handleProgress = (id: string, data: OnProgressData) => {
     // [수정] 전역 재생 중일 때만 상태를 업데이트하여 무한 루프를 방지합니다.
     if (isGloballyPlaying) {
-      // 특정 비디오의 현재 시간을 항상 업데이트합니다.
-      handlePlaybackUpdate(id, { currentTime: data.currentTime });
+      const trimmer = trimmers.find(t => t.id === id);
+      if (!trimmer) return;
 
-      // 타임라인 위치를 결정하는 첫 번째 비디오의 진행 정보일 때만 정지 로직을 실행합니다.
-      if (trimmers.length > 0 && id === trimmers[0].id) {
-        // 부동소수점 오차를 고려하여 아주 작은 허용치(epsilon)를 두고 비교합니다.
-        const epsilon = 0.05; // 50ms
-        if (
-          globalEndTime > 0 &&
-          data.currentTime >= globalEndTime - epsilon // endTime 직전에 멈추도록 조건 변경
-        ) {
-          handleGlobalPause(); // 모든 비디오를 일시 정지시킵니다.
-          setIsGloballyPlaying(false); // 재생/일시정지 버튼 상태를 업데이트합니다.
-        }
+      // 비디오의 실제 재생 시간(currentTime)을 타임라인의 절대 위치로 변환
+      const timeSinceClipStart = data.currentTime - trimmer.startTime;
+      const currentTimelinePosition =
+        trimmer.timelinePosition + timeSinceClipStart;
+
+      // 플레이헤드가 임계점을 넘지 않도록 위치를 제한
+      const finalPosition = Math.min(
+        currentTimelinePosition,
+        endPointThreshold,
+      );
+
+      handlePlaybackUpdate(id, { currentTime: data.currentTime });
+      setTimelinePosition(finalPosition);
+
+      const epsilon = 0.05; // 50ms
+      // 실제 정지해야 할 지점 (사용자 설정 끝점과 비디오 최대 길이 중 더 빠른 지점)
+      const stopThreshold = Math.min(globalEndTime, endPointThreshold);
+
+      // 정지 지점에 도달했는지 확인
+      if (stopThreshold > 0 && finalPosition >= stopThreshold - epsilon) {
+        handleGlobalPause();
+        setIsGloballyPlaying(false);
+        // 플레이헤드를 정확히 정지 지점에 맞춤
+        setTimelinePosition(stopThreshold);
       }
     }
   };
@@ -572,56 +602,62 @@ const VideoEditScreen: React.FC<{
   };
 
   // 모든 비디오 동시 일시정지
-  const handleGlobalPause = () => {
+  const handleGlobalPause = useCallback(() => {
     trimmers.forEach(t => handlePlaybackUpdate(t.id, { isPaused: true }));
-  };
+  }, [trimmers, handlePlaybackUpdate]);
 
   // 전역 재생/일시정지 버튼 토글
   const handleToggleGlobalPlay = () => {
-    const shouldPlay = !isGloballyPlaying;
-
-    if (shouldPlay) {
-      // 재생 시작 시, 각 비디오를 현재 타임라인 위치에 맞게 설정하고 재생
+    if (isGloballyPlaying) {
+      setIsGloballyPlaying(false);
+      setSeekAndPlayRequest(null); // 대기중인 seek 요청 취소
+      setPlayRequest(false); // 대기중인 재생 요청 취소
       trimmers.forEach(trimmer => {
-        const ref = previewSlotRefs.current[trimmer.id];
-        if (ref && trimmer.sourceVideo) {
-          const clipDuration = trimmer.endTime - trimmer.startTime;
-          const trackStartTime = trimmer.timelinePosition;
-          const trackEndTime = trackStartTime + clipDuration;
-
-          let seekTime;
-
-          if (timelinePosition < trackStartTime) {
-            // 재생 헤드가 클립 시작점보다 앞에 있으면, 클립의 시작 부분으로 이동
-            seekTime = trimmer.startTime;
-          } else if (timelinePosition > trackEndTime) {
-            // 재생 헤드가 클립 끝 지점보다 뒤에 있으면, 클립의 끝 부분으로 이동
-            seekTime = trimmer.endTime;
-          } else {
-            // 재생 헤드가 클립 내에 있으면, 올바른 상대 시간 계산
-            const timeIntoClip = timelinePosition - trackStartTime;
-            seekTime = trimmer.startTime + timeIntoClip;
-          }
-
-          if (isFinite(seekTime)) {
-            ref.seek(seekTime); // 비디오를 정확한 시간으로 이동
-            handlePlaybackUpdate(trimmer.id, {
-              currentTime: seekTime,
-              isPaused: false, // 재생 시작
-            });
-          }
-        } else if (ref) {
-          // 비디오 소스가 없는 슬롯이라도 재생 상태는 동기화
-          handlePlaybackUpdate(trimmer.id, { isPaused: false });
-        }
+        handlePlaybackUpdate(trimmer.id, { isPaused: true });
       });
     } else {
-      // 정지 시에는 모든 비디오를 단순히 일시정지시킵니다.
-      handleGlobalPause();
+      const isOutside =
+        timelinePosition < globalStartTime || timelinePosition >= globalEndTime;
+
+      if (isOutside) {
+        // 이동 후 재생: 1단계(seek)만 트리거
+        setSeekAndPlayRequest(globalStartTime);
+      } else {
+        // 즉시 재생: 2단계(재생)만 트리거
+        setPlayRequest(true);
+      }
     }
-    // 최종적으로 재생 상태를 업데이트합니다.
-    setIsGloballyPlaying(shouldPlay);
   };
+
+  // [수정] 재생 요청이 들어오면 비디오를 재생하는 useEffect
+  useEffect(() => {
+    if (seekAndPlayRequest !== null) {
+      const videoId = trimmers[0]?.id;
+      if (videoId && previewSlotRefs.current[videoId]) {
+        // seek가 완료된 후 실행할 콜백 설정
+        seekCompleteCallback.current = () => {
+          setTimelinePosition(seekAndPlayRequest);
+          setPlayRequest(true); // 2단계(재생) 트리거
+          seekCompleteCallback.current = null;
+        };
+        // seek 실행
+        previewSlotRefs.current[videoId]?.seek(seekAndPlayRequest);
+      }
+    } else {
+      // 재생 요청이 취소되면 콜백도 취소
+      seekCompleteCallback.current = null;
+    }
+  }, [seekAndPlayRequest, trimmers]);
+
+  // [수정] 2단계: 재생 요청 처리
+  useEffect(() => {
+    if (!playRequest) return;
+    setIsGloballyPlaying(true);
+    trimmers.forEach(trimmer => {
+      handlePlaybackUpdate(trimmer.id, { isPaused: false });
+    });
+    setPlayRequest(false);
+  }, [playRequest, trimmers, handlePlaybackUpdate]);
 
   // 모든 비디오를 동시 재생 시작점으로 이동
   const handleGlobalSeekToStart = () => {
@@ -639,6 +675,7 @@ const VideoEditScreen: React.FC<{
     // 타임라인 위치도 동기화합니다.
     setTimelinePosition(globalStartTime);
     setIsGloballyPlaying(false);
+    timelineRef.current?.scrollToTime(globalStartTime);
   };
 
   const handleGlobalSeekToEnd = () => {
@@ -653,20 +690,21 @@ const VideoEditScreen: React.FC<{
     });
     setTimelinePosition(globalEndTime);
     setIsGloballyPlaying(false);
+    timelineRef.current?.scrollToTime(globalEndTime);
   };
 
   const handleGlobalStartTimeUpdate = (newTime: number) => {
     setGlobalStartTime(newTime);
-    if (trimmers.length === 1) {
-      handleTrimmerUpdate(trimmers[0].id, { startTime: newTime });
-    }
+    // if (trimmers.length === 1) {
+    //   handleTrimmerUpdate(trimmers[0].id, { startTime: newTime });
+    // }
   };
 
   const handleGlobalEndTimeUpdate = (newTime: number) => {
     setGlobalEndTime(newTime);
-    if (trimmers.length === 1) {
-      handleTrimmerUpdate(trimmers[0].id, { endTime: newTime });
-    }
+    // if (trimmers.length === 1) {
+    //   handleTrimmerUpdate(trimmers[0].id, { endTime: newTime });
+    // }
   };
 
   const handleTrackSelectionChange = (trackId: string | null) => {
@@ -698,6 +736,17 @@ const VideoEditScreen: React.FC<{
   // =================================================================================
   // 7. 렌더링 (JSX)
   // =================================================================================
+
+  const handlePositionChange = (time: number) => {
+    setTimelinePosition(time);
+  };
+
+  const onSeekComplete = () => {
+    if (seekCompleteCallback.current) {
+      seekCompleteCallback.current();
+    }
+  };
+
   return (
     <ScreenContainer edges={['bottom']}>
       {/* 7.1. 비디오 미리보기 영역 */}
@@ -713,6 +762,7 @@ const VideoEditScreen: React.FC<{
           onPlay={handlePlay}
           onPause={handlePause}
           onStop={handleStop}
+          onSeekComplete={onSeekComplete}
           isCollapsed={previewState === 'collapsed'}
         />
       </Animated.View>
@@ -755,19 +805,18 @@ const VideoEditScreen: React.FC<{
           {/* 타임라인 컴포넌트 */}
           <View style={{ height: timelineHeight, minHeight: 100 }}>
             <Timeline
+              ref={timelineRef}
               trimmers={trimmers}
               globalStartTime={globalStartTime}
               globalEndTime={globalEndTime}
-              currentTime={
-                playbackStates[trimmers[0]?.id]?.currentTime ?? timelinePosition
-              }
-              onPositionChange={handleTimelinePositionChange}
+              currentTime={timelinePosition}
+              isGloballyPlaying={isGloballyPlaying}
+              onPositionChange={handlePositionChange}
               onHeightChange={setTimelineHeight}
               onGlobalStartTimeChange={handleGlobalStartTimeUpdate}
               onGlobalEndTimeChange={handleGlobalEndTimeUpdate}
               onTrackPositionChange={handleTrackPositionChange}
               onTrackSelectionChange={handleTrackSelectionChange}
-              isGloballyPlaying={isGloballyPlaying}
             />
           </View>
         </View>

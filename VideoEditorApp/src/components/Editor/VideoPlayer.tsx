@@ -64,6 +64,7 @@ interface Props {
   onPlay: () => void; // 재생 버튼 클릭 시 호출될 함수
   onPause: () => void; // 일시정지 버튼 클릭 시 호출될 함수
   onStop: () => void; // 중지 버튼 클릭 시 호출될 함수
+  onSeekComplete?: () => void; // [추가] seek 완료 시 호출될 함수
 }
 
 const VideoPlayer = forwardRef<VideoPlayerHandles, Props>(
@@ -79,6 +80,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandles, Props>(
       onPlay,
       onPause,
       onStop,
+      onSeekComplete, // [추가]
     },
     ref,
   ) => {
@@ -136,6 +138,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandles, Props>(
               }
             }}
             onProgress={handleProgress} // 확장된 진행 이벤트 핸들러
+            onSeek={onSeekComplete} // [추가]
             volume={volume} // 볼륨
             // startTime과 endTime은 이제 직접 프롭으로 전달하지 않습니다.
             // 대신 onLoad에서 초기 seek하고 onProgress에서 endTime을 모니터링합니다.

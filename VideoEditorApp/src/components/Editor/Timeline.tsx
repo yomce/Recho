@@ -1,4 +1,11 @@
-import React, { useRef, useState, useEffect, useMemo } from 'react';
+import React, {
+  useRef,
+  useState,
+  useEffect,
+  useMemo,
+  forwardRef,
+  useImperativeHandle,
+} from 'react';
 import {
   PanGestureHandler,
   State,
@@ -124,6 +131,10 @@ const TimeDragHandle = styled(Animated.View)`
   cursor: ew-resize;
 `;
 
+export interface TimelineHandles {
+  scrollToTime: (time: number) => void;
+}
+
 interface TimelineProps {
   trimmers: TrimmerState[];
   globalStartTime: number;
@@ -138,22 +149,56 @@ interface TimelineProps {
   onTrackSelectionChange: (trackId: string | null) => void;
 }
 
-const Timeline: React.FC<TimelineProps> = ({
-  trimmers,
-  globalStartTime,
-  globalEndTime,
-  currentTime,
-  isGloballyPlaying,
-  onPositionChange,
-  onHeightChange,
-  onGlobalStartTimeChange,
-  onGlobalEndTimeChange,
-  onTrackPositionChange,
-  onTrackSelectionChange,
-}) => {
+const Timeline: React.ForwardRefRenderFunction<
+  TimelineHandles,
+  TimelineProps
+> = (
+  {
+    trimmers,
+    globalStartTime,
+    globalEndTime,
+    currentTime,
+    isGloballyPlaying,
+    onPositionChange,
+    onHeightChange,
+    onGlobalStartTimeChange,
+    onGlobalEndTimeChange,
+    onTrackPositionChange,
+    onTrackSelectionChange,
+  },
+  ref,
+) => {
   const [containerWidth, setContainerWidth] = useState(0);
   const [isPanning, setIsPanning] = useState(false);
   const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
+
+  // =================================================================================
+  // =================================================================================
+
+  // 편집 데이터 명시 !!!!!!!(중요!!!!!!)
+
+  // =================================================================================
+  // =================================================================================
+
+  const startPoint = globalStartTime;
+  const endPoint = globalEndTime;
+  const startPointThreshold = 0; // 시작점은 0초 이전으로 갈 수 없음
+  const endPointThreshold = trimmers[0]?.duration ?? Infinity; // 끝점은 첫 비디오 길이를 초과할 수 없음
+
+  // [추가] 트랙 위치에 따른 동적 핸들 제약 조건
+  const { latestTrackStartTime, earliestTrackEndTime } = useMemo(() => {
+    if (trimmers.length === 0) {
+      return { latestTrackStartTime: Infinity, earliestTrackEndTime: 0 };
+    }
+    const startPositions = trimmers.map(t => t.timelinePosition);
+    const endPositions = trimmers.map(
+      t => t.timelinePosition + (t.endTime - t.startTime),
+    );
+    return {
+      latestTrackStartTime: Math.max(...startPositions),
+      earliestTrackEndTime: Math.min(...endPositions),
+    };
+  }, [trimmers]);
 
   // Notify parent component about the active track change
   useEffect(() => {
@@ -248,7 +293,15 @@ const Timeline: React.FC<TimelineProps> = ({
     return Math.max(...trimmers.map(t => t.endTime - t.startTime));
   }, [trimmers]);
   const leftPadding = longestClipDuration * PIXELS_PER_SECOND;
-  const minPan = containerWidth - tracksContainerWidth - leftPadding + maxPan;
+  const oldMinPan =
+    containerWidth - tracksContainerWidth - leftPadding + maxPan;
+
+  // [수정] 플레이헤드가 endPointThreshold를 시각적으로 넘지 못하도록 최소 패닝 값을 재계산
+  const minPanBasedOnThreshold =
+    containerWidth / 2 - endPointThreshold * PIXELS_PER_SECOND;
+
+  // 두 최소 패닝 값 중 더 제한적인(더 큰) 값을 최종 minPan으로 사용
+  const minPan = Math.max(oldMinPan, minPanBasedOnThreshold);
 
   const clampedPan = finalTranslateX.interpolate({
     inputRange: [minPan, maxPan],
@@ -273,14 +326,22 @@ const Timeline: React.FC<TimelineProps> = ({
     return marks;
   })();
 
-  // --- Global Time Handle Drag Logic ---
+  // =================================================================================
+  // =================================================================================
+
+  // 편집 데이터 명시 !!!!!!!(중요!!!!!!)
+
+  // =================================================================================
+  // =================================================================================
+
+  // 글로벌 타임 핸들 드래그 로직
   const dragStartHandleTimeRef = useRef(0);
 
   const onStartHandleStateChange = (
     event: PanGestureHandlerStateChangeEvent,
   ) => {
     if (event.nativeEvent.state === State.BEGAN) {
-      dragStartHandleTimeRef.current = globalStartTime;
+      dragStartHandleTimeRef.current = startPoint;
     }
   };
 
@@ -288,22 +349,18 @@ const Timeline: React.FC<TimelineProps> = ({
     const { translationX } = event.nativeEvent;
     const timeChange = translationX / PIXELS_PER_SECOND;
     const newStartTime = dragStartHandleTimeRef.current + timeChange;
-    // Ensure start time is not negative and not after end time
-    const clampedTime = Math.max(0, Math.min(newStartTime, globalEndTime));
+    // 시작점은 (가장 늦게 시작하는 트랙의 시작점)보다 앞으로 갈 수 없다.
+    let clampedTime = Math.min(
+      endPoint,
+      Math.max(newStartTime, startPointThreshold, latestTrackStartTime),
+    );
+    clampedTime = parseFloat(clampedTime.toFixed(2));
     onGlobalStartTimeChange(clampedTime);
   };
 
-  const minPossibleEndTime = useMemo(() => {
-    if (trimmers.length === 0) return Infinity;
-    const endTimes = trimmers.map(
-      t => t.timelinePosition + (t.endTime - t.startTime),
-    );
-    return Math.min(...endTimes);
-  }, [trimmers]);
-
   const onEndHandleStateChange = (event: PanGestureHandlerStateChangeEvent) => {
     if (event.nativeEvent.state === State.BEGAN) {
-      dragStartHandleTimeRef.current = globalEndTime;
+      dragStartHandleTimeRef.current = endPoint;
     }
   };
 
@@ -311,11 +368,13 @@ const Timeline: React.FC<TimelineProps> = ({
     const { translationX } = event.nativeEvent;
     const timeChange = translationX / PIXELS_PER_SECOND;
     const newEndTime = dragStartHandleTimeRef.current + timeChange;
-    // Ensure end time is not before start time and not after the earliest track end
-    const clampedTime = Math.max(
-      globalStartTime,
-      Math.min(newEndTime, minPossibleEndTime),
+
+    // 끝점은 (가장 일찍 끝나는 트랙의 끝점)보다 뒤로 갈 수 없다.
+    let clampedTime = Math.max(
+      startPoint,
+      Math.min(newEndTime, endPointThreshold, earliestTrackEndTime),
     );
+    clampedTime = parseFloat(clampedTime.toFixed(2));
     onGlobalEndTimeChange(clampedTime);
   };
 
@@ -343,12 +402,23 @@ const Timeline: React.FC<TimelineProps> = ({
   useEffect(() => {
     const listenerId = clampedPan.addListener(({ value }) => {
       if (containerWidth > 0) {
-        const centerTime = (containerWidth / 2 - value) / PIXELS_PER_SECOND;
+        let centerTime = (containerWidth / 2 - value) / PIXELS_PER_SECOND;
+        // 플레이헤드 위치가 임계점을 넘지 않도록 제한
+        centerTime = Math.max(
+          startPointThreshold,
+          Math.min(centerTime, endPointThreshold),
+        );
         onPositionChange(centerTime);
       }
     });
     return () => clampedPan.removeListener(listenerId);
-  }, [clampedPan, containerWidth, onPositionChange]);
+  }, [
+    clampedPan,
+    containerWidth,
+    onPositionChange,
+    startPointThreshold,
+    endPointThreshold,
+  ]);
 
   useEffect(() => {
     // 재생 중이거나, 사용자가 직접 타임라인을 패닝하고 있지 않을 때
@@ -368,6 +438,16 @@ const Timeline: React.FC<TimelineProps> = ({
     isPanning,
     isGloballyPlaying,
   ]);
+
+  useImperativeHandle(ref, () => ({
+    scrollToTime: (time: number) => {
+      if (containerWidth > 0) {
+        const newPanValue = containerWidth / 2 - time * PIXELS_PER_SECOND;
+        const clampedPosition = Math.max(minPan, Math.min(newPanValue, maxPan));
+        panPosition.setValue(clampedPosition);
+      }
+    },
+  }));
 
   const tracksHeight =
     RULER_HEIGHT + trimmers.length * (TRACK_HEIGHT + TRACK_MARGIN) + 20;
@@ -505,4 +585,4 @@ const Timeline: React.FC<TimelineProps> = ({
   );
 };
 
-export default Timeline;
+export default forwardRef(Timeline);

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import PrimaryButton from "@/components/atoms/button/PrimaryButton";
 import TextInput from "@/components/atoms/input/TextInput";
+import axiosInstance from '@/services/axiosInstance';
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -29,19 +30,12 @@ const RegisterPage: React.FC = () => {
     setIsLoading(true); // 로딩 시작
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL;
-      const response = await fetch(`${apiUrl}/users`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id, username, email, password }),
+      await axiosInstance.post('users', {
+        id,
+        username,
+        email,
+        password,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message[0] || "회원가입에 실패했습니다.");
-      }
 
       alert("회원가입에 성공했습니다! 로그인 페이지로 이동합니다.");
       navigate("/login");

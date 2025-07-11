@@ -22,7 +22,7 @@ export const SessionDetail: React.FC<SessionDetailProps> = ({
   isApplied,
 }) => {
   const { user } = useAuthStore();
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
   const [isIn, setIsIn] = useState(false);
   const [application, setApplication] = useState<ApplicationEnsemble | null>(
     null

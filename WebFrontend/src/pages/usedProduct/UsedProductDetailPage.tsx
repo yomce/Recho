@@ -1,9 +1,9 @@
 // src/pages/user/UsedProductDetailPage.tsx
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { type UsedProduct, STATUS, TRADE_TYPE } from '../../types/product';
+import { type UsedProduct, TRADE_TYPE } from '../../types/product';
 import { useAuthStore } from '@/stores/authStore';
 import axiosInstance from '@/services/axiosInstance';
 import useViewCounter from '@/hooks/useViewCounter';
@@ -15,20 +15,6 @@ import MessageInputForm from '@/components/atoms/input/MessageInput';
 import IconButton from '@/components/atoms/button/IconButton';
 import SwiperImageCard from '@/components/atoms/card/SwipeImageCard';
 import { ToastMenu } from '@/components/atoms/button/ToastMenu';
-
-// Enum 값에 따른 한글 텍스트 매핑
-const STATUS_TEXT = {
-  [STATUS.FOR_SALE]: '판매중',
-  [STATUS.IN_PROGRESS]: '예약중',
-  [STATUS.SOLD]: '판매완료',
-};
-
-// Enum 값에 따른 Tailwind 클래스 매핑
-const STATUS_CLASSES = {
-  [STATUS.FOR_SALE]: 'bg-green-500 text-white',
-  [STATUS.IN_PROGRESS]: 'bg-yellow-400 text-black',
-  [STATUS.SOLD]: 'bg-gray-500 text-white',
-};
 
 const TRADE_TYPE_TEXT = {
   [TRADE_TYPE.IN_PERSON]: '직거래',

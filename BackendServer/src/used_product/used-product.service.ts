@@ -68,11 +68,6 @@ export class UsedProductService {
   ): Promise<UsedProduct> {
     const { locationId, ...restOfDto } = createDto;
 
-    // TODO: 실제 프로젝트에서는 주입받은 locationRepo를 사용해 ID로 지역 정보를 조회해야 합니다.
-    // const locationInfo = await this.locationRepo.findOneBy({ id: locationId });
-    // if (!locationInfo) {
-    //   throw new NotFoundException(`Location with ID #${locationId} not found.`);
-    // }
 
     // 실제로 locationRepo를 사용해 ID로 지역 정보를 조회
     const locationEntity = await this.locationRepo.findOneBy({
@@ -82,15 +77,7 @@ export class UsedProductService {
     if (!locationEntity) {
       throw new NotFoundException(`Location with ID #${locationId} not found.`);
     }
-    /*
-    // 임시로 location 객체를 생성합니다. (실제로는 위 주석처럼 DB에서 조회)
-    const locationDataForDb = {
-      location_id: locationEntity.locationId,
-      region_level_1: locationEntity.region_level1, // 임시 데이터
-      region_level_2: locationEntity.region_level2, // 임시 데이터
-      address: locationEntity.address,
-    };
-    */
+
     const newProduct = this.usedProductRepo.create({
       ...restOfDto,
       locationId: locationEntity.locationId,

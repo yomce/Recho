@@ -1,7 +1,7 @@
 // src/stores/authStore.ts
 
 import { create } from "zustand";
-import { jwtDecode, type JwtPayload } from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 import axiosInstance from "../services/axiosInstance"; // 설정된 Axios 인스턴스
 import axios from "axios";
 

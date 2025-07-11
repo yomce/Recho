@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Link } from "react-router-dom";
-import axios from "axios";
 import {
   type PracticeRoom,
   type PaginatedPracticeRoomResponse,
@@ -12,6 +10,7 @@ import Icon from '@/components/atoms/icon/Icon'
 import SecondaryButton from "@/components/atoms/button/SecondaryButton";
 import PostCard from "@/components/atoms/card/PostCard";
 import SwiperTabs from "@/components/organisms/PostNavigationTabs";
+import axiosInstance from '@/services/axiosInstance';
 
 interface Cursor {
   lastProductId: number;
@@ -51,8 +50,7 @@ const PracticeRoomPage: React.FC = () => {
           params.append("lastCreatedAt", nextCursor.lastCreatedAt);
         }
 
-        const apiUrl = import.meta.env.VITE_API_URL;
-        const response = await axios.get<PaginatedPracticeRoomResponse>(
+        const response = await axiosInstance.get<PaginatedPracticeRoomResponse>(
           `${apiUrl}/practice-room`,
           { params }
         );

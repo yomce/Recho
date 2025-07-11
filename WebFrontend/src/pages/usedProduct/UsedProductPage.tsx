@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { type UsedProduct, type PaginatedUsedProductResponse } from '../../types/product';
-import { useAuthStore } from '@/stores/authStore';
 import axiosInstance from '@/services/axiosInstance';
 
 import CategoryList from '@/components/layout/CategoryList';
@@ -21,7 +20,6 @@ const UsedProductPage: React.FC = () => {
   const [nextCursor, setNextCursor] = useState<Cursor | null>(null);
   const [hasNextPage, setHasNextPage] = useState(true);
   const [selected, setSelected] = useState("전체");
-  const { user } = useAuthStore();
 
   const fetchItems = useCallback(async (isInitialFetch: boolean) => {
     if (loading || !hasNextPage) return;

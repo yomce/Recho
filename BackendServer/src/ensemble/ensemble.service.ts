@@ -20,6 +20,7 @@ import {
 import { UserService } from 'src/auth/user/user.service';
 import { RecruitEnsembleResponseDto } from './dto/recruit-ensemble.response.dto';
 import { UserResponseDto } from 'src/auth/user/dto/user.response.dto';
+import { Location } from 'src/map/entities/location.entity';
 
 @Injectable()
 export class EnsembleService {
@@ -30,6 +31,9 @@ export class EnsembleService {
     @InjectRepository(SessionEnsemble)
     private readonly sessionEnsembleRepo: Repository<SessionEnsemble>,
 
+    @InjectRepository(Location)
+    private readonly locationRepo: Repository<Location>,
+
     private readonly userService: UserService,
     private readonly dataSource: DataSource,
   ) {}
@@ -37,14 +41,15 @@ export class EnsembleService {
   async findEnsembleWithPagination(
     limit: number,
     lastPostId?: number,
-    lastCreateAt?: Date,
+    lastCreatedAt?: Date,
   ): Promise<PaginatedRecruitEnsembleResponse> {
+    console.log('lastPostId:', lastPostId, 'lastCreatedAt:', lastCreatedAt);
     const realLimit = limit + 1;
     const queryBuilder =
       this.recruitEnsembleRepo.createQueryBuilder('recruitEnsemble');
 
-    if (lastPostId && lastCreateAt) {
-      const lastCreatedAtDate = new Date(lastCreateAt);
+    if (lastPostId && lastCreatedAt) {
+      const lastCreatedAtDate = new Date(lastCreatedAt);
       queryBuilder.where(
         '(recruitEnsemble.createdAt < :lastCreatedAtDate) OR (recruitEnsemble.createdAt = :lastCreatedAtDate AND recruitEnsemble.postId < :lastPostId)',
         { lastCreatedAtDate, lastPostId },
@@ -65,7 +70,7 @@ export class EnsembleService {
       hasNextPage && lastItem
         ? {
             lastPostId: lastItem.postId,
-            lastCreateAt: lastItem.createdAt.toISOString(),
+            lastCreatedAt: lastItem.createdAt.toISOString(),
           }
         : undefined;
     return {
@@ -80,8 +85,14 @@ export class EnsembleService {
     id: string,
   ): Promise<RecruitEnsembleResponseDto> {
     return this.dataSource.transaction(async (transactionalEntityManager) => {
-      const recruitEnsembleDto = createDto;
+      const { locationId, ...recruitEnsembleDto } = createDto;
       const user = await this.userService.findById(id);
+
+      const locationEntity = await this.locationRepo.findOneBy({ locationId: Number(locationId), });
+
+      if (!locationEntity) {
+        throw new NotFoundException(`Location with ID#${locationId} not found.`);
+      }
 
       if (!user) {
         throw new NotFoundException(`User with ID "${id}" not found`);
@@ -92,6 +103,7 @@ export class EnsembleService {
         user: user,
         recruitStatus: RECRUIT_STATUS.RECRUITING,
         viewCount: 0,
+        locationId: locationEntity.locationId,
       });
 
       const savedEnsemble = await transactionalEntityManager.save(newEnsemble);
@@ -128,7 +140,7 @@ export class EnsembleService {
   async detailEnsemble(id: number): Promise<RecruitEnsembleResponseDto> {
     const ensemble = await this.recruitEnsembleRepo.findOne({
       where: { postId: id },
-      relations: ['sessionEnsemble', 'applierEnsemble', 'user'],
+      relations: ['sessionEnsemble', 'applierEnsemble', 'user', 'location'],
     });
     if (!ensemble) {
       throw new NotFoundException(`Ensemble with ID #${id} not found.`);

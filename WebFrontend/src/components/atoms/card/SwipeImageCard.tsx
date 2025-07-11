@@ -28,7 +28,7 @@ const SwiperImageCard: React.FC<SwiperImageCardProps> = ({
   return (
     <div
       className={`relative mx-auto ${className}`}
-      style={{ width: `${width}px`, aspectRatio }}
+      // style={{ width: `${width}px`, aspectRatio }}
     >
       <Swiper
         spaceBetween={8}

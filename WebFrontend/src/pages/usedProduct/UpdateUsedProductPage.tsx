@@ -34,7 +34,7 @@ const UpdateUsedProductPage: React.FC = () => {
     const fetchProduct = async () => {
       setLoading(true);
       try {
-        const response = await axiosInstance.get<UsedProduct>(`api/used-products/${id}`);
+        const response = await axiosInstance.get<UsedProduct>(`used-products/${id}`);
         const product = response.data;
         setForm({
           title: product.title,

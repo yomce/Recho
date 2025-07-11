@@ -48,7 +48,7 @@ const RecruitEnsembleDetailPage: React.FC = () => {
       setError(null);
       try {
         // API 엔드포인트를 합주단원 모집 공고 상세 조회로 변경
-        const response = await axiosInstance.get<RecruitEnsemble>(`api/ensembles/${id}`);
+        const response = await axiosInstance.get<RecruitEnsemble>(`ensembles/${id}`);
         console.log(response.data);
 
         setSessionList(response.data.sessionEnsemble)
@@ -71,7 +71,7 @@ const RecruitEnsembleDetailPage: React.FC = () => {
     const fetchSessionDetail = async () => {
       try {
         if (ensemble) {
-          const response = await axiosInstance.get<ApplicationEnsemble[]>(`api/application/${ensemble.postId}`)
+          const response = await axiosInstance.get<ApplicationEnsemble[]>(`application/${ensemble.postId}`)
           setApplicationList(response.data);
         }
       } catch (err) {

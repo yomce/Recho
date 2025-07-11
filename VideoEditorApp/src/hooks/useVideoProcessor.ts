@@ -13,7 +13,7 @@ import {
   TrimmerState,
   RootStackParamList,
   EditData,
-  ServerVideo,
+  Video as ServerVideo,
   CustomJwtPayload,
 } from '../types';
 import { generateCollageFilterComplex } from '../utils/ffmpegFilters';
@@ -279,12 +279,6 @@ export const useVideoProcessor = () => {
         serverVideos.length > 0 ? serverVideos[serverVideos.length - 1] : null;
       const parent_video_id = directParent ? directParent.id : null;
       const depth = directParent ? directParent.depth + 1 : 1;
-
-      const s3Keys: Record<string, string> = {};
-      urlMappings.forEach(mapping => {
-        s3Keys[mapping.purpose.replace(/_VIDEO|_THUMBNAIL/, '')] =
-          mapping.s3Key;
-      });
 
       await axiosInstance.post('/video-insert/complete', {
         user_id: userId,

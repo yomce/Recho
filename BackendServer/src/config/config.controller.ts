@@ -10,6 +10,7 @@ export class ConfigController {
     // Parameter Store 등에서 불러온 값 중 공개 가능한 키만 골라서 반환
     return {
       kakaoMapAppKey: this.configService.get<string>('KAKAO_MAP_APP_KEY'),
+      kakaoCallbackUrl: this.configService.get<string>('KAKAO_CALLBACK_URL'),
     };
   }
 }

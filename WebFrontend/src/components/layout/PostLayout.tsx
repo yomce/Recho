@@ -1,4 +1,4 @@
-// src/components/layout/MainLayout.tsx
+// src/components/layout/PostLayout.tsx
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
@@ -20,6 +20,7 @@ const PostLayout: React.FC<LayoutProps> = ({ children, bgClassName = "bg-brand-f
   const handleGoToHome = () => navigate('/');
   const handleGoToChat = () => navigate('/chat');
   const handleGoToVinyls = () => navigate('/vinyls');
+  const handleGoToCommunity = () => navigate('/community');
   
   // '마이페이지' 이동 로직을 Layout이 직접 처리
   const handleGoToMyPage = () => {
@@ -46,7 +47,7 @@ const PostLayout: React.FC<LayoutProps> = ({ children, bgClassName = "bg-brand-f
       <MainFooter 
         currentPath={location.pathname}
         onHomeClick={handleGoToHome}
-        onCommunityClick={() => toast('커뮤니티 페이지는 준비 중입니다.')}
+        onCommunityClick={handleGoToCommunity}
         onVinylClick={handleGoToVinyls}
         onChatClick={handleGoToChat}
         onMyPageClick={handleGoToMyPage}

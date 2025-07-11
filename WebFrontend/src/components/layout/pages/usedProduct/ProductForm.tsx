@@ -122,7 +122,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         type="submit"
         disabled={isLoading}
         className="mt-4"
-        style={{ borderRadius: "10px" }}
+        style={{ borderRadius: "20px" }}
       >
         {isLoading ? loadingButtonText : submitButtonText}
       </PrimaryButton>

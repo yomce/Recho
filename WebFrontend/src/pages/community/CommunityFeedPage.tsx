@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 // import axios from 'axios';
-import './CommunityFeedPage.css';
 import axiosInstance from '../../services/axiosInstance';
 import { useAuthStore } from '../../stores/authStore';
 import Icon from '../../components/atoms/icon/Icon';
+import PostLayout from '../../components/layout/PostLayout';
+import FloatingWriteButton from '../../components/atoms/button/FloatingWriteButton';
 
 // --- 타입 정의 ---
 export interface Post {
@@ -126,71 +127,89 @@ const CommunityFeedPage: React.FC = () => {
   };
 
   return (
-    <div className="feed-container">
-      <header className="feed-header">
-        <h1 className="text-2xl font-bold">🎸 커뮤니티</h1>
-        <nav className="category-nav mt-4">
-          {CATEGORIES.map((category) => (
-            <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`category-button ${selectedCategory === category ? 'active' : ''}`}
-            >
-              {category}
-            </button>
-          ))}
+    <PostLayout>
+      <div className="p-4">
+        {/* 카테고리 네비게이션 */}
+        <nav className="mb-4 overflow-x-auto whitespace-nowrap smooth-scroll">
+          <div className="flex space-x-2">
+            {CATEGORIES.map((category) => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors
+                  ${selectedCategory === category
+                    ? 'bg-brand-primary text-brand-inverse'
+                    : 'bg-brand-default text-brand-text-secondary hover:bg-gray-100'
+                  }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
         </nav>
-      </header>
-      
-      <main className="post-list">
-        {isLoading ? (
-          <p className="text-center p-4">로딩 중...</p>
-        ) : error ? (
-          <p className="text-center p-4 text-red-500">{error}</p>
-        ) : (
-          posts.map((post) => (
-            <article key={post.id} className="post-card" onClick={() => navigate(`/community/${post.id}`)}>
-              <div className="post-header">
-                <img src={post.authorProfileUrl || 'https://i.pravatar.cc/50'} alt={post.author} className="author-avatar" />
-                <div className="author-info">
-                    <strong>{post.author}</strong>
-                    <span>{timeSince(new Date(post.createdAt))} · <span className="category">{post.category}</span></span>
-                </div>
-                {currentUser && currentUser.username === post.author && (
-                    <button onClick={(e) => handleDeletePost(e, post.id)} className="ml-auto text-sm text-red-500 hover:underline p-1 shrink-0">삭제</button>
-                )}
-              </div>
-              <div className="post-content">
-                  <h3>{post.title}</h3>
-                  <p>{post.content.substring(0, 150)}...</p>
-                  {post.thumbnailUrl && <img src={post.thumbnailUrl} alt={post.title} className="post-thumbnail" />}
-              </div>
-              <div className="post-footer">
-                <button
-                  className={`flex items-center gap-1 cursor-pointer ${post.isLiked ? 'text-red-500' : 'text-gray-500'}`}
-                  onClick={(e) => handleToggleLike(e, post.id)}
-                >
-                  <Icon name="like" size={18} fill={post.isLiked ? 'currentColor' : 'none'} />
-                  <span>{post.likeCount}</span>
-                </button>
-                <div className="flex items-center gap-1 text-gray-500">
-                  <Icon name="chat" size={18} />
-                  <span>{post.commentCount}</span>
-                </div>
-              </div>
-            </article>
-          ))
-        )}
-      </main>
 
-      <button
-        className="new-post-button"
-        aria-label="새 글 작성"
-        onClick={() => navigate('/community/new')}
-      >
-        +
-      </button>
-    </div>
+        {/* 메인 콘텐츠 (게시글 목록) */}
+        <main className="space-y-4">
+          {isLoading ? (
+            <p className="text-center text-brand-gray p-8">로딩 중...</p>
+          ) : error ? (
+            <p className="text-center text-brand-error-text p-8">{error}</p>
+          ) : posts.length === 0 ? (
+            <div className="text-center text-brand-gray p-8 bg-brand-default rounded-card">
+              <p>아직 게시글이 없어요.</p>
+              <p className="text-footnote mt-1">첫 번째 글을 작성해보세요!</p>
+            </div>
+          ) : (
+            posts.map((post) => (
+              <article
+                key={post.id}
+                className="cursor-pointer bg-brand-default rounded-card p-4 shadow-sm hover:shadow-md transition-shadow"
+                onClick={() => navigate(`/community/${post.id}`)}
+              >
+                {/* 게시글 상단 정보 */}
+                <div className="flex items-center gap-3 mb-3">
+                  <img src={post.authorProfileUrl || `https://i.pravatar.cc/50?u=${post.author}`} alt={post.author} className="w-10 h-10 rounded-full object-cover" />
+                  <div className="flex-1">
+                    <p className="text-caption-bold text-brand-text-primary">{post.author}</p>
+                    <p className="text-footnote text-brand-gray">
+                      {timeSince(new Date(post.createdAt))} · <span className="font-semibold text-brand-primary">{post.category}</span>
+                    </p>
+                  </div>
+                  {currentUser && currentUser.username === post.author && (
+                    <button onClick={(e) => handleDeletePost(e, post.id)} className="text-footnote text-brand-disabled hover:text-brand-error-text">삭제</button>
+                  )}
+                </div>
+
+                {/* 게시글 본문 */}
+                <div className="space-y-2">
+                  <h3 className="text-subheadline text-brand-text-primary">{post.title}</h3>
+                  <p className="text-body text-brand-text-secondary line-clamp-3">{post.content}</p>
+                  {post.thumbnailUrl && <img src={post.thumbnailUrl} alt={post.title} className="rounded-lg mt-3 w-full max-h-60 object-cover" />}
+                </div>
+                
+                {/* 게시글 하단 정보 (좋아요, 댓글) */}
+                <div className="flex items-center gap-6 mt-4 pt-3 border-t border-brand-frame">
+                  <button
+                    className={`flex items-center gap-1.5 text-caption transition-colors ${post.isLiked ? 'text-red-500' : 'text-brand-gray hover:text-red-400'}`}
+                    onClick={(e) => handleToggleLike(e, post.id)}
+                  >
+                    <Icon name="like" size={18} fill={post.isLiked ? 'currentColor' : 'none'} className={post.isLiked ? '' : 'stroke-current'} />
+                    <span>{post.likeCount}</span>
+                  </button>
+                  <div className="flex items-center gap-1.5 text-caption text-brand-gray">
+                    <Icon name="chat" size={18} />
+                    <span>{post.commentCount}</span>
+                  </div>
+                </div>
+              </article>
+            ))
+          )}
+        </main>
+      </div>
+
+      {/* 새 글 작성 플로팅 버튼 */}
+      <FloatingWriteButton />
+    </PostLayout>
   );
 };
 

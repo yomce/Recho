@@ -120,7 +120,7 @@ const PostCard: React.FC<PostCardProps> = ({
   return (
     <div className={`w-full h-full ${containerClassName}`}>
       <Link to={linkUrl} className={linkClassName}>
-        <div className={`flex items-start justify-between border border-gray-200 rounded-[var(--radius-card)] ${cardClassName}`}>
+        <div className={`flex items-start justify-between rounded-[var(--radius-card)] ${cardClassName}`}>
           {imagePosition === "left" ? (
             <>
               {imageElement}

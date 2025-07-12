@@ -139,6 +139,8 @@ interface TimelineProps {
   trimmers: TrimmerState[];
   globalStartTime: number;
   globalEndTime: number;
+  startPointThreshold: number;
+  endPointThreshold: number;
   currentTime: number;
   isGloballyPlaying: boolean;
   onPositionChange: (time: number) => void;
@@ -147,6 +149,8 @@ interface TimelineProps {
   onGlobalEndTimeChange: (time: number) => void;
   onTrackPositionChange: (trackId: string, newPosition: number) => void;
   onTrackSelectionChange: (trackId: string | null) => void;
+  onDragStateChange: (isDragging: boolean) => void;
+  onTrackDragEnd: () => void; // [추가] 트랙 드래그가 끝났을 때 호출
 }
 
 const Timeline: React.ForwardRefRenderFunction<
@@ -157,6 +161,8 @@ const Timeline: React.ForwardRefRenderFunction<
     trimmers,
     globalStartTime,
     globalEndTime,
+    startPointThreshold,
+    endPointThreshold,
     currentTime,
     isGloballyPlaying,
     onPositionChange,
@@ -165,12 +171,31 @@ const Timeline: React.ForwardRefRenderFunction<
     onGlobalEndTimeChange,
     onTrackPositionChange,
     onTrackSelectionChange,
+    onDragStateChange,
+    onTrackDragEnd, // [추가]
   },
   ref,
 ) => {
   const [containerWidth, setContainerWidth] = useState(0);
   const [isPanning, setIsPanning] = useState(false);
   const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
+
+  // [추가] 핸들러 위치를 위한 애니메이션 값
+  const startHandlePosition = useRef(
+    new Animated.Value(globalStartTime * PIXELS_PER_SECOND),
+  ).current;
+  const endHandlePosition = useRef(
+    new Animated.Value(globalEndTime * PIXELS_PER_SECOND),
+  ).current;
+
+  // [수정] 부모로부터 받은 globalStartTime/EndTime이 변경되면 애니메이션 값을 '즉시' 업데이트
+  useEffect(() => {
+    startHandlePosition.setValue(globalStartTime * PIXELS_PER_SECOND);
+  }, [globalStartTime, startHandlePosition]);
+
+  useEffect(() => {
+    endHandlePosition.setValue(globalEndTime * PIXELS_PER_SECOND);
+  }, [globalEndTime, endHandlePosition]);
 
   // =================================================================================
   // =================================================================================
@@ -180,10 +205,9 @@ const Timeline: React.ForwardRefRenderFunction<
   // =================================================================================
   // =================================================================================
 
-  const startPoint = globalStartTime;
-  const endPoint = globalEndTime;
-  const startPointThreshold = 0; // 시작점은 0초 이전으로 갈 수 없음
-  const endPointThreshold = trimmers[0]?.duration ?? Infinity; // 끝점은 첫 비디오 길이를 초과할 수 없음
+  // 아마도 글로벌 타임으로 모두 대체 가능 할 듯??
+  // const startPoint = globalStartTime;
+  // const endPoint = globalEndTime;
 
   // [추가] 트랙 위치에 따른 동적 핸들 제약 조건
   const { latestTrackStartTime, earliestTrackEndTime } = useMemo(() => {
@@ -254,6 +278,10 @@ const Timeline: React.ForwardRefRenderFunction<
     trackId: string,
     currentPosition: number,
   ) => {
+    if (event.nativeEvent.oldState === State.ACTIVE) {
+      onTrackDragEnd(); // [추가] 드래그가 끝나면 콜백 호출
+    }
+
     if (event.nativeEvent.state === State.BEGAN) {
       dragStartPosRef.current = currentPosition;
     }
@@ -341,7 +369,14 @@ const Timeline: React.ForwardRefRenderFunction<
     event: PanGestureHandlerStateChangeEvent,
   ) => {
     if (event.nativeEvent.state === State.BEGAN) {
-      dragStartHandleTimeRef.current = startPoint;
+      dragStartHandleTimeRef.current = globalStartTime;
+      onDragStateChange(true);
+    } else if (
+      event.nativeEvent.state === State.END ||
+      event.nativeEvent.state === State.FAILED ||
+      event.nativeEvent.state === State.CANCELLED
+    ) {
+      onDragStateChange(false);
     }
   };
 
@@ -351,16 +386,24 @@ const Timeline: React.ForwardRefRenderFunction<
     const newStartTime = dragStartHandleTimeRef.current + timeChange;
     // 시작점은 (가장 늦게 시작하는 트랙의 시작점)보다 앞으로 갈 수 없다.
     let clampedTime = Math.min(
-      endPoint,
+      globalEndTime,
       Math.max(newStartTime, startPointThreshold, latestTrackStartTime),
     );
     clampedTime = parseFloat(clampedTime.toFixed(2));
+    console.log('[Timeline] onStartHandleDrag new time:', clampedTime);
     onGlobalStartTimeChange(clampedTime);
   };
 
   const onEndHandleStateChange = (event: PanGestureHandlerStateChangeEvent) => {
     if (event.nativeEvent.state === State.BEGAN) {
-      dragStartHandleTimeRef.current = endPoint;
+      dragStartHandleTimeRef.current = globalEndTime;
+      onDragStateChange(true);
+    } else if (
+      event.nativeEvent.state === State.END ||
+      event.nativeEvent.state === State.FAILED ||
+      event.nativeEvent.state === State.CANCELLED
+    ) {
+      onDragStateChange(false);
     }
   };
 
@@ -371,10 +414,11 @@ const Timeline: React.ForwardRefRenderFunction<
 
     // 끝점은 (가장 일찍 끝나는 트랙의 끝점)보다 뒤로 갈 수 없다.
     let clampedTime = Math.max(
-      startPoint,
+      globalStartTime,
       Math.min(newEndTime, endPointThreshold, earliestTrackEndTime),
     );
     clampedTime = parseFloat(clampedTime.toFixed(2));
+    console.log('[Timeline] onEndHandleDrag new time:', clampedTime);
     onGlobalEndTimeChange(clampedTime);
   };
 
@@ -487,6 +531,27 @@ const Timeline: React.ForwardRefRenderFunction<
                 <TickView height={mark.isMajor ? 15 : 8} />
               </TickContainer>
             ))}
+
+            {/* [추가] Threshold 시각적 헤드 */}
+            <TimeIndicatorLine
+              style={{
+                left: leftPadding + startPointThreshold * PIXELS_PER_SECOND,
+                height: RULER_HEIGHT + tracksHeight,
+                backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                zIndex: 100,
+              }}
+            />
+            {isFinite(endPointThreshold) && (
+              <TimeIndicatorLine
+                style={{
+                  left: leftPadding + endPointThreshold * PIXELS_PER_SECOND,
+                  height: RULER_HEIGHT + tracksHeight,
+                  backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                  zIndex: 100,
+                }}
+              />
+            )}
+
             {/* Global Time Handles - Now inside Ruler for correct positioning */}
             <TimeIndicatorLine
               style={{
@@ -500,7 +565,7 @@ const Timeline: React.ForwardRefRenderFunction<
             >
               <TimeDragHandle
                 style={{
-                  left: leftPadding + globalStartTime * PIXELS_PER_SECOND - 10,
+                  left: Animated.add(startHandlePosition, leftPadding - 10),
                 }}
               />
             </PanGestureHandler>
@@ -516,7 +581,7 @@ const Timeline: React.ForwardRefRenderFunction<
             >
               <TimeDragHandle
                 style={{
-                  left: leftPadding + globalEndTime * PIXELS_PER_SECOND - 10,
+                  left: Animated.add(endHandlePosition, leftPadding - 10),
                 }}
               />
             </PanGestureHandler>
@@ -573,9 +638,7 @@ const Timeline: React.ForwardRefRenderFunction<
       <DebugInfoPanel>
         {activeTrack ? (
           <DebugText>
-            Active: S: {activeTrack.startTime.toFixed(2)} E:{' '}
-            {activeTrack.endTime.toFixed(2)} | Pos:{' '}
-            {activeTrack.timelinePosition.toFixed(2)}
+            Active Track Position: {activeTrack.timelinePosition.toFixed(2)}
           </DebugText>
         ) : (
           <DebugText>트랙을 선택하여 정보를 확인하세요.</DebugText>

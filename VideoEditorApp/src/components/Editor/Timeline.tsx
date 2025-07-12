@@ -139,6 +139,8 @@ interface TimelineProps {
   trimmers: TrimmerState[];
   globalStartTime: number;
   globalEndTime: number;
+  startPointThreshold: number;
+  endPointThreshold: number;
   currentTime: number;
   isGloballyPlaying: boolean;
   onPositionChange: (time: number) => void;
@@ -159,6 +161,8 @@ const Timeline: React.ForwardRefRenderFunction<
     trimmers,
     globalStartTime,
     globalEndTime,
+    startPointThreshold,
+    endPointThreshold,
     currentTime,
     isGloballyPlaying,
     onPositionChange,
@@ -204,8 +208,6 @@ const Timeline: React.ForwardRefRenderFunction<
   // 아마도 글로벌 타임으로 모두 대체 가능 할 듯??
   // const startPoint = globalStartTime;
   // const endPoint = globalEndTime;
-  const startPointThreshold = 0; // 시작점은 0초 이전으로 갈 수 없음
-  const endPointThreshold = trimmers[0]?.duration ?? Infinity; // 끝점은 첫 비디오 길이를 초과할 수 없음
 
   // [추가] 트랙 위치에 따른 동적 핸들 제약 조건
   const { latestTrackStartTime, earliestTrackEndTime } = useMemo(() => {
@@ -636,9 +638,7 @@ const Timeline: React.ForwardRefRenderFunction<
       <DebugInfoPanel>
         {activeTrack ? (
           <DebugText>
-            Active: S: {activeTrack.startTime.toFixed(2)} E:{' '}
-            {activeTrack.endTime.toFixed(2)} | Pos:{' '}
-            {activeTrack.timelinePosition.toFixed(2)}
+            Active Track Position: {activeTrack.timelinePosition.toFixed(2)}
           </DebugText>
         ) : (
           <DebugText>트랙을 선택하여 정보를 확인하세요.</DebugText>

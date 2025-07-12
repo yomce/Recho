@@ -5,7 +5,7 @@ export class PaginatedRecruitEnsembleResponse {
 
   nextCursor?: {
     lastPostId: number;
-    lastCreateAt: string;
+    lastCreatedAt: string;
   };
 
   hasNextPage: boolean;

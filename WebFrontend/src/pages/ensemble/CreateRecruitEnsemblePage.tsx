@@ -8,6 +8,9 @@ import { useAuthStore } from '@/stores/authStore';
 import { EnsembleForm, type RecruitEnsembleFormState, SKILL_LEVEL } from '@/pages/ensemble/components/EnsembleForm';
 import axios from 'axios';
 import type { SessionEnsembleFormState } from './components/SessionForm';
+import { useLocationStore } from '@/components/map/store/useLocationStore';
+import { saveLocationToDB } from '@/components/map/LocationSaveHandler';
+import PostLayout from '@/components/layout/PostLayout';
 
 // 서버에 전송할 데이터 타입 (id 포함)
 interface CreateSessionEnsemblePayload {
@@ -28,6 +31,8 @@ interface CreateRecruitEnsemblePayload {
 const CreateRecruitEnsemblePage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+
+  const location = useLocationStore((state) => state.location);
 
   // 2. 폼 상태 타입으로 EnsembleFormState를 사용합니다.
   const [sessionFormList, setSessionForm] = useState<SessionEnsembleFormState[]>([{
@@ -99,10 +104,18 @@ const CreateRecruitEnsemblePage: React.FC = () => {
       setError('인증 정보가 없습니다. 다시 로그인해주세요.');
       return;
     }
+    if (!location) {
+      setError('위치 정보가 필요합니다.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
+      // 1. locationId 먼저 저장
+      const locationId = await saveLocationToDB(location);
+
       // payload 생성
       const sessionListPayLoad: CreateSessionEnsemblePayload[] = sessionFormList.map((item) => ({
         instrument: item.instrument,
@@ -114,12 +127,12 @@ const CreateRecruitEnsemblePage: React.FC = () => {
         content: form.content,
         eventDate: new Date(form.eventDate),
         skillLevel: Number(form.skillLevel),
-        locationId: Number(form.locationId),
+        locationId,
         totalRecruitCnt: Number(form.totalRecruitCnt),
         sessionList: sessionListPayLoad,
       };
 
-      const response = await axiosInstance.post('ensembles', payload);
+      const response = await axiosInstance.post('/ensembles', payload);
       alert('모집 공고가 성공적으로 등록되었습니다!');
       navigate(`/ensembles/${response.data.postId}`);
 
@@ -142,24 +155,23 @@ const CreateRecruitEnsemblePage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-3xl mx-auto my-8 p-10 bg-white rounded-lg shadow-xl">
-      <h2 className="text-center mt-0 mb-8 text-2xl font-bold text-gray-800">합주단원 모집 공고 등록</h2>
-      
-      {/* 3. 복잡한 폼 UI 대신 EnsembleForm 컴포넌트를 사용합니다. */}
-      <EnsembleForm
-        formState={form}
-        onFormChange={handleRecruitChange}
-        onFormSubmit={handleSubmit}
-        isLoading={loading}
-        errorMessage={error}
-        submitButtonText="모집 공고 등록하기"
-        loadingButtonText="등록 중..."
-        sessionFormList={sessionFormList}
-        onSessionFormListChange={handleSessionChange}
-        onSessionFormAdd={handleSessionAdd}
-        onSessionFormRemove={handleSessionRemove}
-      />
-    </div>
+    <PostLayout>
+      <div className="bg-brand-frame p-4">
+        <EnsembleForm
+          formState={form}
+          onFormChange={handleRecruitChange}
+          onFormSubmit={handleSubmit}
+          isLoading={loading}
+          errorMessage={error}
+          submitButtonText="모집 공고 등록하기"
+          loadingButtonText="등록 중..."
+          sessionFormList={sessionFormList}
+          onSessionFormListChange={handleSessionChange}
+          onSessionFormAdd={handleSessionAdd}
+          onSessionFormRemove={handleSessionRemove}
+        />
+      </div>
+    </PostLayout>
   );
 };
 

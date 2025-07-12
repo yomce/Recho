@@ -17,8 +17,8 @@ export class InsertVideoDto {
    * - 부모 영상에서 편집/리믹스 시에만 포함
    */
   @IsOptional()
-  @IsNumber()
-  parent_video_id?: number;
+  @IsString()
+  parent_video_id?: string;
 
   /**
    * - 최초 생성 시: 1

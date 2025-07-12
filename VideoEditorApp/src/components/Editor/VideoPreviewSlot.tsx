@@ -39,6 +39,7 @@ interface VideoPreviewSlotProps {
   onPlay: () => void;
   onPause: () => void;
   onStop: () => void;
+  onSeekComplete: () => void;
 }
 
 // 상위 컴포넌트에서 제어하기 위한 핸들러 타입
@@ -70,7 +71,7 @@ const VideoPreviewSlot = forwardRef<
     <PreviewWrapper>
       <VideoPlayer
         ref={playerRef}
-        source={{ uri: props.sourceVideo.uri }}
+        source={props.sourceVideo}
         volume={props.volume}
         isPaused={props.isPaused}
         startTime={props.startTime}
@@ -80,6 +81,7 @@ const VideoPreviewSlot = forwardRef<
         onPlay={props.onPlay}
         onPause={props.onPause}
         onStop={props.onStop}
+        onSeekComplete={props.onSeekComplete}
       />
     </PreviewWrapper>
   );

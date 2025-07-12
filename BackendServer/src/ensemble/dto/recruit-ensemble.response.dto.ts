@@ -6,6 +6,8 @@ import {
   RecruitEnsemble,
   SKILL_LEVEL,
 } from '../entities/recruit-ensemble.entity';
+import { Location } from 'src/map/entities/location.entity';
+import { Entity } from 'typeorm';
 
 export class RecruitEnsembleResponseDto {
   postId: number;
@@ -14,6 +16,7 @@ export class RecruitEnsembleResponseDto {
   content: string;
   eventDate: Date;
   skillLevel: SKILL_LEVEL;
+  location: Location;
   locationId: number;
   totalRecruitCnt: number;
   recruitStatus: RECRUIT_STATUS;
@@ -34,6 +37,7 @@ export class RecruitEnsembleResponseDto {
     dto.content = recruitEnsemble.content;
     dto.eventDate = recruitEnsemble.eventDate;
     dto.skillLevel = recruitEnsemble.skillLevel;
+    dto.location = recruitEnsemble.location;
     dto.locationId = recruitEnsemble.locationId;
     dto.totalRecruitCnt = recruitEnsemble.totalRecruitCnt;
     dto.recruitStatus = recruitEnsemble.recruitStatus;

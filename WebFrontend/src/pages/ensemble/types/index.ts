@@ -8,6 +8,16 @@ export enum APPLICATION_STATUS {
   CANCEL,
 }
 
+export interface Location {
+  locationId: string;
+  regionLevel1: string;
+  regionLevel2: string;
+  address: string;
+  lat: number;
+  lng: number;
+}
+
+
 export interface ApplicationEnsemble {
   applicationId: number;
   recruitEnsemble: RecruitEnsemble;
@@ -32,6 +42,7 @@ export interface RecruitEnsemble {
   eventDate: string;
   skillLevel: SKILL_LEVEL;
   locationId: number;
+  location: Location;
   totalRecruitCnt: number;
   recruitStatus: number;
   createdAt: string;

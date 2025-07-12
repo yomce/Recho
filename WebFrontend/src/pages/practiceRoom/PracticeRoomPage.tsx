@@ -10,7 +10,7 @@ import Icon from '@/components/atoms/icon/Icon'
 import SecondaryButton from "@/components/atoms/button/SecondaryButton";
 import PostCard from "@/components/atoms/card/PostCard";
 import SwiperTabs from "@/components/organisms/PostNavigationTabs";
-import axiosInstance from '@/services/axiosInstance';
+import axiosInstance from "@/services/axiosInstance";
 
 interface Cursor {
   lastProductId: number;
@@ -51,7 +51,7 @@ const PracticeRoomPage: React.FC = () => {
         }
 
         const response = await axiosInstance.get<PaginatedPracticeRoomResponse>(
-          `${apiUrl}/practice-room`,
+          `practice-room`,
           { params }
         );
 
@@ -112,7 +112,7 @@ const PracticeRoomPage: React.FC = () => {
           </SecondaryButton>
         </div>
       </div>
-      <div className="grid grid-cols-1 p-4 mb-[52px]">
+      <div className="grid grid-cols-1 mb-[52px]">
         {error && (
           <div className="button-brand-gray mb-4">
             <p className="text-brand-error-text">{error}</p>

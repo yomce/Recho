@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import Icon from "../icon/Icon";
+import { RECRUIT_STATUS, RECRUIT_STATUS_LABEL, SKILL_LEVEL, SKILL_LEVEL_DIC } from '@/pages/ensemble/types';
 
 interface PostCardProps {
   id: number | string;
@@ -10,15 +11,17 @@ interface PostCardProps {
   location?: number | string;
   address?: string;
   eventDate?: string;
-  recruitStatus?: number;
-  totalRecruitCnt?: number; 
+  recruitStatus?: RECRUIT_STATUS
+  totalRecruitCnt?: number;
   imageUrl?: string;
+
+  skillLevel?: SKILL_LEVEL
+  currentRecruitCnt?: number;
 
   imagePosition?: "left" | "right";
   imgWidth?: number;
   imgHeight?: number;
 
-  // 커스텀 클래스
   containerClassName?: string;
   linkClassName?: string;
   cardClassName?: string;
@@ -33,6 +36,7 @@ interface PostCardProps {
   eventDateClassName?: string;
   recruitStatusClassName?: string;
   totalRecruitCntClassName?: string;
+  skillLevelClassName?: string;
 }
 
 const PostCard: React.FC<PostCardProps> = ({
@@ -42,6 +46,7 @@ const PostCard: React.FC<PostCardProps> = ({
   price,
   address,
   eventDate,
+  skillLevel,
   recruitStatus,
   totalRecruitCnt,
   imageUrl = "",
@@ -63,6 +68,7 @@ const PostCard: React.FC<PostCardProps> = ({
   eventDateClassName = "text-caption text-brand-gray",
   recruitStatusClassName = "text-caption text-brand-gray",
   totalRecruitCntClassName = "flex flex-row items-center gap-2 text-caption text-brand-gray",
+  skillLevelClassName = `flex flex-row items-center gap-2 text-caption text-brand-gray justify-end`,
 }) => {
   const location = useLocation();
   const width = imgWidth;
@@ -84,10 +90,10 @@ const PostCard: React.FC<PostCardProps> = ({
 
   const textContent = (
     <div className={textWrapperClassName}>
-      <span className={recruitStatusClassName}>{recruitStatus}</span>
+      {recruitStatus !== undefined && <span className={recruitStatusClassName}>{RECRUIT_STATUS_LABEL[recruitStatus]}</span>}
       {title && <h2 className={titleClassName}>{title}</h2>}
       {description && <p className={descriptionClassName}>{description}</p>}
-      {address && 
+      {address &&
         <p className="text-caption text-brand-gray flex flex-row items-center truncate">
           <Icon name="mapPin" size={16} className="mr-1" />
           {address}
@@ -106,7 +112,8 @@ const PostCard: React.FC<PostCardProps> = ({
           {totalRecruitCnt} 명 참여
         </p>
       )}
-      
+      {skillLevel !== undefined && <span className={skillLevelClassName}>{SKILL_LEVEL_DIC[skillLevel]}</span>}
+
     </div>
   );
 

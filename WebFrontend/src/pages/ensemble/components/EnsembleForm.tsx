@@ -9,27 +9,13 @@ import TextAreaInput from '@/components/atoms/input/TextAreaInput';
 import CustomDatePicker from '@/components/atoms/input/CustomDatePicker';
 import CategorySelector from '@/components/atoms/input/CategorySelector';
 import PrimaryButton from '@/components/atoms/button/PrimaryButton';
-
-// 필요한 타입과 Enum (이전과 동일)
-export enum SKILL_LEVEL {
-  BEGINNER,
-  INTERMEDIATE,
-  ADVANCED,
-  PROFESSIONAL,
-}
-
-export const SKILL_LEVEL_TEXT = {
-  [SKILL_LEVEL.BEGINNER]: '초보',
-  [SKILL_LEVEL.INTERMEDIATE]: '중수',
-  [SKILL_LEVEL.ADVANCED]: '고수',
-  [SKILL_LEVEL.PROFESSIONAL]: '전문가',
-};
+import { SKILL_LEVEL_DIC } from '../types';
 
 export interface RecruitEnsembleFormState {
   title: string;
   content: string;
   eventDate: string;
-  skillLevel: SKILL_LEVEL;
+  skillLevel: number;
   locationId: string;
   totalRecruitCnt: string;
   sessionEnsemble: SessionEnsembleFormState[];
@@ -83,7 +69,7 @@ export const EnsembleForm: React.FC<RecruitEnsembleFormProps> = ({
     }
   };
 
-  const SKILL_CATEGORIES: CategoryOption[] = Object.entries(SKILL_LEVEL_TEXT).map(
+  const SKILL_CATEGORIES: CategoryOption[] = Object.entries(SKILL_LEVEL_DIC).map(
     ([id, name]) => ({ id: id.toString(), name }) // 👈 key를 string으로 변환
   );
 

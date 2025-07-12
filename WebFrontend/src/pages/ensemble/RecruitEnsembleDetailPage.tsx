@@ -45,7 +45,6 @@ const RecruitEnsembleDetailPage: React.FC = () => {
       try {
         // API 엔드포인트를 합주단원 모집 공고 상세 조회로 변경
         const response = await axiosInstance.get<RecruitEnsemble>(`ensembles/${id}`);
-        console.log(response.data);
 
         setEnsemble(response.data);
       } catch (err) {
@@ -93,6 +92,18 @@ const RecruitEnsembleDetailPage: React.FC = () => {
     navigate(`/ensembles/edit/${id}`);
   };
 
+  const handleComplete = async () => {
+    if (window.confirm('정말로 이 모집 공고를 삭제하시겠습니까?')) {
+      try {
+        await axiosInstance.patch(`ensembles/${id}/complete`);
+        alert('모집 공고가 성공적으로 삭제되었습니다.');
+        navigate('/ensembles'); // 목록 페이지로 이동
+      } catch (err) {
+        setError('공고 삭제 중 오류가 발생했습니다.');
+      }
+    }
+  }
+
   const handleDelete = async () => {
     if (window.confirm('정말로 이 모집 공고를 삭제하시겠습니까?')) {
       try {
@@ -125,6 +136,7 @@ const RecruitEnsembleDetailPage: React.FC = () => {
       post={ensemble}
       isOwner={isOwner}
       onEdit={handleEdit}
+      onComplete={handleComplete}
       onDelete={handleDelete}
       applicationEnsembleList={applicationList || []}
       isApplied={isApplied}

@@ -11,7 +11,6 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.actions.login);
   const kakaoCallbackUrl = useConfigStore((state) => state.config?.kakaoCallbackUrl);
-  console.log(kakaoCallbackUrl);
 
   const [id, setId] = useState("");
   const [password, setPassword] = useState("");

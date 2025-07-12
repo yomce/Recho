@@ -3,9 +3,11 @@ import Icon from '../icon/Icon';
 
 export const ToastMenu = ({
   onEdit,
+  onComplete,
   onDelete,
 } : {
   onEdit: () => void;
+  onComplete: () => void;
   onDelete: () => void;
 }) => {
   toast.custom((t) => (
@@ -29,6 +31,18 @@ export const ToastMenu = ({
             }}
           >
             수정하기
+          </button>
+        </div>
+        <div className="flex items-start justify-center gap-2 py-3">
+          <Icon name="check" size={20} className="text-brand-gray" />
+          <button
+            className="text-caption text-brand-gray"
+            onClick={() => {
+              onComplete();
+              toast.dismiss(t.id);
+            }}
+          >
+            모집 종료
           </button>
         </div>
         <div className="flex items-start justify-center gap-2 py-3">

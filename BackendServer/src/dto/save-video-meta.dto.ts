@@ -20,4 +20,16 @@ export class SaveVideoMetaDto {
   @IsOptional()
   @IsNumber()
   depth?: number;
+
+  @IsOptional()
+  @IsNumber()
+  startTime?: number;
+
+  @IsOptional()
+  @IsNumber()
+  endTime?: number;
+
+  @IsOptional()
+  @IsNumber()
+  timelinePosition?: number;
 }

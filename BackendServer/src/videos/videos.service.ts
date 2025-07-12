@@ -151,12 +151,29 @@ export class VideosService {
     let currentVideoId: string | null = id;
 
     while (currentVideoId) {
-      const videoDetails = await this.getVideoDetails(currentVideoId);
-      if (!videoDetails) {
+      const video = await this.videoRepository.findOne({
+        where: { id: currentVideoId },
+        select: [
+          'id',
+          'parent_video_id',
+          'depth',
+          'startTime',
+          'endTime',
+          'timelinePosition',
+          'source_video_key',
+          'results_video_key', // globalStart/EndTime 계산을 위해 추가
+          'thumbnail_key', // 썸네일 표시를 위해 추가
+        ],
+      });
+
+      if (!video) {
         break;
       }
-      lineage.push(videoDetails);
-      currentVideoId = videoDetails.parent_video_id || null;
+      // 소스 비디오의 URL을 생성하여 video_url에 할당
+      video.video_url = await this.getSourceVideoUrl(video.source_video_key);
+
+      lineage.push(video);
+      currentVideoId = video.parent_video_id || null;
     }
 
     return lineage.reverse();

@@ -89,16 +89,24 @@ export type VideoEditScreenRouteProp = RouteProp<
 export interface Video {
   id: string;
   user_id: string;
-  parent_video_id?: string;
+  parent_video_id: string | null;
   depth: number;
-  results_video_key: string;
-  source_video_key: string;
-  thumbnail_key: string;
   like_count: number;
   comment_count: number;
   created_at: string;
+  source_video_key: string;
+  results_video_key: string;
+  thumbnail_key: string;
   video_url: string;
   thumbnail_url: string;
+  user?: {
+    id: string;
+    nickname: string;
+    profile_image_url: string;
+  };
+  startTime: number;
+  endTime: number;
+  timelinePosition: number;
 }
 
 export interface CustomJwtPayload {

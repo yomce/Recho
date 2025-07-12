@@ -77,6 +77,10 @@ export const useVideoProcessor = () => {
   const startVideoProcessing = async (
     trimmers: TrimmerState[],
     serverVideos: ServerVideo[],
+    parentVideoId: string | null,
+    startTime: number,
+    endTime: number,
+    timelinePosition: number,
   ) => {
     setIsProcessing(true);
 
@@ -277,7 +281,6 @@ export const useVideoProcessor = () => {
       // Save Metadata to DB
       const directParent =
         serverVideos.length > 0 ? serverVideos[serverVideos.length - 1] : null;
-      const parent_video_id = directParent ? directParent.id : null;
       const depth = directParent ? directParent.depth + 1 : 1;
 
       await axiosInstance.post('/video-insert/complete', {
@@ -285,8 +288,11 @@ export const useVideoProcessor = () => {
         results_video_key: responseData.RESULT_VIDEO.key,
         source_video_key: responseData.SOURCE_VIDEO.key,
         thumbnail_key: responseData.THUMBNAIL.key,
-        parent_video_id,
+        parent_video_id: parentVideoId,
         depth,
+        startTime,
+        endTime,
+        timelinePosition,
       });
 
       Alert.alert(
@@ -311,4 +317,3 @@ export const useVideoProcessor = () => {
 
   return { isProcessing, uploading, startVideoProcessing };
 };
- 

@@ -13,11 +13,10 @@ import { CreateUserDto } from '../auth/user/dto/create-user.dto';
 import { UserService } from '../auth/user/user.service'; // 경로 확인
 
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm'; 
+import { Repository } from 'typeorm';
 import { Message } from './entities/message.entity';
 
-
-const prodOrigin = process.env.FRONTEND_URL;
+const prodOrigin = 'http://recho.cloud';
 const devOrigin = 'http://localhost:5173'; // 개발용 프론트엔드 주소 (포트 확인)
 const whitelist = [prodOrigin, devOrigin];
 

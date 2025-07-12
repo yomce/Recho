@@ -51,6 +51,8 @@ import {
   AlignStartVertical,
   AlignEndVertical,
   SlidersHorizontal,
+  Settings2,
+  SlidersVertical,
 } from 'lucide-react-native';
 
 import Timeline, { TimelineHandles } from '../components/Editor/Timeline';
@@ -96,6 +98,8 @@ interface CustomJwtPayload {
 type LocalVideoEditParams = {
   videos?: MediaItem[];
   parentVideoId?: string;
+  parentStartTime?: number;
+  parentEndTime?: number;
   total_slots?: number;
   sourceVideos?: ServerVideo[];
 };
@@ -190,6 +194,8 @@ const VideoEditScreen: React.FC<{
     videos: localVideos = [], // 로컬에서 촬영/선택된 비디오
     total_slots = 1, // 총 비디오 슬롯 개수
     sourceVideos: serverVideos = [], // 부모 비디오 정보 (서버에서 옴)
+    parentStartTime = 0, // 부모의 시작 시간 (기본값 0)
+    parentEndTime, // 부모의 종료 시간 (기본값 undefined)
   } = route.params ?? {};
 
   // 비디오 처리 로직을 커스텀 훅으로 분리
@@ -353,8 +359,13 @@ const VideoEditScreen: React.FC<{
   const seekCompleteCallback = useRef<(() => void) | null>(null);
   const isDraggingHandleRef = useRef(false);
 
-  const startPointThreshold = 1; // 나중에 동적으로 변경될 수 있는 시작점 임계값
-  const endPointThreshold = trimmers[0]?.duration ?? Infinity;
+  // [수정] 부모의 편집 가능 영역을 받아와 threshold의 기본값으로 설정
+  const startPointThreshold = parentStartTime;
+  // [수정] 부모의 endTime과 새로 추가된 비디오의 길이 중 더 작은 값을 임계점으로 사용
+  const endPointThreshold = Math.min(
+    parentEndTime ?? Infinity,
+    trimmers[0]?.duration ?? Infinity,
+  );
 
   // =================================================================================
   // 6. 핵심 로직: 비디오 처리 및 업로드
@@ -362,8 +373,31 @@ const VideoEditScreen: React.FC<{
 
   // '콜라주 생성 및 업로드' 버튼 클릭 시 실행되는 메인 함수
   const handleProcessAndUpload = useCallback(() => {
-    startVideoProcessing(trimmers, serverVideos);
-  }, [startVideoProcessing, trimmers, serverVideos]);
+    // 마지막 트랙의 타임라인 포지션을 가져옵니다.
+    // 사용자의 지시에 따라, 마지막에 추가된 클립의 절대 위치를 사용합니다.
+    const lastTrimmer =
+      trimmers.length > 0 ? trimmers[trimmers.length - 1] : null;
+    const timelinePosition = lastTrimmer ? lastTrimmer.timelinePosition : 0;
+
+    // 부모 비디오 ID는 route.params에서 가져옵니다.
+    const parentVideoId = route.params?.parentVideoId || null;
+
+    startVideoProcessing(
+      trimmers,
+      serverVideos,
+      parentVideoId,
+      globalStartTime,
+      globalEndTime,
+      timelinePosition,
+    );
+  }, [
+    trimmers,
+    serverVideos,
+    startVideoProcessing,
+    route.params?.parentVideoId,
+    globalStartTime,
+    globalEndTime,
+  ]);
 
   // =================================================================================
   // 4. useEffects (상태 변경에 따른 부가 효과 처리)
@@ -435,38 +469,132 @@ const VideoEditScreen: React.FC<{
 
   // 컴포넌트 마운트 시, 전달받은 비디오 정보로 Trimmer 초기 상태 설정
   useEffect(() => {
-    const finalVideos = localVideos || [];
-    const numSlots = finalVideos.length > 0 ? finalVideos.length : total_slots;
+    // [로그 추가] 컴포넌트로 전달된 모든 파라미터 확인
+    console.log(
+      '[VideoEditScreen] Received route.params:',
+      JSON.stringify(route.params, null, 2),
+    );
 
-    const initialTrimmers = Array.from({ length: numSlots }, (_, i) => {
-      const video = finalVideos[i] || null;
-      const id = `trimmer${i + 1}`;
-      return {
-        id,
-        sourceVideo: video,
-        duration: 0, // Initially 0, will be updated on load
-        startTime: 0,
-        endTime: 0, // Initially 0, will be updated on load
-        timelinePosition: 0,
-        isPlaying: false,
-        isMuted: false,
-        volume: 1,
-        equalizer: defaultEQBands,
-        aspectRatio: 'original',
-        originalAspectRatioValue: '1.777',
-      };
-    });
-    setTrimmers(initialTrimmers);
+    // [로그 추가] 초기 비디오 데이터 확인
+    console.log(
+      '[VideoEditScreen] Initial serverVideos:',
+      JSON.stringify(serverVideos, null, 2),
+    );
+    console.log(
+      '[VideoEditScreen] Initial localVideos:',
+      JSON.stringify(localVideos, null, 2),
+    );
+
+    // 1. 부모 비디오(serverVideos)를 TrimmerState 형식으로 변환합니다.
+    // [수정] 중복된 비디오 ID가 전달될 경우를 대비하여 `id`를 기준으로 중복 제거
+    const uniqueServerVideos = Array.from(
+      new Map(serverVideos.map(item => [item.id, item])).values(),
+    );
+
+    // [로그 추가] 중복 제거 후 serverVideos 확인
+    console.log(
+      '[VideoEditScreen] Unique serverVideos:',
+      JSON.stringify(uniqueServerVideos, null, 2),
+    );
+
+    const parentTrimmers: TrimmerState[] = uniqueServerVideos.map(video => ({
+      id: video.id,
+      sourceVideo: {
+        id: video.id,
+        uri: video.video_url, // ProcessingScreen에서 다운로드한 로컬 경로를 사용해야 함
+        filename: video.source_video_key,
+        type: 'video/mp4',
+        size: 0, // 알 수 없으므로 0으로 설정
+      },
+      duration: video.endTime - video.startTime, // 부모 트랙의 실제 길이는 구간 길이
+      startTime: video.startTime,
+      endTime: video.endTime,
+      timelinePosition: video.timelinePosition,
+      isPlaying: false,
+      isMuted: false,
+      volume: 1,
+      equalizer: defaultEQBands,
+      aspectRatio: 'original',
+      originalAspectRatioValue: '1.777', // 이 값은 동적으로 설정 필요
+    }));
+
+    // [수정] localVideos에서 이미 부모 트랙으로 추가된 비디오를 제외합니다.
+    const parentVideoIds = new Set(uniqueServerVideos.map(v => v.id));
+    const newOnlyLocalVideos = localVideos.filter(
+      video => !parentVideoIds.has(video.id),
+    );
+
+    // [로그 추가] 필터링 후 새로 추가된 비디오만 남았는지 확인
+    console.log(
+      '[VideoEditScreen] New-only local videos:',
+      JSON.stringify(newOnlyLocalVideos, null, 2),
+    );
+
+    // [추가] 직계 부모 비디오를 찾습니다 (depth가 가장 높은 비디오).
+    const directParent =
+      uniqueServerVideos.length > 0
+        ? uniqueServerVideos.reduce((prev, current) =>
+            prev.depth > current.depth ? prev : current,
+          )
+        : null;
+
+    // [추가] 직계 부모가 있다면, 전역 시작/종료 시간을 부모의 시간으로 설정합니다.
+    if (directParent) {
+      console.log(
+        '[VideoEditScreen] Setting global times from direct parent:',
+        {
+          start: directParent.startTime,
+          end: directParent.endTime,
+        },
+      );
+      setGlobalStartTime(directParent.startTime);
+      setGlobalEndTime(directParent.endTime);
+    }
+
+    // 2. 새로 추가된 비디오(localVideos)를 TrimmerState 형식으로 변환합니다.
+    const newTrimmers: TrimmerState[] = newOnlyLocalVideos.map((video, i) => ({
+      id: `trimmer${uniqueServerVideos.length + i + 1}`,
+      sourceVideo: video,
+      duration: 0, // 로드 시 업데이트됨
+      startTime: 0,
+      endTime: 0, // 로드 시 업데이트됨
+      // [수정] 새 비디오의 타임라인 위치를 직계 부모의 시작 시간으로 설정합니다.
+      timelinePosition: directParent ? directParent.startTime : 0,
+      isPlaying: false,
+      isMuted: false,
+      volume: 1,
+      equalizer: defaultEQBands,
+      aspectRatio: 'original',
+      originalAspectRatioValue: '1.777',
+    }));
+
+    const allTrimmers = [...parentTrimmers, ...newTrimmers];
+
+    // [로그 추가] 최종적으로 타임라인에 설정될 데이터 확인
+    console.log(
+      '[VideoEditScreen] Final allTrimmers:',
+      JSON.stringify(
+        allTrimmers.map(t => ({
+          id: t.id,
+          sourceFile: t.sourceVideo?.filename,
+          pos: t.timelinePosition,
+        })),
+        null,
+        2,
+      ),
+    );
+
+    setTrimmers(allTrimmers);
 
     const initialPlaybackStates: Record<
       string,
       { currentTime: number; isPaused: boolean }
     > = {};
-    initialTrimmers.forEach(t => {
+    allTrimmers.forEach(t => {
       initialPlaybackStates[t.id] = { currentTime: 0, isPaused: true };
     });
     setPlaybackStates(initialPlaybackStates);
-  }, [localVideos, total_slots]);
+  }, [serverVideos, localVideos, route.params]);
 
   useEffect(() => {
     // 모든 비디오의 duration이 로드되었는지 확인
@@ -499,7 +627,10 @@ const VideoEditScreen: React.FC<{
   // =================================================================================
   // trimmers 이용 잘하기
   const recalculateGlobalBoundaries = useCallback(() => {
+    // [추가] 직계 부모가 있을 경우, 이 함수를 실행하지 않고 부모의 경계를 유지합니다.
+    const hasParent = serverVideos.length > 0;
     if (
+      hasParent ||
       trimmers.length === 0 ||
       trimmers.some(t => t.duration === 0) ||
       isDraggingHandleRef.current // 핸들 드래그 중에는 실행하지 않음
@@ -525,12 +656,24 @@ const VideoEditScreen: React.FC<{
       maxStart,
       minEnd,
     });
-    // [수정] 계산된 시작점이 현재 시작점보다 앞서는 경우, 수동 설정을 존중하여 덮어쓰지 않음
+    // 계산된 시작점이 현재 시작점보다 앞서는 경우, 수동 설정을 존중하여 덮어쓰지 않음
     if (maxStart > globalStartTime) {
       setGlobalStartTime(maxStart);
     }
-    setGlobalEndTime(minEnd < maxStart ? maxStart : minEnd);
-  }, [trimmers, globalStartTime, endPointThreshold]);
+
+    const newEndTime = minEnd < maxStart ? maxStart : minEnd;
+    // 계산된 종료점이 현재 종료점보다 작은 경우에만 업데이트하여 수동 조작을 존중
+    if (newEndTime < globalEndTime) {
+      setGlobalEndTime(newEndTime);
+    }
+  }, [
+    trimmers,
+    globalStartTime,
+    globalEndTime,
+    startPointThreshold,
+    endPointThreshold,
+    serverVideos,
+  ]);
 
   // =================================================================================
   // 5. 핸들러 함수 (이벤트 처리)
@@ -965,7 +1108,29 @@ const VideoEditScreen: React.FC<{
                   padding: 20,
                 }}
               >
-                <SlidersHorizontal color="white" size={20} />
+                <SlidersVertical color="white" size={20} />
+              </TouchableOpacity>
+            )}
+            {isSettingsButtonVisible && (
+              <TouchableOpacity
+                onPress={() => {}}
+                style={{
+                  backgroundColor: '#000',
+                  borderRadius: 50,
+                  shadowColor: '#fff',
+                  shadowOffset: {
+                    width: 0,
+                    height: 0,
+                  },
+                  shadowOpacity: 0.5,
+                  shadowRadius: 3.84,
+                  elevation: 5,
+                  position: 'absolute',
+                  left: 16,
+                  padding: 20,
+                }}
+              >
+                <Settings2 color="white" size={20} />
               </TouchableOpacity>
             )}
           </View>

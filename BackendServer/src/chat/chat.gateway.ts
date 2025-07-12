@@ -22,14 +22,15 @@ const whitelist = [prodOrigin, devOrigin];
 
 @WebSocketGateway({
   cors: {
-    origin: function (origin, callback) {
-      // whitelist에 요청한 origin이 있거나, origin이 없는 경우(Postman 등) 허용
-      if (whitelist.indexOf(origin) !== -1 || !origin) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
+    origin: '*',
+    // function (origin, callback) {
+    //   // whitelist에 요청한 origin이 있거나, origin이 없는 경우(Postman 등) 허용
+    //   if (whitelist.indexOf(origin) !== -1 || !origin) {
+    //     callback(null, true);
+    //   } else {
+    //     callback(new Error('Not allowed by CORS'));
+    //   }
+    // },
     credentials: true,
   },
 })
@@ -40,7 +41,7 @@ export class ChatGateway {
   constructor(
     private readonly chatService: ChatService,
     private readonly userService: UserService, // ← 추가
-    @InjectRepository(Message) 
+    @InjectRepository(Message)
     private readonly msgRepo: Repository<Message>,
   ) {}
 

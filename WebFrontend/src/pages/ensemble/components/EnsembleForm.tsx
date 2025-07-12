@@ -9,7 +9,6 @@ import TextAreaInput from '@/components/atoms/input/TextAreaInput';
 import CustomDatePicker from '@/components/atoms/input/CustomDatePicker';
 import CategorySelector from '@/components/atoms/input/CategorySelector';
 import PrimaryButton from '@/components/atoms/button/PrimaryButton';
-import SecondaryButton from '@/components/atoms/button/SecondaryButton';
 
 // 필요한 타입과 Enum (이전과 동일)
 export enum SKILL_LEVEL {

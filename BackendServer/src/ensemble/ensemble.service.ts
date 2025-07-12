@@ -44,10 +44,10 @@ export class EnsembleService {
     lastPostId?: number,
     lastCreatedAt?: Date,
   ): Promise<PaginatedRecruitEnsembleResponse> {
-    console.log('lastPostId:', lastPostId, 'lastCreatedAt:', lastCreatedAt);
     const realLimit = limit + 1;
-    const queryBuilder =
-      this.recruitEnsembleRepo.createQueryBuilder('recruitEnsemble');
+    const queryBuilder = this.recruitEnsembleRepo
+      .createQueryBuilder('recruitEnsemble')
+      .leftJoinAndSelect('recruitEnsemble.location', 'location');
 
     if (lastPostId && lastCreatedAt) {
       const lastCreatedAtDate = new Date(lastCreatedAt);
@@ -108,7 +108,7 @@ export class EnsembleService {
         user: user,
         recruitStatus: RECRUIT_STATUS.RECRUITING,
         viewCount: 0,
-        locationId: locationEntity.locationId,
+        location: locationEntity,
       });
 
       const savedEnsemble = await transactionalEntityManager.save(newEnsemble);

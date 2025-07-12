@@ -9,7 +9,7 @@ import FilterButton from '@/components/atoms/button/FilterButton';
 import { toast } from 'react-hot-toast';
 import FilterToast from '@/components/atoms/button/FilterToast';
 import FloatingWriteButton from '@/components/atoms/button/FloatingWriteButton';
-import type { RECRUIT_STATUS, SKILL_LEVEL } from './types';
+import type { Location, RECRUIT_STATUS, SKILL_LEVEL } from './types';
 
 // 모집 공고 데이터 타입 (서버 응답 기준, 필요에 따라 수정)
 interface RecruitEnsemble {
@@ -29,8 +29,7 @@ interface RecruitEnsemble {
   totalRecruitCnt: number;
   viewCount: number;
   
-  // 다른 테이블과의 관계 ID
-  locationId: number;
+  location: Location;
 }
 
 // 페이지네이션 커서 타입

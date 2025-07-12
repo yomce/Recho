@@ -44,7 +44,7 @@ const CreateRecruitEnsemblePage: React.FC = () => {
   const [form, setForm] = useState<RecruitEnsembleFormState>({
     title: '',
     content: '',
-    eventDate: '',
+    eventDate: new Date().toISOString().split('T')[0],
     skillLevel: SKILL_LEVEL.BEGINNER,
     locationId: '',
     totalRecruitCnt: '1',

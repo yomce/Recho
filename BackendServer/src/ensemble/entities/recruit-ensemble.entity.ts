@@ -51,11 +51,8 @@ export class RecruitEnsemble {
   skillLevel: SKILL_LEVEL;
 
   @ManyToOne(() => Location, { eager: true })
-  @JoinColumn({ name: 'locationId' })
+  @JoinColumn({ name: 'location' })
   location: Location;
-
-  @Column()
-  locationId: number;
 
   @Column()
   totalRecruitCnt: number;

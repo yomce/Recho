@@ -16,7 +16,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Message } from './entities/message.entity';
 
-const prodOrigin = 'http://recho.cloud';
+const prodOrigin = 'https://recho.cloud';
 const devOrigin = 'http://localhost:5173'; // 개발용 프론트엔드 주소 (포트 확인)
 const whitelist = [prodOrigin, devOrigin];
 

@@ -5,12 +5,13 @@ import { useNavigate } from 'react-router-dom';
 import axiosInstance from '@/services/axiosInstance';
 import { useAuthStore } from '@/stores/authStore';
 // 1. 공통 폼과 관련 타입들을 components 폴더에서 가져옵니다.
-import { EnsembleForm, type RecruitEnsembleFormState, SKILL_LEVEL } from '@/pages/ensemble/components/EnsembleForm';
+import { EnsembleForm, type RecruitEnsembleFormState } from '@/pages/ensemble/components/EnsembleForm';
 import axios from 'axios';
 import type { SessionEnsembleFormState } from './components/SessionForm';
 import { useLocationStore } from '@/components/map/store/useLocationStore';
 import { saveLocationToDB } from '@/components/map/LocationSaveHandler';
 import PostLayout from '@/components/layout/PostLayout';
+import { SKILL_LEVEL } from './types';
 
 // 서버에 전송할 데이터 타입 (id 포함)
 interface CreateSessionEnsemblePayload {
@@ -43,7 +44,7 @@ const CreateRecruitEnsemblePage: React.FC = () => {
   const [form, setForm] = useState<RecruitEnsembleFormState>({
     title: '',
     content: '',
-    eventDate: '',
+    eventDate: new Date().toISOString().split('T')[0],
     skillLevel: SKILL_LEVEL.BEGINNER,
     locationId: '',
     totalRecruitCnt: '1',

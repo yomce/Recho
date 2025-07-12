@@ -9,6 +9,7 @@ import FilterButton from '@/components/atoms/button/FilterButton';
 import { toast } from 'react-hot-toast';
 import FilterToast from '@/components/atoms/button/FilterToast';
 import FloatingWriteButton from '@/components/atoms/button/FloatingWriteButton';
+import type { Location, RECRUIT_STATUS, SKILL_LEVEL } from './types';
 
 // 모집 공고 데이터 타입 (서버 응답 기준, 필요에 따라 수정)
 interface RecruitEnsemble {
@@ -23,13 +24,12 @@ interface RecruitEnsemble {
   eventDate: string;
 
   // 상태 및 숫자 정보
-  skillLevel: number;         // 0 (BEGINNER), 1 (INTERMEDIATE) 등
-  recruitStatus: number;   // 0 (모집중) 등
+  skillLevel: SKILL_LEVEL;         // 0 (BEGINNER), 1 (INTERMEDIATE) 등
+  recruitStatus: RECRUIT_STATUS;   // 0 (모집중) 등
   totalRecruitCnt: number;
   viewCount: number;
   
-  // 다른 테이블과의 관계 ID
-  locationId: number;
+  location: Location;
 }
 
 // 페이지네이션 커서 타입
@@ -74,6 +74,8 @@ const RecruitEnsembleListPage: React.FC = () => {
         { params }
       );
 
+      console.log(response.data);
+
       const { data, nextCursor: newCursor, hasNextPage: newHasNextPage } = response.data;
 
       setItems(prev => (isInitialFetch ? data : [...prev, ...data]));
@@ -91,7 +93,7 @@ const RecruitEnsembleListPage: React.FC = () => {
 
   useEffect(() => {
     fetchItems(true);
-  }, []); // fetchItems가 useCallback으로 감싸져 있으므로 의존성 배열이 안전합니다.
+  }, [fetchItems]); // fetchItems가 useCallback으로 감싸져 있으므로 의존성 배열이 안전합니다.
 
   const handleLoadMore = () => {
     fetchItems(false);
@@ -140,6 +142,7 @@ const RecruitEnsembleListPage: React.FC = () => {
               eventDate={item.eventDate.slice(0,10)}
               recruitStatus={item.recruitStatus}
               totalRecruitCnt={item.totalRecruitCnt}
+              skillLevel={item.skillLevel}
               cardClassName="h-[140px] items-center mt-2"
               textWrapperClassName="flex flex-col items-start justify-center w-full p-4 ml-2 gap-1"
               imagePosition="left"

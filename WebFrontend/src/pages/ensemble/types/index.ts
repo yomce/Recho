@@ -1,5 +1,4 @@
 import type { User } from '@/stores/authStore';
-import type { SKILL_LEVEL } from '../components/EnsembleForm';
 
 export enum APPLICATION_STATUS {
   WAITING,
@@ -49,3 +48,29 @@ export interface RecruitEnsemble {
   viewCount: number;
   sessionEnsemble: SessionEnsemble[]
 }
+
+export enum SKILL_LEVEL {
+  BEGINNER,
+  INTERMEDIATE,
+  ADVANCED,
+  PROFESSIONAL,
+}
+
+export const SKILL_LEVEL_DIC: Record<SKILL_LEVEL, string> = {
+  [SKILL_LEVEL.BEGINNER]: '초보',
+  [SKILL_LEVEL.INTERMEDIATE]: '중급',
+  [SKILL_LEVEL.ADVANCED]: '고급',
+  [SKILL_LEVEL.PROFESSIONAL]: '전문가',
+};
+
+export enum RECRUIT_STATUS {
+  RECRUITING,
+  COMPLETE,
+  CANCEL,
+}
+
+export const RECRUIT_STATUS_LABEL: Record<RECRUIT_STATUS, string> = {
+  [RECRUIT_STATUS.RECRUITING]: '모집 중',
+  [RECRUIT_STATUS.COMPLETE]: '모집 완료',
+  [RECRUIT_STATUS.CANCEL]: '취소됨',
+};

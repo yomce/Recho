@@ -65,6 +65,26 @@ export class EnsembleController {
     );
   }
 
+  @Post(':postId/complete')
+  @UseGuards(AuthGuard('jwt'))
+  async closeRecruitment(
+    @Param('postId') postId: number,
+    @Req() req: Request,
+  ): Promise<RecruitEnsembleResponseDto> {
+    if (!req.user || !req.user.id) {
+      this.logger.error(
+        'Authentication information missing from request user object.',
+      );
+      throw new ForbiddenException('사용자 인증 정보가 없습니다.');
+    }
+    const userId = req.user.id;
+
+    this.logger.log(
+      `Closing recruitment for post ID #${postId} by user ${userId}`,
+    );
+    return this.ensembleService.closeRecruitment(postId, userId);
+  }
+
   @Get(':postId')
   async detailEnsemble(
     @Param('postId', ParseIntPipe) postId: number,

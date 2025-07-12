@@ -10,6 +10,8 @@ import { CreateUsedProductDto } from './dto/create-used-product.dto';
 import { UpdateUsedProductDto } from './dto/update-used-product.dto';
 import { PaginatedUsedProductResponse } from './dto/paginated-used-product.response.dto';
 import { Location } from 'src/map/entities/location.entity';
+import { ImageService } from 'src/image/image.service';
+
 
 @Injectable()
 export class UsedProductService {
@@ -19,6 +21,8 @@ export class UsedProductService {
     // TODO: 실제 프로젝트에서는 Location 엔티티의 Repository를 주입받아야 합니다.
     @InjectRepository(Location)
     private readonly locationRepo: Repository<Location>,
+    
+    private readonly imageService: ImageService,
   ) {}
 
   async findUsedProductWithPagination(
@@ -66,7 +70,7 @@ export class UsedProductService {
     createDto: CreateUsedProductDto,
     id: string,
   ): Promise<UsedProduct> {
-    const { locationId, ...restOfDto } = createDto;
+    const { locationId, imageIds = [], ...restOfDto } = createDto;
 
 
     // 실제로 locationRepo를 사용해 ID로 지역 정보를 조회
@@ -85,10 +89,22 @@ export class UsedProductService {
       status: Status.FOR_SALE,
       viewCount: 0,
     });
-    return await this.usedProductRepo.save(newProduct);
+
+    const savedProduct = await this.usedProductRepo.save(newProduct);
+
+    // --- 이미지에 게시글 ID (refPostId) 매핑 ---
+    if(imageIds.length > 0) {
+      console.log('[이미지 매핑] 이미지 ID들:', imageIds);
+      await this.imageService.connectImagesToPost({
+        imageIds,
+        refPostId: savedProduct.productId,
+      });
+    }
+    
+    return savedProduct;
   }
 
-  async detailProduct(productId: number): Promise<UsedProduct> {
+  async detailProduct(productId: number): Promise<UsedProduct & { imageIds: number[] } & { imageUrl: string[] }> {
     const product = await this.usedProductRepo.findOne({
       where: { productId: productId },
       relations: ['location'],
@@ -96,7 +112,14 @@ export class UsedProductService {
     if (!product) {
       throw new NotFoundException(`Product with ID #${productId} not found.`);
     }
-    return product;
+    const images = await this.imageService.findImageByRefPostId(productId);
+    const imageIds = images.map(img => img.imageId);
+    const imageUrl = images.map(img => img.imageUrl)
+    return {
+      ...product,
+      imageIds,
+      imageUrl,
+    };
   }
 
   async deleteProduct(productId: number, id: string): Promise<void> {
@@ -134,6 +157,28 @@ export class UsedProductService {
         );
       }
       locationEntity = found;
+    }
+    // -- 이미지 수정 로직 추가
+    if (updateDto.imageIds) {
+      const allImages = await this.imageService.findImageByRefPostId(productId);
+      const existingImageIds = allImages.map((img) => img.imageId);
+
+      const toDisconnect = existingImageIds.filter(
+        (id) => !updateDto.imageIds?.includes(id),
+      );
+
+      const toConnect = updateDto.imageIds;
+
+      if(toDisconnect.length > 0) {
+        await this.imageService.disconnectImages(toDisconnect);
+      }
+
+      if(toConnect.length > 0) {
+        await this.imageService.connectImagesToPost({
+          imageIds: toConnect,
+          refPostId: productId,
+        });
+      }
     }
 
     // 나머지 필드 병합

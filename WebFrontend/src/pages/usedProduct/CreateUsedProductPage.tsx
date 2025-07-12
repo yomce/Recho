@@ -38,6 +38,7 @@ const CreateUsedProductPage: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [imageIds, setImageIds] = useState<number[]>([]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -70,6 +71,7 @@ const CreateUsedProductPage: React.FC = () => {
         categoryId: parseInt(form.categoryId, 10),
         tradeType: form.tradeType,
         locationId: String(locationId),
+        imageIds,
       };
 
       const response = await axiosInstance.post('used-products', payload);
@@ -102,6 +104,7 @@ const CreateUsedProductPage: React.FC = () => {
           errorMessage={error}
           submitButtonText="상품 등록하기"
           loadingButtonText="등록 중..."
+          setImageIds={setImageIds}
         />
       </div>
     </PostLayout>

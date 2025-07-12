@@ -23,6 +23,7 @@ const UpdateUsedProductPage: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [images, setImages] = useState<{ id: number, url: string }[]>([]);
   const { user } = useAuthStore();
 
   useEffect(() => {
@@ -43,6 +44,7 @@ const UpdateUsedProductPage: React.FC = () => {
           categoryId: String(product.categoryId),
           tradeType: product.tradeType,
           locationId: String(product.location.locationId),
+          imageIds: images.map((img) => img.id)
         });
       } catch (err) {
         if (axios.isAxiosError(err)) { // err가 Axios 에러인지 확인하면 더 안전합니다.
@@ -112,6 +114,7 @@ const UpdateUsedProductPage: React.FC = () => {
           errorMessage={error}
           submitButtonText="수정 완료"
           loadingButtonText="수정 중..."
+          setImageIds={setImages}
         />
       </div>
     </PostLayout>

@@ -9,6 +9,9 @@ interface PostCardProps {
   price?: number;
   location?: number | string;
   address?: string;
+  eventDate?: string;
+  recruitStatus?: number;
+  totalRecruitCnt?: number; 
   imageUrl?: string;
 
   imagePosition?: "left" | "right";
@@ -27,6 +30,9 @@ interface PostCardProps {
   priceWrapperClassName?: string;
   priceTextClassName?: string;
   priceUnitClassName?: string;
+  eventDateClassName?: string;
+  recruitStatusClassName?: string;
+  totalRecruitCntClassName?: string;
 }
 
 const PostCard: React.FC<PostCardProps> = ({
@@ -35,6 +41,9 @@ const PostCard: React.FC<PostCardProps> = ({
   description = "",
   price,
   address,
+  eventDate,
+  recruitStatus,
+  totalRecruitCnt,
   imageUrl = "",
   imagePosition = "right",
   imgWidth = 120,
@@ -51,6 +60,9 @@ const PostCard: React.FC<PostCardProps> = ({
   priceWrapperClassName = "text-[16px] font-bold mt-2 flex items-center gap-1",
   priceTextClassName = "truncate max-w-[160px] inline-block",
   priceUnitClassName = "",
+  eventDateClassName = "text-caption text-brand-gray",
+  recruitStatusClassName = "text-caption text-brand-gray",
+  totalRecruitCntClassName = "flex flex-row items-center gap-2 text-caption text-brand-gray",
 }) => {
   const location = useLocation();
   const width = imgWidth;
@@ -72,6 +84,7 @@ const PostCard: React.FC<PostCardProps> = ({
 
   const textContent = (
     <div className={textWrapperClassName}>
+      <span className={recruitStatusClassName}>{recruitStatus}</span>
       {title && <h2 className={titleClassName}>{title}</h2>}
       {description && <p className={descriptionClassName}>{description}</p>}
       {address && 
@@ -86,13 +99,21 @@ const PostCard: React.FC<PostCardProps> = ({
           <span className={priceUnitClassName}>원</span>
         </span>
       )}
+      <p className={eventDateClassName}>{eventDate}</p>
+      { totalRecruitCnt && (
+        <p className={totalRecruitCntClassName}>
+          <Icon name="user" size={16} className="text-brand-gray"/>
+          {totalRecruitCnt} 명 참여
+        </p>
+      )}
+      
     </div>
   );
 
   return (
     <div className={`w-full h-full ${containerClassName}`}>
       <Link to={linkUrl} className={linkClassName}>
-        <div className={`flex items-start justify-between border border-gray-200 rounded-[var(--radius-card)] h-[120px] ${cardClassName}`}>
+        <div className={`flex items-start justify-between border border-gray-200 rounded-[var(--radius-card)] ${cardClassName}`}>
           {imagePosition === "left" ? (
             <>
               {imageElement}

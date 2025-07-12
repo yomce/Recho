@@ -40,6 +40,7 @@ import {
   IoCameraOutline,
   IoLocationSharp,
   IoHeart,
+  IoOptionsOutline,
 } from 'react-icons/io5';
 
 // 아이콘 이름을 키로, 실제 컴포넌트를 값으로 매핑합니다.
@@ -82,6 +83,7 @@ const iconMap = {
   category: IoListOutline, // 카테고리
   camera: IoCameraOutline, // 카메라
   mapPin: IoLocationSharp, // 지도 핀
+  options: IoOptionsOutline,
 };
 
 // Icon 컴포넌트가 받을 props 타입을 정의합니다.

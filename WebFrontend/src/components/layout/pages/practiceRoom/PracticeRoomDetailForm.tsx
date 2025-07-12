@@ -25,8 +25,8 @@ export const PracticeRoomDetail: React.FC<PracticeRoomDetailProps> = ({
   onDelete,
 }) => {
   return (
-    <PostLayout bgClassName="bg-brand-inverse mx-auto">
-      <div className="">
+    <PostLayout bgClassName="bg-brand-inverse">
+      <div className="mx-auto p-4 w-full">
         <div className="relative">
         {/* 이미지 섹션 */}
           <SwiperImageCard
@@ -35,9 +35,7 @@ export const PracticeRoomDetail: React.FC<PracticeRoomDetailProps> = ({
               "https://placehold.co/400x270/DDD/333?text=2",
               "https://placehold.co/400x270/CCC/333?text=3"
             ]}
-            width={430}
-            height={270}
-            slideClassName="rounded-b-[var(--radius-card)] px-2"
+            slideClassName="rounded-[var(--radius-card)]"
             showPagination={true}
           />
           {isOwner && (
@@ -54,7 +52,7 @@ export const PracticeRoomDetail: React.FC<PracticeRoomDetailProps> = ({
             </div>
           )}
         </div>
-        <div className="flex flex-col w-[430px] mx-auto px-4 gap-4">
+        <div className="flex flex-col w-full mx-auto px-4 gap-4">
           <UserProfileCard
             imageUrl={post.imageUrl || 'https://placehold.co/40x40'}
             name={post.id}

@@ -17,7 +17,23 @@ import { Repository } from 'typeorm';
 import { Message } from './entities/message.entity';
 
 
-@WebSocketGateway({ cors: true })
+const prodOrigin = process.env.FRONTEND_URL;
+const devOrigin = 'http://localhost:5173'; // 개발용 프론트엔드 주소 (포트 확인)
+const whitelist = [prodOrigin, devOrigin];
+
+@WebSocketGateway({
+  cors: {
+    origin: function (origin, callback) {
+      // whitelist에 요청한 origin이 있거나, origin이 없는 경우(Postman 등) 허용
+      if (whitelist.indexOf(origin) !== -1 || !origin) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+  },
+})
 export class ChatGateway {
   @WebSocketServer()
   server: Server;

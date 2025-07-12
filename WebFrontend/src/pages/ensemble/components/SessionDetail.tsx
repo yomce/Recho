@@ -7,6 +7,7 @@ import type {
 import axiosInstance from "@/services/axiosInstance";
 import axios from "axios";
 import { useAuthStore } from "@/stores/authStore";
+import PrimaryButton from "@/components/atoms/button/PrimaryButton";
 
 interface SessionDetailProps {
   item: SessionEnsemble;
@@ -31,9 +32,9 @@ export const SessionDetail: React.FC<SessionDetailProps> = ({
   // 1. 현재 세션에 지원한 유저들의 이름 목록을 계산합니다.
   // applicationEnsembleList나 item.sessionId가 변경될 때만 다시 계산됩니다.
   const applierUsernames = useMemo(() => {
-    return applicationEnsembleList
-      .filter((app) => app.sessionEnsemble.sessionId === item.sessionId)
-      .map((app) => app.id); // user 객체 안의 username을 추출
+    return (applicationEnsembleList || []).filter(
+      (app) => app.sessionEnsemble.sessionId === item.sessionId
+    ).map((app) => app.id); // user 객체 안의 username을 추출
   }, [applicationEnsembleList, item.sessionId]);
 
   // 2. 위에서 계산한 목록의 길이를 통해 현재 지원자 수를 구합니다.
@@ -94,64 +95,73 @@ export const SessionDetail: React.FC<SessionDetailProps> = ({
   };
 
   useEffect(() => {
-    const selfApplication = applicationEnsembleList.find(
-      (app) => app.id === user?.id
-    );
+    const selfApplication = Array.isArray(applicationEnsembleList)
+      ? applicationEnsembleList.find((app) => app.id === user?.id)
+      : undefined;
 
     setIsIn(!!selfApplication);
     setApplication(selfApplication || null);
-  }, [applicationEnsembleList, isApplied, user]);
+  }, [applicationEnsembleList, user]);
 
   return (
-    <div className="w-full p-4 mb-4 border rounded-xl shadow-sm bg-white space-y-4">
-      <div className="flex justify-between items-center">
-        {/* 악기 이름 */}
-        <p className="text-lg font-semibold text-gray-800">{item.instrument}</p>
-
-        {/* 모집 인원 정보 */}
-        <div className="text-right">
-          <p className="text-md text-gray-700">
-            <span className="font-medium">모집 인원:</span> {item.recruitCount}
-            명
-          </p>
-          <p className="text-sm text-gray-500">
-            (현재 {nowRecruitCount}명 지원)
-          </p>
+    <div className="w-full mt-[16px]">
+      <div className="flex flex-col gap-1 p-3 bg-gray-50 rounded-lg border border-gray-200">
+        {/* 제목 줄 */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-caption text-brand-gray">{item.instrument}</span>
+          </div>
+          <div className="flex flex-col items-end justify-end">
+            <span className="text-footnote text-gray-500">
+              {nowRecruitCount}/{item.recruitCount}
+            </span>
+            <p className="text-sm text-gray-500">
+              (현재 {nowRecruitCount}명 지원)
+            </p>
+          </div>
         </div>
-      </div>
+        <div className="mt-2 border-t border-brand-frame" />
 
-      {/* 3. 지원자 목록 표시 부분 */}
-      {applierUsernames.length > 0 && (
-        <div className="pt-3 border-t border-gray-200">
-          <p className="text-sm font-medium text-gray-700">현재 지원자:</p>
-          <p className="text-sm text-gray-600 mt-1 bg-gray-50 p-2 rounded-md">
-            {applierUsernames.join(", ")}
-          </p>
-        </div>
-      )}
+        {/* 유저 목록 */}
+        <div className="flex items-center justify-between gap-4 mt-2">
+          <div className="flex items-center gap-2">
+            {applierUsernames.map((userId) => (
+              <div key={userId} className="flex flex-col items-center">
+                <img
+                  src="https://placehold.co/32x32"
+                  alt={`user-${userId}`}
+                  className="w-12 h-12 rounded-full border border-white"
+                />
+                <p className="text-footnote text-gray-500 mt-1">{userId}</p>
+              </div>
+            ))}
+          </div>
 
-      {/* --- 버튼 추가 부분 --- */}
-      {user?.id !== ensemble.user.id ? (
-        <div className="flex justify-end">
-          {isApplied ? (
-            isIn ? (
-              <button
-                onClick={handleCancel}
-                className="px-4 py-2 font-semibold text-white bg-red-500 rounded-md shadow-sm hover:bg-red-600"
-              >
-                지원 취소
-              </button>
-            ) : null
-          ) : (
-            <button
-              onClick={handleApply}
-              className="px-4 py-2 font-semibold text-white bg-blue-500 rounded-md shadow-sm hover:bg-blue-600"
-            >
-              지원하기
-            </button>
+          {/* 버튼 렌더링 */}
+          {user?.id !== ensemble.user.id && (
+            <div className="max-w-[60px] whitespace-nowrap overflow-hidden">
+              {isApplied ? (
+                isIn ? (
+
+                  <PrimaryButton
+                    onClick={handleCancel}
+                    style={{ fontSize: 12 }}
+                  >
+                    지원 취소
+                  </PrimaryButton>
+                ) : null
+              ) : (
+                <PrimaryButton
+                  onClick={handleApply}
+                  style={{ fontSize: 12 }}
+                >
+                  지원하기
+                </PrimaryButton>
+              )}
+            </div>
           )}
         </div>
-      ) : null}
+      </div>
     </div>
   );
 };

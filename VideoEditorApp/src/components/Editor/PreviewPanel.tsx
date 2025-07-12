@@ -9,10 +9,10 @@ import VideoPreviewSlot, { VideoPreviewSlotHandles } from './VideoPreviewSlot';
 // 1. 스타일 컴포넌트 (UI)
 // =================================================================================
 
-const PreviewArea = styled.View`
+const PreviewArea = styled.View<{ state: 'max' | 'min' | 'collapsed' }>`
   flex: 1;
   width: 100%;
-  background-color: #1a1a1a;
+  background-color: ${({ state }) => (state === 'max' ? '#000000' : '#1a1a1a')};
   justify-content: center;
   align-items: center;
   overflow: hidden;
@@ -80,6 +80,7 @@ interface PreviewPanelProps {
   onSeekComplete: () => void; // [추가]
   setPreviewSlotRef: (id: string, ref: VideoPreviewSlotHandles | null) => void;
   isCollapsed: boolean;
+  previewState: 'max' | 'min' | 'collapsed';
 }
 
 // =================================================================================
@@ -99,6 +100,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
   onSeekComplete, // [추가]
   setPreviewSlotRef,
   isCollapsed,
+  previewState,
 }) => {
   // 비디오 뷰의 투명도를 제어하는 애니메이션 값
   const videoOpacity = useRef(new Animated.Value(isCollapsed ? 0 : 1)).current;
@@ -113,7 +115,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
   }, [isCollapsed, videoOpacity]);
 
   return (
-    <PreviewArea onLayout={onLayout}>
+    <PreviewArea onLayout={onLayout} state={previewState}>
       {/* 비디오 프리뷰 (항상 렌더링, isCollapsed에 따라 투명도 조절) */}
       <OverlappingContainer style={{ opacity: videoOpacity }}>
         <VirtualCanvas scale={previewScale}>

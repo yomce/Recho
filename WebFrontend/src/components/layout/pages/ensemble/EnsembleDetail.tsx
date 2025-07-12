@@ -1,11 +1,9 @@
 import React from "react";
 import { type RecruitEnsemble } from "@/pages/ensemble/types";
-import KakaoMapApi from "@/components/map/KakaoMapComponent";
 import PostLayout from "../../PostLayout";
 import IconButton from "@/components/atoms/button/IconButton";
 import { ToastMenu } from "@/components/atoms/button/ToastMenu";
 import ProfileBubble from "@/components/atoms/card/ProfileBubble";
-import PrimaryButton from "@/components/atoms/button/PrimaryButton";
 import { SKILL_LEVEL_TEXT } from "@/pages/ensemble/components/EnsembleForm";
 import { SessionDetail } from "@/pages/ensemble/components/SessionDetail";
 import { type ApplicationEnsemble } from "@/pages/ensemble/types";

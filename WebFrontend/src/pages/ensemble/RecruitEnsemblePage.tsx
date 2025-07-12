@@ -1,8 +1,6 @@
 // src/pages/RecruitEnsembleListPage.tsx
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuthStore } from '@/stores/authStore';
 import axiosInstance from '@/services/axiosInstance';
 import PostLayout from '@/components/layout/PostLayout';
 import SwiperTabs from '@/components/organisms/PostNavigationTabs';
@@ -53,7 +51,6 @@ const RecruitEnsembleListPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [nextCursor, setNextCursor] = useState<Cursor | null>(null);
   const [hasNextPage, setHasNextPage] = useState(true);
-  const { user } = useAuthStore();
 
   const tabs = ['합주모집', '주변모임', '즐겨찾기'];
   

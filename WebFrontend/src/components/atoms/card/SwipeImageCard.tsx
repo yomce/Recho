@@ -15,15 +15,15 @@ interface SwiperImageCardProps {
 
 const SwiperImageCard: React.FC<SwiperImageCardProps> = ({
   images,
-  width = 398,
-  height = 270,
+  // width = 398,
+  // height = 270,
   className = "",
   slideClassName = "",
   imgClassName = "",
   showPagination = true,
   autoPlay = true,
 }) => {
-  const aspectRatio = width / height;
+  // const _aspectRatio = width / height;
 
   return (
     <div

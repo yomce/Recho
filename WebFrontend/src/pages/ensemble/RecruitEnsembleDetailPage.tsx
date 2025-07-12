@@ -1,11 +1,11 @@
 // src/pages/RecruitEnsembleDetailPage.tsx
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import axiosInstance from '@/services/axiosInstance';
 import axios from 'axios';
-import type { SessionEnsemble, RecruitEnsemble, ApplicationEnsemble } from './types';
+import type { RecruitEnsemble, ApplicationEnsemble } from './types';
 import useViewCounter from '@/hooks/useViewCounter';
 import RecruitEnsembleDetail from '@/components/layout/pages/ensemble/EnsembleDetail';
 

@@ -39,6 +39,9 @@ const UserPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const accessToken = localStorage.getItem('accessToken');
 
+  const [isEditing, setIsEditing] = useState(false);
+  const [newUsername, setNewUsername] = useState('');
+
   const openVinylModal = () => setIsVinylModalOpen(true);
   const closeVinylModal = () => setIsVinylModalOpen(false);
 
@@ -103,8 +106,40 @@ const UserPage: React.FC = () => {
   };
 
   const handleEditProfile = () => {
-    toast('프로필 수정 기능은 준비 중입니다.');
-    setIsSettingsModalOpen(false);
+    if (user) {
+      setIsEditing(true);
+      setNewUsername(user.username); // 현재 닉네임으로 입력창 초기화
+      setIsSettingsModalOpen(false); // 설정 모달 닫기
+    }
+  };
+
+  // [3] 수정 취소 핸들러 추가
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+  };
+
+  // [4] 프로필 저장 핸들러 추가
+  const handleSaveProfile = async () => {
+    if (!newUsername.trim()) {
+      toast.error('닉네임을 입력해주세요.');
+      return;
+    }
+    if (user && newUsername === user.username) {
+      setIsEditing(false); // 변경사항이 없으면 그냥 수정 모드 종료
+      return;
+    }
+
+    try {
+      // API 호출하여 닉네임 업데이트
+      const response = await axiosInstance.patch<UserProfile>('/users/me', {
+        username: newUsername,
+      });
+      setUser(response.data); // 응답받은 최신 정보로 유저 상태 업데이트
+      setIsEditing(false); // 수정 모드 종료
+      toast.success('프로필이 성공적으로 수정되었습니다.');
+    } catch (err) {
+      toast.error('프로필 수정에 실패했습니다.');
+    }
   };
 
   const isMyProfile = currentUser?.id === user?.id;
@@ -130,17 +165,30 @@ const UserPage: React.FC = () => {
             {/* 프로필 카드 */}
             <div className="relative w-full rounded-card bg-brand-default p-6 pt-12 text-center">
               <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2">
-                <Avatar 
+                <Avatar
                   src={user.profileUrl || `https://placehold.co/128x128/e9ecef/495057?text=${user.username.charAt(0)}`}
                   alt={`${user.username}의 프로필 사진`}
-                  size={64} // 프로필 사진 크기 조정
-
+                  size={64}
                 />
               </div>
-              <h2 className="text-title font-bold">{user.username}</h2>
+              
+              {/* [5] isEditing 상태에 따라 닉네임 또는 입력창을 표시 */}
+              {isMyProfile && isEditing ? (
+                <input
+                  type="text"
+                  value={newUsername}
+                  onChange={(e) => setNewUsername(e.target.value)}
+                  // 아래 className을 수정하여 글자가 보이도록 변경합니다.
+                  className="w-full rounded-md border border-brand-primary bg-white p-2 text-center text-title font-bold text-gray-800"
+                  autoFocus
+                />
+              ) : (
+                <h2 className="text-title font-bold">{user.username}</h2>
+              )}
+
               <p className="text-body text-brand-gray">@{user.id}</p>
               <p className="mt-4 min-h-[4.5rem] text-body text-brand-text-secondary">
-                {user.intro || "자기소개가 없습니다."}
+                {user.intro || '자기소개가 없습니다.'}
               </p>
               <p className="text-footnote text-brand-disabled">
                 가입일: {new Date(user.createdAt).toLocaleDateString()}
@@ -150,8 +198,20 @@ const UserPage: React.FC = () => {
             {/* 버튼 섹션 */}
             <div className="mt-6 w-full max-w-xs">
               {isMyProfile ? (
-                <SecondaryButton onClick={handleEditProfile}>프로필 수정</SecondaryButton>
+                isEditing ? (
+                  // 수정 중일 때: '저장'/'취소' 버튼 표시
+                  <div className="flex w-full gap-3">
+                    <PrimaryButton onClick={handleSaveProfile} className="flex-1">저장</PrimaryButton>
+                    <SecondaryButton onClick={handleCancelEdit} className="flex-1">취소</SecondaryButton>
+                  </div>
+                ) : (
+                  // 수정 중이 아닐 때: '프로필 수정' 버튼 표시 (이 부분이 수정되었습니다)
+                  <SecondaryButton onClick={handleEditProfile} className="w-full">
+                    프로필 수정
+                  </SecondaryButton>
+                )
               ) : (
+                // 다른 사람 프로필일 때: 'DM 보내기' 버튼 표시
                 <PrimaryButton onClick={handleSendDm}>DM 보내기</PrimaryButton>
               )}
             </div>

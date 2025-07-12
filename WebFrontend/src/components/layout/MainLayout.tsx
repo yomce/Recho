@@ -8,6 +8,10 @@ import MainFooter from './MainFooter';
 
 interface LayoutProps {
   children: React.ReactNode;
+  currentPath: string;
+  onCategoryClick?: () => void;
+  onSearchClick?: () => void;
+  onNotificationClick?: () => void;
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
@@ -20,6 +24,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const handleGoToChat = () => navigate('/chat');
   const handleGoToVinyl = () => navigate('/vinyl');
   const handleGoToCommunity = () => navigate('/community');
+  const handleGoToSearch = () => navigate('/search')
   
   // '마이페이지' 이동 로직을 Layout이 직접 처리
   const handleGoToMyPage = () => {
@@ -37,7 +42,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <MainHeader   
         currentPath={location.pathname}
         onCategoryClick={handleGoToCategory}
-        onSearchClick={() => toast('준비 중입니다.')}
+        onSearchClick={handleGoToSearch}
         onNotificationClick={() => toast('준비 중입니다.')}
       />
       <main className="py-14 pb-20">

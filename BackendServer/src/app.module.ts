@@ -27,6 +27,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { PostsModule } from './community/posts/posts.module';
 import { CommentsModule } from './community/comments/comments.module';
+import { SearchModule } from './search/search.module';
 
 @Module({
   imports: [
@@ -97,6 +98,7 @@ import { CommentsModule } from './community/comments/comments.module';
     ViewCountModule,
     PostsModule,
     CommentsModule,
+    SearchModule,
   ],
   controllers: [AppController, ConfigController],
   providers: [AppService],

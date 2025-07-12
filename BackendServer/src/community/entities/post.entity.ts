@@ -5,21 +5,32 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToMany, // ⭐️ OneToMany 임포트
+  OneToMany, 
+  ManyToOne, 
+  JoinColumn, 
 
 } from 'typeorm';
 import { Comment } from './comment.entity';
 import { PostLike } from './post-like.entity';
+import { User } from '../../auth/user/user.entity'; // ✅ User 엔티티 임포트
 
 
-
-@Entity('posts') // 데이터베이스 테이블 이름을 'posts'로 지정
+@Entity('posts')
 export class Post {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ length: 100 })
-  author: string;
+  author: string; // 표시용 닉네임은 그대로 유지
+
+  // ✅ 시작: User와의 관계 설정
+  @Column()
+  userId: string;
+
+  @ManyToOne(() => User, (user) => user.posts, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'userId', referencedColumnName: 'id' })
+  user: User;
+  // ✅ 끝: User와의 관계 설정
 
   @Column({ length: 255, nullable: true })
   authorProfileUrl?: string;
@@ -30,7 +41,7 @@ export class Post {
   @Column({ length: 255 })
   title: string;
 
-  @Column('text') // 긴 글을 저장하기 위해 'text' 타입 사용
+  @Column('text')
   content: string;
 
   @Column({ nullable: true })
@@ -40,7 +51,7 @@ export class Post {
   likeCount: number;
 
   @Column({ type: 'int', default: 0 })
-  commentCount: number; 
+  commentCount: number;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -48,8 +59,9 @@ export class Post {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @OneToMany(() => Comment, (comment) => comment.post) // ⭐️ 1:N 관계 추가
+  @OneToMany(() => Comment, (comment) => comment.post)
   comments: Comment[];
-   @OneToMany(() => PostLike, (like) => like.post)
+
+  @OneToMany(() => PostLike, (like) => like.post)
   likes: PostLike[];
 }

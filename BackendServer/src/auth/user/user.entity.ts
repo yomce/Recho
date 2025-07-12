@@ -11,6 +11,7 @@ import { Message } from '../../chat/entities/message.entity';
 import { UserRoom } from '../../chat/entities/user-room.entity';
 import { RecruitEnsemble } from 'src/ensemble/entities/recruit-ensemble.entity';
 import { PostLike } from '../../community/entities/post-like.entity';
+import { Post } from '../../community/entities/post.entity'; 
 
 @Entity('Users')
 export class User {
@@ -107,4 +108,7 @@ export class User {
 
   @OneToMany(() => PostLike, (like) => like.user)
   postLikes: PostLike[];
+
+  @OneToMany(() => Post, (post) => post.user)
+  posts: Post[]; // 👈 2. 이 코드를 추가하여 관계를 설정합니다.**
 }

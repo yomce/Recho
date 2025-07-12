@@ -15,7 +15,8 @@ interface User {
 // 게시물 타입
 interface Post {
   id: number;
-  author: string; // 게시물 작성자는 문자열 이름으로 가정
+  userId: string; 
+  author: string; 
   category: string;
   title: string;
   content: string;

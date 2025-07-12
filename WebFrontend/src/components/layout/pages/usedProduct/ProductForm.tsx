@@ -33,6 +33,7 @@ interface ProductFormProps {
   errorMessage: string | null;
   submitButtonText: string;
   loadingButtonText: string;
+  setImageIds: React.Dispatch<React.SetStateAction<{ id: number; url: string }[]>>;
 }
 
 export const ProductForm: React.FC<ProductFormProps> = ({
@@ -43,14 +44,18 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   errorMessage,
   submitButtonText,
   loadingButtonText,
+  setImageIds,
 }) => {
   const [form1, setForm1] = useState({ categoryId: '' });
   const [form2, setForm2] = useState({ TRADE_TYPE: '' });
-  
+  console.log("product form:",setImageIds);
   return (
     <form onSubmit={onFormSubmit}>
       <div className="mb-6">
-        <ImageUploadPreview />
+        <ImageUploadPreview 
+          refIn="USED-PRODUCTS"
+          onUploadComplete={(newIds) => setImageIds((prev) => [...prev, ...newIds])}
+        />
       </div>
       <div className="mb-6">
         <InputLabel htmlFor="title">상품명</InputLabel>

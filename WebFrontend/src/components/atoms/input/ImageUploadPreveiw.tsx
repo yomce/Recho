@@ -1,23 +1,57 @@
 import React, { useState } from "react";
 import Icon from "../icon/Icon";
+import { useImageUpload } from "@/hooks/useImageUpload";
 
 interface ImageUploadProps {
+  refIn: string,
+  refPostId?: number,
   maxImages?: number;
+  onUploadComplete?: (images: { id: number; url: string }[]) => void;
 }
 
-const ImageUploadPreview: React.FC<ImageUploadProps> = ({ maxImages = 5 }) => {
+const ImageUploadPreview: React.FC<ImageUploadProps> = ({ refIn, refPostId, maxImages = 5, onUploadComplete }) => {
   const [ images, setImages ] = useState<string[]>([]);
   const [ showModal, setShowModal ] = useState(false);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    const fileUrl = files.map((file) => URL.createObjectURL(file));
+  const { getPresignedUrls, uploadToS3, saveImgMetaData } = useImageUpload();
 
-    console.log("업로드된 파일:", files);
-    console.log("생성된 미리보기 URL:", fileUrl);
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []).slice(0, maxImages - images.length);
+    
+    if(files.length === 0)  return;
 
-    setImages((prev) => [...prev, ...fileUrl].slice(0, maxImages));
-    setShowModal(false);
+    try {
+      // 1. Presigned URL 발급
+      const uploadData = await getPresignedUrls(files, refIn);
+
+      // 2. S3에 이미지 직접 업로드
+      await uploadToS3(files, uploadData, refIn);
+
+      console.log("업로드함");
+
+      // 3. 이미지 메타데이터 서버 저장
+      const imageIds = await saveImgMetaData(uploadData, refIn, refPostId);
+
+      console.log("이미지id:",imageIds);
+
+      // 4. 미리보기 UI 업데이트
+      const previewUrls = files.map((file) => URL.createObjectURL(file));
+      setImages((prev) => [...prev, ...previewUrls].slice(0, maxImages));
+      setShowModal(false);
+
+      // 여기서 부모로 id 배열 전달
+      if (onUploadComplete) {
+        const combined = (imageIds ?? []).map((id, index) => ({
+          id,
+          url: previewUrls[index],
+        }));
+        console.log("image upload preview:", combined);
+        onUploadComplete(combined);
+      }
+    } catch(error) {
+      console.error("이미지 업로드 오류:", error);
+      alert("이미지 업로드에 실패했습니다.");
+    }
   };
 
   return(

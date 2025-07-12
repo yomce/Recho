@@ -1,3 +1,5 @@
+// src/pages/community/PostDetailPage.tsx
+
 import React, { useEffect, useState, type FormEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';

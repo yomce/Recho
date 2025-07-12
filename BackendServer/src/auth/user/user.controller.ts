@@ -7,12 +7,16 @@ import {
   Param,
   NotFoundException,
   Req,
+  Patch,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { User } from './user.entity';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
+import { UpdateUserDto } from './dto/update-user.dto'; //
 
 interface RequestWithUser extends Request {
   user: User;
@@ -83,4 +87,18 @@ export class UserController {
     // 4. 안전한 정보만 담긴 result 객체를 반환합니다.
     return result;
   }
+
+   @UseGuards(AuthGuard('jwt'))
+  @Patch('me')
+  @UsePipes(new ValidationPipe()) // DTO 유효성 검사를 자동으로 실행합니다.
+  async updateMyInfo(
+    @Req() req: RequestWithUser,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<Omit<User, 'password' | 'hashedRefreshToken'>> {
+    const userId = req.user.id;
+    console.log(`[UserController] updateMyInfo 호출. ID: ${userId}, 변경할 닉네임: ${updateUserDto.username}`);
+    return this.userService.updateUser(userId, updateUserDto);
+  }
+
+
 }

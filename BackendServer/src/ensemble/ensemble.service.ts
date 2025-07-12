@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -43,10 +44,10 @@ export class EnsembleService {
     lastPostId?: number,
     lastCreatedAt?: Date,
   ): Promise<PaginatedRecruitEnsembleResponse> {
-    console.log('lastPostId:', lastPostId, 'lastCreatedAt:', lastCreatedAt);
     const realLimit = limit + 1;
-    const queryBuilder =
-      this.recruitEnsembleRepo.createQueryBuilder('recruitEnsemble');
+    const queryBuilder = this.recruitEnsembleRepo
+      .createQueryBuilder('recruitEnsemble')
+      .leftJoinAndSelect('recruitEnsemble.location', 'location');
 
     if (lastPostId && lastCreatedAt) {
       const lastCreatedAtDate = new Date(lastCreatedAt);
@@ -88,10 +89,14 @@ export class EnsembleService {
       const { locationId, ...recruitEnsembleDto } = createDto;
       const user = await this.userService.findById(id);
 
-      const locationEntity = await this.locationRepo.findOneBy({ locationId: Number(locationId), });
+      const locationEntity = await this.locationRepo.findOneBy({
+        locationId: Number(locationId),
+      });
 
       if (!locationEntity) {
-        throw new NotFoundException(`Location with ID#${locationId} not found.`);
+        throw new NotFoundException(
+          `Location with ID#${locationId} not found.`,
+        );
       }
 
       if (!user) {
@@ -103,7 +108,7 @@ export class EnsembleService {
         user: user,
         recruitStatus: RECRUIT_STATUS.RECRUITING,
         viewCount: 0,
-        locationId: locationEntity.locationId,
+        location: locationEntity,
       });
 
       const savedEnsemble = await transactionalEntityManager.save(newEnsemble);
@@ -135,6 +140,49 @@ export class EnsembleService {
       nowRecruitCount: 0,
     });
     await manager.save(SessionEnsemble, newSessionEnsemble);
+  }
+
+  async closeRecruitment(
+    postId: number,
+    userId: string,
+  ): Promise<RecruitEnsembleResponseDto> {
+    // 1. 게시물을 DB에서 찾습니다. 이때 작성자 정보(user)도 함께 가져옵니다.
+    const recruitEnsemble = await this.recruitEnsembleRepo.findOne({
+      where: { postId },
+      relations: ['user'], // 작성자 ID를 비교하기 위해 user 관계를 로드합니다.
+    });
+
+    // 게시물이 없는 경우
+    if (!recruitEnsemble) {
+      throw new NotFoundException(
+        `Recruitment post with ID #${postId} not found.`,
+      );
+    }
+
+    // 2. 요청한 사용자가 게시물 작성자가 맞는지 권한을 확인합니다.
+    if (recruitEnsemble.user.id !== userId) {
+      throw new ForbiddenException(
+        'You are not authorized to close this recruitment.',
+      );
+    }
+
+    // 이미 모집 종료된 게시물인지 확인합니다.
+    if (recruitEnsemble.recruitStatus !== RECRUIT_STATUS.RECRUITING) {
+      throw new ConflictException('This recruitment is already closed.'); // 409 Conflict 에러
+    }
+
+    // 3. 모집 상태를 '모집 완료'로 변경합니다.
+    // RECRUIT_STATUS에 '모집 완료'에 해당하는 상태값이 정의되어 있어야 합니다.
+    // 예: export enum RECRUIT_STATUS { RECRUITING = 'RECRUITING', CLOSED = 'CLOSED' }
+    recruitEnsemble.recruitStatus = RECRUIT_STATUS.COMPLETE;
+
+    // 4. 변경된 내용을 저장합니다.
+    const updatedEnsemble =
+      await this.recruitEnsembleRepo.save(recruitEnsemble);
+
+    // 5. 업데이트된 게시물 정보를 DTO로 변환하여 반환합니다.
+    const userResponse = UserResponseDto.from(updatedEnsemble.user);
+    return RecruitEnsembleResponseDto.from(updatedEnsemble, userResponse);
   }
 
   async detailEnsemble(id: number): Promise<RecruitEnsembleResponseDto> {

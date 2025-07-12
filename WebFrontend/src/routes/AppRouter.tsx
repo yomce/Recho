@@ -33,7 +33,7 @@ import MapViewPage from "@/pages/map/MapViewPage";
 import ProtectedRoute from "./ProtectedRoute";
 import CategoryPage from "@/pages/main/CategoryPage";
 import CommunityFeedPage from "@/pages/community/CommunityFeedPage";
-import NewPostPage from "@/pages/community/NewPostPage";
+import CreatePostPage from "@/pages/community/CreatePostPage";
 import PostDetailPage from '@/pages/community/PostDetailPage'; // ⭐️ 상세 페이지 임포트
 
 
@@ -56,7 +56,7 @@ const AppRouter: React.FC = () => {
           <Route path="/main" element={<MainPage />} />
 
           <Route path="/community" element={<CommunityFeedPage />} />
-          <Route path="/community/new" element={<NewPostPage />} /> 
+          <Route path="/community/create" element={<CreatePostPage />} /> 
           <Route path="/community/:id" element={<PostDetailPage />} /> 
 
           <Route path="/chat" element={<ChatListPage />} />

@@ -1,12 +1,9 @@
 import React from "react";
-import { type RecruitEnsemble } from "@/pages/ensemble/types";
-import KakaoMapApi from "@/components/map/KakaoMapComponent";
+import { SKILL_LEVEL_DIC, type RecruitEnsemble } from "@/pages/ensemble/types";
 import PostLayout from "../../PostLayout";
 import IconButton from "@/components/atoms/button/IconButton";
 import { ToastMenu } from "@/components/atoms/button/ToastMenu";
 import ProfileBubble from "@/components/atoms/card/ProfileBubble";
-import PrimaryButton from "@/components/atoms/button/PrimaryButton";
-import { SKILL_LEVEL_TEXT } from "@/pages/ensemble/components/EnsembleForm";
 import { SessionDetail } from "@/pages/ensemble/components/SessionDetail";
 import { type ApplicationEnsemble } from "@/pages/ensemble/types";
 
@@ -14,6 +11,7 @@ interface RecruitEnsembleProps {
   post: RecruitEnsemble;
   isOwner?: boolean;
   onEdit?: () => void;
+  onComplete?: () => void;
   onDelete?: () => void;
   applicationEnsembleList: ApplicationEnsemble[];
   isApplied: boolean;
@@ -31,6 +29,7 @@ export const RecruitEnsembleDetail: React.FC<RecruitEnsembleProps> = ({
   post,
   isOwner = false,
   onEdit,
+  onComplete,
   onDelete,
   applicationEnsembleList,
   isApplied,
@@ -45,6 +44,7 @@ export const RecruitEnsembleDetail: React.FC<RecruitEnsembleProps> = ({
               onClick={() =>
                 ToastMenu({
                   onEdit: () => onEdit?.(),
+                  onComplete: () => onComplete?.(),
                   onDelete: () => onDelete?.(),
                 })
                 }
@@ -73,7 +73,7 @@ export const RecruitEnsembleDetail: React.FC<RecruitEnsembleProps> = ({
           <p>{post.location.address}</p>
         </div>
         <div className="flex flex-row items-center justify-start gap-2">
-          <p className={`px-6 py-1 rounded-full text-white font-semibold ${skillLevelColorMap[post.skillLevel]}`}>{SKILL_LEVEL_TEXT[post.skillLevel]}</p>
+          <p className={`px-6 py-1 rounded-full text-white font-semibold ${skillLevelColorMap[post.skillLevel]}`}>{SKILL_LEVEL_DIC[post.skillLevel]}</p>
         </div>
       </div>
       <pre className="whitespace-pre-wrap break-words text-base leading-relaxed bg-gray-50 p-4 rounded mt-[16px]">

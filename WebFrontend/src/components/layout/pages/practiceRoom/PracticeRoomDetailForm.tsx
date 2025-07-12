@@ -13,6 +13,7 @@ interface PracticeRoomDetailProps {
   post: PracticeRoom;
   isOwner?:boolean;
   onEdit?: () => void;
+  onComplete?: () => void;
   onDelete?: () => void;
 }
 

@@ -4,7 +4,7 @@ interface TextInputFormProps extends React.InputHTMLAttributes<HTMLInputElement>
   icon?: React.ReactNode;
 }
 
-const inputStyles = "w-full py-3 px-4 bg-brand-inverse border border-gray-300 rounded-md box-border text-caption placeholder:text-gray-400 focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-brand-primary)]";
+const inputStyles = "w-full py-3 px-4 bg-brand-inverse rounded-card box-border text-caption placeholder:text-gray-400 focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-brand-primary)]";
 
 const TextInputForm: React.FC<TextInputFormProps> = ({ icon, className = '', ...props }) => {
   const hasIcon = Boolean(icon);

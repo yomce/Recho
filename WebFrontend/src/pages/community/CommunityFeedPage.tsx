@@ -1,3 +1,5 @@
+// WebFrontend/src/pages/community/CommunityFeedPage.tsx;
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 // import axios from 'axios';
@@ -25,7 +27,10 @@ export interface Post {
 
 // --- API 함수들 ---
 const fetchPosts = async (category: string): Promise<Post[]> => {
-  const response = await axiosInstance.get('/posts', { params: { category } });
+  // '전체' 카테리이거나 값이 없는 경우, 파라미터 객체를 비워서 요청
+  const params = category && category !== '전체' ? { category } : {};
+  
+  const response = await axiosInstance.get('/posts', { params });
   return response.data;
 };
 
@@ -163,7 +168,7 @@ const CommunityFeedPage: React.FC = () => {
             posts.map((post) => (
               <article
                 key={post.id}
-                className="cursor-pointer bg-brand-default rounded-card p-4 shadow-sm hover:shadow-md transition-shadow"
+                className="cursor-pointer bg-brand-default rounded-card p-4 hover:scale-101"
                 onClick={() => navigate(`/community/${post.id}`)}
               >
                 {/* 게시글 상단 정보 */}

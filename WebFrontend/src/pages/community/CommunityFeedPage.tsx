@@ -12,6 +12,7 @@ import FloatingWriteButton from '../../components/atoms/button/FloatingWriteButt
 // --- 타입 정의 ---
 export interface Post {
   id: number;
+  userId: string; 
   author: string;
   authorProfileUrl?: string;
   category: string;
@@ -180,7 +181,7 @@ const CommunityFeedPage: React.FC = () => {
                       {timeSince(new Date(post.createdAt))} · <span className="font-semibold text-brand-primary">{post.category}</span>
                     </p>
                   </div>
-                  {currentUser && currentUser.username === post.author && (
+                  {currentUser && currentUser.id === post.userId && (
                     <button onClick={(e) => handleDeletePost(e, post.id)} className="text-footnote text-brand-disabled hover:text-brand-error-text">삭제</button>
                   )}
                 </div>

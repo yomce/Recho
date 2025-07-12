@@ -25,7 +25,8 @@ export class PostsService {
     }
     const newPost = this.postsRepository.create({
       ...createPostDto,
-      author: user.name, // ⭐️ user.name을 사용합니다.
+      author: user.name,
+      userId: user.id,  
       likeCount: 0,
       commentCount: 0,
     });
@@ -34,6 +35,8 @@ export class PostsService {
 
   async findAll(category: string | undefined, user: AuthenticatedUser | undefined): Promise<any[]> {
     const queryBuilder = this.postsRepository.createQueryBuilder('post')
+        // ✅ User 엔티티를 조인하여 사용자 정보를 함께 선택합니다.
+        .leftJoinAndSelect('post.user', 'user')
         .orderBy('post.createdAt', 'DESC');
 
     if (category && category !== '전체') {
@@ -42,18 +45,28 @@ export class PostsService {
     
     const posts = await queryBuilder.getMany();
 
+    // ✅ 이제 post.user 객체에서 항상 최신 사용자 정보를 사용할 수 있습니다.
+    const responsePosts = posts.map(post => ({
+        ...post,
+        // post.author 대신 조인된 user 객체의 최신 username을 사용합니다.
+        author: post.user ? post.user.username : '탈퇴한 사용자',
+        authorProfileUrl: post.user ? post.user.profileUrl : null,
+    }));
+
     if (user && user.id) {
       const likedPostIds = (await this.postLikesRepository.find({
         where: { userId: user.id },
         select: ['postId'],
       })).map(like => like.postId);
 
-      return posts.map(post => ({
+      // isLiked 로직을 responsePosts에 적용합니다.
+      return responsePosts.map(post => ({
         ...post,
         isLiked: likedPostIds.includes(post.id),
       }));
     }
-    return posts.map(post => ({ ...post, isLiked: false }));
+    
+    return responsePosts.map(post => ({ ...post, isLiked: false }));
   }
 
   async findOne(id: number): Promise<Post> {
@@ -69,8 +82,8 @@ export class PostsService {
     if (!post) {
       throw new NotFoundException('삭제하려는 게시물을 찾을 수 없습니다.');
     }
-    // ⭐️ post.author와 user.name을 비교합니다.
-    if (post.author !== user.name) {
+    // ✅ 닉네임(post.author) 대신 영구적인 ID(post.userId)로 권한을 확인합니다.
+    if (post.userId !== user.id) {
       throw new ForbiddenException('게시물을 삭제할 권한이 없습니다.');
     }
     await this.postsRepository.delete(postId);

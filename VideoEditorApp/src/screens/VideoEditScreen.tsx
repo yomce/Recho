@@ -327,12 +327,13 @@ const VideoEditScreen: React.FC<{
   const [previewScale, setPreviewScale] = useState(1); // 가상 캔버스의 스케일 값
   const [isGloballyPlaying, setIsGloballyPlaying] = useState(false); // 전체 동시 재생 여부
   const [globalStartTime, setGlobalStartTime] = useState(0); // 모든 비디오가 동시에 재생될 수 있는 시작 시간
-  const [globalEndTime, setGlobalEndTime] = useState(38);
+  const [globalEndTime, setGlobalEndTime] = useState(0);
   const [timelinePosition, setTimelinePosition] = useState(0);
   const [timelineHeight, setTimelineHeight] = useState(100); // 타임라인의 동적 높이
   const [isSheetVisible, setSheetVisible] = useState(false);
   const [selectedTrack, setSelectedTrack] = useState<TrimmerState | null>(null);
   const [isSettingsButtonVisible, setSettingsButtonVisible] = useState(false);
+  const [isTimelineReady, setIsTimelineReady] = useState(false);
 
   // [수정] 재생 요청 상태 관리 리팩토링
   const [seekAndPlayRequest, setSeekAndPlayRequest] = useState<number | null>(
@@ -352,6 +353,7 @@ const VideoEditScreen: React.FC<{
   const seekCompleteCallback = useRef<(() => void) | null>(null);
   const isDraggingHandleRef = useRef(false);
 
+  const startPointThreshold = 1; // 나중에 동적으로 변경될 수 있는 시작점 임계값
   const endPointThreshold = trimmers[0]?.duration ?? Infinity;
 
   // =================================================================================
@@ -466,6 +468,30 @@ const VideoEditScreen: React.FC<{
     setPlaybackStates(initialPlaybackStates);
   }, [localVideos, total_slots]);
 
+  useEffect(() => {
+    // 모든 비디오의 duration이 로드되었는지 확인
+    const allLoaded =
+      trimmers.length > 0 && trimmers.every(t => t.duration > 0);
+    if (allLoaded) {
+      setIsTimelineReady(true);
+    }
+  }, [trimmers]);
+
+  useEffect(() => {
+    // 초기 globalEndTime을 첫 비디오의 길이로 설정 (한 번만 실행)
+    if (
+      trimmers.length > 0 &&
+      trimmers[0].duration > 0 &&
+      globalEndTime === 0
+    ) {
+      const initialEndTime = trimmers[0].duration;
+      console.log(
+        `[VideoEditScreen] Initializing globalEndTime to: ${initialEndTime}`,
+      );
+      setGlobalEndTime(initialEndTime);
+    }
+  }, [trimmers, globalEndTime]);
+
   // =================================================================================
 
   // Trimmer 정보(시작/끝 시간 등)가 변경될 때마다 전역 시작/끝 시간 다시 계산
@@ -483,8 +509,6 @@ const VideoEditScreen: React.FC<{
       return;
     }
 
-    const endPointThreshold = trimmers[0]?.duration ?? Infinity;
-
     const trackStartTimes = trimmers.map(t => t.timelinePosition);
     const trackEndTimes = trimmers.map(
       t => t.timelinePosition + (t.endTime - t.startTime),
@@ -494,7 +518,7 @@ const VideoEditScreen: React.FC<{
     let minEnd = Math.min(...trackEndTimes);
 
     // [추가] 계산된 값에 임계값 적용
-    maxStart = Math.max(0, maxStart); // 시작점은 0보다 작을 수 없음
+    maxStart = Math.max(startPointThreshold, maxStart); // 시작점은 임계값보다 작을 수 없음
     minEnd = Math.min(endPointThreshold, minEnd); // 끝점은 임계값을 넘을 수 없음
 
     console.log('[VideoEditScreen] recalculateGlobalBoundaries. New values:', {
@@ -506,7 +530,7 @@ const VideoEditScreen: React.FC<{
       setGlobalStartTime(maxStart);
     }
     setGlobalEndTime(minEnd < maxStart ? maxStart : minEnd);
-  }, [trimmers, globalStartTime]);
+  }, [trimmers, globalStartTime, endPointThreshold]);
 
   // =================================================================================
   // 5. 핸들러 함수 (이벤트 처리)
@@ -845,24 +869,38 @@ const VideoEditScreen: React.FC<{
 
           {/* 타임라인 컴포넌트 */}
           <View style={{ height: timelineHeight, minHeight: 100 }}>
-            <Timeline
-              ref={timelineRef}
-              trimmers={trimmers}
-              globalStartTime={globalStartTime}
-              globalEndTime={globalEndTime}
-              currentTime={timelinePosition}
-              isGloballyPlaying={isGloballyPlaying}
-              onPositionChange={handlePositionChange}
-              onHeightChange={setTimelineHeight}
-              onGlobalStartTimeChange={handleGlobalStartTimeUpdate}
-              onGlobalEndTimeChange={handleGlobalEndTimeUpdate}
-              onTrackPositionChange={handleTrackPositionChange}
-              onTrackSelectionChange={handleTrackSelectionChange}
-              onDragStateChange={handleDragStateChange}
-              onTrackDragEnd={() => {
-                /* 트랙 드래그가 끝났을 떄 */
-              }}
-            />
+            {isTimelineReady ? (
+              <Timeline
+                ref={timelineRef}
+                trimmers={trimmers}
+                globalStartTime={globalStartTime}
+                globalEndTime={globalEndTime}
+                startPointThreshold={startPointThreshold}
+                endPointThreshold={endPointThreshold}
+                currentTime={timelinePosition}
+                isGloballyPlaying={isGloballyPlaying}
+                onPositionChange={handlePositionChange}
+                onHeightChange={setTimelineHeight}
+                onGlobalStartTimeChange={handleGlobalStartTimeUpdate}
+                onGlobalEndTimeChange={handleGlobalEndTimeUpdate}
+                onTrackPositionChange={handleTrackPositionChange}
+                onTrackSelectionChange={handleTrackSelectionChange}
+                onDragStateChange={handleDragStateChange}
+                onTrackDragEnd={() => {
+                  /* 트랙 드래그가 끝났을 떄 */
+                }}
+              />
+            ) : (
+              <View
+                style={{
+                  flex: 1,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ color: 'white' }}>타임라인 로딩 중...</Text>
+              </View>
+            )}
           </View>
         </View>
 

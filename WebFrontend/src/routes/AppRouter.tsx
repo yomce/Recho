@@ -34,7 +34,8 @@ import ProtectedRoute from "./ProtectedRoute";
 import CategoryPage from "@/pages/main/CategoryPage";
 import CommunityFeedPage from "@/pages/community/CommunityFeedPage";
 import CreatePostPage from "@/pages/community/CreatePostPage";
-import PostDetailPage from '@/pages/community/PostDetailPage'; // ⭐️ 상세 페이지 임포트
+import PostDetailPage from '@/pages/community/PostDetailPage';
+import SearchPage from '../pages/search/SearchPage';
 
 
 
@@ -106,6 +107,8 @@ const AppRouter: React.FC = () => {
           />
           <Route path="/map-view" element={<MapViewPage />} />
           <Route path="/style-guide" element={<StyleGuideTest />} />
+
+          <Route path="/search" element={<SearchPage />} />
         </Route>
       </Routes>
       <Navigation />

@@ -1,8 +1,8 @@
 // src/pages/main/MainPage.tsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { useUiStore } from '@/stores/uiStore';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 // Zustand 스토어 및 아토믹 컴포넌트 import
 import { useAuthStore } from '@/stores/authStore';
@@ -26,6 +26,7 @@ const QuickAction: React.FC<{ icon: React.ReactNode; label: string; onClick?: ()
 
 const MainPage: React.FC = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [, setIsModalOpen] = useState(false);
     const user = useAuthStore((state) => state.user);
     const accessToken = localStorage.getItem('accessToken');
@@ -60,8 +61,15 @@ const MainPage: React.FC = () => {
       { id: 3, imageUrl: 'https://placehold.co/600x800/32CD32/FFFFFF?text=Musical', title: '새로운 뮤지컬', subtitle: '2025.10.1 - 2025.12.31' },
     ];
 
+    const handleSearchClick = () => navigate('/search');
+    const handleCategoryClick = () => navigate('/category');
+
     return (
-        <Layout>
+        <Layout
+            currentPath={location.pathname}
+            onSearchClick={handleSearchClick}
+            onCategoryClick={handleCategoryClick}
+        >
             <div className="p-4">
                 <h1 className="text-subheadline text-left font-bold text-brand-text-primary">
                     {user?.username}님, 환영합니다!

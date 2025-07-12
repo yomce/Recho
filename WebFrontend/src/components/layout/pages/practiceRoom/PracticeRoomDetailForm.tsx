@@ -23,7 +23,6 @@ export const PracticeRoomDetail: React.FC<PracticeRoomDetailProps> = ({
   post,
   isOwner = false,
   onEdit,
-  onComplete,
   onDelete,
 }) => {
   return (
@@ -47,7 +46,6 @@ export const PracticeRoomDetail: React.FC<PracticeRoomDetailProps> = ({
               onClick={() =>
                 ToastMenu({
                   onEdit: () => onEdit?.(),
-                  onComplete: () => onComplete?.(),
                   onDelete: () => onDelete?.(),
                 })
                 }

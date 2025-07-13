@@ -87,6 +87,7 @@ import PreviewPanel from '../components/Editor/PreviewPanel';
 import GlobalControls from '../components/Editor/GlobalControls';
 import { useVideoProcessor } from '../hooks/useVideoProcessor';
 import BottomSheet from '../components/Common/BottomSheet';
+import { extractWaveformData } from '../utils/waveformUtils';
 
 // LayoutAnimation을 Android에서 활성화
 if (
@@ -372,6 +373,7 @@ const VideoEditScreen: React.FC<{
   );
   const seekCompleteCallback = useRef<(() => void) | null>(null);
   const isDraggingHandleRef = useRef(false);
+  const activeFfmpegSessionId = useRef<number | null>(null);
 
   // [수정] 부모의 편집 가능 영역을 받아와 threshold의 기본값으로 설정
   const startPointThreshold = parentStartTime;
@@ -483,32 +485,10 @@ const VideoEditScreen: React.FC<{
 
   // 컴포넌트 마운트 시, 전달받은 비디오 정보로 Trimmer 초기 상태 설정
   useEffect(() => {
-    // [로그 추가] 컴포넌트로 전달된 모든 파라미터 확인
-    console.log(
-      '[VideoEditScreen] Received route.params:',
-      JSON.stringify(route.params, null, 2),
-    );
-
-    // [로그 추가] 초기 비디오 데이터 확인
-    console.log(
-      '[VideoEditScreen] Initial serverVideos:',
-      JSON.stringify(serverVideos, null, 2),
-    );
-    console.log(
-      '[VideoEditScreen] Initial localVideos:',
-      JSON.stringify(localVideos, null, 2),
-    );
-
     // 1. 부모 비디오(serverVideos)를 TrimmerState 형식으로 변환합니다.
     // [수정] 중복된 비디오 ID가 전달될 경우를 대비하여 `id`를 기준으로 중복 제거
     const uniqueServerVideos = Array.from(
       new Map(serverVideos.map(item => [item.id, item])).values(),
-    );
-
-    // [로그 추가] 중복 제거 후 serverVideos 확인
-    console.log(
-      '[VideoEditScreen] Unique serverVideos:',
-      JSON.stringify(uniqueServerVideos, null, 2),
     );
 
     const parentTrimmers: TrimmerState[] = uniqueServerVideos.map(video => ({
@@ -538,12 +518,6 @@ const VideoEditScreen: React.FC<{
       video => !parentVideoIds.has(video.id),
     );
 
-    // [로그 추가] 필터링 후 새로 추가된 비디오만 남았는지 확인
-    console.log(
-      '[VideoEditScreen] New-only local videos:',
-      JSON.stringify(newOnlyLocalVideos, null, 2),
-    );
-
     // [추가] 직계 부모 비디오를 찾습니다 (depth가 가장 높은 비디오).
     const directParent =
       uniqueServerVideos.length > 0
@@ -554,13 +528,6 @@ const VideoEditScreen: React.FC<{
 
     // [추가] 직계 부모가 있다면, 전역 시작/종료 시간을 부모의 시간으로 설정합니다.
     if (directParent) {
-      console.log(
-        '[VideoEditScreen] Setting global times from direct parent:',
-        {
-          start: directParent.startTime,
-          end: directParent.endTime,
-        },
-      );
       setGlobalStartTime(directParent.startTime);
       setGlobalEndTime(directParent.endTime);
     }
@@ -583,20 +550,6 @@ const VideoEditScreen: React.FC<{
     }));
 
     const allTrimmers = [...parentTrimmers, ...newTrimmers];
-
-    // [로그 추가] 최종적으로 타임라인에 설정될 데이터 확인
-    console.log(
-      '[VideoEditScreen] Final allTrimmers:',
-      JSON.stringify(
-        allTrimmers.map(t => ({
-          id: t.id,
-          sourceFile: t.sourceVideo?.filename,
-          pos: t.timelinePosition,
-        })),
-        null,
-        2,
-      ),
-    );
 
     setTrimmers(allTrimmers);
 
@@ -627,9 +580,6 @@ const VideoEditScreen: React.FC<{
       globalEndTime === 0
     ) {
       const initialEndTime = trimmers[0].duration;
-      console.log(
-        `[VideoEditScreen] Initializing globalEndTime to: ${initialEndTime}`,
-      );
       setGlobalEndTime(initialEndTime);
     }
   }, [trimmers, globalEndTime]);
@@ -646,9 +596,97 @@ const VideoEditScreen: React.FC<{
   // [추가] trimmers 상태가 변경될 때마다 전역 경계를 다시 계산합니다.
   // 이 로직은 모든 시나리오(부모 유무 포함)에서 동적 편집 영역을 보장합니다.
   useEffect(() => {
-    recalculateGlobalBoundaries();
+    // [수정] 연속적인 편집 중 불필요한 호출을 막기 위해 디바운스 적용
+    const debounceTimer = setTimeout(() => {
+      recalculateGlobalBoundaries();
+    }, 150); // 150ms 동안 추가 변경이 없으면 실행
+
+    return () => clearTimeout(debounceTimer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trimmerDependencies]);
+
+  // [수정] 파형 추출을 위한 의존성을 명시적으로 관리하여 불필요한 재실행을 방지합니다.
+  const waveformDependencies = useMemo(
+    () =>
+      trimmers
+        .map(t => `${t.id}-${t.sourceVideo?.uri}-${t.duration}-${!!t.waveform}`)
+        .join(','),
+    [trimmers],
+  );
+
+  // [추가] trimmers에 sourceVideo가 설정되면 파형 데이터를 추출합니다.
+  useEffect(() => {
+    // 여러 번의 빠른 상태 업데이트가 하나의 작업으로 이어지도록 debounce 효과를 줍니다.
+    const timer = setTimeout(() => {
+      const fetchWaveformsSequentially = async () => {
+        // 파형 데이터가 없으면서, 비디오 소스와 duration이 있는 트랙만 필터링합니다.
+        const trimmersToProcess = trimmers.filter(
+          t => t.sourceVideo?.uri && t.duration > 0 && !t.waveform,
+        );
+
+        if (trimmersToProcess.length === 0) {
+          return;
+        }
+
+        // 한 번에 하나씩 순차적으로 파형을 추출하여 성능 저하를 방지합니다.
+        const newWaveforms: { id: string; waveform: number[] }[] = [];
+        for (const trimmer of trimmersToProcess) {
+          try {
+            const waveform = await extractWaveformData(
+              trimmer.sourceVideo!.uri,
+              trimmer.duration,
+              sessionId => {
+                activeFfmpegSessionId.current = sessionId;
+              },
+            );
+
+            if (waveform && waveform.length > 0) {
+              newWaveforms.push({ id: trimmer.id, waveform });
+            } else {
+              // 파형 추출 실패 또는 빈 배열 반환 시 경고
+              console.warn(
+                `[Waveform] Failed to extract or received empty waveform for ${trimmer.id}.`,
+              );
+            }
+          } catch (error) {
+            // 오류 로깅
+            console.error(
+              `[Waveform] Error extracting waveform for ${trimmer.id}:`,
+              error,
+            );
+          }
+        }
+        activeFfmpegSessionId.current = null;
+
+        if (newWaveforms.length > 0) {
+          setTrimmers(currentTrimmers => {
+            const updatedTrimmers = [...currentTrimmers];
+            newWaveforms.forEach(update => {
+              const index = updatedTrimmers.findIndex(t => t.id === update.id);
+              if (index !== -1) {
+                updatedTrimmers[index] = {
+                  ...updatedTrimmers[index],
+                  waveform: update.waveform,
+                };
+              }
+            });
+            return updatedTrimmers;
+          });
+        }
+      };
+
+      fetchWaveformsSequentially();
+    }, 200); // 안정성을 위해 지연 시간을 1초로 늘림
+
+    return () => {
+      clearTimeout(timer);
+      if (activeFfmpegSessionId.current) {
+        FFmpegKit.cancel(activeFfmpegSessionId.current);
+        activeFfmpegSessionId.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [waveformDependencies]);
 
   // =================================================================================
   // trimmers 이용 잘하기
@@ -675,10 +713,6 @@ const VideoEditScreen: React.FC<{
     maxStart = Math.max(startPointThreshold, maxStart); // 시작점은 임계값보다 작을 수 없음
     minEnd = Math.min(endPointThreshold, minEnd); // 끝점은 임계값을 넘을 수 없음
 
-    console.log('[VideoEditScreen] recalculateGlobalBoundaries. New values:', {
-      maxStart,
-      minEnd,
-    });
     // 계산된 시작점이 현재 시작점보다 앞서는 경우, 수동 설정을 존중하여 덮어쓰지 않음
     if (maxStart > globalStartTime) {
       setGlobalStartTime(maxStart);
@@ -736,123 +770,10 @@ const VideoEditScreen: React.FC<{
     [],
   );
 
-  // 비디오 로딩 완료 시 (onLoad), 비디오 길이(duration) 상태 업데이트
-  const handleVideoLoad = (id: string, data: OnLoadData) => {
-    handleTrimmerUpdate(id, {
-      duration: data.duration,
-      startTime: 0,
-      endTime: data.duration,
-    });
-    handlePlaybackUpdate(id, { currentTime: 0 });
-  };
-
-  // 비디오 재생 중 주기적으로 호출 (onProgress)
-  const handleProgress = (id: string, data: OnProgressData) => {
-    // [수정] 전역 재생 중일 때만 상태를 업데이트하여 무한 루프를 방지합니다.
-    if (isGloballyPlaying) {
-      const trimmer = trimmers.find(t => t.id === id);
-      if (!trimmer) return;
-
-      // 비디오의 실제 재생 시간(currentTime)을 타임라인의 절대 위치로 변환
-      const timeSinceClipStart = data.currentTime - trimmer.startTime;
-      const currentTimelinePosition =
-        trimmer.timelinePosition + timeSinceClipStart;
-
-      // 플레이헤드가 임계점을 넘지 않도록 위치를 제한
-      const finalPosition = Math.min(
-        currentTimelinePosition,
-        endPointThreshold,
-      );
-
-      handlePlaybackUpdate(id, { currentTime: data.currentTime });
-      setTimelinePosition(finalPosition);
-
-      const epsilon = 0.05; // 50ms
-      // 실제 정지해야 할 지점 (사용자 설정 끝점과 비디오 최대 길이 중 더 빠른 지점)
-      const stopThreshold = Math.min(globalEndTime, endPointThreshold);
-
-      // 정지 지점에 도달했는지 확인
-      if (stopThreshold > 0 && finalPosition >= stopThreshold - epsilon) {
-        handleGlobalPause();
-        setIsGloballyPlaying(false);
-        // 플레이헤드를 정확히 정지 지점에 맞춤
-        setTimelinePosition(stopThreshold);
-      }
-    }
-  };
-
-  // 개별 비디오 재생/일시정지/정지/탐색 핸들러
-  const handlePlay = (id: string) =>
-    handlePlaybackUpdate(id, { isPaused: false });
-  const handlePause = (id: string) =>
-    handlePlaybackUpdate(id, { isPaused: true });
-  const handleStop = (id: string) => {
-    const trimmer = trimmers.find(t => t.id === id);
-    if (trimmer) {
-      previewSlotRefs.current[id]?.seek(trimmer.startTime);
-      handlePlaybackUpdate(id, {
-        isPaused: true,
-        currentTime: trimmer.startTime,
-      });
-    }
-  };
-
-  const handleSeek = (id: string, time: number) => {
-    previewSlotRefs.current[id]?.seek(time);
-    handlePlaybackUpdate(id, { currentTime: time });
-  };
-
-  // --- [추가] 액션 메뉴 핸들러 ---
-  const handleAlignTrackLeft = useCallback(() => {
-    if (!selectedTrack) return;
-
-    // 조건: 플레이헤더가 재생 영역 내에 있을 때만
-    if (
-      timelinePosition >= globalStartTime &&
-      timelinePosition <= globalEndTime
-    ) {
-      const offset = timelinePosition - globalStartTime;
-      // [수정] 새 위치가 음수가 되지 않도록 하는 제한 제거
-      const newPosition = selectedTrack.timelinePosition - offset;
-      handleTrimmerUpdate(selectedTrack.id, { timelinePosition: newPosition });
-      setTimelinePosition(globalStartTime); // 플레이헤드 위치 상태 변경
-      timelineRef.current?.scrollToTime(globalStartTime); // [추가] 타임라인 UI 즉시 스크롤
-    } else {
-      Alert.alert('알림', '플레이헤드를 재생 영역 내에 위치시켜 주세요.');
-    }
-  }, [
-    selectedTrack,
-    timelinePosition,
-    globalStartTime,
-    globalEndTime,
-    handleTrimmerUpdate,
-  ]);
-
-  const handleAlignTrackRight = useCallback(() => {
-    if (!selectedTrack) return;
-
-    // 조건: 플레이헤더가 재생 영역 내에 있을 때만
-    if (
-      timelinePosition >= globalStartTime &&
-      timelinePosition <= globalEndTime
-    ) {
-      // 지시사항: "엔드 포인트와 플레이 헤드 거리만큼 뒤로 이동"
-      const offset = globalEndTime - timelinePosition;
-      const newPosition = selectedTrack.timelinePosition + offset;
-
-      handleTrimmerUpdate(selectedTrack.id, { timelinePosition: newPosition });
-      setTimelinePosition(globalEndTime); // 플레이헤드 위치 상태 변경
-      timelineRef.current?.scrollToTime(globalEndTime); // [추가] 타임라인 UI 즉시 스크롤
-    } else {
-      Alert.alert('알림', '플레이헤드를 재생 영역 내에 위치시켜 주세요.');
-    }
-  }, [
-    selectedTrack,
-    timelinePosition,
-    globalStartTime,
-    globalEndTime,
-    handleTrimmerUpdate,
-  ]);
+  // 모든 비디오 동시 일시정지
+  const handleGlobalPause = useCallback(() => {
+    trimmers.forEach(t => handlePlaybackUpdate(t.id, { isPaused: true }));
+  }, [trimmers, handlePlaybackUpdate]);
 
   // 전역 재생/일시정지 버튼 토글
   const handleToggleGlobalPlay = useCallback(() => {
@@ -893,6 +814,126 @@ const VideoEditScreen: React.FC<{
     soloTrackId,
     preSoloMuteStates,
   ]);
+
+  // 비디오 재생 중 주기적으로 호출 (onProgress)
+  const handleProgress = useCallback(
+    (id: string, data: OnProgressData) => {
+      // 오직 첫 번째 트랙만이 타임라인 업데이트를 책임집니다.
+      // 또한, 전역 재생 중이 아닐 때는 아무 작업도 하지 않습니다.
+      if (
+        !isGloballyPlaying ||
+        trimmers.length === 0 ||
+        id !== trimmers[0].id
+      ) {
+        return;
+      }
+
+      const trimmer = trimmers[0]; // 기준 트랙
+
+      const timeSinceClipStart = data.currentTime - trimmer.startTime;
+      const currentTimelinePosition =
+        trimmer.timelinePosition + timeSinceClipStart;
+
+      // 플레이헤드가 임계점을 넘지 않도록 위치를 제한
+      const finalPosition = Math.min(
+        currentTimelinePosition,
+        endPointThreshold,
+      );
+      const stopThreshold = Math.min(globalEndTime, endPointThreshold);
+      const epsilon = 0.05; // 50ms
+
+      // 정지 지점에 도달했는지 확인
+      if (stopThreshold > 0 && finalPosition >= stopThreshold - epsilon) {
+        handleGlobalPause();
+        setIsGloballyPlaying(false);
+        setTimelinePosition(stopThreshold);
+        return; // 재생이 멈추면 더 이상 진행하지 않음
+      }
+
+      // 타임라인 UI를 업데이트합니다.
+      setTimelinePosition(finalPosition);
+    },
+    [
+      isGloballyPlaying,
+      trimmers,
+      endPointThreshold,
+      globalEndTime,
+      handleGlobalPause,
+    ],
+  );
+
+  // 비디오 로딩 완료 시 (onLoad), 비디오 길이(duration) 상태 업데이트
+  const handleVideoLoad = (id: string, data: OnLoadData) => {
+    handleTrimmerUpdate(id, {
+      duration: data.duration,
+      startTime: 0,
+      endTime: data.duration,
+    });
+    handlePlaybackUpdate(id, { currentTime: 0 });
+  };
+
+  // 개별 비디오 재생/일시정지/정지/탐색 핸들러
+  const handlePlay = useCallback(
+    (id: string) => handlePlaybackUpdate(id, { isPaused: false }),
+    [handlePlaybackUpdate],
+  );
+  const handlePause = useCallback(
+    (id: string) => handlePlaybackUpdate(id, { isPaused: true }),
+    [handlePlaybackUpdate],
+  );
+  const handleStop = useCallback(
+    (id: string) => {
+      const trimmer = trimmers.find(t => t.id === id);
+      if (trimmer) {
+        previewSlotRefs.current[id]?.seek(trimmer.startTime);
+        handlePlaybackUpdate(id, {
+          isPaused: true,
+          currentTime: trimmer.startTime,
+        });
+      }
+    },
+    [trimmers, handlePlaybackUpdate],
+  );
+
+  const handleSeek = useCallback(
+    (id: string, time: number) => {
+      previewSlotRefs.current[id]?.seek(time);
+      handlePlaybackUpdate(id, { currentTime: time });
+    },
+    [handlePlaybackUpdate],
+  );
+
+  // --- [추가] 액션 메뉴 핸들러 ---
+  const handleAlignTrackLeft = useCallback(() => {
+    if (!selectedTrack) return;
+
+    // 조건: 플레이헤더가 재생 영역 내에 있을 때만
+    if (
+      timelinePosition >= globalStartTime &&
+      timelinePosition <= globalEndTime
+    ) {
+      const offset = timelinePosition - globalStartTime;
+      // [수정] 새 위치가 음수가 되지 않도록 하는 제한 제거
+      const newPosition = selectedTrack.timelinePosition - offset;
+      handleTrimmerUpdate(selectedTrack.id, { timelinePosition: newPosition });
+      setTimelinePosition(globalStartTime); // 플레이헤드 위치 상태 변경
+      timelineRef.current?.scrollToTime(globalStartTime); // [추가] 타임라인 UI 즉시 스크롤
+    } else {
+      Alert.alert('알림', '플레이헤드를 재생 영역 내에 위치시켜 주세요.');
+    }
+  }, [
+    selectedTrack,
+    timelinePosition,
+    globalStartTime,
+    globalEndTime,
+    handleTrimmerUpdate,
+  ]);
+
+  const handleMoveTrackLeft = useCallback(() => {
+    if (!selectedTrack) return;
+    const newPosition = selectedTrack.timelinePosition - 0.033;
+    handleTrimmerUpdate(selectedTrack.id, { timelinePosition: newPosition });
+  }, [selectedTrack, handleTrimmerUpdate]);
 
   const handleToggleIndividualPlay = useCallback(() => {
     if (!selectedTrack) return;
@@ -942,13 +983,33 @@ const VideoEditScreen: React.FC<{
     handleToggleGlobalPlay,
   ]);
 
-  const handleMoveTrackLeft = useCallback(() => {
-    if (!selectedTrack) return;
-    const newPosition = selectedTrack.timelinePosition - 0.033;
-    handleTrimmerUpdate(selectedTrack.id, { timelinePosition: newPosition });
-  }, [selectedTrack, handleTrimmerUpdate]);
-
   const handleMoveTrackRight = useCallback(() => {
+    if (!selectedTrack) return;
+
+    // 조건: 플레이헤더가 재생 영역 내에 있을 때만
+    if (
+      timelinePosition >= globalStartTime &&
+      timelinePosition <= globalEndTime
+    ) {
+      // 지시사항: "엔드 포인트와 플레이 헤드 거리만큼 뒤로 이동"
+      const offset = globalEndTime - timelinePosition;
+      const newPosition = selectedTrack.timelinePosition + offset;
+
+      handleTrimmerUpdate(selectedTrack.id, { timelinePosition: newPosition });
+      setTimelinePosition(globalEndTime); // 플레이헤드 위치 상태 변경
+      timelineRef.current?.scrollToTime(globalEndTime); // [추가] 타임라인 UI 즉시 스크롤
+    } else {
+      Alert.alert('알림', '플레이헤드를 재생 영역 내에 위치시켜 주세요.');
+    }
+  }, [
+    selectedTrack,
+    timelinePosition,
+    globalStartTime,
+    globalEndTime,
+    handleTrimmerUpdate,
+  ]);
+
+  const handleAlignTrackRight = useCallback(() => {
     if (!selectedTrack) return;
     const newPosition = selectedTrack.timelinePosition + 0.033;
     handleTrimmerUpdate(selectedTrack.id, { timelinePosition: newPosition });
@@ -959,11 +1020,6 @@ const VideoEditScreen: React.FC<{
   const handleGlobalPlay = () => {
     trimmers.forEach(t => handlePlaybackUpdate(t.id, { isPaused: false }));
   };
-
-  // 모든 비디오 동시 일시정지
-  const handleGlobalPause = useCallback(() => {
-    trimmers.forEach(t => handlePlaybackUpdate(t.id, { isPaused: true }));
-  }, [trimmers, handlePlaybackUpdate]);
 
   // [수정] 재생 요청이 들어오면 비디오를 재생하는 useEffect
   useEffect(() => {
@@ -1039,10 +1095,6 @@ const VideoEditScreen: React.FC<{
   };
 
   const handleGlobalStartTimeUpdate = (newTime: number) => {
-    console.log(
-      '[VideoEditScreen] handleGlobalStartTimeUpdate new time:',
-      newTime,
-    );
     setGlobalStartTime(newTime);
     // if (trimmers.length === 1) {
     //   handleTrimmerUpdate(trimmers[0].id, { startTime: newTime });
@@ -1050,10 +1102,6 @@ const VideoEditScreen: React.FC<{
   };
 
   const handleGlobalEndTimeUpdate = (newTime: number) => {
-    console.log(
-      '[VideoEditScreen] handleGlobalEndTimeUpdate new time:',
-      newTime,
-    );
     setGlobalEndTime(newTime);
     // if (trimmers.length === 1) {
     //   handleTrimmerUpdate(trimmers[0].id, { endTime: newTime });

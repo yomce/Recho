@@ -48,7 +48,7 @@ const OverlayMarker = styled.View<{ left: number; width: number }>`
 `;
 
 const TracksContainerView = styled.View`
-  background-color: #ffff00;
+  background-color: #cccccc;
   padding-vertical: 10px;
 `;
 
@@ -84,14 +84,33 @@ const TrackWrapper = styled.View`
   position: relative;
 `;
 
+const WaveformContainer = styled.View`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px;
+  overflow: hidden;
+`;
+
+const WaveformBar = styled.View<{ height: number }>`
+  background-color: #ffffff;
+  width: 2px;
+  border-radius: 1px;
+  height: ${({ height }) => height / 1.2}%;
+`;
+
 const TrackContent = styled.TouchableOpacity<{ isActive: boolean }>`
   position: absolute;
   height: 100%;
-  background-color: #4a4a4a;
-  border-radius: 5px;
-  border-width: ${({ isActive }) => (isActive ? '5px' : '0px')};
-  border-color: #8e4df6;
+  background-color: ${({ isActive }) => (isActive ? '#8e4df6' : '#000000')};
+  border-radius: 20px;
   overflow: hidden;
+  elevation: 5;
 `;
 
 const DebugText = styled.Text`
@@ -152,6 +171,23 @@ interface TimelineProps {
   onDragStateChange: (isDragging: boolean) => void;
   onTrackDragEnd: () => void; // [추가] 트랙 드래그가 끝났을 때 호출
 }
+
+interface WaveformProps {
+  data: number[];
+}
+
+const Waveform: React.FC<WaveformProps> = React.memo(({ data }) => {
+  if (!data || data.length === 0) {
+    return null;
+  }
+  return (
+    <WaveformContainer>
+      {data.map((amplitude, index) => (
+        <WaveformBar key={index} height={Math.max(5, amplitude * 90) + 10} />
+      ))}
+    </WaveformContainer>
+  );
+});
 
 const Timeline: React.ForwardRefRenderFunction<
   TimelineHandles,
@@ -668,7 +704,11 @@ const Timeline: React.ForwardRefRenderFunction<
                         width: trackWidth,
                         left: trackLeft,
                       }}
-                    />
+                    >
+                      {trimmer.waveform && trimmer.waveform.length > 0 && (
+                        <Waveform data={trimmer.waveform} />
+                      )}
+                    </TrackContent>
                   </TrackWrapper>
                 </PanGestureHandler>
               );

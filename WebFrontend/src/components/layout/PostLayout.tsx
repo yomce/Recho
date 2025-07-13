@@ -19,7 +19,7 @@ const PostLayout: React.FC<LayoutProps> = ({ children, bgClassName = "bg-brand-f
   // Footer에서 사용할 페이지 이동 함수들
   const handleGoToHome = () => navigate('/');
   const handleGoToChat = () => navigate('/chat');
-  const handleGoToVinyls = () => navigate('/vinyls');
+  const handleGoToVinyl = () => navigate('/vinyl');
   const handleGoToCommunity = () => navigate('/community');
   
   // '마이페이지' 이동 로직을 Layout이 직접 처리
@@ -48,7 +48,7 @@ const PostLayout: React.FC<LayoutProps> = ({ children, bgClassName = "bg-brand-f
         currentPath={location.pathname}
         onHomeClick={handleGoToHome}
         onCommunityClick={handleGoToCommunity}
-        onVinylClick={handleGoToVinyls}
+        onVinylClick={handleGoToVinyl}
         onChatClick={handleGoToChat}
         onMyPageClick={handleGoToMyPage}
       />

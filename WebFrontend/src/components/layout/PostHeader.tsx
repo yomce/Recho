@@ -28,7 +28,7 @@ const PostHeader: React.FC<HeaderProps> = ({
     if (currentPath.startsWith('/used-products')) return '악기거래';
     if (currentPath.startsWith('/practice-room')) return '합주실예약';
     if (currentPath.startsWith('/ensembles')) return '세션모집';
-    if (currentPath.startsWith('/vinyls')) return '바이닐';
+    if (currentPath.startsWith('/vinyl')) return '바이닐';
     if (currentPath.startsWith('/community')) return '커뮤니티';
     if (currentPath.startsWith('/promotions')) return '공연홍보';
     if (isMapViewPage) return '상세 지도';

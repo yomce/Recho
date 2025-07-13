@@ -46,17 +46,14 @@ const LoginPage: React.FC = () => {
       <div className="w-full max-w-md">
         <div className="sm:mx-auto sm:w-full">
           <img
-            className="mx-auto h-12 w-auto"
+            className="mx-auto h-12 w-[300px] h-[300px]"
             src="/RechoLogo.png"
-            alt="Recho Logo"
+            alt="Recho"
           />
           {/* 커스텀 클래스 .text-title 적용 */}
           <h2 className="mt-6 text-center text-body text-[var(--color-brand-text-primary)]">
             음악으로 나를 알리는 플랫폼
           </h2>
-          <h3 className="mt-4 text-center text-subheadline text-[var(--color-brand-text-primary)]">
-            RECHO
-          </h3>
         </div>
 
         {/* 커스텀 변수 --color-brand-default, --radius-card 적용 */}

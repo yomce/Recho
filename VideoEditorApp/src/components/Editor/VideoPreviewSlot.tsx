@@ -32,6 +32,7 @@ interface VideoPreviewSlotProps {
   sourceVideo: MediaItem | null;
   volume: number;
   isPaused: boolean;
+  isMuted?: boolean;
   startTime: number;
   endTime: number;
   onLoad: (data: OnLoadData) => void;
@@ -73,6 +74,7 @@ const VideoPreviewSlot = forwardRef<
         ref={playerRef}
         source={props.sourceVideo}
         volume={props.volume}
+        muted={props.isMuted}
         isPaused={props.isPaused}
         startTime={props.startTime}
         endTime={props.endTime}

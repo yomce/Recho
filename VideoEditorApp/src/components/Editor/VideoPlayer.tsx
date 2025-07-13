@@ -27,28 +27,6 @@ const StyledVideo = styled(Video)<ReactVideoSourceProperties>`
   height: 100%;
 `;
 
-const PlaybackControls = styled.View`
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-  margin-top: 5px;
-  height: 40px;
-  background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
-`;
-
-const ButtonContainer = styled.TouchableOpacity`
-  width: 50px;
-  height: 100%;
-  justify-content: center;
-  align-items: center;
-`;
-
-const ButtonText = styled.Text`
-  color: #ecf0f1;
-  font-size: 18px;
-`;
-
 export interface VideoPlayerHandles {
   seek: (time: number) => void;
 }
@@ -57,13 +35,12 @@ interface Props {
   source: MediaItem; // 재생할 미디어 아이템
   volume: number; // 볼륨 (0.0 ~ 2.0)
   isPaused: boolean; // 재생 일시정지 여부
+  muted?: boolean; // 음소거 여부
   startTime: number; // 비디오 재생 시작 시간 (초)
   endTime: number; // 비디오 재생 종료 시간 (초)
   onLoad: (data: OnLoadData) => void; // 비디오 로드 완료 시 호출될 함수
   onProgress: (data: OnProgressData) => void; // 재생 진행 중 호출될 함수
-  onPlay: () => void; // 재생 버튼 클릭 시 호출될 함수
   onPause: () => void; // 일시정지 버튼 클릭 시 호출될 함수
-  onStop: () => void; // 중지 버튼 클릭 시 호출될 함수
   onSeekComplete?: () => void; // [추가] seek 완료 시 호출될 함수
 }
 
@@ -73,13 +50,12 @@ const VideoPlayer = forwardRef<VideoPlayerHandles, Props>(
       source,
       volume,
       isPaused,
+      muted,
       startTime,
       endTime,
       onLoad,
       onProgress,
-      onPlay,
       onPause,
-      onStop,
       onSeekComplete, // [추가]
     },
     ref,
@@ -125,6 +101,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandles, Props>(
             source={{ uri: source.uri }} // 비디오 URI 소스
             resizeMode="cover" // 비디오 크기 조정 모드
             paused={isPaused} // 재생/일시정지 상태
+            muted={muted} // [추가] 음소거 상태
             progressUpdateInterval={50} // [추가] 50ms마다 진행상황 업데이트
             onLoad={data => {
               onLoad(data); // 원래의 onLoad 함수 호출

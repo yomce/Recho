@@ -1,6 +1,6 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { VideoInsertService } from './video-insert.service';
-import { SaveVideoMetaDto } from '../dto/save-video-meta.dto';
+import { SaveVideoMetaDto } from '../videos/dto/save-video-meta.dto';
 
 // Presigned URL의 목적을 정의하는 타입
 export type TFilePurpose = 'RESULT_VIDEO' | 'THUMBNAIL' | 'SOURCE_VIDEO';

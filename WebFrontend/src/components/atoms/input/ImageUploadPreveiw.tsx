@@ -53,7 +53,11 @@ const ImageUploadPreview: React.FC<ImageUploadProps> = ({
 
       // 여기서 부모로 id 배열 전달
       if (onUploadComplete) {
+<<<<<<< HEAD
         const combined = (imageIds ?? []).map((id: number, index: number) => ({
+=======
+        const combined = (imageIds ?? []).map((id, index) => ({
+>>>>>>> origin/feature/image-upload-BE
           id,
           url: previewUrls[index],
         }));

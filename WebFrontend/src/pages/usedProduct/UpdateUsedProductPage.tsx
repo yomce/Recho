@@ -17,13 +17,18 @@ const UpdateUsedProductPage: React.FC = () => {
   const location = useLocationStore((state) => state.location);
 
   const [form, setForm] = useState<UsedProductForm>({
-    title: '', description: '', price: '', categoryId: '',
-    tradeType: TRADE_TYPE.IN_PERSON, locationId: '',
+    title: '', 
+    description: '', 
+    price: '', 
+    categoryId: '',
+    tradeType: TRADE_TYPE.IN_PERSON, 
+    locationId: '',
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [images, setImages] = useState<{ id: number, url: string }[]>([]);
+  const [imageIds, setImageIds] = useState<{ id: number; url: string }[]>([]);
+  const [originalImages, setOriginalImages] = useState<{ id: number; url: string }[]>([]);
   const { user } = useAuthStore();
 
   useEffect(() => {
@@ -37,6 +42,11 @@ const UpdateUsedProductPage: React.FC = () => {
       try {
         const response = await axiosInstance.get<UsedProduct>(`used-products/${id}`);
         const product = response.data;
+        const originalImageData = (product.imageIds || []).map((id, idx) => ({
+          id,
+          url: product.imageUrl?.[idx] ?? '',
+        }));
+        setOriginalImages(originalImageData);
         setForm({
           title: product.title,
           description: product.description,
@@ -44,7 +54,7 @@ const UpdateUsedProductPage: React.FC = () => {
           categoryId: String(product.categoryId),
           tradeType: product.tradeType,
           locationId: String(product.location.locationId),
-          imageIds: images.map((img) => img.id)
+          imageIds: imageIds.map((img) => img.id),
         });
       } catch (err) {
         if (axios.isAxiosError(err)) { // err가 Axios 에러인지 확인하면 더 안전합니다.
@@ -114,7 +124,9 @@ const UpdateUsedProductPage: React.FC = () => {
           errorMessage={error}
           submitButtonText="수정 완료"
           loadingButtonText="수정 중..."
-          setImageIds={setImages}
+          setImageIds={setImageIds}
+          originalImages={originalImages}
+          onImageChange={setOriginalImages}
         />
       </div>
     </PostLayout>

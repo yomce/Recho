@@ -7,11 +7,23 @@ interface ImageUploadProps {
   refPostId?: number,
   maxImages?: number;
   onUploadComplete?: (images: { id: number; url: string }[]) => void;
+  originalImages?: { id: number; url: string }[]; // 기존 이미지 목록
+  onImageChange?: (images: { id: number; url: string }[]) => void; // 삭제 등 변경 알림
 }
 
-const ImageUploadPreview: React.FC<ImageUploadProps> = ({ refIn, refPostId, maxImages = 5, onUploadComplete }) => {
+const ImageUploadPreview: React.FC<ImageUploadProps> = ({ 
+  refIn, 
+  refPostId, 
+  maxImages = 5, 
+  onUploadComplete, 
+  originalImages = [],
+  onImageChange,
+}) => {
   const [ images, setImages ] = useState<string[]>([]);
   const [ showModal, setShowModal ] = useState(false);
+
+  console.log("originalImages:", originalImages);
+  console.log(images);
 
   const { getPresignedUrls, uploadToS3, saveImgMetaData } = useImageUpload();
 
@@ -41,7 +53,7 @@ const ImageUploadPreview: React.FC<ImageUploadProps> = ({ refIn, refPostId, maxI
 
       // 여기서 부모로 id 배열 전달
       if (onUploadComplete) {
-        const combined = (imageIds ?? []).map((id, index) => ({
+        const combined = (imageIds ?? []).map((id: number, index: number) => ({
           id,
           url: previewUrls[index],
         }));
@@ -54,12 +66,19 @@ const ImageUploadPreview: React.FC<ImageUploadProps> = ({ refIn, refPostId, maxI
     }
   };
 
+  const handleDeleteOriginal = (idToDelete: number) => {
+    if (!originalImages || !onImageChange) return;
+    const next = originalImages.filter((img) => img.id !== idToDelete);
+    onImageChange(next); // 상위 상태 업데이트
+  };
+
+
   return(
     <div className="flex gap-4 items-center">
       {/* 카메라 박스 */}
       <div className="w-[64px] h-[64px] border border-gray-300 bg-white rounded-lg flex flex-col items-center justify-center gap-1 text-caption">
         <Icon name="camera" size={20} className="text-brand-gray"/>
-        <span className="text-footnote text-brand-gray">{images.length}/{maxImages}</span>
+        <span className="text-footnote text-brand-gray">{originalImages.length + images.length}/{maxImages}</span>
       </div>
 
       {/* 플러스 박스 */}
@@ -70,7 +89,24 @@ const ImageUploadPreview: React.FC<ImageUploadProps> = ({ refIn, refPostId, maxI
         <Icon name="plus" size={24} className="text-brand-gray"/>
       </button>
 
-      {/* 이미지 미리보기 */}
+      {/* 기존 이미지 (서버에서 불러온 거) */}
+      {originalImages?.map((img) => (
+        <div
+          key={img.id}
+          className="w-[64px] h-[64px] rounded-lg overflow-hidden border border-gray-300 bg-white relative"
+        >
+          <img src={img.url} alt="original-preview" className="w-full h-full object-cover" />
+          <button
+            type="button"
+            onClick={() => handleDeleteOriginal(img.id)}
+            className="absolute top-0 right-0 bg-black/60 text-white text-xs rounded-full px-1"
+          >
+            ×
+          </button>
+        </div>
+      ))}
+
+      {/* 새로 업로드한 이미지 미리보기 */}
       {images.map((src, idx) => (
         <div
           key={idx}

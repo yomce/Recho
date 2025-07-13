@@ -33,7 +33,8 @@ export interface UsedProduct {
   location: Location;
   tradeType: TRADE_TYPE;
   readonly viewCount: number;
-  imageUrl?: string; // 목록에서 썸네일 이미지를 보여주기 위한 선택적 필드
+  imageUrl?: string[]; // 목록에서 썸네일 이미지를 보여주기 위한 선택적 필드
+  imageIds?: number[]; // 이미지 ID 배열
 }
 
 /**
@@ -47,6 +48,7 @@ export interface UsedProductForm {
   tradeType: TRADE_TYPE;
   locationId: string; // 폼에서는 지역의 ID만 관리
   location?: Location;
+  imageIds?: number[];
 }
 
 /**

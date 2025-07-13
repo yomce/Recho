@@ -58,7 +58,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       <div className="mb-6">
         <ImageUploadPreview 
           refIn="USED-PRODUCTS"
-          onUploadComplete={(newIds) => setImageIds((prev) => [...prev, ...newIds])}
+          onUploadComplete={(newIds) => {
+            setImageIds((prev) => [...prev, ...newIds]);
+          }}
           originalImages={originalImages}
           onImageChange={(updated) => {
             setImageIds(updated); // 이미지 삭제 시 imageIds도 갱신

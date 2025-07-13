@@ -2,7 +2,7 @@ import React from "react";
 import Avatar from "../avatar/Avatar";
 
 interface UserProfileCardProps {
-  imageUrl?: string;
+  imageUrl?: string | string[];
   name: string;
   location: string;
   status?: "판매중" | "예약중" | "판매완료";
@@ -34,9 +34,10 @@ export const statusStyleMap = {
 
 // 유효한 이미지 URL을 반환하는 헬퍼 함수
 // 만약 URL이 유효하지 않으면 기본 프로필 이미지를 반환
-const getValidImage = (url?: unknown): string => {
-  return (typeof url === 'string' && url.trim().length > 0)
-    ? url
+const getValidImage = (url?: string | string[]): string => {
+  const resolvedUrl = Array.isArray(url) ? url[0] : url;
+  return (typeof resolvedUrl === 'string' && resolvedUrl.trim().length > 0)
+    ? resolvedUrl
     : defaultProfileImage;
 };
 

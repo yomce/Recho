@@ -32,7 +32,9 @@ export const PracticeRoomForm: React.FC<PracticeRoomFormProps> = ({
   return (
     <form onSubmit={onFormSubmit}>
       <div className="mb-6">
-        <ImageUploadPreview />
+        <ImageUploadPreview
+          refIn="PRACTICE-ROOM"
+        />
       </div>
       <div className="mb-6">
         <InputLabel htmlFor="title">상호명</InputLabel>

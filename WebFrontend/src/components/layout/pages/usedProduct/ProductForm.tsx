@@ -33,13 +33,9 @@ interface ProductFormProps {
   errorMessage: string | null;
   submitButtonText: string;
   loadingButtonText: string;
-<<<<<<< HEAD
   setImageIds: React.Dispatch<React.SetStateAction<{ id: number; url: string }[]>>;   // 이미지 ID 배열을 관리하는 함수 (최초 생성 시 빈 배열로 시작)
   originalImages?: { id: number; url: string }[]; // 서버에서 받아온 기존 이미지
   onImageChange?: (images: { id: number; url: string }[]) => void; // 새로 추가된 이미지
-=======
-  setImageIds: React.Dispatch<React.SetStateAction<{ id: number; url: string }[]>>;
->>>>>>> origin/feature/image-upload-BE
 }
 
 export const ProductForm: React.FC<ProductFormProps> = ({

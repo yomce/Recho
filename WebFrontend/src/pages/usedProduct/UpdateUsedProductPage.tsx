@@ -27,12 +27,8 @@ const UpdateUsedProductPage: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-<<<<<<< HEAD
   const [imageIds, setImageIds] = useState<{ id: number; url: string }[]>([]);
   const [originalImages, setOriginalImages] = useState<{ id: number; url: string }[]>([]);
-=======
-  const [images, setImages] = useState<{ id: number, url: string }[]>([]);
->>>>>>> origin/feature/image-upload-BE
   const { user } = useAuthStore();
 
   useEffect(() => {
@@ -59,12 +55,8 @@ const UpdateUsedProductPage: React.FC = () => {
           categoryId: String(product.categoryId),
           tradeType: product.tradeType,
           locationId: String(product.location.locationId),
-<<<<<<< HEAD
           // imageIds: imageIds.map((img) => img.id),
           imageIds: originalImageData.map((img) => img.id),
-=======
-          imageIds: images.map((img) => img.id)
->>>>>>> origin/feature/image-upload-BE
         });
       } catch (err) {
         if (axios.isAxiosError(err)) { // err가 Axios 에러인지 확인하면 더 안전합니다.

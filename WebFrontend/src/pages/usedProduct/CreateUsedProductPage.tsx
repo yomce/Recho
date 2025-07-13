@@ -71,11 +71,7 @@ const CreateUsedProductPage: React.FC = () => {
         categoryId: parseInt(form.categoryId, 10),
         tradeType: form.tradeType,
         locationId: String(locationId),
-<<<<<<< HEAD
         imageIds: imageIds.map((img) => img.id),
-=======
-        imageIds,
->>>>>>> origin/feature/image-upload-BE
       };
 
       const response = await axiosInstance.post('used-products', payload);

@@ -1,9 +1,10 @@
-import React, { useRef, useEffect } from 'react';
+import React, { memo } from 'react';
 import styled from 'styled-components/native';
 import { LayoutChangeEvent, Text, Animated } from 'react-native';
 
 import { TrimmerState, PlaybackState } from '../../types';
 import VideoPreviewSlot, { VideoPreviewSlotHandles } from './VideoPreviewSlot';
+import { OnLoadData, OnProgressData } from 'react-native-video';
 
 // =================================================================================
 // 1. 스타일 컴포넌트 (UI)
@@ -72,13 +73,13 @@ interface PreviewPanelProps {
   playbackStates: Record<string, PlaybackState>;
   previewScale: number;
   onLayout: (event: LayoutChangeEvent) => void;
-  onVideoLoad: (id: string, data: any) => void;
-  onProgress: (id: string, data: any) => void;
+  setPreviewSlotRef: (id: string, ref: VideoPreviewSlotHandles | null) => void;
+  onVideoLoad: (id: string, data: OnLoadData) => void;
+  onProgress: (id: string, data: OnProgressData) => void;
   onPlay: (id: string) => void;
   onPause: (id: string) => void;
   onStop: (id: string) => void;
-  onSeekComplete: () => void; // [추가]
-  setPreviewSlotRef: (id: string, ref: VideoPreviewSlotHandles | null) => void;
+  onSeekComplete: () => void;
   isCollapsed: boolean;
   previewState: 'max' | 'min' | 'collapsed';
 }
@@ -92,20 +93,22 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
   playbackStates,
   previewScale,
   onLayout,
+  setPreviewSlotRef,
   onVideoLoad,
   onProgress,
   onPlay,
   onPause,
   onStop,
-  onSeekComplete, // [추가]
-  setPreviewSlotRef,
+  onSeekComplete,
   isCollapsed,
   previewState,
 }) => {
   // 비디오 뷰의 투명도를 제어하는 애니메이션 값
-  const videoOpacity = useRef(new Animated.Value(isCollapsed ? 0 : 1)).current;
+  const videoOpacity = React.useRef(
+    new Animated.Value(isCollapsed ? 0 : 1),
+  ).current;
 
-  useEffect(() => {
+  React.useEffect(() => {
     // isCollapsed 상태가 바뀔 때마다 투명도 애니메이션 실행
     Animated.timing(videoOpacity, {
       toValue: isCollapsed ? 0 : 1,
@@ -144,18 +147,19 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
                 >
                   <VideoPreviewSlot
                     ref={ref => setPreviewSlotRef(trimmer.id, ref)}
+                    videoId={trimmer.id}
                     sourceVideo={trimmer.sourceVideo}
                     volume={trimmer.volume}
-                    isMuted={trimmer.isMuted}
                     isPaused={playbackStates[trimmer.id]?.isPaused ?? true}
+                    isMuted={trimmer.isMuted}
                     startTime={trimmer.startTime}
                     endTime={trimmer.endTime}
-                    onLoad={data => onVideoLoad(trimmer.id, data)}
-                    onProgress={data => onProgress(trimmer.id, data)}
-                    onPlay={() => onPlay(trimmer.id)}
-                    onPause={() => onPause(trimmer.id)}
-                    onStop={() => onStop(trimmer.id)}
-                    onSeekComplete={onSeekComplete} // [추가]
+                    onLoad={onVideoLoad}
+                    onProgress={onProgress}
+                    onPlay={onPlay}
+                    onPause={onPause}
+                    onStop={onStop}
+                    onSeekComplete={onSeekComplete}
                   />
                 </SlotContainer>
               );
@@ -180,4 +184,4 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
   );
 };
 
-export default PreviewPanel;
+export default memo(PreviewPanel);

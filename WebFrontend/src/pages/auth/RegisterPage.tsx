@@ -16,20 +16,23 @@ const RegisterPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  
+
   // 에러 및 로딩 상태
   const [idError, setIdError] = useState("");
   const [usernameError, setUsernameError] = useState("");
-  const [emailError, setEmailError] = useState(""); // 이메일 에러 상태 추가
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState(""); // 비밀번호 에러 상태
+  const [passwordConfirmError, setPasswordConfirmError] = useState(""); // 비밀번호 확인 에러 상태
   const [formError, setFormError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // 중복 확인 통과 여부 상태
+  // 중복 및 유효성 확인 통과 여부 상태
   const [isIdChecked, setIsIdChecked] = useState(false);
   const [isUsernameChecked, setIsUsernameChecked] = useState(false);
-  const [isEmailChecked, setIsEmailChecked] = useState(false); // 이메일 확인 상태 추가
+  const [isEmailChecked, setIsEmailChecked] = useState(false);
+  const [isPasswordValid, setIsPasswordValid] = useState(false); // 비밀번호 유효성 상태
 
-  // 입력값이 변경되면 중복 확인 상태를 초기화
+  // 입력값이 변경되면 확인 상태를 초기화
   useEffect(() => {
     setIsIdChecked(false);
   }, [id]);
@@ -40,12 +43,44 @@ const RegisterPage: React.FC = () => {
   
   useEffect(() => {
     setIsEmailChecked(false);
-  }, [email]); // 이메일 확인 상태 초기화 effect 추가
+  }, [email]);
+
+  // [신규] 비밀번호 유효성 실시간 검사
+  useEffect(() => {
+    // 비밀번호 규칙 정의
+    const hasMinLength = password.length >= 8;
+    const hasLetter = /[a-zA-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    if (password && (!hasMinLength || !hasLetter || !hasNumber || !hasSpecialChar)) {
+      setPasswordError("비밀번호는 8자 이상이며, 영문, 숫자, 특수문자를 모두 포함해야 합니다.");
+      setIsPasswordValid(false);
+    } else {
+      setPasswordError("");
+      // 비밀번호가 유효할 때만 isPasswordValid를 true로 설정 (빈 값이 아닐 때)
+      setIsPasswordValid(password ? true : false);
+    }
+
+    // 비밀번호 일치 여부 확인
+    if (confirmPassword && password !== confirmPassword) {
+      setPasswordConfirmError("비밀번호가 일치하지 않습니다.");
+    } else {
+      setPasswordConfirmError("");
+    }
+  }, [password, confirmPassword]);
 
   // 아이디 중복 확인 핸들러
   const handleCheckId = async () => {
     if (!id) {
       setIdError("아이디를 입력해주세요.");
+      return;
+    }
+    const hasLetter = /[a-zA-Z]/;
+    const hasNumber = /[0-9]/;
+    if (!hasLetter.test(id) || !hasNumber.test(id)) {
+      setIdError("아이디는 영문과 숫자를 모두 포함해야 합니다.");
+      setIsIdChecked(false);
       return;
     }
     try {
@@ -78,13 +113,12 @@ const RegisterPage: React.FC = () => {
     }
   };
   
-  // (신규) 이메일 중복 확인 핸들러
+  // 이메일 중복 확인 핸들러
   const handleCheckEmail = async () => {
     if (!email) {
       setEmailError("이메일을 입력해주세요.");
       return;
     }
-    // 간단한 이메일 형식 검사
     if (!/\S+@\S+\.\S+/.test(email)) {
       setEmailError("올바른 이메일 형식이 아닙니다.");
       return;
@@ -101,13 +135,14 @@ const RegisterPage: React.FC = () => {
     }
   };
 
+  // [수정됨] 가입하기 버튼 클릭 핸들러
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFormError("");
 
-    // 유효성 검사
+    // 최종 유효성 검사
     if (!isIdChecked) {
-      setFormError("아이디 중복 확인을 해주세요.");
+      setFormError("아이디 중복 및 유효성 확인을 해주세요.");
       return;
     }
     if (!isUsernameChecked) {
@@ -116,6 +151,10 @@ const RegisterPage: React.FC = () => {
     }
     if (!isEmailChecked) {
       setFormError("이메일 중복 확인을 해주세요.");
+      return;
+    }
+    if (!isPasswordValid) {
+      setFormError("비밀번호가 보안 규칙에 맞지 않습니다.");
       return;
     }
     if (password !== confirmPassword) {
@@ -147,8 +186,7 @@ const RegisterPage: React.FC = () => {
     }
   };
 
-  // 모든 중복 확인이 완료되었는지 여부
-  const allChecksPassed = isIdChecked && isUsernameChecked && isEmailChecked;
+  const allChecksPassed = isIdChecked && isUsernameChecked && isEmailChecked && isPasswordValid && password === confirmPassword;
 
   return (
     <div className="centered-card-container px-4">
@@ -166,7 +204,7 @@ const RegisterPage: React.FC = () => {
 
         <div>
           <form className="space-y-4 mt-4" onSubmit={handleSubmit}>
-            {/* 아이디 입력 그룹 */}
+            {/* 아이디 */}
             <div className="flex items-start space-x-2">
               <div className="flex-grow">
                 <TextInput
@@ -175,20 +213,20 @@ const RegisterPage: React.FC = () => {
                   required
                   value={id}
                   onChange={(e) => setId(e.target.value)}
-                  placeholder="아이디를 입력해주세요"
+                  placeholder="아이디 (영문, 숫자 조합)"
                 />
                 {idError && <p className="mt-1 text-sm text-error">{idError}</p>}
               </div>
               <button
                 type="button"
                 onClick={handleCheckId}
-                className="px-4 py-2 mt-px border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-brand-blue hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue whitespace-nowrap"
+                className="btn-check-duplicate"
               >
                 중복 확인
               </button>
             </div>
 
-            {/* 닉네임 입력 그룹 */}
+            {/* 닉네임 */}
             <div className="flex items-start space-x-2">
               <div className="flex-grow">
                 <TextInput
@@ -204,13 +242,13 @@ const RegisterPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleCheckUsername}
-                className="px-4 py-2 mt-px border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-brand-blue hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue whitespace-nowrap"
+                className="btn-check-duplicate"
               >
                 중복 확인
               </button>
             </div>
             
-            {/* 이메일 입력 그룹 */}
+            {/* 이메일 */}
             <div className="flex items-start space-x-2">
                 <div className="flex-grow">
                     <TextInput
@@ -226,31 +264,37 @@ const RegisterPage: React.FC = () => {
                 <button
                     type="button"
                     onClick={handleCheckEmail}
-                    className="px-4 py-2 mt-px border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-brand-blue hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue whitespace-nowrap"
+                    className="btn-check-duplicate"
                 >
                     중복 확인
                 </button>
             </div>
             
             {/* 비밀번호 */}
-            <TextInput
-              id="password"
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="비밀번호를 입력해주세요"
-            />
+            <div>
+              <TextInput
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="비밀번호"
+              />
+              {passwordError && <p className="mt-1 text-sm text-error">{passwordError}</p>}
+            </div>
             
             {/* 비밀번호 확인 */}
-            <TextInput
-              id="confirmPassword"
-              type="password"
-              required
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="비밀번호를 한번 더 입력해주세요"
-            />
+            <div>
+              <TextInput
+                id="confirmPassword"
+                type="password"
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="비밀번호 확인"
+              />
+              {passwordConfirmError && <p className="mt-1 text-sm text-error">{passwordConfirmError}</p>}
+            </div>
 
             {formError && <p className="text-center text-error">{formError}</p>}
 
@@ -275,6 +319,25 @@ const RegisterPage: React.FC = () => {
           </Link>
         </p>
       </div>
+      {/* 스타일을 위한 CSS 추가 */}
+      <style>{`
+        .btn-check-duplicate {
+          padding: 0 1rem;
+          height: 2.5rem; // TextInput 높이와 맞추기 위해 조정
+          margin-top: 1px;
+          border: 1px solid transparent;
+          font-size: 0.875rem;
+          font-weight: 500;
+          border-radius: 0.375rem;
+          box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+          color: white;
+          background-color: var(--color-brand-blue);
+          white-space: nowrap;
+        }
+        .btn-check-duplicate:hover {
+          opacity: 0.8;
+        }
+      `}</style>
     </div>
   );
 };

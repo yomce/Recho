@@ -21,8 +21,8 @@ const RegisterPage: React.FC = () => {
   const [idError, setIdError] = useState("");
   const [usernameError, setUsernameError] = useState("");
   const [emailError, setEmailError] = useState("");
-  const [passwordError, setPasswordError] = useState(""); // 비밀번호 에러 상태
-  const [passwordConfirmError, setPasswordConfirmError] = useState(""); // 비밀번호 확인 에러 상태
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordConfirmError, setPasswordConfirmError] = useState("");
   const [formError, setFormError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -30,7 +30,7 @@ const RegisterPage: React.FC = () => {
   const [isIdChecked, setIsIdChecked] = useState(false);
   const [isUsernameChecked, setIsUsernameChecked] = useState(false);
   const [isEmailChecked, setIsEmailChecked] = useState(false);
-  const [isPasswordValid, setIsPasswordValid] = useState(false); // 비밀번호 유효성 상태
+  const [isPasswordValid, setIsPasswordValid] = useState(false);
 
   // 입력값이 변경되면 확인 상태를 초기화
   useEffect(() => {
@@ -45,9 +45,8 @@ const RegisterPage: React.FC = () => {
     setIsEmailChecked(false);
   }, [email]);
 
-  // [신규] 비밀번호 유효성 실시간 검사
+  // 비밀번호 유효성 실시간 검사
   useEffect(() => {
-    // 비밀번호 규칙 정의
     const hasMinLength = password.length >= 8;
     const hasLetter = /[a-zA-Z]/.test(password);
     const hasNumber = /[0-9]/.test(password);
@@ -58,11 +57,9 @@ const RegisterPage: React.FC = () => {
       setIsPasswordValid(false);
     } else {
       setPasswordError("");
-      // 비밀번호가 유효할 때만 isPasswordValid를 true로 설정 (빈 값이 아닐 때)
       setIsPasswordValid(password ? true : false);
     }
 
-    // 비밀번호 일치 여부 확인
     if (confirmPassword && password !== confirmPassword) {
       setPasswordConfirmError("비밀번호가 일치하지 않습니다.");
     } else {
@@ -95,15 +92,16 @@ const RegisterPage: React.FC = () => {
     }
   };
 
-  // 닉네임 중복 확인 핸들러
+  // [수정됨] 닉네임 중복 확인 핸들러 (유효성 검사 없음)
   const handleCheckUsername = async () => {
     if (!username) {
       setUsernameError("닉네임을 입력해주세요.");
       return;
     }
+
     try {
       await axiosInstance.post("/users/check-username", { username });
-      setUsernameError("");
+      setUsernameError(""); // 에러 메시지 초기화
       alert("사용 가능한 닉네임입니다.");
       setIsUsernameChecked(true);
     } catch (err) {
@@ -135,14 +133,13 @@ const RegisterPage: React.FC = () => {
     }
   };
 
-  // [수정됨] 가입하기 버튼 클릭 핸들러
+  // 가입하기 버튼 클릭 핸들러
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFormError("");
 
-    // 최종 유효성 검사
     if (!isIdChecked) {
-      setFormError("아이디 중복 및 유효성 확인을 해주세요.");
+      setFormError("아이디 중복 확인을 해주세요.");
       return;
     }
     if (!isUsernameChecked) {
@@ -319,11 +316,10 @@ const RegisterPage: React.FC = () => {
           </Link>
         </p>
       </div>
-      {/* 스타일을 위한 CSS 추가 */}
       <style>{`
         .btn-check-duplicate {
           padding: 0 1rem;
-          height: 2.5rem; // TextInput 높이와 맞추기 위해 조정
+          height: 2.5rem;
           margin-top: 1px;
           border: 1px solid transparent;
           font-size: 0.875rem;

@@ -12,12 +12,10 @@ const ProcessingScreen: React.FC = () => {
     useNavigation<StackNavigationProp<RootStackParamList, 'Processing'>>();
   const route = useRoute<ProcessingScreenRouteProp>();
 
-  const { sourceVideos, localVideos } = route.params;
+  const { sourceVideos, localVideos, parentVideoId } = route.params;
 
   useEffect(() => {
     const downloadAndNavigate = async () => {
-      console.log('[ProcessingScreen] Starting video download...');
-
       try {
         const downloadPromises = sourceVideos.map(async video => {
           const urlWithoutQuery = video.video_url.split('?')[0];
@@ -33,18 +31,12 @@ const ProcessingScreen: React.FC = () => {
 
           const localPath = `${RNFS.DocumentDirectoryPath}/${video.id}.${finalExtension}`;
 
-          console.log(
-            `[ProcessingScreen] Downloading ${video.video_url} to ${localPath}`,
-          );
-
           const download = RNFS.downloadFile({
             fromUrl: video.video_url,
             toFile: localPath,
           });
 
           await download.promise;
-
-          console.log(`[ProcessingScreen] Download finished for ${video.id}`);
 
           return {
             id: video.id,
@@ -57,22 +49,19 @@ const ProcessingScreen: React.FC = () => {
 
         const downloadedMediaItems = await Promise.all(downloadPromises);
 
-        console.log(
-          '[ProcessingScreen] All videos downloaded. Navigating to VideoEditScreen...',
-        );
-
         navigation.replace('VideoEdit', {
-          sourceVideos: sourceVideos,
-          videos: [...downloadedMediaItems, ...localVideos],
+          videos: [...localVideos, ...downloadedMediaItems],
+          sourceVideos,
+          parentVideoId,
         });
       } catch (error) {
         console.error('[ProcessingScreen] Failed to download videos:', error);
-        // 사용자에게 오류 알림
+        // 오류 처리 로직
       }
     };
 
     downloadAndNavigate();
-  }, [navigation, sourceVideos, localVideos]);
+  }, [localVideos, navigation, sourceVideos, parentVideoId]);
 
   return (
     <View style={styles.container}>
@@ -97,4 +86,3 @@ const styles = StyleSheet.create({
 });
 
 export default ProcessingScreen;
- 

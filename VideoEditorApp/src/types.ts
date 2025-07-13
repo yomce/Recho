@@ -33,6 +33,7 @@ export interface TrimmerState {
   timelinePosition: number;
   isPlaying: boolean;
   isMuted: boolean;
+  waveform?: number[]; // [추가] 오디오 파형 데이터
 }
 
 // FFmpeg 필터에 전달될 트리머 데이터
@@ -72,6 +73,7 @@ export type RootStackParamList = {
   Processing: {
     sourceVideos: Video[];
     localVideos: MediaItem[];
+    parentVideoId?: string;
   };
   MediaLibrary: undefined;
   FFmpegTest: undefined;

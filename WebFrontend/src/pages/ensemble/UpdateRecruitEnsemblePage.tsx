@@ -79,7 +79,7 @@ const UpdateRecruitEnsemblePage: React.FC = () => {
           content: ensemble.content,
           eventDate: formattedEventDate,
           skillLevel: ensemble.skillLevel,
-          locationId: String(ensemble.locationId),
+          locationId: String(ensemble.location.locationId),
           totalRecruitCnt: String(ensemble.totalRecruitCnt),
           sessionEnsemble: newSessionForm
         });

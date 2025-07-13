@@ -65,10 +65,10 @@ export class EnsembleController {
     );
   }
 
-  @Post(':postId/complete')
+  @Patch(':postId/complete')
   @UseGuards(AuthGuard('jwt'))
   async closeRecruitment(
-    @Param('postId') postId: number,
+    @Param('postId', ParseIntPipe) postId: number,
     @Req() req: Request,
   ): Promise<RecruitEnsembleResponseDto> {
     if (!req.user || !req.user.id) {

@@ -58,9 +58,7 @@ export class ApplicationService {
       throw new ForbiddenException('동일한 사용자의 잘못된 접근입니다.');
     }
 
-    if (
-      recruitEnsemblePost.applierEnsemble.some((app) => app.id === id)
-    ) {
+    if (recruitEnsemblePost.applierEnsemble.some((app) => app.id === id)) {
       this.logger.error(
         'Authentication information missing from request user object.',
       );

@@ -264,16 +264,12 @@ export class EnsembleService {
       // 2. 권한 확인 (트랜잭션 내에서 데이터를 다시 조회하여 최신 상태 보장)
       const ensemble = await queryRunner.manager.findOne(RecruitEnsemble, {
         where: { postId },
-        relations: ['sessionEnsemble', 'user'],
+        relations: ['sessionEnsemble', 'user', 'location'],
       });
 
       if (!ensemble) {
         throw new NotFoundException(`Ensemble with ID #${postId} not found.`);
       }
-      console.log('-----------');
-      console.log(id);
-      console.log(ensemble);
-      console.log('-----------');
 
       if (id !== ensemble.user.id) {
         throw new ForbiddenException(`Unauthorized`);
@@ -330,9 +326,28 @@ export class EnsembleService {
       }
 
       // 4. 부모 엔티티(Ensemble)의 필드 머지(업데이트) 처리
+      const locationEntity = await this.locationRepo.findOneBy({
+        locationId: Number(updateDto.locationId),
+      });
+
+      if (!locationEntity) {
+        throw new NotFoundException(
+          `Location with ID#${updateDto.locationId} not found.`,
+        );
+      }
+
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { sessionList, ...ensembleDto } = updateDto;
-      await queryRunner.manager.update(RecruitEnsemble, postId, ensembleDto);
+
+      const newEnsemble = this.recruitEnsembleRepo.create({
+        ...updateDto,
+        user: ensemble.user,
+        recruitStatus: ensemble.recruitStatus,
+        viewCount: ensemble.viewCount,
+        location: locationEntity,
+      });
+
+      await queryRunner.manager.update(RecruitEnsemble, postId, newEnsemble);
 
       // 5. 모든 작업이 성공하면 트랜잭션을 커밋합니다.
       await queryRunner.commitTransaction();

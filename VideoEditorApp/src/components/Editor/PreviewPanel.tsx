@@ -146,6 +146,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
                     ref={ref => setPreviewSlotRef(trimmer.id, ref)}
                     sourceVideo={trimmer.sourceVideo}
                     volume={trimmer.volume}
+                    isMuted={trimmer.isMuted}
                     isPaused={playbackStates[trimmer.id]?.isPaused ?? true}
                     startTime={trimmer.startTime}
                     endTime={trimmer.endTime}

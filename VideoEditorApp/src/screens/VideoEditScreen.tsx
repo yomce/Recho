@@ -13,6 +13,7 @@ import React, {
   useEffect,
   useCallback,
   useLayoutEffect,
+  useMemo,
 } from 'react';
 import styled from 'styled-components/native';
 import {
@@ -30,6 +31,7 @@ import {
   Easing,
   TextInput,
   TouchableOpacity,
+  StyleSheet,
 } from 'react-native';
 import { CameraRoll } from '@react-native-camera-roll/camera-roll';
 import RNFS from 'react-native-fs';
@@ -53,6 +55,13 @@ import {
   SlidersHorizontal,
   Settings2,
   SlidersVertical,
+  Scissors,
+  Music,
+  Type,
+  CirclePlay,
+  CirclePause,
+  ArrowBigLeftDashIcon,
+  ArrowBigRightDashIcon,
 } from 'lucide-react-native';
 
 import Timeline, { TimelineHandles } from '../components/Editor/Timeline';
@@ -340,6 +349,11 @@ const VideoEditScreen: React.FC<{
   const [selectedTrack, setSelectedTrack] = useState<TrimmerState | null>(null);
   const [isSettingsButtonVisible, setSettingsButtonVisible] = useState(false);
   const [isTimelineReady, setIsTimelineReady] = useState(false);
+  const [isActionMenuVisible, setIsActionMenuVisible] = useState(false);
+  const [soloTrackId, setSoloTrackId] = useState<string | null>(null);
+  const [preSoloMuteStates, setPreSoloMuteStates] = useState<
+    Record<string, boolean>
+  >({});
 
   // [수정] 재생 요청 상태 관리 리팩토링
   const [seekAndPlayRequest, setSeekAndPlayRequest] = useState<number | null>(
@@ -620,17 +634,26 @@ const VideoEditScreen: React.FC<{
     }
   }, [trimmers, globalEndTime]);
 
-  // =================================================================================
+  // trimmers 배열의 핵심 값들이 변경될 때만 새로운 문자열을 생성합니다.
+  const trimmerDependencies = useMemo(
+    () =>
+      trimmers
+        .map(t => `${t.id}-${t.timelinePosition}-${t.startTime}-${t.endTime}`)
+        .join(','),
+    [trimmers],
+  );
 
-  // Trimmer 정보(시작/끝 시간 등)가 변경될 때마다 전역 시작/끝 시간 다시 계산
+  // [추가] trimmers 상태가 변경될 때마다 전역 경계를 다시 계산합니다.
+  // 이 로직은 모든 시나리오(부모 유무 포함)에서 동적 편집 영역을 보장합니다.
+  useEffect(() => {
+    recalculateGlobalBoundaries();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trimmerDependencies]);
 
   // =================================================================================
   // trimmers 이용 잘하기
   const recalculateGlobalBoundaries = useCallback(() => {
-    // [추가] 직계 부모가 있을 경우, 이 함수를 실행하지 않고 부모의 경계를 유지합니다.
-    const hasParent = serverVideos.length > 0;
     if (
-      hasParent ||
       trimmers.length === 0 ||
       trimmers.some(t => t.duration === 0) ||
       isDraggingHandleRef.current // 핸들 드래그 중에는 실행하지 않음
@@ -672,7 +695,6 @@ const VideoEditScreen: React.FC<{
     globalEndTime,
     startPointThreshold,
     endPointThreshold,
-    serverVideos,
   ]);
 
   // =================================================================================
@@ -692,17 +714,17 @@ const VideoEditScreen: React.FC<{
   };
 
   // 자식 컴포넌트(VideoControlSet)에서 Trimmer 상태가 변경되었을 때 호출됨
-  const handleTrimmerUpdate = (
-    id: string,
-    newState: Partial<Omit<TrimmerState, 'id'>>,
-  ) => {
-    setTrimmers(prev =>
-      prev.map(trimmer =>
-        trimmer.id === id ? { ...trimmer, ...newState } : trimmer,
-      ),
-    );
-    setSeekTrigger(c => c + 1); // [추가] 비디오 위치 조정을 수동으로 트리거
-  };
+  const handleTrimmerUpdate = useCallback(
+    (id: string, newState: Partial<Omit<TrimmerState, 'id'>>) => {
+      setTrimmers(prev =>
+        prev.map(trimmer =>
+          trimmer.id === id ? { ...trimmer, ...newState } : trimmer,
+        ),
+      );
+      setSeekTrigger(c => c + 1); // [추가] 비디오 위치 조정을 수동으로 트리거
+    },
+    [],
+  );
 
   const handlePlaybackUpdate = useCallback(
     (id: string, newState: Partial<PlaybackState>) => {
@@ -780,19 +802,60 @@ const VideoEditScreen: React.FC<{
     handlePlaybackUpdate(id, { currentTime: time });
   };
 
-  // --- 5.3. 전역 컨트롤 핸들러 ---
-  // 모든 비디오 동시 재생 (현재는 사용되지 않고 handleToggleGlobalPlay로 통합됨)
-  const handleGlobalPlay = () => {
-    trimmers.forEach(t => handlePlaybackUpdate(t.id, { isPaused: false }));
-  };
+  // --- [추가] 액션 메뉴 핸들러 ---
+  const handleAlignTrackLeft = useCallback(() => {
+    if (!selectedTrack) return;
 
-  // 모든 비디오 동시 일시정지
-  const handleGlobalPause = useCallback(() => {
-    trimmers.forEach(t => handlePlaybackUpdate(t.id, { isPaused: true }));
-  }, [trimmers, handlePlaybackUpdate]);
+    // 조건: 플레이헤더가 재생 영역 내에 있을 때만
+    if (
+      timelinePosition >= globalStartTime &&
+      timelinePosition <= globalEndTime
+    ) {
+      const offset = timelinePosition - globalStartTime;
+      // [수정] 새 위치가 음수가 되지 않도록 하는 제한 제거
+      const newPosition = selectedTrack.timelinePosition - offset;
+      handleTrimmerUpdate(selectedTrack.id, { timelinePosition: newPosition });
+      setTimelinePosition(globalStartTime); // 플레이헤드 위치 상태 변경
+      timelineRef.current?.scrollToTime(globalStartTime); // [추가] 타임라인 UI 즉시 스크롤
+    } else {
+      Alert.alert('알림', '플레이헤드를 재생 영역 내에 위치시켜 주세요.');
+    }
+  }, [
+    selectedTrack,
+    timelinePosition,
+    globalStartTime,
+    globalEndTime,
+    handleTrimmerUpdate,
+  ]);
+
+  const handleAlignTrackRight = useCallback(() => {
+    if (!selectedTrack) return;
+
+    // 조건: 플레이헤더가 재생 영역 내에 있을 때만
+    if (
+      timelinePosition >= globalStartTime &&
+      timelinePosition <= globalEndTime
+    ) {
+      // 지시사항: "엔드 포인트와 플레이 헤드 거리만큼 뒤로 이동"
+      const offset = globalEndTime - timelinePosition;
+      const newPosition = selectedTrack.timelinePosition + offset;
+
+      handleTrimmerUpdate(selectedTrack.id, { timelinePosition: newPosition });
+      setTimelinePosition(globalEndTime); // 플레이헤드 위치 상태 변경
+      timelineRef.current?.scrollToTime(globalEndTime); // [추가] 타임라인 UI 즉시 스크롤
+    } else {
+      Alert.alert('알림', '플레이헤드를 재생 영역 내에 위치시켜 주세요.');
+    }
+  }, [
+    selectedTrack,
+    timelinePosition,
+    globalStartTime,
+    globalEndTime,
+    handleTrimmerUpdate,
+  ]);
 
   // 전역 재생/일시정지 버튼 토글
-  const handleToggleGlobalPlay = () => {
+  const handleToggleGlobalPlay = useCallback(() => {
     if (isGloballyPlaying) {
       setIsGloballyPlaying(false);
       setSeekAndPlayRequest(null); // 대기중인 seek 요청 취소
@@ -812,7 +875,95 @@ const VideoEditScreen: React.FC<{
         setPlayRequest(true);
       }
     }
+
+    // [추가] 전역 재생이 멈추면 솔로 모드도 해제
+    if (isGloballyPlaying && soloTrackId) {
+      setSoloTrackId(null);
+      setTrimmers(prev =>
+        prev.map(t => ({ ...t, isMuted: preSoloMuteStates[t.id] ?? false })),
+      );
+    }
+  }, [
+    isGloballyPlaying,
+    timelinePosition,
+    globalStartTime,
+    globalEndTime,
+    trimmers,
+    handlePlaybackUpdate,
+    soloTrackId,
+    preSoloMuteStates,
+  ]);
+
+  const handleToggleIndividualPlay = useCallback(() => {
+    if (!selectedTrack) return;
+
+    // 경우 1: 현재 트랙이 이미 솔로 모드일 때 -> 솔로 모드 끄기
+    if (soloTrackId === selectedTrack.id) {
+      setSoloTrackId(null);
+      setTrimmers(prev =>
+        prev.map(t => ({ ...t, isMuted: preSoloMuteStates[t.id] ?? false })),
+      );
+      if (isGloballyPlaying) {
+        handleToggleGlobalPlay(); // 전역 재생 중지
+      }
+    }
+    // 경우 2: 솔로 모드가 아닌데 전역 재생 중일 때 -> 전역 재생만 끄기
+    else if (soloTrackId === null && isGloballyPlaying) {
+      handleToggleGlobalPlay();
+    }
+    // 경우 3: 그 외 (솔로 모드도 아니고, 전역 재생도 아닐 때) -> 솔로 모드 켜기
+    else {
+      // 1. 현재 음소거 상태 저장
+      const currentMuteStates: Record<string, boolean> = {};
+      trimmers.forEach(t => {
+        currentMuteStates[t.id] = t.isMuted;
+      });
+      setPreSoloMuteStates(currentMuteStates);
+
+      // 2. 솔로 트랙 ID 설정
+      setSoloTrackId(selectedTrack.id);
+
+      // 3. 다른 트랙 음소거
+      setTrimmers(prev =>
+        prev.map(t => ({ ...t, isMuted: t.id !== selectedTrack.id })),
+      );
+
+      // 4. 전역 재생 시작
+      if (!isGloballyPlaying) {
+        handleToggleGlobalPlay();
+      }
+    }
+  }, [
+    selectedTrack,
+    soloTrackId,
+    trimmers,
+    isGloballyPlaying,
+    preSoloMuteStates,
+    handleToggleGlobalPlay,
+  ]);
+
+  const handleMoveTrackLeft = useCallback(() => {
+    if (!selectedTrack) return;
+    const newPosition = selectedTrack.timelinePosition - 0.033;
+    handleTrimmerUpdate(selectedTrack.id, { timelinePosition: newPosition });
+  }, [selectedTrack, handleTrimmerUpdate]);
+
+  const handleMoveTrackRight = useCallback(() => {
+    if (!selectedTrack) return;
+    const newPosition = selectedTrack.timelinePosition + 0.033;
+    handleTrimmerUpdate(selectedTrack.id, { timelinePosition: newPosition });
+  }, [selectedTrack, handleTrimmerUpdate]);
+
+  // --- 5.3. 전역 컨트롤 핸들러 ---
+  // 모든 비디오 동시 재생 (현재는 사용되지 않고 handleToggleGlobalPlay로 통합됨)
+  const handleGlobalPlay = () => {
+    trimmers.forEach(t => handlePlaybackUpdate(t.id, { isPaused: false }));
   };
+
+  // 모든 비디오 동시 일시정지
+  const handleGlobalPause = useCallback(() => {
+    trimmers.forEach(t => handlePlaybackUpdate(t.id, { isPaused: true }));
+  }, [trimmers, handlePlaybackUpdate]);
 
   // [수정] 재생 요청이 들어오면 비디오를 재생하는 useEffect
   useEffect(() => {
@@ -925,6 +1076,7 @@ const VideoEditScreen: React.FC<{
       setSelectedTrack(null);
       setSettingsButtonVisible(false);
       setSheetVisible(false); // 트랙 선택 해제 시 시트도 닫기
+      setIsActionMenuVisible(false); // [추가] 트랙 선택 해제 시 액션 메뉴도 닫기
     }
   };
 
@@ -1060,6 +1212,47 @@ const VideoEditScreen: React.FC<{
             zIndex: 10,
           }}
         >
+          {isActionMenuVisible && (
+            <View style={styles.centeredActionMenuContainer}>
+              <View style={styles.actionMenu}>
+                <TouchableOpacity
+                  onPress={handleAlignTrackLeft}
+                  style={styles.actionMenuItem}
+                >
+                  <AlignStartVertical color="white" size={20} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleMoveTrackLeft}
+                  style={styles.actionMenuItem}
+                >
+                  <ArrowBigLeftDashIcon color="white" size={20} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleToggleIndividualPlay}
+                  style={styles.actionMenuItem}
+                >
+                  {(soloTrackId === selectedTrack?.id || isGloballyPlaying) &&
+                  selectedTrack ? (
+                    <CirclePause color="white" size={24} />
+                  ) : (
+                    <CirclePlay color="white" size={24} />
+                  )}
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleMoveTrackRight}
+                  style={styles.actionMenuItem}
+                >
+                  <ArrowBigRightDashIcon color="white" size={20} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleAlignTrackRight}
+                  style={styles.actionMenuItem}
+                >
+                  <AlignEndVertical color="white" size={20} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
           <View
             style={{
               justifyContent: 'center',
@@ -1102,7 +1295,7 @@ const VideoEditScreen: React.FC<{
                   },
                   shadowOpacity: 0.5,
                   shadowRadius: 3.84,
-                  elevation: 5,
+
                   position: 'absolute',
                   right: 16,
                   padding: 20,
@@ -1113,22 +1306,11 @@ const VideoEditScreen: React.FC<{
             )}
             {isSettingsButtonVisible && (
               <TouchableOpacity
-                onPress={() => {}}
-                style={{
-                  backgroundColor: '#000',
-                  borderRadius: 50,
-                  shadowColor: '#fff',
-                  shadowOffset: {
-                    width: 0,
-                    height: 0,
-                  },
-                  shadowOpacity: 0.5,
-                  shadowRadius: 3.84,
-                  elevation: 5,
-                  position: 'absolute',
-                  left: 16,
-                  padding: 20,
-                }}
+                onPress={() => setIsActionMenuVisible(v => !v)}
+                style={[
+                  styles.actionButton,
+                  { position: 'absolute', left: 16 },
+                ]}
               >
                 <Settings2 color="white" size={20} />
               </TouchableOpacity>
@@ -1173,5 +1355,54 @@ const VideoEditScreen: React.FC<{
     </ScreenContainer>
   );
 };
+
+const styles = StyleSheet.create({
+  actionButton: {
+    backgroundColor: '#000',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#fff',
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
+    shadowOpacity: 0.5,
+    shadowRadius: 3.84,
+    elevation: 5,
+    padding: 20,
+  },
+  centeredActionMenuContainer: {
+    position: 'absolute',
+    bottom: 76, // GlobalControls 높이(60) + 간격(16)
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
+  actionMenu: {
+    flexDirection: 'row',
+    backgroundColor: '#000',
+    borderRadius: 30,
+    paddingHorizontal: 16,
+    justifyContent: 'space-around',
+    width: '100%',
+    height: 60,
+    alignItems: 'center',
+    shadowColor: '#fff',
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
+    shadowOpacity: 0.5,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  actionMenuItem: {
+    // padding: 16,
+  },
+});
 
 export default VideoEditScreen;

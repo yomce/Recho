@@ -268,8 +268,34 @@ const Timeline: React.ForwardRefRenderFunction<
     event: PanGestureHandlerGestureEvent,
     trackId: string,
   ) => {
-    const timeDelta = event.nativeEvent.translationX / PIXELS_PER_SECOND;
-    const newPosition = dragStartPosRef.current + timeDelta;
+    const { translationX } = event.nativeEvent;
+    const snapThreshold = 7; // 7px threshold for snapping
+
+    const track = trimmers.find(t => t.id === trackId);
+    if (!track) return;
+
+    // Calculate the potential new position in seconds without snapping
+    const timeDelta = translationX / PIXELS_PER_SECOND;
+    let newPosition = dragStartPosRef.current + timeDelta;
+
+    // Calculate positions in pixels for snapping check
+    const newPositionPx =
+      (dragStartPosRef.current + timeDelta) * PIXELS_PER_SECOND;
+    const playheadPx = currentTime * PIXELS_PER_SECOND;
+    const trackDuration = track.endTime - track.startTime;
+    const trackDurationPx = trackDuration * PIXELS_PER_SECOND;
+
+    // Check for start snap
+    if (Math.abs(newPositionPx - playheadPx) < snapThreshold) {
+      newPosition = currentTime;
+    }
+    // Check for end snap
+    else if (
+      Math.abs(newPositionPx + trackDurationPx - playheadPx) < snapThreshold
+    ) {
+      newPosition = currentTime - trackDuration;
+    }
+
     onTrackPositionChange(trackId, newPosition);
   };
 
@@ -383,7 +409,15 @@ const Timeline: React.ForwardRefRenderFunction<
   const onStartHandleDrag = (event: any) => {
     const { translationX } = event.nativeEvent;
     const timeChange = translationX / PIXELS_PER_SECOND;
-    const newStartTime = dragStartHandleTimeRef.current + timeChange;
+    let newStartTime = dragStartHandleTimeRef.current + timeChange;
+
+    const snapThreshold = 7; // 7px threshold for snapping
+    const pixelDistanceToPlayhead =
+      (newStartTime - currentTime) * PIXELS_PER_SECOND;
+    if (Math.abs(pixelDistanceToPlayhead) < snapThreshold) {
+      newStartTime = currentTime;
+    }
+
     // 시작점은 (가장 늦게 시작하는 트랙의 시작점)보다 앞으로 갈 수 없다.
     let clampedTime = Math.min(
       globalEndTime,
@@ -410,7 +444,14 @@ const Timeline: React.ForwardRefRenderFunction<
   const onEndHandleDrag = (event: any) => {
     const { translationX } = event.nativeEvent;
     const timeChange = translationX / PIXELS_PER_SECOND;
-    const newEndTime = dragStartHandleTimeRef.current + timeChange;
+    let newEndTime = dragStartHandleTimeRef.current + timeChange;
+
+    const snapThreshold = 7; // 7px threshold for snapping
+    const pixelDistanceToPlayhead =
+      (newEndTime - currentTime) * PIXELS_PER_SECOND;
+    if (Math.abs(pixelDistanceToPlayhead) < snapThreshold) {
+      newEndTime = currentTime;
+    }
 
     // 끝점은 (가장 일찍 끝나는 트랙의 끝점)보다 뒤로 갈 수 없다.
     let clampedTime = Math.max(

@@ -20,6 +20,7 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
   const [prevRotationAngle, setPrevRotationAngle] = useState(
     props.rotationAngle
   );
+  const [isPlaying, setIsPlaying] = useState(false); // 비디오 재생 상태 관리
 
   const handleVideoCanPlay = () => {
     // 비디오가 재생 준비되면 재생 시도
@@ -27,10 +28,25 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
       videoRef.current.play().catch((error) => {
         console.log("자동 재생 실패. 사용자의 상호작용이 필요합니다.", error);
       });
+      setIsPlaying(true); // 재생 시작 시 상태 업데이트
     }
     // 부모 컴포넌트에게 로딩 완료 알림 (필요한 경우)
     if (props.onVideoReady) {
       props.onVideoReady();
+    }
+  };
+
+  const handleVideoClick = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        videoRef.current.play().catch((error) => {
+          console.log("재생 실패:", error);
+        });
+        setIsPlaying(true);
+      }
     }
   };
 
@@ -40,10 +56,13 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
       if (props.isVisible) {
         // 화면에 보일 때 비디오 로드를 시작 (재생은 onCanPlay에서)
         videoRef.current.load();
+        // isPlaying 상태를 true로 초기화하여 다음 렌더링 시 재생되도록 준비
+        setIsPlaying(true); 
       } else {
         // 보이지 않으면 일시정지하고 시간 리셋
         videoRef.current.pause();
         videoRef.current.currentTime = 0;
+        setIsPlaying(false); // 일시정지 시 상태 업데이트
       }
     }
   }, [props.isVisible]);
@@ -91,6 +110,7 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
         crossOrigin="anonymous"
         style={{ display: "block" }}
         onCanPlay={handleVideoCanPlay}
+        onClick={handleVideoClick}
       />
       <div
         id="video_data"

@@ -203,10 +203,10 @@ const VinylPage: React.FC = () => {
                 }}
               >
                 <VinylContents
-                  likes={video.like_count}
-                  comments={video.comment_count}
+                  likes={video.likeCount}
+                  comments={video.commentCount}
                   videoInfo={video.id}
-                  videoSrc={video.video_url}
+                  videoSrc={video.videoUrl}
                   isVisible={isCurrentlyVisible(index)}
                   rotationAngle={getRotationAngle(index)}
                   depth={video.depth}

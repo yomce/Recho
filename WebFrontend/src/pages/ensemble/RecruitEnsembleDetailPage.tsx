@@ -82,7 +82,7 @@ const RecruitEnsembleDetailPage: React.FC = () => {
 
   useEffect(() => {
     if (applicationList) {
-      setIsApplied(applicationList.some((app) => app.id === user?.id));
+      setIsApplied(applicationList.some((app) => app.user.id === user?.id));
     } else {
       setIsApplied(false);
     }
@@ -93,13 +93,13 @@ const RecruitEnsembleDetailPage: React.FC = () => {
   };
 
   const handleComplete = async () => {
-    if (window.confirm('정말로 이 모집 공고를 삭제하시겠습니까?')) {
+    if (window.confirm('정말로 이 멤버와 합주하시겠습니까?\n 공고가 종료되면 되돌릴 수 없습니다.')) {
       try {
         await axiosInstance.patch(`ensembles/${id}/complete`);
-        alert('모집 공고가 성공적으로 삭제되었습니다.');
-        navigate('/ensembles'); // 목록 페이지로 이동
+        alert('모집 공고가 성공적으로 종료되었습니다.\n 합주를 위한 채팅방이 개설되었습니다.');
+        navigate(`/ensembles/${id}`); // 목록 페이지로 이동
       } catch (err) {
-        setError('공고 삭제 중 오류가 발생했습니다.');
+        setError('공고 종료 중 오류가 발생했습니다.');
       }
     }
   }

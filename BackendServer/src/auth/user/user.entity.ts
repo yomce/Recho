@@ -12,6 +12,7 @@ import { UserRoom } from '../../chat/entities/user-room.entity';
 import { RecruitEnsemble } from 'src/ensemble/entities/recruit-ensemble.entity';
 import { PostLike } from '../../community/entities/post-like.entity';
 import { Post } from '../../community/entities/post.entity'; 
+import { ApplierEnsemble } from 'src/application/entities/applier-ensemble.entity';
 
 @Entity('Users')
 export class User {
@@ -105,6 +106,9 @@ export class User {
   /** 이 사용자의 합주 포스터 */
   @OneToMany(() => RecruitEnsemble, (recruitEnsemble) => recruitEnsemble.user)
   recruitEnsemble: RecruitEnsemble[];
+
+  @OneToMany(() => ApplierEnsemble, (applierEnsemble) => applierEnsemble.user)
+  applierEnsemble: ApplierEnsemble[];
 
   @OneToMany(() => PostLike, (like) => like.user)
   postLikes: PostLike[];

@@ -13,6 +13,7 @@ import { RecruitEnsemble } from 'src/ensemble/entities/recruit-ensemble.entity';
 import { PostLike } from '../../community/entities/post-like.entity';
 import { Post } from '../../community/entities/post.entity'; 
 import { ApplierEnsemble } from 'src/application/entities/applier-ensemble.entity';
+import { Video } from 'src/videos/entities';
 
 @Entity('Users')
 export class User {
@@ -115,4 +116,7 @@ export class User {
 
   @OneToMany(() => Post, (post) => post.user)
   posts: Post[]; // 👈 2. 이 코드를 추가하여 관계를 설정합니다.**
+
+  @OneToMany(() => Video, (video) => video.user)
+  videos: Video[];
 }

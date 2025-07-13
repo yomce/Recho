@@ -1,11 +1,12 @@
 // src/videos/videos.service.ts
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { S3Client, GetObjectCommand, S3ClientConfig } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Video } from '../entities/video.entity';
 import { ConfigService } from '@nestjs/config';
+import { Video } from './entities';
+import { UserService } from 'src/auth/user/user.service';
 
 @Injectable()
 export class VideosService {
@@ -15,6 +16,7 @@ export class VideosService {
     @InjectRepository(Video)
     private readonly videoRepository: Repository<Video>,
     private readonly configService: ConfigService,
+    private readonly userService: UserService,
   ) {
     // 1. ConfigService에서 설정값 가져오기
     const region = this.configService.get<string>('AWS_REGION');
@@ -45,8 +47,14 @@ export class VideosService {
   }
 
   async getThumbnailsByUser(id: string): Promise<string[]> {
+    const user = await this.userService.findById(id);
+
+    if (!user) {
+      throw new NotFoundException(`User with ID "${id}" not found`);
+    }
+
     const videos = await this.videoRepository.find({
-      where: { user_id: id },
+      where: { user: user },
       select: ['thumbnail_key'],
     });
 

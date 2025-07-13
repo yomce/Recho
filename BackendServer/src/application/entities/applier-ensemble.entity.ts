@@ -1,3 +1,4 @@
+import { User } from 'src/auth/user/user.entity';
 import { RecruitEnsemble } from 'src/ensemble/entities/recruit-ensemble.entity';
 import { SessionEnsemble } from 'src/ensemble/session/entities/session-ensemble.entity';
 import {
@@ -41,8 +42,11 @@ export class ApplierEnsemble {
   @JoinColumn({ name: 'sessionId' })
   sessionEnsemble: SessionEnsemble;
 
-  @Column()
-  id: string;
+  @ManyToOne(() => User, (user) => user.applierEnsemble, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 
   @Column()
   applicationStatus: APPLICATION_STATUS;

@@ -22,6 +22,9 @@ import { UserService } from 'src/auth/user/user.service';
 import { RecruitEnsembleResponseDto } from './dto/recruit-ensemble.response.dto';
 import { UserResponseDto } from 'src/auth/user/dto/user.response.dto';
 import { Location } from 'src/map/entities/location.entity';
+import { ChatService } from 'src/chat/chat.service';
+import { ApplierEnsemble } from 'src/application/entities/applier-ensemble.entity';
+import { RoomType } from 'src/chat/dto/create-room.dto';
 
 @Injectable()
 export class EnsembleService {
@@ -32,11 +35,15 @@ export class EnsembleService {
     @InjectRepository(SessionEnsemble)
     private readonly sessionEnsembleRepo: Repository<SessionEnsemble>,
 
+    @InjectRepository(ApplierEnsemble)
+    private readonly applierEnsembleRepo: Repository<ApplierEnsemble>,
+
     @InjectRepository(Location)
     private readonly locationRepo: Repository<Location>,
 
     private readonly userService: UserService,
     private readonly dataSource: DataSource,
+    private readonly chatService: ChatService,
   ) {}
 
   async findEnsembleWithPagination(
@@ -89,6 +96,10 @@ export class EnsembleService {
       const { locationId, ...recruitEnsembleDto } = createDto;
       const user = await this.userService.findById(id);
 
+      if (!user) {
+        throw new NotFoundException(`User with ID "${id}" not found`);
+      }
+
       const locationEntity = await this.locationRepo.findOneBy({
         locationId: Number(locationId),
       });
@@ -97,10 +108,6 @@ export class EnsembleService {
         throw new NotFoundException(
           `Location with ID#${locationId} not found.`,
         );
-      }
-
-      if (!user) {
-        throw new NotFoundException(`User with ID "${id}" not found`);
       }
 
       const newEnsemble = this.recruitEnsembleRepo.create({
@@ -180,8 +187,29 @@ export class EnsembleService {
     const updatedEnsemble =
       await this.recruitEnsembleRepo.save(recruitEnsemble);
 
+    const savedAppliers = await this.applierEnsembleRepo
+      .createQueryBuilder('applier')
+      .innerJoinAndSelect('applier.user', 'user')
+      .innerJoinAndSelect('applier.sessionEnsemble', 'sessionEnsemble')
+      .innerJoin('applier.recruitEnsemble', 'recruitEnsemble')
+      .where('recruitEnsemble.postId = :postId', { postId })
+      .getMany();
+
+    const ensembleRoom = await this.chatService.createRoom(
+      recruitEnsemble.title,
+      RoomType.GROUP,
+      recruitEnsemble.user.id,
+    );
+
+    await Promise.all(
+      savedAppliers.map(async (applier) => {
+        await this.chatService.joinRoom(applier.user.id, ensembleRoom.id);
+      }),
+    );
+
     // 5. 업데이트된 게시물 정보를 DTO로 변환하여 반환합니다.
     const userResponse = UserResponseDto.from(updatedEnsemble.user);
+
     return RecruitEnsembleResponseDto.from(updatedEnsemble, userResponse);
   }
 

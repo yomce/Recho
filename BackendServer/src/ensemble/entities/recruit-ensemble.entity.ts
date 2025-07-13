@@ -35,7 +35,7 @@ export class RecruitEnsemble {
   @ManyToOne(() => User, (user) => user.recruitEnsemble, {
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'user' })
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
   @Column()

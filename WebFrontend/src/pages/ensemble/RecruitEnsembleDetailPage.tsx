@@ -66,9 +66,8 @@ const RecruitEnsembleDetailPage: React.FC = () => {
       try {
         if (ensemble) {
           const response = await axiosInstance.get<ApplicationEnsemble[]>(`application/${ensemble.postId}`)
-          console.log('data--');
-          console.log(ensemble);
-          console.log(response.data);
+          console.log('application response')
+          console.log(response);
           setApplicationList(response.data);
         }
       } catch (err) {
@@ -85,7 +84,7 @@ const RecruitEnsembleDetailPage: React.FC = () => {
 
   useEffect(() => {
     if (applicationList) {
-      setIsApplied(applicationList.some((app) => app.id === user?.id));
+      setIsApplied(applicationList.some((app) => app.user.id === user?.id));
     } else {
       setIsApplied(false);
     }

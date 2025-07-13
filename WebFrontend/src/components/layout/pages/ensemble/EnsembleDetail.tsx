@@ -93,8 +93,11 @@ export const RecruitEnsembleDetail: React.FC<RecruitEnsembleProps> = ({
         {post.content}
       </pre>
         {
-          post.recruitStatus === RECRUIT_STATUS.RECRUITING ? (
-            post.sessionEnsemble.map((session) => (
+          post.recruitStatus !== RECRUIT_STATUS.RECRUITING &&
+          <p>이 공고는 종료되었습니다.</p>
+        }
+        {
+          post.sessionEnsemble.map((session) => (
               <SessionDetail
                 key={session.sessionId}
                 item={session}
@@ -103,9 +106,6 @@ export const RecruitEnsembleDetail: React.FC<RecruitEnsembleProps> = ({
                 isApplied={isApplied}
               />
             ))
-          ) : (
-            <p>이 공고는 종료되었습니다.</p>
-          )
         }
     </PostLayout>
   );

@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
-import type {
-  ApplicationEnsemble,
-  RecruitEnsemble,
-  SessionEnsemble,
+import {
+  RECRUIT_STATUS,
+  type ApplicationEnsemble,
+  type RecruitEnsemble,
+  type SessionEnsemble,
 } from "../types";
 import axiosInstance from "@/services/axiosInstance";
 import axios from "axios";
@@ -150,7 +151,7 @@ export const SessionDetail: React.FC<SessionDetailProps> = ({
           </div>
 
           {/* 버튼 렌더링 */}
-          {user?.id !== ensemble.user.id && (
+          {ensemble.recruitStatus === RECRUIT_STATUS.RECRUITING && user?.id !== ensemble.user.id && (
             <div className="max-w-[60px] whitespace-nowrap overflow-hidden">
               {isApplied ? (
                 isIn ? (

@@ -56,9 +56,10 @@ export class ApplicationController {
     );
   }
 
-  @Delete(':postId/:sessionId/:applicationId')
+  @Delete(':ensembleId/:sessionId/:applicationId')
   @UseGuards(AuthGuard('jwt'))
   async deleteApplication(
+    @Param('ensembleId', ParseIntPipe) ensembleId: number,
     @Param('applicationId', ParseIntPipe) applicationId: number,
     @Req() req: Request,
   ): Promise<void> {
@@ -75,6 +76,10 @@ export class ApplicationController {
     const id = req.user.id;
 
     this.logger.log(`Apply to new session: ${applicationId}`);
-    await this.applicationService.deleteApplication(applicationId, id);
+    await this.applicationService.deleteApplication(
+      ensembleId,
+      applicationId,
+      id,
+    );
   }
 }

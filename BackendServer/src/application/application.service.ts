@@ -74,9 +74,9 @@ export class ApplicationService {
 
     if (recruitEnsemblePost.recruitStatus !== RECRUIT_STATUS.RECRUITING) {
       this.logger.error(
-        'Authentication information missing from request user object.',
+        'Attempted to access a post that is not currently recruiting.',
       );
-      throw new ForbiddenException('동일한 사용자의 잘못된 접근입니다.');
+      throw new ForbiddenException('모집 중인 글에만 접근할 수 있습니다.');
     }
 
     if (recruitEnsemblePost.user.id === id) {
@@ -119,10 +119,21 @@ export class ApplicationService {
     return applierDto;
   }
 
-  async deleteApplication(applicationId: number, id: string): Promise<void> {
+  async deleteApplication(
+    ensembleId: number,
+    applicationId: number,
+    id: string,
+  ): Promise<void> {
+    const recruitEnsemblePost =
+      await this.ensembleService.detailEnsemble(ensembleId);
     const application = await this.detailApplication(applicationId);
-    console.log('delete application service');
-    console.log(application);
+
+    if (recruitEnsemblePost.recruitStatus !== RECRUIT_STATUS.RECRUITING) {
+      this.logger.error(
+        'Attempted to access a post that is not currently recruiting.',
+      );
+      throw new ForbiddenException('모집 중인 글에만 접근할 수 있습니다.');
+    }
 
     if (id !== application?.user.id) {
       throw new ForbiddenException(`Unauthorized`);

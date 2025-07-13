@@ -66,8 +66,6 @@ const RecruitEnsembleDetailPage: React.FC = () => {
       try {
         if (ensemble) {
           const response = await axiosInstance.get<ApplicationEnsemble[]>(`application/${ensemble.postId}`)
-          console.log('application response')
-          console.log(response);
           setApplicationList(response.data);
         }
       } catch (err) {

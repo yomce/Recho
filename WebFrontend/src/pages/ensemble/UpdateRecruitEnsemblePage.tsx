@@ -67,7 +67,6 @@ const UpdateRecruitEnsemblePage: React.FC = () => {
         // eventDate는 'YYYY-MM-DD' 형식으로 변환해야 <input type="date">에 표시됩니다.
         const formattedEventDate = new Date(ensemble.eventDate).toISOString().split('T')[0];
 
-        console.log(ensemble);
         const newSessionForm : SessionEnsembleFormState[] = ensemble.sessionEnsemble.map(item => ({
           sessionId: String(item.sessionId),
           instrument: item.instrument,

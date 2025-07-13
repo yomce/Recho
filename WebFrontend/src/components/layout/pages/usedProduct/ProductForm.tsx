@@ -48,7 +48,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 }) => {
   const [form1, setForm1] = useState({ categoryId: '' });
   const [form2, setForm2] = useState({ TRADE_TYPE: '' });
-  console.log("product form:",setImageIds);
+
   return (
     <form onSubmit={onFormSubmit}>
       <div className="mb-6">

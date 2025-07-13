@@ -18,3 +18,4 @@ export class ImageController {
     const savedImages = await this.imageService.saveImages(bulkImageSave.images);
     return { imageIds: savedImages.map((img) => img.imageId) };
   }
+}

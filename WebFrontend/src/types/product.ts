@@ -59,6 +59,7 @@ export interface CreateUsedProductPayload {
   categoryId: number; // 전송 전 숫자로 변환
   tradeType: TRADE_TYPE;
   locationId: string;
+  imageIds: number[]; // 이미지 ID 배열
 }
 
 /**

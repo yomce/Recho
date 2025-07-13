@@ -38,7 +38,7 @@ const CreateUsedProductPage: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [imageIds, setImageIds] = useState<number[]>([]);
+  const [imageIds, setImageIds] = useState<{ id: number; url: string }[]>([]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -71,7 +71,7 @@ const CreateUsedProductPage: React.FC = () => {
         categoryId: parseInt(form.categoryId, 10),
         tradeType: form.tradeType,
         locationId: String(locationId),
-        imageIds,
+        imageIds: imageIds.map((img) => img.id),
       };
 
       const response = await axiosInstance.post('used-products', payload);

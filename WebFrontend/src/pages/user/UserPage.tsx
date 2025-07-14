@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axiosInstance from '../../services/axiosInstance';
 import ProfileContentTabs from '@/components/organisms/ProfileContentTabs';
-import SearchOverlay from '@/components/organisms/SearchOverlay'; // 1. SearchOverlay 컴포넌트 import
+import SearchOverlay from '@/components/organisms/SearchOverlay';
 
 // 컴포넌트 import
 import MyPageLayout from '@/components/layout/UserPageLayout';
@@ -13,6 +13,7 @@ import SecondaryButton from '@/components/atoms/button/SecondaryButton';
 import Modal from '@/components/molecules/modal/Modal';
 import { useAuthStore } from '@/stores/authStore';
 import { toast } from 'react-hot-toast';
+import { AxiosError } from 'axios'; // AxiosError 타입 import
 
 // 타입 정의
 interface UserProfile {
@@ -27,7 +28,7 @@ interface UserProfile {
 const UserPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false); 
+  const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
 
   const { user: currentUser, actions: { logout } } = useAuthStore();
 
@@ -76,10 +77,10 @@ const UserPage: React.FC = () => {
         ]);
         setUser(userResponse.data);
         const formattedThumbnails = thumbnailsResponse.data.map((url, index) => ({
-          id: `thumb-${index}`, // 임시로 고유 ID 생성
+          id: `thumb-${index}`,
           thumbnailUrl: url,
         }));
-        setThumbnails(formattedThumbnails); 
+        setThumbnails(formattedThumbnails);
       } catch (err) {
         setError('사용자 정보를 가져오는 중 오류가 발생했습니다.');
       } finally {
@@ -108,37 +109,51 @@ const UserPage: React.FC = () => {
   const handleEditProfile = () => {
     if (user) {
       setIsEditing(true);
-      setNewUsername(user.username); // 현재 닉네임으로 입력창 초기화
-      setIsSettingsModalOpen(false); // 설정 모달 닫기
+      setNewUsername(user.username);
+      setIsSettingsModalOpen(false);
     }
   };
 
-  // [3] 수정 취소 핸들러 추가
   const handleCancelEdit = () => {
     setIsEditing(false);
   };
 
-  // [4] 프로필 저장 핸들러 추가
+  // [수정됨] 프로필 저장 핸들러
   const handleSaveProfile = async () => {
     if (!newUsername.trim()) {
       toast.error('닉네임을 입력해주세요.');
       return;
     }
+    // 현재 닉네임과 동일하면 변경 로직을 실행하지 않음
     if (user && newUsername === user.username) {
-      setIsEditing(false); // 변경사항이 없으면 그냥 수정 모드 종료
+      setIsEditing(false);
       return;
     }
 
     try {
-      // API 호출하여 닉네임 업데이트
+      // 1. 닉네임 중복 검사 API를 먼저 호출합니다.
+      //    (성공적으로 응답하면 사용 가능하다는 의미)
+      await axiosInstance.post('/users/check-username', { username: newUsername });
+
+      // 2. 중복 검사를 통과하면 실제 프로필 업데이트 API를 호출합니다.
       const response = await axiosInstance.patch<UserProfile>('/users/me', {
         username: newUsername,
       });
-      setUser(response.data); // 응답받은 최신 정보로 유저 상태 업데이트
-      setIsEditing(false); // 수정 모드 종료
+
+      setUser(response.data);
+      setIsEditing(false);
       toast.success('프로필이 성공적으로 수정되었습니다.');
+
     } catch (err) {
-      toast.error('프로필 수정에 실패했습니다.');
+      const error = err as AxiosError<{ message: string }>;
+      // 닉네임 중복으로 인한 409 Conflict 에러 처리
+      if (error.response && error.response.status === 409) {
+        toast.error(error.response.data.message || '이미 사용 중인 닉네임입니다.');
+      } else {
+        // 그 외 다른 에러 (네트워크 문제, 서버 에러 등)
+        toast.error('프로필 수정에 실패했습니다.');
+        console.error(err);
+      }
     }
   };
 
@@ -155,9 +170,9 @@ const UserPage: React.FC = () => {
   }
 
   return (
-    <MyPageLayout 
-    onSettingsClick={() => setIsSettingsModalOpen(true)}
-    onSearchClick={() => setIsSearchOverlayOpen(true)}
+    <MyPageLayout
+      onSettingsClick={() => setIsSettingsModalOpen(true)}
+      onSearchClick={() => setIsSearchOverlayOpen(true)}
     >
       <div className="p-4 pt-12">
         {user ? (
@@ -171,14 +186,12 @@ const UserPage: React.FC = () => {
                   size={64}
                 />
               </div>
-              
-              {/* [5] isEditing 상태에 따라 닉네임 또는 입력창을 표시 */}
+
               {isMyProfile && isEditing ? (
                 <input
                   type="text"
                   value={newUsername}
                   onChange={(e) => setNewUsername(e.target.value)}
-                  // 아래 className을 수정하여 글자가 보이도록 변경합니다.
                   className="w-full rounded-md border border-brand-primary bg-white p-2 text-center text-title font-bold text-gray-800"
                   autoFocus
                 />
@@ -199,19 +212,16 @@ const UserPage: React.FC = () => {
             <div className="mt-6 w-full max-w-xs">
               {isMyProfile ? (
                 isEditing ? (
-                  // 수정 중일 때: '저장'/'취소' 버튼 표시
                   <div className="flex w-full gap-3">
                     <PrimaryButton onClick={handleSaveProfile} className="flex-1">저장</PrimaryButton>
                     <SecondaryButton onClick={handleCancelEdit} className="flex-1">취소</SecondaryButton>
                   </div>
                 ) : (
-                  // 수정 중이 아닐 때: '프로필 수정' 버튼 표시 (이 부분이 수정되었습니다)
                   <SecondaryButton onClick={handleEditProfile} className="w-full">
                     프로필 수정
                   </SecondaryButton>
                 )
               ) : (
-                // 다른 사람 프로필일 때: 'DM 보내기' 버튼 표시
                 <PrimaryButton onClick={handleSendDm}>DM 보내기</PrimaryButton>
               )}
             </div>
@@ -219,10 +229,10 @@ const UserPage: React.FC = () => {
             {/* 썸네일 섹션 */}
             {thumbnails.length > 0 && (
               <div className="mt-8 w-full">
-                <ProfileContentTabs 
-                  shorts={thumbnails} // '바이닐' 탭에 표시할 데이터
-                  usedProducts={[]}   // '중고거래' 탭에 표시할 데이터 (API 연동 필요)
-                  posts={[]}          // '작성글' 탭에 표시할 데이터 (API 연동 필요)
+                <ProfileContentTabs
+                  shorts={thumbnails}
+                  usedProducts={[]}
+                  posts={[]}
                   onVinylCreateClick={openVinylModal}
                 />
               </div>
@@ -233,7 +243,6 @@ const UserPage: React.FC = () => {
           )}
         </div>
 
-      {/* 설정 모달 */}
       <Modal isOpen={isVinylModalOpen} onClose={closeVinylModal} title="새로운 Vinyl 만들기">
         <div className="mt-4 flex flex-col gap-3">
             <p className="text-body text-brand-text-secondary mb-2">새로운 비디오를 만들기 위한 소스를 선택해주세요.</p>

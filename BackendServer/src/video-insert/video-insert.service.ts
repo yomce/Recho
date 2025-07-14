@@ -5,10 +5,10 @@ import { v4 as uuidv4 } from 'uuid';
 import * as dotenv from 'dotenv';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Video } from '../entities/video.entity';
-import { SaveVideoMetaDto } from '../dto/save-video-meta.dto';
+import { SaveVideoMetaDto } from '../videos/dto/save-video-meta.dto';
 import { GetUploadUrlDto, TFilePurpose } from './video-insert.controller';
 import { ConfigService } from '@nestjs/config';
+import { Video } from 'src/videos/entities';
 
 dotenv.config();
 

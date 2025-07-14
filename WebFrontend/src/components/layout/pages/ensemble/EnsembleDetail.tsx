@@ -1,5 +1,9 @@
 import React from "react";
-import { SKILL_LEVEL_DIC, type RecruitEnsemble } from "@/pages/ensemble/types";
+import {
+  RECRUIT_STATUS,
+  SKILL_LEVEL_DIC,
+  type RecruitEnsemble,
+} from "@/pages/ensemble/types";
 import PostLayout from "../../PostLayout";
 import IconButton from "@/components/atoms/button/IconButton";
 import { ToastMenu } from "@/components/atoms/button/ToastMenu";
@@ -18,12 +22,11 @@ interface RecruitEnsembleProps {
 }
 
 const skillLevelColorMap: Record<number, string> = {
-  0: 'bg-green-400',
-  1: 'bg-blue-400',
-  2: 'bg-purple-400',
-  3: 'bg-yellow-500',
+  0: "bg-green-400",
+  1: "bg-blue-400",
+  2: "bg-purple-400",
+  3: "bg-yellow-500",
 };
-
 
 export const RecruitEnsembleDetail: React.FC<RecruitEnsembleProps> = ({
   post,
@@ -37,18 +40,30 @@ export const RecruitEnsembleDetail: React.FC<RecruitEnsembleProps> = ({
   return (
     <PostLayout bgClassName="bg-brand-inverse">
       <div className="relative mx-auto px-4 w-full">
-        {isOwner && ( 
+        {isOwner && (
           <div className="absolute top-1 right-4 z-10">
-            <IconButton
-              iconName="moreFill"
-              onClick={() =>
-                ToastMenu({
-                  onEdit: () => onEdit?.(),
-                  onComplete: () => onComplete?.(),
-                  onDelete: () => onDelete?.(),
-                })
+            {post.recruitStatus === RECRUIT_STATUS.RECRUITING ? (
+              <IconButton
+                iconName="moreFill"
+                onClick={() =>
+                  ToastMenu({
+                    onEdit: () => onEdit?.(),
+                    onComplete: () => onComplete?.(),
+                    onDelete: () => onDelete?.(),
+                  })
                 }
               />
+            ) : (
+              <IconButton
+                iconName="moreFill"
+                onClick={() =>
+                  ToastMenu({
+                    onEdit: () => onEdit?.(),
+                    onDelete: () => onDelete?.(),
+                  })
+                }
+              />
+            )}
           </div>
         )}
         <ProfileBubble
@@ -59,37 +74,41 @@ export const RecruitEnsembleDetail: React.FC<RecruitEnsembleProps> = ({
       </div>
       <div className="flex flex-col p-4 rounded-[10px] gap-2 text-brand-gray">
         <div className="flex flex-row items-center justify-start gap-2">
-          <IconButton
-            iconName="calendar"
-            iconSize={20}
-          />
-          <p>{post.eventDate.slice(0,10)}</p>
+          <IconButton iconName="calendar" iconSize={20} />
+          <p>{post.eventDate.slice(0, 10)}</p>
         </div>
         <div className="flex flex-row items-center justify-start gap-2">
-          <IconButton
-            iconName="mapPin"
-            iconSize={20}
-          />
+          <IconButton iconName="mapPin" iconSize={20} />
           <p>{post.location.address}</p>
         </div>
         <div className="flex flex-row items-center justify-start gap-2">
-          <p className={`px-6 py-1 rounded-full text-white font-semibold ${skillLevelColorMap[post.skillLevel]}`}>{SKILL_LEVEL_DIC[post.skillLevel]}</p>
+          <p
+            className={`px-6 py-1 rounded-full text-white font-semibold ${skillLevelColorMap[post.skillLevel]}`}
+          >
+            {SKILL_LEVEL_DIC[post.skillLevel]}
+          </p>
         </div>
       </div>
       <pre className="whitespace-pre-wrap break-words text-base leading-relaxed bg-gray-50 p-4 rounded mt-[16px]">
         {post.content}
       </pre>
-      {post.sessionEnsemble.map((session) => (
-      <SessionDetail
-        key={session.sessionId}
-        item={session}
-        ensemble={post}
-        applicationEnsembleList={applicationEnsembleList}
-        isApplied={isApplied}
-      />
-    ))}
+        {
+          post.recruitStatus !== RECRUIT_STATUS.RECRUITING &&
+          <p>이 공고는 종료되었습니다.</p>
+        }
+        {
+          post.sessionEnsemble.map((session) => (
+              <SessionDetail
+                key={session.sessionId}
+                item={session}
+                ensemble={post}
+                applicationEnsembleList={applicationEnsembleList}
+                isApplied={isApplied}
+              />
+            ))
+        }
     </PostLayout>
-  )
+  );
 };
 
 export default RecruitEnsembleDetail;

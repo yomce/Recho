@@ -1,13 +1,15 @@
 import React, { useEffect, useMemo, useState } from "react";
-import type {
-  ApplicationEnsemble,
-  RecruitEnsemble,
-  SessionEnsemble,
+import {
+  RECRUIT_STATUS,
+  type ApplicationEnsemble,
+  type RecruitEnsemble,
+  type SessionEnsemble,
 } from "../types";
 import axiosInstance from "@/services/axiosInstance";
 import axios from "axios";
 import { useAuthStore } from "@/stores/authStore";
 import PrimaryButton from "@/components/atoms/button/PrimaryButton";
+import { useNavigate } from 'react-router-dom';
 
 interface SessionDetailProps {
   item: SessionEnsemble;
@@ -28,17 +30,18 @@ export const SessionDetail: React.FC<SessionDetailProps> = ({
   const [application, setApplication] = useState<ApplicationEnsemble | null>(
     null
   );
+  const navigate = useNavigate();
 
   // 1. 현재 세션에 지원한 유저들의 이름 목록을 계산합니다.
   // applicationEnsembleList나 item.sessionId가 변경될 때만 다시 계산됩니다.
-  const applierUsernames = useMemo(() => {
+  const applierUserIds = useMemo(() => {
     return (applicationEnsembleList || []).filter(
       (app) => app.sessionEnsemble.sessionId === item.sessionId
-    ).map((app) => app.id); // user 객체 안의 username을 추출
+    ).map((app) => app.user.id); // user 객체 안의 username을 추출
   }, [applicationEnsembleList, item.sessionId]);
 
   // 2. 위에서 계산한 목록의 길이를 통해 현재 지원자 수를 구합니다.
-  const nowRecruitCount = applierUsernames.length;
+  const nowRecruitCount = applierUserIds.length;
 
   const handleApply = async () => {
     if (!user) {
@@ -94,14 +97,22 @@ export const SessionDetail: React.FC<SessionDetailProps> = ({
     }
   };
 
+  const moveToUserInfo = (userId: string) => {
+    navigate(`/users/${userId}`)
+  }
+
   useEffect(() => {
-    const selfApplication = Array.isArray(applicationEnsembleList)
-      ? applicationEnsembleList.find((app) => app.id === user?.id)
+    // 현재 사용자 ID가 applierUserIds 목록에 있는지 확인합니다.
+    const isCurrentUserApplier = user?.id && applierUserIds.includes(user.id);
+
+    // 현재 사용자가 지원자라면 해당 지원 정보를 찾습니다.
+    const selfApplication = isCurrentUserApplier
+      ? applicationEnsembleList.find((app) => app.user.id === user?.id)
       : undefined;
 
-    setIsIn(!!selfApplication);
+    setIsIn(isCurrentUserApplier || false);
     setApplication(selfApplication || null);
-  }, [applicationEnsembleList, user]);
+  }, [applierUserIds, applicationEnsembleList, user]);
 
   return (
     <div className="w-full mt-[16px]">
@@ -125,20 +136,22 @@ export const SessionDetail: React.FC<SessionDetailProps> = ({
         {/* 유저 목록 */}
         <div className="flex items-center justify-between gap-4 mt-2">
           <div className="flex items-center gap-2">
-            {applierUsernames.map((userId) => (
-              <div key={userId} className="flex flex-col items-center">
-                <img
-                  src="https://placehold.co/32x32"
-                  alt={`user-${userId}`}
-                  className="w-12 h-12 rounded-full border border-white"
-                />
-                <p className="text-footnote text-gray-500 mt-1">{userId}</p>
-              </div>
+            {applierUserIds.map((userId) => (
+              <button key={userId} onClick={() => {moveToUserInfo(userId)}}>
+                <div className="flex flex-col items-center">
+                  <img
+                    src="https://placehold.co/32x32"
+                    alt={`user-${userId}`}
+                    className="w-12 h-12 rounded-full border border-white"
+                  />
+                  <p className="text-footnote text-gray-500 mt-1">{userId}</p>
+                </div>
+              </button>
             ))}
           </div>
 
           {/* 버튼 렌더링 */}
-          {user?.id !== ensemble.user.id && (
+          {ensemble.recruitStatus === RECRUIT_STATUS.RECRUITING && user?.id !== ensemble.user.id && (
             <div className="max-w-[60px] whitespace-nowrap overflow-hidden">
               {isApplied ? (
                 isIn ? (

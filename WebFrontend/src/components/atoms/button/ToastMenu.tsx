@@ -42,7 +42,7 @@ export const ToastMenu = ({
               toast.dismiss(t.id);
             }}
           >
-            모집 종료
+            이 멤버와 합주하기
           </button>
         </div>}
         <div className="flex items-start justify-center gap-2 py-3">

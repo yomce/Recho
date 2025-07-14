@@ -12,9 +12,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApplicationService } from './application.service';
-import { ApplierEnsemble } from './entities/applier-ensemble.entity';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
+import { ApplierEnsembleResponseDto } from './dto/applier-ensemble.response.dto';
 
 @Controller('application')
 export class ApplicationController {
@@ -24,7 +24,7 @@ export class ApplicationController {
   @Get(':postId')
   async getApplication(
     @Param('postId', ParseIntPipe) postId: number,
-  ): Promise<ApplierEnsemble[]> {
+  ): Promise<ApplierEnsembleResponseDto[]> {
     this.logger.log('Fetching applier with list');
 
     const newApplication =
@@ -38,7 +38,7 @@ export class ApplicationController {
     @Param('postId', ParseIntPipe) postId: number,
     @Param('sessionId', ParseIntPipe) sessionId: number,
     @Req() req: Request,
-  ): Promise<ApplierEnsemble> {
+  ): Promise<ApplierEnsembleResponseDto> {
     if (!req.user || !req.user.id) {
       this.logger.error(
         'Authentication information missing from request user object.',
@@ -56,9 +56,10 @@ export class ApplicationController {
     );
   }
 
-  @Delete(':postId/:sessionId/:applicationId')
+  @Delete(':ensembleId/:sessionId/:applicationId')
   @UseGuards(AuthGuard('jwt'))
   async deleteApplication(
+    @Param('ensembleId', ParseIntPipe) ensembleId: number,
     @Param('applicationId', ParseIntPipe) applicationId: number,
     @Req() req: Request,
   ): Promise<void> {
@@ -69,9 +70,16 @@ export class ApplicationController {
       throw new ForbiddenException('사용자 인증 정보가 없습니다.');
     }
 
+    console.log('delete req');
+    console.log(req);
+
     const id = req.user.id;
 
     this.logger.log(`Apply to new session: ${applicationId}`);
-    await this.applicationService.deleteApplication(applicationId, id);
+    await this.applicationService.deleteApplication(
+      ensembleId,
+      applicationId,
+      id,
+    );
   }
 }

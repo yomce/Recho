@@ -21,7 +21,7 @@ export interface ApplicationEnsemble {
   applicationId: number;
   recruitEnsemble: RecruitEnsemble;
   sessionEnsemble: SessionEnsemble;
-  id: string;
+  user: User;
   applicationStatus: APPLICATION_STATUS;
   appliedAt: string;
   approvedAt?: string;

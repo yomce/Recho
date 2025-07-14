@@ -1,3 +1,4 @@
+import { User } from 'src/auth/user/user.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -7,19 +8,15 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm';
-import { User } from '../auth/user/user.entity';
 
 @Entity('videos')
 export class Video {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => User, (user) => user.id)
+  @ManyToOne(() => User, (user) => user.videos)
   @JoinColumn({ name: 'user_id' })
   user: User;
-
-  @Column()
-  user_id: string;
 
   @ManyToOne(() => Video, (video) => video.children, { nullable: true })
   @JoinColumn({ name: 'parent_video_id' })

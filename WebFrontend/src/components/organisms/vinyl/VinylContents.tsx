@@ -1,9 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
 import PrimaryButton from "@/components/atoms/button/PrimaryButton";
-import { HiChatBubbleOvalLeftEllipsis, HiHeart, HiUser, HiUserCircle } from "react-icons/hi2";
+import type { User } from '@/stores/authStore';
+import VinylRightLayout from '@/components/layout/pages/vinyl/VinylRightLayout';
+import ProfileWithName from '@/components/atoms/button/ProfileWithName';
 
 interface VinylContentsProps {
+  videoOwner: User;
   size: {width: number, height: number};
   likes: number;
   comments: number;
@@ -36,7 +39,7 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
     window.addEventListener("resize", updateHeight); // 리사이즈 대응
 
     return () => window.removeEventListener("resize", updateHeight);
-  }, []);
+  }, [props.size.width]);
 
   const handleVideoCanPlay = () => {
     // 비디오가 재생 준비되면 재생 시도
@@ -135,86 +138,29 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
 
         {/* --- 왼쪽 위 프로필 및 구독 버튼 추가 --- */}
     <div
-        style={{
-          position: "absolute",
-          top: `${divHeight * 0.84}px`,
-          left: "16px",
-          display: "flex",
-          alignItems: "center",
-          gap: "8px", // 아이콘과 버튼 사이 간격
-          zIndex: 10,
-        }}
-      >
-        <HiUserCircle
-          style={{
-            color: "#FFFFFF",
-            width: "40px", // 사이드바 아이콘보다 작게
-            height: "40px",
-            cursor: "pointer",
-          }}
+      style={{
+        position: "absolute",
+        top: `${divHeight * 0.84}px`,
+        left: "24px",
+        display: "flex",
+        alignItems: "center",
+        gap: "8px", // 아이콘과 버튼 사이 간격
+        zIndex: 10,
+      }}
+    >
+        <ProfileWithName
+          user={props.videoOwner}
         />
-        {/* <button
-          style={{
-            backgroundColor: "rgba(255, 255, 255, 0.2)",
-            color: "white",
-            border: "1px solid white",
-            borderRadius: "6px",
-            padding: "4px 10px",
-            fontSize: "0.8rem",
-            cursor: "pointer",
-          }}
-        >
-          구독하기
-        </button> */}
-      </div>
-      {/* ------------------------------------ */}
-
-      <div
-        style={{
-          position: "absolute",
-          top: `${divHeight * 0.5}px`, // '합주하기' 버튼과의 간격 고려
-          right: "24px",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: "0px", // 아이콘 간의 간격
-          zIndex: 10,
-        }}
-      >
-
-        <div style={{ textAlign: 'center' }}>
-          <HiHeart
-            style={{
-              color: '#FFFFFF',
-              width: "35px",
-              height: "35px",
-              cursor: 'pointer',
-              filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.5))'
-            }}
-          />
-          <span style={{ display: 'block', fontSize: '1rem'}}>
-            {props.likes}
-          </span>
-        </div>
-
-        <div style={{ textAlign: 'center' }}>
-          <HiChatBubbleOvalLeftEllipsis
-            style={{
-              color: '#FFFFFF',
-              width: "35px",
-              height: "35px",
-              cursor: 'pointer',
-              filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.5))'
-            }}
-          />
-          <span style={{ display: 'block', fontSize: '1rem' }}>
-            {props.comments}
-          </span>
-        </div>
       </div>
 
+      <VinylRightLayout
+        likes={props.likes}
+        comments={props.comments}
+        divHeight={divHeight}
+      />
+      
       {/* 버튼은 비디오 위에, 중앙에 위치 */}
-      {props.depth < 6 && (
+      {!isPlaying && props.depth < 6 && (
         <PrimaryButton
           onClick={() => props.onStartEnsemble(props.videoInfo)}
           style={{

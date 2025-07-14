@@ -8,6 +8,7 @@ import Modal from "@/components/molecules/modal/Modal";
 import PrimaryButton from "@/components/atoms/button/PrimaryButton";
 import SecondaryButton from "@/components/atoms/button/SecondaryButton";
 import Navigation from "@/components/layout/Navigation";
+import { useSizeStore } from '@/stores/sizeStore';
 
 const SWIPE_VELOCITY_THRESHOLD = 500;
 const DRAG_THRESHOLD = 100;
@@ -24,8 +25,7 @@ const VinylPage: React.FC = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
-
-  const [size, setSize] = useState({ width: 0, height: 0 });
+  const globalSize = useSizeStore();
 
   useEffect(() => {
     // Lock body scroll when component mounts
@@ -37,24 +37,22 @@ const VinylPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // isLoading이 true일 때는 어차피 ref가 없으므로 바로 종료
     if (isLoading || !containerRef.current) {
       return;
     }
-
+    const element = containerRef.current;
+    
     const resizeObserver = new ResizeObserver(entries => {
       if (entries[0]) {
         const { width, height } = entries[0].contentRect;
-        setSize({ width, height });
+        // 2. React의 setState 대신 Zustand의 setSize 사용
+        useSizeStore.getState().setSize({ width, height });
       }
     });
 
-    // 여기서 containerRef.current는 null이 아님이 보장됩니다.
-    const element = containerRef.current;
     resizeObserver.observe(element);
 
     return () => {
-      // unmount 시점에 정리
       resizeObserver.unobserve(element);
     };
   }, [isLoading]);
@@ -227,7 +225,8 @@ const VinylPage: React.FC = () => {
                 }}
               >
                 <VinylContents
-                  size={size}
+                  videoOwner={video.user}
+                  size={globalSize}
                   likes={video.likeCount}
                   comments={video.commentCount}
                   videoInfo={video.id}

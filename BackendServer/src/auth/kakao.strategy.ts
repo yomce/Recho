@@ -3,7 +3,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, Profile } from 'passport-kakao';
-import { UserService } from './user/user.service'; // 경로에 맞게 수정해주세요
+import { UserService } from './user/user.service';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()

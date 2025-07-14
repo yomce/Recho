@@ -43,7 +43,7 @@ const OverlayMarker = styled.View<{ left: number; width: number }>`
   height: 100%;
   left: ${({ left }) => left}px;
   width: ${({ width }) => width}px;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 100, 120, 0.3);
   z-index: 50;
   pointer-events: none;
 `;

@@ -55,13 +55,11 @@ import {
   SlidersHorizontal,
   Settings2,
   SlidersVertical,
-  Scissors,
-  Music,
-  Type,
   CirclePlay,
   CirclePause,
   ArrowBigLeftDashIcon,
   ArrowBigRightDashIcon,
+  Upload,
 } from 'lucide-react-native';
 
 import Timeline, { TimelineHandles } from '../components/Editor/Timeline';
@@ -399,30 +397,57 @@ const VideoEditScreen: React.FC<{
 
   // '콜라주 생성 및 업로드' 버튼 클릭 시 실행되는 메인 함수
   const handleProcessAndUpload = useCallback(() => {
-    // 마지막 트랙의 타임라인 포지션을 가져옵니다.
-    // 사용자의 지시에 따라, 마지막에 추가된 클립의 절대 위치를 사용합니다.
-    const lastTrimmer =
-      trimmers.length > 0 ? trimmers[trimmers.length - 1] : null;
-    const timelinePosition = lastTrimmer ? lastTrimmer.timelinePosition : 0;
+    // 모든 비디오 슬롯이 채워졌는지 확인
+    const isAllSlotFilled = trimmers.every(trimmer => !!trimmer.sourceVideo);
+    if (!isAllSlotFilled) {
+      Alert.alert('오류', '모든 비디오 슬롯을 채워주세요.');
+      return;
+    }
 
-    // 부모 비디오 ID는 route.params에서 가져옵니다.
-    const parentVideoId = route.params?.parentVideoId || null;
+    // 편집 완료 확인 알림 표시
+    Alert.alert('편집 완료', '편집을 완료하시겠습니까?', [
+      {
+        text: '취소',
+        style: 'cancel',
+      },
+      {
+        text: '완료',
+        onPress: () => {
+          // 마지막 트랙의 타임라인 포지션을 가져옵니다.
+          const lastTrimmer =
+            trimmers.length > 0 ? trimmers[trimmers.length - 1] : null;
+          const timelinePosition = lastTrimmer
+            ? lastTrimmer.timelinePosition
+            : 0;
 
-    startVideoProcessing(
-      trimmers,
-      serverVideos,
-      parentVideoId,
-      globalStartTime,
-      globalEndTime,
-      timelinePosition,
-    );
+          // 부모 비디오 ID는 serverVideos에서 가져옵니다.
+          const parentVideoId =
+            serverVideos && serverVideos.length > 0
+              ? serverVideos[serverVideos.length - 1].id
+              : null;
+
+          // 백그라운드에서 렌더링 및 업로드 시작
+          startVideoProcessing(
+            trimmers,
+            serverVideos,
+            parentVideoId,
+            globalStartTime,
+            globalEndTime,
+            timelinePosition,
+          );
+
+          // 즉시 웹뷰로 이동
+          navigation.navigate('Web', {});
+        },
+      },
+    ]);
   }, [
     trimmers,
     serverVideos,
     startVideoProcessing,
-    route.params?.parentVideoId,
     globalStartTime,
     globalEndTime,
+    navigation,
   ]);
 
   // =================================================================================
@@ -443,11 +468,13 @@ const VideoEditScreen: React.FC<{
               fontSize: 16,
             }}
           >
-            {isProcessing
-              ? '생성 중...'
-              : uploading
-              ? '업로드 중...'
-              : '업로드'}
+            {isProcessing ? (
+              '생성 중...'
+            ) : uploading ? (
+              '업로드 중...'
+            ) : (
+              <Upload size={24} color="#FFFFFF" />
+            )}
           </Text>
         </TouchableOpacity>
       ),

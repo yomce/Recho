@@ -23,7 +23,11 @@ const SwiperImageCard: React.FC<SwiperImageCardProps> = ({
   showPagination = true,
   autoPlay = true,
 }) => {
-  // const _aspectRatio = width / height;
+  const defaultImage = "https://placehold.co/400x270/EEE/333?text=1";
+  const displayImages = images && images.length > 0 ? images : [defaultImage];
+
+  // 이미지가 하나뿐일 때는 Swiper의 추가 기능을 비활성화하여 사용자 경험을 개선합니다.
+  const enableSwiperFeatures = displayImages.length > 1;
 
   return (
     <div
@@ -32,11 +36,11 @@ const SwiperImageCard: React.FC<SwiperImageCardProps> = ({
     >
       <Swiper
         spaceBetween={8}
-        pagination={showPagination ? { clickable: true } : false}
-        autoplay={autoPlay ? { delay: 3000 } : false}
-        loop
+        pagination={showPagination && enableSwiperFeatures ? { clickable: true } : false}
+        autoplay={autoPlay && enableSwiperFeatures ? { delay: 3000 } : false}
+        loop={enableSwiperFeatures}
       >
-        {images.map((src, index) => (
+        {displayImages.map((src, index) => (
           <SwiperSlide key={index}>
             <div
               className={`overflow-hidden ${slideClassName}`}
@@ -56,4 +60,3 @@ const SwiperImageCard: React.FC<SwiperImageCardProps> = ({
 };
 
 export default SwiperImageCard;
-

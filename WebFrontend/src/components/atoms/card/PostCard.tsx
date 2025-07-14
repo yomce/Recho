@@ -13,7 +13,7 @@ interface PostCardProps {
   eventDate?: string;
   recruitStatus?: RECRUIT_STATUS
   totalRecruitCnt?: number;
-  imageUrl?: string;
+  imageUrl?: string | string[];
 
   skillLevel?: SKILL_LEVEL
   currentRecruitCnt?: number;
@@ -81,7 +81,11 @@ const PostCard: React.FC<PostCardProps> = ({
       className={`flex-shrink-0 overflow-hidden ${imageWrapperClassName}`}
     >
       <img
-        src={imageUrl || "https://placehold.co/120x120"}
+        src={
+          Array.isArray(imageUrl)
+          ? imageUrl[0] || "https://placehold.co/120x120"
+          : imageUrl || "https://placehold.co/120x120"
+        }
         alt="썸네일"
         className={imageClassName}
       />

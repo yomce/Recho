@@ -2,7 +2,7 @@ import React from "react";
 import Avatar from "../avatar/Avatar";
 
 interface UserProfileCardProps {
-  imageUrl: string;
+  imageUrl?: string | string[];
   name: string;
   location: string;
   status?: "판매중" | "예약중" | "판매완료";
@@ -10,6 +10,7 @@ interface UserProfileCardProps {
 }
 
 export const baseStatusStyle = "rounded-[10px] px-4 py-1 text-[14px] whitespace-nowrap";
+export const defaultProfileImage = "https://recho-img.s3.ap-northeast-2.amazonaws.com/users/default_profile.jpg";
 
 export const statusStyleMap = {
   판매중: {
@@ -31,6 +32,15 @@ export const statusStyleMap = {
   }
 };
 
+// 유효한 이미지 URL을 반환하는 헬퍼 함수
+// 만약 URL이 유효하지 않으면 기본 프로필 이미지를 반환
+const getValidImage = (url?: string | string[]): string => {
+  const resolvedUrl = Array.isArray(url) ? url[0] : url;
+  return (typeof resolvedUrl === 'string' && resolvedUrl.trim().length > 0)
+    ? resolvedUrl
+    : defaultProfileImage;
+};
+
 const UserProfileCard: React.FC<UserProfileCardProps> = ({
   imageUrl,
   name,
@@ -45,7 +55,7 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
       <div className="flex items-center gap-4">
         {/* 프로필 이미지 */}
         <Avatar
-          src={imageUrl}
+          src={getValidImage(imageUrl)}
           size={40} 
           alt="프로필 이미지" 
         />

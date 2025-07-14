@@ -3,6 +3,7 @@ import { motion, useAnimation } from "framer-motion";
 import PrimaryButton from "@/components/atoms/button/PrimaryButton";
 
 interface VinylContentsProps {
+  size: {width: number, height: number};
   likes: number;
   comments: number;
   videoInfo: string;
@@ -21,6 +22,20 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
     props.rotationAngle
   );
   const [isPlaying, setIsPlaying] = useState(false); // 비디오 재생 상태 관리
+
+  const [divHeight, setDivHeight] = useState(0);
+
+  useEffect(() => {
+    const updateHeight = () => {
+      const height = props.size.width * 16 / 9;
+      setDivHeight(height);
+    };
+
+    updateHeight(); // 초기값 설정
+    window.addEventListener("resize", updateHeight); // 리사이즈 대응
+
+    return () => window.removeEventListener("resize", updateHeight);
+  }, []);
 
   const handleVideoCanPlay = () => {
     // 비디오가 재생 준비되면 재생 시도
@@ -98,6 +113,8 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
       style={{
         position: "relative",
         transformOrigin: "50% 300%", // 회전 축을 하단으로 설정
+        width: "100%",
+        height: `${divHeight}px`,
       }}
       animate={controls}
     >

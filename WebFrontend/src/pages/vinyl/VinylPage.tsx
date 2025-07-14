@@ -25,6 +25,8 @@ const VinylPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
 
+  const [size, setSize] = useState({ width: 0, height: 0 });
+
   useEffect(() => {
     // Lock body scroll when component mounts
     document.body.style.overflow = "hidden";
@@ -35,6 +37,29 @@ const VinylPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // isLoading이 true일 때는 어차피 ref가 없으므로 바로 종료
+    if (isLoading || !containerRef.current) {
+      return;
+    }
+
+    const resizeObserver = new ResizeObserver(entries => {
+      if (entries[0]) {
+        const { width, height } = entries[0].contentRect;
+        setSize({ width, height });
+      }
+    });
+
+    // 여기서 containerRef.current는 null이 아님이 보장됩니다.
+    const element = containerRef.current;
+    resizeObserver.observe(element);
+
+    return () => {
+      // unmount 시점에 정리
+      resizeObserver.unobserve(element);
+    };
+  }, [isLoading]);
+
+  useEffect(() => {
     const fetchVideos = async () => {
       // 5초 후 강제로 로딩을 종료하는 타임아웃 설정
       loadingTimeoutRef.current = setTimeout(() => {
@@ -43,7 +68,6 @@ const VinylPage: React.FC = () => {
 
       try {
         const videoData = await getVideos(1, 10);
-        console.log("Fetched video data:", videoData);
         if (videoData.length === 0) {
           // 비디오가 없으면 바로 로딩 종료 및 타임아웃 해제
           if (loadingTimeoutRef.current)
@@ -203,6 +227,7 @@ const VinylPage: React.FC = () => {
                 }}
               >
                 <VinylContents
+                  size={size}
                   likes={video.likeCount}
                   comments={video.commentCount}
                   videoInfo={video.id}

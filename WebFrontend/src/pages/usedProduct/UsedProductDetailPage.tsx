@@ -133,11 +133,13 @@ const UsedProductDetailPage: React.FC = () => {
           {/* 이미지 섹션 */}
           <div className="relative">
             <SwiperImageCard
-              images={[
-                "https://placehold.co/400x270/EEE/333?text=1",
-                "https://placehold.co/400x270/DDD/333?text=2",
-                "https://placehold.co/400x270/CCC/333?text=3"
-              ]}
+              images={
+                Array.isArray(product.imageUrl)
+                ? product.imageUrl
+                : product.imageUrl
+                  ? [product.imageUrl] // string인 경우 배열로 변환
+                  : []
+              }
               width={400}
               height={300}
               slideClassName="py-4"
@@ -160,7 +162,7 @@ const UsedProductDetailPage: React.FC = () => {
           </div>
 
           <UserProfileCard
-            imageUrl={product.imageUrl || 'https://placehold.co/40x40'}
+            imageUrl={product.imageUrl ?? ""}
             name={product.id}
             location={product.location.address}
             status="판매중"

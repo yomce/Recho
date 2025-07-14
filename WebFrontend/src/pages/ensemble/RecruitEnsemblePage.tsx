@@ -91,7 +91,7 @@ const RecruitEnsembleListPage: React.FC = () => {
 
   useEffect(() => {
     fetchItems(true);
-  }, [fetchItems]); // fetchItems가 useCallback으로 감싸져 있으므로 의존성 배열이 안전합니다.
+  }, []); // fetchItems가 useCallback으로 감싸져 있으므로 의존성 배열이 안전합니다.
 
   const handleLoadMore = () => {
     fetchItems(false);

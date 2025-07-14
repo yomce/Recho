@@ -1,4 +1,4 @@
-import React, { forwardRef, useImperativeHandle, useRef } from 'react';
+import React, { forwardRef, useImperativeHandle, useRef, memo } from 'react';
 import styled from 'styled-components/native';
 import { OnLoadData, OnProgressData } from 'react-native-video';
 import VideoPlayer, { VideoPlayerHandles } from './VideoPlayer';
@@ -29,17 +29,18 @@ const EmptySlotText = styled.Text`
 
 // Props 정의
 interface VideoPreviewSlotProps {
+  videoId: string;
   sourceVideo: MediaItem | null;
   volume: number;
   isPaused: boolean;
   isMuted?: boolean;
   startTime: number;
   endTime: number;
-  onLoad: (data: OnLoadData) => void;
-  onProgress: (data: OnProgressData) => void;
-  onPlay: () => void;
-  onPause: () => void;
-  onStop: () => void;
+  onLoad: (id: string, data: OnLoadData) => void;
+  onProgress: (id: string, data: OnProgressData) => void;
+  onPlay: (id: string) => void;
+  onPause: (id: string) => void;
+  onStop: (id: string) => void;
   onSeekComplete: () => void;
 }
 
@@ -68,6 +69,13 @@ const VideoPreviewSlot = forwardRef<
     );
   }
 
+  const handleLoad = (data: OnLoadData) => props.onLoad(props.videoId, data);
+  const handleProgress = (data: OnProgressData) =>
+    props.onProgress(props.videoId, data);
+  const handlePlay = () => props.onPlay(props.videoId);
+  const handlePause = () => props.onPause(props.videoId);
+  const handleStop = () => props.onStop(props.videoId);
+
   return (
     <PreviewWrapper>
       <VideoPlayer
@@ -78,15 +86,15 @@ const VideoPreviewSlot = forwardRef<
         isPaused={props.isPaused}
         startTime={props.startTime}
         endTime={props.endTime}
-        onLoad={props.onLoad}
-        onProgress={props.onProgress}
-        onPlay={props.onPlay}
-        onPause={props.onPause}
-        onStop={props.onStop}
+        onLoad={handleLoad}
+        onProgress={handleProgress}
+        onPlay={handlePlay}
+        onPause={handlePause}
+        onStop={handleStop}
         onSeekComplete={props.onSeekComplete}
       />
     </PreviewWrapper>
   );
 });
 
-export default VideoPreviewSlot;
+export default memo(VideoPreviewSlot);

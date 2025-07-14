@@ -17,11 +17,12 @@ const cleanUri = (uri: string): string => {
 };
 
 /**
- * 주어진 편집 데이터(비디오 트리밍, 볼륨, 이퀄라이저, 화면 비율 등)를 기반으로 FFmpeg filter_complex 문자열 배열을 생성합니다.
- * (이 함수 내부 로직은 변경되지 않았습니다.)
+ * 주어진 편집 데이터(비디오 트리밍, 타임라인, 볼륨, 화면 비율 등)를 기반으로
+ * FFmpeg filter_complex 문자열 배열을 생성합니다.
+ * 이 함수는 안정적인 그리드 레이아웃과 정교한 타임라인 제어를 결합합니다.
  */
 export const generateCollageFilterComplex = (editData: EditData): string[] => {
-  const { trimmers } = editData;
+  const { trimmers, globalStartTime, globalEndTime, hasAudio } = editData;
   const filterComplex: string[] = [];
   const videoCount = trimmers.length;
 
@@ -29,35 +30,16 @@ export const generateCollageFilterComplex = (editData: EditData): string[] => {
     return [];
   }
 
-  // --- 1. 오디오 처리 (기존과 동일) ---
-  const audioOutputs: string[] = [];
-  trimmers.forEach((trimmer, i) => {
-    filterComplex.push(
-      `[${i}:a]atrim=start=${trimmer.startTime}:end=${trimmer.endTime},asetpts=PTS-STARTPTS[a${i}_trimmed]`,
+  const resultDuration = globalEndTime - globalStartTime;
+  if (resultDuration <= 0) {
+    console.error(
+      'Invalid global time range. End time must be after start time.',
     );
-    filterComplex.push(`[a${i}_trimmed]volume=${trimmer.volume}[a${i}_vol]`);
-    let lastAudioNode = `[a${i}_vol]`;
-    trimmer.equalizer.forEach((band, bandIndex) => {
-      if (band.gain !== 0) {
-        const eqNode = `a${i}_eq${bandIndex}`;
-        filterComplex.push(
-          `${lastAudioNode}equalizer=f=${band.frequency}:t=h:width_type=q:w=1.41:g=${band.gain}[${eqNode}]`,
-        );
-        lastAudioNode = `[${eqNode}]`;
-      }
-    });
-    audioOutputs.push(lastAudioNode);
-  });
-
-  if (audioOutputs.length > 0) {
-    filterComplex.push(
-      `${audioOutputs.join('')}amix=inputs=${videoCount}:duration=longest[a]`,
-    );
+    return [];
   }
 
-  // --- 2. 레이아웃 및 크기 계산 (핵심 수정) ---
+  // --- 1. 기본 캔버스 및 레이아웃 계산 ---
   const ensureEven = (num: number) => 2 * Math.round(num / 2);
-
   const OUTPUT_WIDTH = 540;
   const OUTPUT_HEIGHT = 960;
   const PADDING = 20;
@@ -65,18 +47,15 @@ export const generateCollageFilterComplex = (editData: EditData): string[] => {
   const NUM_COLS = 2;
   const FIXED_ASPECT_RATIO = 4 / 3;
 
-  // 기본 프레임 크기 계산
+  // [수정] 중앙 정렬을 위한 그리드 크기 및 오프셋 계산 로직 (루프 밖으로 이동 및 복원)
+  const isOddCount = videoCount % 2 !== 0;
+  const numRows = Math.ceil(videoCount / NUM_COLS);
   const FRAME_WIDTH = ensureEven(
     (OUTPUT_WIDTH - PADDING * (NUM_COLS + 1)) / NUM_COLS,
   );
   const FRAME_HEIGHT = ensureEven(FRAME_WIDTH / FIXED_ASPECT_RATIO);
 
-  const isOddCount = videoCount % 2 !== 0;
-
-  // 전체 그리드 크기 계산 (홀수/짝수 경우 분리)
-  const numRows = Math.ceil(videoCount / NUM_COLS);
   let totalGridHeight: number;
-
   if (isOddCount) {
     const lastRowFrameWidth = ensureEven(FRAME_WIDTH * 2 + PADDING);
     const lastRowFrameHeight = ensureEven(
@@ -92,55 +71,100 @@ export const generateCollageFilterComplex = (editData: EditData): string[] => {
       numRows * FRAME_HEIGHT + (numRows + 1) * PADDING,
     );
   }
-
   const totalGridWidth = ensureEven(
     NUM_COLS * FRAME_WIDTH + (NUM_COLS + 1) * PADDING,
   );
 
-  // 중앙 정렬을 위한 오프셋 계산
   const gridOffsetX = ensureEven((OUTPUT_WIDTH - totalGridWidth) / 2);
   const gridOffsetY = ensureEven((OUTPUT_HEIGHT - totalGridHeight) / 2);
 
-  const shortestDuration = Math.min(
-    ...trimmers.map(t => t.endTime - t.startTime),
+  // 타임라인의 전체 길이를 계산하여 기본 캔버스 생성
+  const totalDuration = Math.max(
+    globalEndTime,
+    ...trimmers.map(t => t.timelinePosition + (t.endTime - t.startTime)),
   );
 
-  // --- 3. 비디오 필터 체인 생성 ---
   filterComplex.push(
-    `color=c=black:s=${OUTPUT_WIDTH}x${OUTPUT_HEIGHT}:d=${shortestDuration}[bg]`,
+    `color=c=black:s=${OUTPUT_WIDTH}x${OUTPUT_HEIGHT}:d=${totalDuration}[base_v]`,
   );
-  let lastOverlayNode = 'bg';
-  trimmers.forEach((trimmer, i) => {
-    const isLastVideo = i === videoCount - 1;
-    let frameW = FRAME_WIDTH;
-    let frameH = FRAME_HEIGHT;
+  if (hasAudio) {
+    filterComplex.push(`aevalsrc=0:d=${totalDuration}[base_a]`);
+  }
 
-    // 홀수 개수의 마지막 비디오인 경우 프레임 크기를 다르게 설정
+  let lastOverlayNode = '[base_v]';
+  const audioToMix = hasAudio ? ['[base_a]'] : [];
+
+  // --- 2. 개별 비디오 및 오디오 필터 체인 생성 ---
+  trimmers.forEach((trimmer, i) => {
+    const clipDuration = trimmer.endTime - trimmer.startTime;
+    if (clipDuration <= 0) return;
+
+    // --- 2.1. 소스 스트림 처리 (음수 시간 고려) ---
+    let videoInputStream = `[${i}:v]`;
+    // [수정] audioInputStream은 단순히 초기화만 하고, 자르는 로직은 2.5절로 완전히 위임
+    let audioInputStream = hasAudio ? `[${i}:a]` : '';
+    let placementTime = trimmer.timelinePosition;
+    let effectiveClipDuration = clipDuration;
+
+    // timelinePosition이 음수이면, 소스의 시작 부분을 잘라내고 배치 시간을 0으로 조정
+    if (placementTime < 0) {
+      const trimStart = -placementTime;
+      if (trimStart >= clipDuration) return; // 잘라낼 부분이 클립 전체보다 길면 스킵
+
+      effectiveClipDuration -= trimStart;
+
+      videoInputStream = `[v_pre_trimmed_${i}]`;
+      filterComplex.push(
+        `[${i}:v]trim=start=${trimmer.startTime + trimStart}:end=${
+          trimmer.endTime
+        },setpts=PTS-STARTPTS${videoInputStream}`,
+      );
+
+      // [삭제] 여기서 오디오를 자르는 중복 로직 제거
+      // if (hasAudio) { ... }
+
+      placementTime = 0; // 타임라인의 0초에 배치
+    } else {
+      // 양수일 경우 원래 로직대로 trim
+      videoInputStream = `[v_pre_trimmed_${i}]`;
+      filterComplex.push(
+        `[${i}:v]trim=start=${trimmer.startTime}:end=${trimmer.endTime},setpts=PTS-STARTPTS${videoInputStream}`,
+      );
+
+      // [삭제] 여기서 오디오를 자르는 중복 로직 제거
+      // if (hasAudio) { ... }
+    }
+
+    // --- 2.2. 레이아웃 계산 (사용자 기존 로직 유지) ---
+    const isLastVideo = i === videoCount - 1;
+    // const isOddCount = videoCount % 2 !== 0; // 이미 밖에서 계산됨
+    let frameW = FRAME_WIDTH; // 루프 밖에서 계산된 FRAME_WIDTH 사용
+    let frameH = FRAME_HEIGHT; // 루프 밖에서 계산된 FRAME_HEIGHT 사용
     if (isOddCount && isLastVideo) {
-      frameW = ensureEven(FRAME_WIDTH * 2 + PADDING);
+      frameW = ensureEven(frameW * 2 + PADDING);
       frameH = ensureEven(frameW / FIXED_ASPECT_RATIO);
     }
 
-    // 1. 비디오 자르기, 스케일링 및 크롭
+    // --- 2.3. 비디오 필터 적용 (스케일, 크롭, 둥근 모서리) ---
+    const processedVid = `[v_processed_${i}]`;
     filterComplex.push(
-      `[${i}:v]trim=start=${trimmer.startTime}:end=${trimmer.endTime},setpts=PTS-STARTPTS,scale='if(gte(a,${FIXED_ASPECT_RATIO}),-2,${frameW})':'if(gte(a,${FIXED_ASPECT_RATIO}),${frameH},-2)',crop=${frameW}:${frameH}[v${i}_processed]`,
+      `${videoInputStream}scale='if(gte(a,${FIXED_ASPECT_RATIO}),-2,${frameW})':'if(gte(a,${FIXED_ASPECT_RATIO}),${frameH},-2)',crop=${frameW}:${frameH}${processedVid}`,
     );
-
-    let videoStream = `[v${i}_processed]`;
-
-    // 2. 모서리 둥글게
+    let finalVideoStream = processedVid;
     if (cornerRadius > 0) {
+      const roundedVid = `[v_rounded_${i}]`;
       filterComplex.push(`color=c=black:s=${frameW}x${frameH}[mask${i}_base]`);
       filterComplex.push(
         `[mask${i}_base]geq=lum='if(gt(hypot(X-max(${cornerRadius},min(W-${cornerRadius},X)),Y-max(${cornerRadius},min(H-${cornerRadius},Y))),${cornerRadius}),0,255)':a=255[mask${i}]`,
       );
       filterComplex.push(
-        `[${videoStream.slice(1, -1)}][mask${i}]alphamerge[v${i}_rounded]`,
+        `[${processedVid.slice(1, -1)}][mask${i}]alphamerge${roundedVid}`,
       );
-      videoStream = `[v${i}_rounded]`;
+      finalVideoStream = roundedVid;
     }
 
-    // 3. 오버레이 위치 계산
+    // --- 2.4. 타임라인에 비디오 오버레이 ---
+    // [수정] 미리 계산된 오프셋을 사용하여 x,y 좌표 계산
     const row = Math.floor(i / NUM_COLS);
     const col = i % NUM_COLS;
     let x: number, y: number;
@@ -154,22 +178,85 @@ export const generateCollageFilterComplex = (editData: EditData): string[] => {
       y = gridOffsetY + PADDING + row * (FRAME_HEIGHT + PADDING);
     }
 
-    // 4. 배경 위에 오버레이
-    const currentOverlayOutput = isLastVideo ? 'v_final' : `tmp${i}`;
+    const nextOverlayNode = `[v_overlay_${i}]`;
     filterComplex.push(
-      `[${lastOverlayNode}]${videoStream}overlay=x=${x}:y=${y}:shortest=1[${currentOverlayOutput}]`,
+      `${lastOverlayNode}${finalVideoStream}overlay=x=${x}:y=${y}:enable='between(t,${placementTime},${
+        placementTime + effectiveClipDuration
+      })'${nextOverlayNode}`,
     );
-    lastOverlayNode = currentOverlayOutput;
+    lastOverlayNode = nextOverlayNode;
+
+    // --- 2.5. 오디오 처리 (딜레이, 볼륨, EQ) 및 믹싱 목록에 추가 ---
+    if (hasAudio) {
+      // [수정] 모든 오디오 처리를 여기서 통합하여 실행
+      const audioTrimStartTime =
+        trimmer.startTime +
+        (trimmer.timelinePosition < 0 ? -trimmer.timelinePosition : 0);
+      const audioClipDuration = trimmer.endTime - audioTrimStartTime;
+
+      // 잘라낼 오디오가 없는 경우는 스킵
+      if (audioClipDuration <= 0) return;
+
+      const trimmedAud = `[a_trimmed_${i}]`;
+      filterComplex.push(
+        `${audioInputStream}atrim=start=${audioTrimStartTime}:end=${trimmer.endTime},asetpts=PTS-STARTPTS${trimmedAud}`,
+      );
+
+      const volAud = `[a_vol_${i}]`;
+      filterComplex.push(`${trimmedAud}volume=${trimmer.volume}${volAud}`);
+
+      let lastAudioNode = volAud;
+      trimmer.equalizer.forEach((band, bandIndex) => {
+        if (band.gain !== 0) {
+          const eqNode = `[a_eq_${i}_${bandIndex}]`;
+          filterComplex.push(
+            `${lastAudioNode}equalizer=f=${band.frequency}:t=h:width_type=q:w=1.41:g=${band.gain}${eqNode}`,
+          );
+          lastAudioNode = eqNode;
+        }
+      });
+
+      const delayedAud = `[a_delayed_${i}]`;
+      const delayInMillis = Math.round(placementTime * 1000);
+      filterComplex.push(
+        `${lastAudioNode}adelay=${delayInMillis}|${delayInMillis}${delayedAud}`,
+      );
+
+      audioToMix.push(delayedAud);
+    }
   });
 
-  // 5. 최종 비디오 및 오디오 스트림 결합
-  if (audioOutputs.length > 0) {
-    // 최종 비디오 스트림의 이름을 '[v]'로, 오디오 스트림은 '[a]'로 명시적으로 지정
-    // FFmpeg 명령의 -map 옵션에서 사용 가능
-    filterComplex.push(`[${lastOverlayNode}]null[v]`);
-  } else {
-    // 오디오가 없는 경우, 마지막 비디오 노드를 최종 출력 'v'로 지정
-    filterComplex.push(`[${lastOverlayNode}]null[v]`);
+  // --- 3. 최종 믹싱 및 자르기 ---
+  let finalAudioSource = '[base_a]'; // 오디오가 없을 경우 기본 무음 오디오
+  if (hasAudio && audioToMix.length > 1) {
+    // base_a와 하나 이상의 클립 오디오가 있으면 amix로 믹싱
+    const mixedAud = '[a_mixed]';
+    filterComplex.push(
+      `${audioToMix.join('')}amix=inputs=${
+        audioToMix.length
+      }:duration=longest${mixedAud}`,
+    );
+    finalAudioSource = mixedAud;
+  } else if (hasAudio && audioToMix.length === 1) {
+    // 클립 오디오가 하나만 있는 경우 (audioToMix는 base_a와 클립오디오 2개)
+    // 이 케이스는 위의 if문에 포함되므로 사실상 여기는 base_a만 있을 때 해당.
+    finalAudioSource = audioToMix[0];
+  }
+
+  // 최종 비디오 스트림을 전역 시간에 맞춰 자르기
+  const finalVid = '[v_final_trim]';
+  filterComplex.push(
+    `${lastOverlayNode}trim=start=${globalStartTime}:duration=${resultDuration},setpts=PTS-STARTPTS${finalVid}`,
+  );
+  filterComplex.push(`${finalVid}null[v]`); // 비디오 스트림을 '[v]'로 최종 매핑
+
+  if (hasAudio) {
+    const finalAud = '[a_final_trim]';
+    filterComplex.push(
+      `${finalAudioSource}atrim=start=${globalStartTime}:duration=${resultDuration},asetpts=PTS-STARTPTS${finalAud}`,
+    );
+    // [수정] 오디오 스트림은 'anull' 필터를 사용하여 '[a]'로 최종 매핑
+    filterComplex.push(`${finalAud}anull[a]`);
   }
 
   return filterComplex;

@@ -174,6 +174,7 @@ export class VideosService {
     while (currentVideoId) {
       const video = await this.videoRepository.findOne({
         where: { id: currentVideoId },
+        relations: ['parent'], // [수정] 부모 관계를 명시적으로 로드
         select: [
           'id',
           'parent_video_id',
@@ -194,7 +195,8 @@ export class VideosService {
       video.video_url = await this.getSourceVideoUrl(video.source_video_key);
 
       lineage.push(video);
-      currentVideoId = video.parent_video_id || null;
+      // [수정] 직접 ID를 사용하는 대신, 로드된 관계를 통해 다음 ID를 찾음
+      currentVideoId = video.parent ? video.parent.id : null;
     }
 
     return lineage.reverse();

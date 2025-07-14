@@ -96,21 +96,10 @@ const WebScreen: React.FC = () => {
     childVideoId?: string,
   ) => {
     try {
-      console.log(
-        `[WebScreen] ${
-          allowMultiSelection ? '여러' : '단일'
-        } 비디오 파일 선택 시작...`,
-      );
-
       const result = await pick({
         type: [types.video],
         allowMultiSelection: allowMultiSelection,
       });
-
-      console.log(
-        '[WebScreen] Picker Result:',
-        JSON.stringify(result, null, 2),
-      );
 
       if (result && result.length > 0) {
         // 선택된 파일을 앱 내부의 영구적인 공간으로 복사합니다.
@@ -134,15 +123,11 @@ const WebScreen: React.FC = () => {
 
         // childVideoId가 있으면, 이제 lineage를 가져옵니다.
         if (childVideoId) {
-          console.log(
-            `[WebScreen] Fetching video lineage for ID: ${childVideoId}`,
-          );
           try {
             const response = await axiosInstance.get<ServerVideo[]>(
               `videos/${childVideoId}/lineage`,
             );
             sourceItems = response.data;
-            console.log('[WebScreen] Fetched lineage data:', sourceItems);
           } catch (err) {
             console.error('[WebScreen] Failed to fetch video lineage:', err);
             Alert.alert('오류', '합주 정보를 불러오는 데 실패했습니다.');
@@ -154,11 +139,12 @@ const WebScreen: React.FC = () => {
         navigation.navigate('Processing', {
           localVideos: localItems,
           sourceVideos: sourceItems,
+          parentVideoId: childVideoId,
         });
       }
     } catch (error) {
       if (isErrorWithCode(error)) {
-        console.log('[WebScreen] 사용자가 파일 선택을 취소했습니다.');
+        // 사용자가 선택을 취소한 경우이므로 아무것도 하지 않음
       } else {
         console.error('[WebScreen] 파일 선택 오류:', error);
         Alert.alert('오류', '비디오 파일을 선택하는 중 오류가 발생했습니다.');
@@ -202,9 +188,6 @@ const WebScreen: React.FC = () => {
           // 웹에서 전달받은 토큰이 있으면 AsyncStorage에 저장
           if (message.payload && message.payload.token) {
             await AsyncStorage.setItem('accessToken', message.payload.token);
-            console.log(
-              '[WebScreen] accessToken from web stored in AsyncStorage.',
-            );
           }
           await pickVideos(false); // 단일 비디오 선택
           break;
@@ -212,9 +195,6 @@ const WebScreen: React.FC = () => {
           const { token, childVideoId } = message.payload;
           if (token) {
             await AsyncStorage.setItem('accessToken', token);
-            console.log(
-              '[WebScreen] accessToken from web stored for ensemble.',
-            );
           }
           if (childVideoId) {
             // 이제 API를 호출하는 대신, childVideoId를 가지고 바로 pickVideos를 호출합니다.

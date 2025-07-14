@@ -90,7 +90,7 @@ const CategoryPostListPage: React.FC = () => {
   };
 
   return (
-    <PostLayout headerText={categoryName}>
+    <PostLayout>
       <div className="p-4 space-y-4">
         {isLoading ? (
           <p className="text-center text-brand-gray p-8">게시글을 불러오는 중...</p>
@@ -141,7 +141,9 @@ const CategoryPostListPage: React.FC = () => {
         )}
       </div>
       {/* 글 작성 버튼: 현재 카테고리 정보를 쿼리 파라미터로 넘김 */}
-      <FloatingWriteButton onClick={() => navigate(`/community/new?category=${categoryKey}`)} />
+      {/* <FloatingWriteButton onClick={() => navigate(`/community/new?category=${categoryKey}`)} /> */}
+      {/* 해당 내용은 쿼리 파라미터로 넘길 필요가 없습니다. 드롭다운에서 POST 요청 시 카테고리를 구분하도록 변경해주세요 */}
+      <FloatingWriteButton />
     </PostLayout>
   );
 };

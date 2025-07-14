@@ -33,6 +33,7 @@ export interface TrimmerState {
   timelinePosition: number;
   isPlaying: boolean;
   isMuted: boolean;
+  waveform?: number[]; // [추가] 오디오 파형 데이터
 }
 
 // FFmpeg 필터에 전달될 트리머 데이터
@@ -42,11 +43,16 @@ export interface TrimmerDataForFilter {
   volume: number;
   aspectRatio: string;
   equalizer: Omit<EQBand, 'id'>[]; // EQ 밴드에서 'id'는 제외
+  timelinePosition: number; // [추가] 타임라인 위치 정보
+  duration: number; // [추가] 원본 비디오의 클립 길이
 }
 
 // FFmpeg 편집 데이터
 export interface EditData {
   trimmers: TrimmerDataForFilter[]; // 편집할 트리머 데이터 배열
+  globalStartTime: number; // [추가] 전체 타임라인의 시작 시간
+  globalEndTime: number; // [추가] 전체 타임라인의 종료 시간
+  hasAudio: boolean; // [추가] 오디오 트랙 존재 여부
 }
 
 // 시간 편집 유형 (시작 또는 종료)
@@ -72,6 +78,7 @@ export type RootStackParamList = {
   Processing: {
     sourceVideos: Video[];
     localVideos: MediaItem[];
+    parentVideoId?: string;
   };
   MediaLibrary: undefined;
   FFmpegTest: undefined;

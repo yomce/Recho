@@ -94,7 +94,9 @@ export const useVideoProcessor = () => {
         return;
       }
 
-      // ... (processVideoForUpload 로직 전체를 여기에 복사) ...
+      const hasAudio = activeTrimmers.some(t => t.volume > 0);
+
+      // EditData 객체를 생성할 때 새로운 시간 관련 속성들을 모두 포함시킴
       const editData: EditData = {
         trimmers: activeTrimmers.map(t => ({
           startTime: t.startTime,
@@ -108,7 +110,14 @@ export const useVideoProcessor = () => {
             frequency,
             gain,
           })),
+          // 타임라인 위치와 클립 길이 정보 전달
+          timelinePosition: t.timelinePosition,
+          duration: t.endTime - t.startTime,
         })),
+        // 전역 시작/종료 시간 및 오디오 존재 여부 전달
+        globalStartTime: startTime,
+        globalEndTime: endTime,
+        hasAudio: hasAudio,
       };
 
       const filterComplexString =
@@ -119,7 +128,6 @@ export const useVideoProcessor = () => {
       const collageOutputPath = `${
         RNFS.DocumentDirectoryPath
       }/collage_${Date.now()}.mp4`;
-      const hasAudio = activeTrimmers.some(t => t.volume > 0);
       const mapCommand = hasAudio ? '-map "[v]" -map "[a]"' : '-map "[v]"';
       const encoder =
         Platform.OS === 'ios' ? 'h264_videotoolbox' : 'h264_mediacodec';

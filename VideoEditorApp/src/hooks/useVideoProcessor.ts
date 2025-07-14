@@ -8,6 +8,7 @@ import { FFmpegKit, ReturnCode } from 'ffmpeg-kit-react-native';
 import { CameraRoll } from '@react-native-camera-roll/camera-roll';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
+import { WEB_FRONTEND_URL } from '@env';
 
 import {
   TrimmerState,
@@ -273,10 +274,6 @@ export const useVideoProcessor = () => {
         ),
       );
       setUploading(false);
-      Alert.alert(
-        '업로드 완료',
-        '모든 파일이 S3에 성공적으로 업로드되었습니다.',
-      );
 
       // Save Metadata to DB
       const directParent =
@@ -296,24 +293,39 @@ export const useVideoProcessor = () => {
       });
 
       Alert.alert(
-        '완료',
-        '모든 작업이 완료되었습니다. 비디오가 성공적으로 저장되었습니다.',
+        '업로드 완료',
+        '비디오가 성공적으로 업로드되었습니다. 프로필에서 확인하시겠습니까?',
+        [
+          {
+            text: '아니오',
+            style: 'cancel',
+            onPress: () => {
+              // 현재 화면에 머무름 (아무것도 하지 않음)
+            },
+          },
+          {
+            text: '네',
+            onPress: () => {
+              // 웹의 마이페이지로 이동
+              navigation.navigate('Web', {
+                url: `${WEB_FRONTEND_URL}/users/${userId}`,
+              });
+            },
+          },
+        ],
       );
-      navigation.popToTop();
     } catch (error: any) {
-      console.error(
-        '[useVideoProcessor] Error during video processing:',
-        error,
-      );
-      Alert.alert(
-        '오류',
-        `비디오 처리 중 오류가 발생했습니다: ${error.message}`,
-      );
+      console.error('Error in startVideoProcessing:', error);
+      Alert.alert('오류', '비디오 처리 중 오류가 발생했습니다.');
     } finally {
       setIsProcessing(false);
       setUploading(false);
     }
   };
 
-  return { isProcessing, uploading, startVideoProcessing };
+  return {
+    isProcessing,
+    uploading,
+    startVideoProcessing,
+  };
 };

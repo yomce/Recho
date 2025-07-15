@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../services/axiosInstance';
 // import { socket } from '../../services/socket'; // ⬅️ 직접 사용하지 않으므로 삭제해도 무방
 import { useAuthStore } from '../../stores/authStore';
+import PostLayout from '@/components/layout/PostLayout';
 
 // --- 타입 정의 ---
 interface ChatUser {
@@ -99,80 +100,81 @@ const ChatListPage: React.FC = () => {
   const handleEnterRoom = (roomId: string) => {
     navigate(`/chat/${roomId}`);
   };
-  const handleGoBack = () => {
-    navigate('/main');
-  };
+  // const handleGoBack = () => {
+  //   navigate('/main');
+  // };
 
   if (loading) return <div style={styles.container}><h2>채팅방 정보를 불러오고 있습니다...</h2></div>;
   if (error) return <div style={styles.container}><h2>에러: {error}</h2></div>;
 
   return (
-    <div style={styles.container}>
-      <h1 style={styles.header}>채팅</h1>
-      <form onSubmit={handleCreateRoom} style={styles.createForm}>
-        <input
-          type="text"
-          value={newRoomName}
-          onChange={(e) => setNewRoomName(e.target.value)}
-          placeholder="새 그룹 채팅방 이름"
-          style={styles.input}
-        />
-        <button type="submit" style={styles.createButton}>
-          만들기
-        </button>
-      </form>
-      <h2 style={styles.subHeader}>채팅방 목록</h2>
-      <div style={styles.roomList}>
-        {rooms.length > 0 ? (
-          rooms.map((room) => {
-            const isPrivate = room.type === 'PRIVATE';
-            const participants = room.userRooms?.map((ur) => ur.user) || [];
-            const chatPartner = isPrivate
-              ? participants.find((p) => p.id !== user?.id)
-              : null;
-            const participantNamesString = participants
-              .map(p => p.username)
-              .join(', ');
-            return (
-              <div key={room.id} style={styles.roomItem} onClick={() => handleEnterRoom(room.id)}>
-                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  {isPrivate ? (
-                    <Avatar
-                      src={chatPartner?.profileUrl}
-                      alt={chatPartner?.username}
-                    />
-                  ) : (
-                    <div style={{ display: 'flex', position: 'relative', width: '48px', height: '32px' }}>
-                      {participants.slice(0, 2).map((p, index) => (
-                        <div key={p.id} style={{ position: 'absolute', left: `${index * 16}px` }}>
-                           <Avatar src={p.profileUrl} alt={p.username} style={{ border: '2px solid white' }}/>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <div>
-                    <p style={styles.roomName}>
-                      {isPrivate ? chatPartner?.username || '개인 채팅' : room.name}
-                    </p>
-                    {!isPrivate && (
-                        <p style={styles.participantCount}>
-                        {participantNamesString}
-                        </p>
+    <PostLayout bgClassName="bg-brand-inverse">
+      <div style={styles.container}>
+        <form onSubmit={handleCreateRoom} style={styles.createForm}>
+          <input
+            type="text"
+            value={newRoomName}
+            onChange={(e) => setNewRoomName(e.target.value)}
+            placeholder="새 그룹 채팅방 이름"
+            style={styles.input}
+          />
+          <button type="submit" style={styles.createButton}>
+            만들기
+          </button>
+        </form>
+        <h2 style={styles.subHeader}>채팅방 목록</h2>
+        <div style={styles.roomList}>
+          {rooms.length > 0 ? (
+            rooms.map((room) => {
+              const isPrivate = room.type === 'PRIVATE';
+              const participants = room.userRooms?.map((ur) => ur.user) || [];
+              const chatPartner = isPrivate
+                ? participants.find((p) => p.id !== user?.id)
+                : null;
+              const participantNamesString = participants
+                .map(p => p.username)
+                .join(', ');
+              return (
+                <div key={room.id} style={styles.roomItem} onClick={() => handleEnterRoom(room.id)}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {isPrivate ? (
+                      <Avatar
+                        src={chatPartner?.profileUrl}
+                        alt={chatPartner?.username}
+                      />
+                    ) : (
+                      <div style={{ display: 'flex', position: 'relative', width: '48px', height: '32px' }}>
+                        {participants.slice(0, 2).map((p, index) => (
+                          <div key={p.id} style={{ position: 'absolute', left: `${index * 16}px` }}>
+                            <Avatar src={p.profileUrl} alt={p.username} style={{ border: '2px solid white' }}/>
+                          </div>
+                        ))}
+                      </div>
                     )}
+                    <div>
+                      <p style={styles.roomName}>
+                        {isPrivate ? chatPartner?.username || '개인 채팅' : room.name}
+                      </p>
+                      {!isPrivate && (
+                          <p style={styles.participantCount}>
+                          {participantNamesString}
+                          </p>
+                      )}
+                    </div>
                   </div>
+                  <span style={styles.roomType}>{room.type}</span>
                 </div>
-                <span style={styles.roomType}>{room.type}</span>
-              </div>
-            );
-          })
-        ) : (
-          <p>참여하고 있는 채팅방이 없습니다.</p>
-        )}
+              );
+            })
+          ) : (
+            <p>참여하고 있는 채팅방이 없습니다.</p>
+          )}
+        </div>
+        {/* <button onClick={handleGoBack} style={styles.backButton}>
+          메인으로
+        </button> */}
       </div>
-      <button onClick={handleGoBack} style={styles.backButton}>
-        메인으로
-      </button>
-    </div>
+    </PostLayout>
   );
 };
 

@@ -19,7 +19,7 @@ const IconWithNoCount: React.FC<IconWithNoCountProps> = ({
   onClick,
 }) => {
   const baseStyle: React.CSSProperties = {
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: 'rgba(255, 255, 255)',
     width: '35px',
     height: '35px',
     cursor: 'pointer',
@@ -29,19 +29,9 @@ const IconWithNoCount: React.FC<IconWithNoCountProps> = ({
     ...style,
   };
 
-  const countStyle: React.CSSProperties = {
-    display: 'block',
-    fontSize: '13px',
-    margin: '0px',
-    padding: '0px',
-    color: 'rgba(255, 255, 255, 0.8)',
-    filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.5))',
-  };
-
   return (
     <div style={{ textAlign: 'center' }}>
       <IconButton iconName={iconName} iconSize={iconSize} style={baseStyle} onClick={onClick}/>
-      <span style={countStyle}> </span>
     </div>
   );
 };

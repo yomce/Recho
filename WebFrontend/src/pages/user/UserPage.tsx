@@ -80,6 +80,7 @@ const UserPage: React.FC = () => {
           id: `thumb-${index}`,
           thumbnailUrl: url,
         }));
+
         setThumbnails(formattedThumbnails);
         setError(null); // 다른 유저 페이지 로딩 성공 시 에러 상태 초기화
       } catch (err) {

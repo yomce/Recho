@@ -23,7 +23,7 @@ def node_require(script)
   prepare_react_native_project!
   
   pod 'ffmpeg-kit-ios-full-gpl', :podspec => './ffmpeg-kit-ios-full-gpl.podspec'
-  pod 'ffmpeg-kit-react-native', :subspecs => ['full-gpl'], :podspec => '../node_modules/ffmpeg-kit-react-native/ffmpeg-kit-react-native.podspec'
+  pod 'ffmpeg-kit-react-native', :subspecs => ['full-gpl'], :podspec => File.expand_path('../node_modules/ffmpeg-kit-react-native/ffmpeg-kit-react-native.podspec', __dir__)
   
   target 'VideoEditorApp' do
     config = use_native_modules!

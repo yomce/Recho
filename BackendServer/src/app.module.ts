@@ -22,6 +22,7 @@ import { ApplicationModule } from './application/application.module';
 import { ViewCountModule } from './hooks/view_count/view-count.module';
 import loadConfig from './config/env.config';
 import { ConfigController } from './config/config.controller';
+import { searchVideoModule } from './search_video/search-video.module';
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -100,6 +101,7 @@ import { SearchModule } from './search/search.module';
     PostsModule,
     CommentsModule,
     SearchModule,
+    searchVideoModule,
   ],
   controllers: [AppController, ConfigController],
   providers: [AppService],

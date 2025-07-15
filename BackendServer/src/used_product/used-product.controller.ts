@@ -18,7 +18,7 @@ import { UsedProductService } from './used-product.service';
 import { CreateUsedProductDto } from './dto/create-used-product.dto';
 import { PaginationQueryUsedProductDto } from './dto/pagination-query-used-product.dto';
 import { UpdateUsedProductDto } from './dto/update-used-product.dto';
-import { UsedProduct } from './entities/used-product.entity';
+import { UsedProduct, STATUS as Status } from './entities/used-product.entity';
 import { PaginatedUsedProductResponse } from './dto/paginated-used-product.response.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
@@ -35,12 +35,13 @@ export class UsedProductController {
     this.logger.log('Fetching used products with pagination');
 
     // <<< DTO의 변수명 변경에 맞춰 수정하고, limit 기본값 설정
-    const { limit = 20, lastProductId, lastCreatedAt } = paginationQuery;
+    const { limit = 20, lastProductId, lastCreatedAt, categoryId } = paginationQuery;
 
     return this.usedProductService.findUsedProductWithPagination(
       limit,
       lastProductId,
       lastCreatedAt,
+      categoryId,
     );
   }
 
@@ -117,5 +118,22 @@ export class UsedProductController {
       updateUsedProductDto,
       id,
     );
+  }
+
+  @Patch(':id/status')
+  @UseGuards(AuthGuard('jwt'))
+  async updateSalesStatus(
+    @Param('id', ParseIntPipe) productId: number,
+    @Body('status') status: Status,
+    @Req() req: Request,
+  ): Promise<UsedProduct> {
+    if (!req.user || !req.user.id) {
+      this.logger.error(
+        'Authentication information missing from request user object.',
+      );
+      throw new ForbiddenException('사용자 인증 정보가 없습니다.');
+    }
+    const id = req.user.id;
+    return this.usedProductService.updateSalesStatus(productId, id, status);
   }
 }

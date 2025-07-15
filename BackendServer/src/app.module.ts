@@ -29,6 +29,7 @@ import * as path from 'path';
 import { PostsModule } from './community/posts/posts.module';
 import { CommentsModule } from './community/comments/comments.module';
 import { SearchModule } from './search/search.module';
+import { ScrapingModule } from './scraping/scraping.module';
 
 @Module({
   imports: [
@@ -102,6 +103,7 @@ import { SearchModule } from './search/search.module';
     CommentsModule,
     SearchModule,
     searchVideoModule,
+    ScrapingModule,
   ],
   controllers: [AppController, ConfigController],
   providers: [AppService],

@@ -7,8 +7,8 @@ import RNFS from 'react-native-fs';
 import {
   type RootStackParamList,
   type MediaItem,
-  Video as ServerVideo,
-} from '../types';
+  type ServerVideo,
+} from '../navigation/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isErrorWithCode, pick, types } from '@react-native-documents/picker';
 import axiosInstance from '../api/axiosInstance';
@@ -205,7 +205,7 @@ const WebScreen: React.FC = () => {
               endTime: webVideo.endTime,
               timelinePosition: webVideo.timelinePosition,
             };
-            navigation.navigate('Record', { video: rnVideo });
+            navigation.navigate('RecordScreen', { video: rnVideo });
           }
           break;
         }

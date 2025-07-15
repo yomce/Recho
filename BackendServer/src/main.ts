@@ -4,7 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser'; // cookie-parser 임포트 추가
 import { ConfigService } from '@nestjs/config';
-import { Server } from 'https';
+import { ValidationPipe } from '@nestjs/common';
 // import * as dotenv from 'dotenv';
 
 // dotenv.config();
@@ -17,6 +17,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   app.use(cookieParser()); // cookie-parser를 전역 미들웨어로 설정
+  app.useGlobalPipes(new ValidationPipe());
 
   const prodUrl = configService.get<string>('FRONTEND_URL');
   const devUrl = 'http://localhost:5173'; // 개발용 프론트엔드 주소 (포트 확인)

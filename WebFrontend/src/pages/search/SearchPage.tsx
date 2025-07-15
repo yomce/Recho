@@ -1,146 +1,130 @@
-import React, { useState } from 'react';
+// WebFrontend/src/pages/search/SearchPage.tsx
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axiosInstance from '../../services/axiosInstance'; 
+import axiosInstance from '../../services/axiosInstance';
+import { type SearchResults } from '../../types/search';
+import SearchBar from '@/components/molecules/search/SearchBar';
+import RecentSearchChip from '../../components/molecules/search/RecentSearchChip';
+import SearchResultSection from '../../components/molecules/search/SearchResultSection';
+import Icon from '../../components/atoms/icon/Icon';
 
-// --- 타입 정의: 백엔드의 응답(SearchResponseDto)과 형식을 맞춥니다 ---
-interface Post {
-  id: number;
-  title: string;
-  author: string;
-  createdAt: string;
-}
-interface UsedProduct {
-  productId: number;
-  title: string;
-  price: number;
-  imageUrl?: string;
-}
-interface RecruitEnsemble {
-  postId: number;
-  title: string;
-  skillLevel: string;
-  eventDate: string;
-}
+const STORAGE_KEY = 'recent_searches';
 
-interface SearchResults {
-  posts: Post[];
-  usedProducts: UsedProduct[];
-  recruitEnsembles: RecruitEnsemble[];
-}
-
-// --- 검색 페이지 컴포넌트 ---
 const SearchPage: React.FC = () => {
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
   const [results, setResults] = useState<SearchResults | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
-  // 검색 폼 제출 시 실행될 함수
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!keyword.trim()) {
-      alert('검색어를 입력해주세요.');
-      return;
-    }
+  useEffect(() => {
+    const savedSearches = localStorage.getItem(STORAGE_KEY);
+    if (savedSearches) setRecentSearches(JSON.parse(savedSearches));
+  }, []);
 
+  const updateRecentSearches = (updatedList: string[]) => {
+    setRecentSearches(updatedList);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedList));
+  };
+
+  const addRecentSearch = (term: string) => {
+    const newList = [term, ...recentSearches.filter(s => s !== term)].slice(0, 10);
+    updateRecentSearches(newList);
+  };
+
+  const removeRecentSearch = (term: string) => {
+    updateRecentSearches(recentSearches.filter(s => s !== term));
+  };
+
+  const clearAllRecentSearches = () => updateRecentSearches([]);
+
+  const executeSearch = async (term: string) => {
+    setKeyword(term);
+    addRecentSearch(term);
     setIsLoading(true);
-    setError(null);
     setResults(null);
-
     try {
-      // 백엔드에 만들어둔 통합 검색 API 호출
-      const response = await axiosInstance.get<SearchResults>('/search', {
-        params: { keyword },
-      });
+      const response = await axiosInstance.get<SearchResults>('/search', { params: { keyword: term } });
       setResults(response.data);
     } catch (err) {
       console.error('Search failed:', err);
-      setError('검색 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 결과 아이템 렌더링 함수 (예시)
-  const renderPostItem = (post: Post) => (
-    <div key={`post-${post.id}`} onClick={() => navigate(`/community/posts/${post.id}`)} className="p-4 border-b cursor-pointer hover:bg-gray-50">
-      <p className="font-semibold text-gray-800">{post.title}</p>
-      <p className="text-sm text-gray-500">{post.author} · {new Date(post.createdAt).toLocaleDateString()}</p>
+  const renderItem = (item: { id: number; title: string; subtitle: string; path: string; }) => (
+    <div key={item.id} onClick={() => navigate(item.path)} className="p-4 cursor-pointer hover:bg-brand-frame">
+      <p className="text-body font-semibold text-brand-text-primary truncate">{item.title}</p>
+      <p className="text-footnote text-brand-gray truncate">{item.subtitle}</p>
     </div>
   );
-
-  const renderUsedProductItem = (product: UsedProduct) => (
-    <div key={`product-${product.productId}`} onClick={() => navigate(`/used-products/${product.productId}`)} className="p-4 border-b cursor-pointer hover:bg-gray-50">
-      <p className="font-semibold text-gray-800">{product.title}</p>
-      <p className="text-sm text-gray-500">{product.price.toLocaleString()}원</p>
-    </div>
-  );
-  
-  const renderRecruitEnsembleItem = (ensemble: RecruitEnsemble) => (
-     <div key={`ensemble-${ensemble.postId}`} onClick={() => navigate(`/ensemble/${ensemble.postId}`)} className="p-4 border-b cursor-pointer hover:bg-gray-50">
-      <p className="font-semibold text-gray-800">{ensemble.title}</p>
-      <p className="text-sm text-gray-500">{ensemble.skillLevel} · {new Date(ensemble.eventDate).toLocaleDateString()}</p>
-    </div>
-  );
-
 
   return (
-    <div className="max-w-2xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">통합 검색</h1>
-      
-      {/* 검색 입력 폼 */}
-      <form onSubmit={handleSearch} className="flex gap-2 mb-6">
-        <input
-          type="search"
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          placeholder="관심 있는 내용을 검색해보세요"
-          className="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-        />
-        <button type="submit" className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700">
-          검색
-        </button>
-      </form>
+    <div className="app-container">
+      <div className="w-full max-w-[430px] p-4 space-y-6">
+        <header className="flex items-center gap-2">
+          <button onClick={() => navigate(-1)}>
+            <Icon name="back" size={24} />
+          </button>
+          <SearchBar 
+            onSearch={executeSearch} 
+            initialKeyword={keyword} 
+            className="flex-1" 
+          />
+        </header>
 
-      {/* 로딩 및 에러 상태 표시 */}
-      {isLoading && <p className="text-center">검색 중...</p>}
-      {error && <p className="text-center text-red-500">{error}</p>}
+        <main>
+          {isLoading && <div className="text-center p-10 text-brand-gray">검색 중...</div>}
 
-      {/* 검색 결과 표시 */}
-      {results && (
-        <div className="space-y-8">
-          {/* 커뮤니티 게시글 섹션 */}
-          <section>
-            <h2 className="text-xl font-semibold border-b pb-2 mb-2">커뮤니티 게시글</h2>
-            {results.posts.length > 0 ? (
-              results.posts.map(renderPostItem)
-            ) : (
-              <p className="text-gray-500 p-4">관련 게시글이 없습니다.</p>
-            )}
-          </section>
+          {!isLoading && !results && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-subheadline text-brand-text-primary">최근 검색</h2>
+                <button onClick={clearAllRecentSearches} className="text-footnote font-semibold text-brand-gray">
+                  전체 삭제
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {recentSearches.length > 0 ? (
+                  recentSearches.map((term, i) => (
+                    <RecentSearchChip key={i} term={term} onSelect={executeSearch} onRemove={removeRecentSearch} />
+                  ))
+                ) : (
+                  <p className="w-full text-center p-10 text-brand-gray">최근 검색 기록이 없습니다.</p>
+                )}
+              </div>
+            </div>
+          )}
 
-          {/* 중고 거래 섹션 */}
-          <section>
-            <h2 className="text-xl font-semibold border-b pb-2 mb-2">중고 거래</h2>
-            {results.usedProducts.length > 0 ? (
-              results.usedProducts.map(renderUsedProductItem)
-            ) : (
-              <p className="text-gray-500 p-4">관련 상품이 없습니다.</p>
-            )}
-          </section>
-
-          {/* 합주 모집 섹션 */}
-          <section>
-            <h2 className="text-xl font-semibold border-b pb-2 mb-2">합주 모집</h2>
-             {results.recruitEnsembles.length > 0 ? (
-              results.recruitEnsembles.map(renderRecruitEnsembleItem)
-            ) : (
-              <p className="text-gray-500 p-4">관련 모집글이 없습니다.</p>
-            )}
-          </section>
-        </div>
-      )}
+          {!isLoading && results && (
+            <div className="space-y-8">
+              <SearchResultSection 
+                title="커뮤니티 게시글" 
+                items={results.posts} 
+                morePath="/community"
+                keyword={keyword}
+                renderItem={(item) => renderItem({ id: item.postId, title: item.title, subtitle: `작성자: ${item.author}`, path: `/community/${item.postId}` })}
+              />
+              <SearchResultSection 
+                title="중고 거래" 
+                items={results.usedProducts} 
+                morePath="/used-products"
+                keyword={keyword}
+                renderItem={(item) => renderItem({ id: item.productId, title: item.title, subtitle: `${item.price.toLocaleString()}원`, path: `/used-products/${item.productId}` })}
+              />
+              <SearchResultSection 
+                title="합주 모집" 
+                items={results.recruitEnsembles} 
+                morePath="/ensembles"
+                keyword={keyword}
+                renderItem={(item) => renderItem({ id: item.postId, title: item.title, subtitle: `요구 실력: ${item.skillLevel}`, path: `/ensembles/${item.postId}` })}
+              />
+            </div>
+          )}
+        </main>
+      </div>
     </div>
   );
 };

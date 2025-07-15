@@ -1,20 +1,22 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, useAnimation, type PanInfo } from "framer-motion";
 import VinylContents from "../../components/organisms/vinyl/VinylContents";
-import { getVideos } from "../../api";
+import { getVideoById } from "../../api";
 import type { Video } from "../../types/video";
 import Loading from "@/components/loading/Loading";
 import Modal from "@/components/molecules/modal/Modal";
 import PrimaryButton from "@/components/atoms/button/PrimaryButton";
 import SecondaryButton from "@/components/atoms/button/SecondaryButton";
 import Navigation from "@/components/layout/Navigation";
-import { useSizeStore } from "@/stores/sizeStore";
-import { useVinylStore } from "@/stores/vinylStore";
+import { useSizeStore } from '@/stores/sizeStore';
+import { useVinylStore } from '@/stores/vinylStore';
+import { useParams } from 'react-router-dom';
 
 const SWIPE_VELOCITY_THRESHOLD = 500;
 const DRAG_THRESHOLD = 100;
 
 const VinylPage: React.FC = () => {
+  const { videoId: videoId } = useParams<{ videoId: string }>(); 
   const { currentIndex, setCurrentIndex } = useVinylStore(); // 화면 전환 시 이전에 봤던 영상들이 다 보임
   const [containerWidth, setContainerWidth] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -42,8 +44,8 @@ const VinylPage: React.FC = () => {
       return;
     }
     const element = containerRef.current;
-
-    const resizeObserver = new ResizeObserver((entries) => {
+    
+    const resizeObserver = new ResizeObserver(entries => {
       if (entries[0]) {
         const { width, height } = entries[0].contentRect;
         // 2. React의 setState 대신 Zustand의 setSize 사용
@@ -60,24 +62,30 @@ const VinylPage: React.FC = () => {
 
   useEffect(() => {
     const fetchVideos = async () => {
+      if (!videoId) {
+        setIsLoading(false);
+        console.error("비디오 ID가 URL에 없습니다.");
+        return;
+      }
+
       // 5초 후 강제로 로딩을 종료하는 타임아웃 설정
       loadingTimeoutRef.current = setTimeout(() => {
         setIsLoading(false);
       }, 1);
 
       try {
-        const videoData = await getVideos(1, 10);
+        const videoData = await getVideoById(videoId);
 
-        console.log("vinyl page video");
+        console.log('vinyl specific page video')
         console.log(videoData);
 
-        if (videoData.length === 0) {
+        if (!videoData) {
           // 비디오가 없으면 바로 로딩 종료 및 타임아웃 해제
           if (loadingTimeoutRef.current)
             clearTimeout(loadingTimeoutRef.current);
           setIsLoading(false);
         }
-        setVideos(videoData);
+        setVideos([videoData]);
       } catch (error) {
         console.error("비디오 로딩 중 오류 발생:", error);
         if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
@@ -93,7 +101,7 @@ const VinylPage: React.FC = () => {
         clearTimeout(loadingTimeoutRef.current);
       }
     };
-  }, []);
+  }, [videoId]);
 
   useEffect(() => {
     if (!isLoading && containerRef.current) {
@@ -138,43 +146,15 @@ const VinylPage: React.FC = () => {
       window.ReactNativeWebView.postMessage(
         JSON.stringify({
           type: "startEnsemble",
-          data: {
+          payload: {
             token,
-            selectedVideoId: selectedVideoId,
+            childVideoId: selectedVideoId,
           },
         })
       );
       closeModal();
     } else {
       alert("React Native 환경에서만 합주하기가 가능합니다.");
-    }
-  };
-
-  const handleStartRecording = () => {
-    if (!selectedVideoId) {
-      alert("촬영할 비디오를 선택해주세요.");
-      return;
-    }
-
-    const video = videos.find((v) => v.id === selectedVideoId);
-    if (!video) {
-      alert("선택된 비디오 정보를 찾을 수 없습니다.");
-      closeModal();
-      return;
-    }
-
-    if (window.ReactNativeWebView) {
-      window.ReactNativeWebView.postMessage(
-        JSON.stringify({
-          type: "startRecording",
-          data: {
-            video: video,
-          },
-        })
-      );
-      closeModal();
-    } else {
-      alert("React Native 환경에서만 촬영하기가 가능합니다.");
     }
   };
 
@@ -286,7 +266,9 @@ const VinylPage: React.FC = () => {
           <PrimaryButton onClick={handleStartEnsemble}>
             갤러리에서 선택
           </PrimaryButton>
-          <PrimaryButton onClick={handleStartRecording}>촬영하기</PrimaryButton>
+          <PrimaryButton onClick={() => alert("촬영하기")}>
+            촬영하기
+          </PrimaryButton>
           <SecondaryButton onClick={closeModal}>닫기</SecondaryButton>
         </div>
       </Modal>

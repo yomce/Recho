@@ -1,3 +1,5 @@
+// src/components/atoms/avatar/Avatar.tsx
+
 import React from 'react';
 
 interface AvatarProps {

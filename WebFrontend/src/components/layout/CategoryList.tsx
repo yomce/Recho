@@ -1,4 +1,5 @@
 import React from "react";
+import { PRODUCT_CATEGORY_LABELS } from "@/types/product";
 
 interface CategoryListProps {
   categories?: string[];
@@ -6,19 +7,19 @@ interface CategoryListProps {
   selectedCategory?: string;
 }
 
-const defaultCategories = ['전체', '일렉', '베이스', '통기타', '클래식'];
+const productCategories = ["전체", ...Object.values(PRODUCT_CATEGORY_LABELS)];
 
 const CategoryList: React.FC<CategoryListProps> = ({
-  categories = defaultCategories,
+  categories = productCategories,
   onClickCategory,
   selectedCategory,
 }) => {
   const categoryImages: Record<string, string> = {
-    전체: 'https://placehold.co/60x60?text=All',
-    일렉: 'https://placehold.co/60x60?text=Electic',
-    베이스: 'https://placehold.co/64x64?text=Base',
-    통기타: 'https://placehold.co/64x64?text=Acoustic',
-    클래식: 'https://placehold.co/64x64?text=Classic',
+    전체: 'https://recho-img.s3.ap-northeast-2.amazonaws.com/default-img/all.jpg',
+    일렉기타: 'https://recho-img.s3.ap-northeast-2.amazonaws.com/default-img/electric.png',
+    베이스기타: 'https://recho-img.s3.ap-northeast-2.amazonaws.com/default-img/base.png', // public 폴더에 파일을 두고 이렇게 경로 지정
+    통기타: 'https://recho-img.s3.ap-northeast-2.amazonaws.com/default-img/acoustic.png',
+    클래식기타: 'https://recho-img.s3.ap-northeast-2.amazonaws.com/default-img/classical.png',
   };
 
   return (
@@ -30,15 +31,17 @@ const CategoryList: React.FC<CategoryListProps> = ({
             onClick={() => onClickCategory?.(category)}
             className="flex flex-col items-center flex-shrink-0 cursor-pointer"
           >
-            <img
-              src={categoryImages[category] || 'https://placehold.co/64x64?text=기타'}
-              alt={category}
-              className={`w-[64px] h-[64px] rounded-full transition-all duration-100 ease-in-out ${
-                selectedCategory === category
-                  ? "ring-1 ring-brand-primary"
-                  : "bg-gray-200 opacity-80"
-              }`}
-            />
+            <div className="w-[64px] h-[64px]">
+              <img
+                src={categoryImages[category] || 'https://placehold.co/64x64?text=기타'}
+                alt={category}
+                className={`w-full h-full object-cover bg-white rounded-full transition-all duration-100 ease-in-out ${
+                  selectedCategory === category
+                    ? "ring-1 ring-brand-primary"
+                    : "bg-white opacity-80"
+                }`}
+              />
+            </div>
             <span className="mt-1 text-[14px] text-black">{category}</span>
           </div>
         ))}

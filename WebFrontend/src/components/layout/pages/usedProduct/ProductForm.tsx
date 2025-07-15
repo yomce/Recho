@@ -1,23 +1,21 @@
 // src/components/ProductForm.tsx (새로 생성)
 
 import React from 'react';
-import { useState } from 'react';
 import { type UsedProductForm } from '../../../../types/product'
 import LocationSelector from '../../../map/LocationSelector';
 import InputLabel from '@/components/atoms/input/InputLabel';
 import CategorySelector from '@/components/atoms/input/CategorySelector';
+import { PRODUCT_CATEGORY_LABELS } from '@/types/product';
 import TextInputForm from '@/components/atoms/input/TextInputForm';
 import TextAreaInput from '@/components/atoms/input/TextAreaInput';
 import PrimaryButton from '@/components/atoms/button/PrimaryButton';
 import ImageUploadPreview from '@/components/atoms/input/ImageUploadPreveiw';
 
 
-const productCategories = [
-  { id: '1', name: '베이스기타' },
-  { id: '2', name: '일렉기타' },
-  { id: '3', name: '클래식기타' },
-  { id: '4', name: '통기타' },
-];
+const categoryLabels = Object.entries(PRODUCT_CATEGORY_LABELS).map(([key, name]: [string, string]) => ({
+  id: Number(key), // ProductCategory
+  name,
+}));
 
 const tradeCategories = [
   { id: 'IN_PERSON', name: '직거래' },
@@ -28,6 +26,8 @@ const tradeCategories = [
 interface ProductFormProps {
   formState: UsedProductForm;
   onFormChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
+  onCategoryChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  onTradeTypeChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   onFormSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   isLoading: boolean;
   errorMessage: string | null;
@@ -41,6 +41,8 @@ interface ProductFormProps {
 export const ProductForm: React.FC<ProductFormProps> = ({
   formState,
   onFormChange,
+  onCategoryChange,
+  onTradeTypeChange,
   onFormSubmit,
   isLoading,
   errorMessage,
@@ -50,9 +52,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   originalImages = [],
   onImageChange,
 }) => {
-  const [form1, setForm1] = useState({ categoryId: '' });
-  const [form2, setForm2] = useState({ TRADE_TYPE: '' });
-
   return (
     <form onSubmit={onFormSubmit}>
       <div className="mb-6">
@@ -84,9 +83,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         <InputLabel htmlFor="categoryId">카테고리</InputLabel>
         <CategorySelector
           name="productCategories"
-          value={String(form1.categoryId)}
-          onChange={(e) => setForm1({ categoryId: e.target.value })}
-          categories={productCategories}
+          // value={String(form1.categoryId)}
+          // onChange={(e) => setForm1({ categoryId: e.target.value })}
+          value={String(formState.categoryId)}
+          onChange={onCategoryChange}
+          categories={categoryLabels}
           showSubCategory={true}
         />
       </div>
@@ -108,9 +109,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       <div className="mb-6">
         <InputLabel htmlFor="tradeType">거래 방식</InputLabel>
         <CategorySelector
-          name="tradeCategories"
-          value={String(form2.TRADE_TYPE)}
-          onChange={(e) => setForm2({ TRADE_TYPE: e.target.value })}
+          name="tradeType"
+          value={String(formState.tradeType)}
+          onChange={onTradeTypeChange}
+          // onChange={(e) => setForm2({ TRADE_TYPE: e.target.value })}
           categories={tradeCategories}
           showSubCategory={false}
         />

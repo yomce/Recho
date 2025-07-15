@@ -60,7 +60,7 @@ export class VideosService {
     }
 
     const videos = await this.videoRepository.find({
-      where: { user: user },
+      where: { user: { id: id } }, // user 객체의 id를 직접 지정
       select: ['thumbnail_key'],
     });
 

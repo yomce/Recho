@@ -59,8 +59,6 @@ const FilterToast: React.FC<FilterToastProps> = ({ activeTab, toastId, onApplyFi
     }
   }, [activeTab]);
 
-  console.log('location:', selectedRegion)
-
   return (
     <div
       ref={containerRef}

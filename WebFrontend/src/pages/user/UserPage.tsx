@@ -80,6 +80,10 @@ const UserPage: React.FC = () => {
           id: `thumb-${index}`,
           thumbnailUrl: url,
         }));
+
+        console.log('API 응답 후 포맷팅된 썸네일 배열:', formattedThumbnails);
+        console.log('썸네일 배열의 길이:', formattedThumbnails.length);
+
         setThumbnails(formattedThumbnails);
         setError(null); // 다른 유저 페이지 로딩 성공 시 에러 상태 초기화
       } catch (err) {

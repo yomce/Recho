@@ -19,6 +19,7 @@ const CreateUsedProductPage: React.FC = () => {
     categoryId: 0,
     tradeType: TRADE_TYPE.IN_PERSON,
     locationId: '',
+    videoId: '',
   });
 
   const location = useLocationStore((state) => state.location);
@@ -87,6 +88,7 @@ const CreateUsedProductPage: React.FC = () => {
         tradeType: form.tradeType,
         locationId: String(locationId),
         imageIds: imageIds.map((img) => img.id),
+        videoId: form.videoId,
       };
       console.log(payload);
       const response = await axiosInstance.post('used-products', payload);

@@ -7,7 +7,6 @@ import CameraScreen from '../screens/CameraScreen';
 import VideoEditScreen from '../screens/VideoEditScreen';
 import MediaLibraryScreen from '../screens/MediaLibraryScreen';
 import VideoPreviewScreen from '../screens/VideoPreviewScreen';
-import NewVideoTestScreen from '../screens/NewVideoTestScreen';
 import RecordScreen from '../screens/RecordScreen'; // RecordScreen 임포트
 import FFmpegTestScreen from '../screens/FFmpegTestScreen'; // FFmpegTestScreen 임포트
 import WebScreen from '../screens/WebScreen'; // WebScreen 임포트
@@ -76,15 +75,7 @@ const AppNavigator = () => {
           }}
         />
         <Stack.Screen
-          name="NewVideoTest"
-          component={NewVideoTestScreen}
-          options={{
-            title: '합주 녹화 (Test)',
-            headerShown: false,
-          }}
-        />
-        <Stack.Screen
-          name="Record"
+          name="RecordScreen"
           component={RecordScreen}
           options={{
             title: '합주 녹화',

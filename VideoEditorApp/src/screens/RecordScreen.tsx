@@ -11,29 +11,28 @@ import {
 import { pick, types, isErrorWithCode } from '@react-native-documents/picker';
 import { CameraRoll } from '@react-native-camera-roll/camera-roll';
 import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
+import { RouteProp, useRoute } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 
-import { RootStackParamList, MediaItem, Video as ServerVideo } from '../types';
+import {
+  RootStackParamList,
+  MediaItem,
+  ServerVideo,
+} from '../navigation/types';
 import { downscaleVideoIfRequired } from '../utils/ffmpegFilters';
 import VideoPlaceholder from '../components/VideoPlaceholder';
 import CameraView from '../components/CameraView';
 import RecordButton from '../components/RecordButton';
 import InfoDisplay from '../components/Common/InfoDisplay';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RouteProp, useRoute } from '@react-navigation/native';
 import axiosInstance from '../api/axiosInstance';
 
 const { AudioSessionModule } = NativeModules;
 
-type RecordScreenNavigationProp = StackNavigationProp<
-  RootStackParamList,
-  'Record'
->;
+type RecordScreenProps = {
+  navigation: StackNavigationProp<RootStackParamList, 'RecordScreen'>;
+  route: RouteProp<RootStackParamList, 'RecordScreen'>;
+};
 
-interface Props {
-  navigation: RecordScreenNavigationProp;
-}
-
-// Styled Components 정의
 const ScreenContainer = styled(SafeAreaView)`
   flex: 1;
   background-color: black;
@@ -66,13 +65,8 @@ const VideoPlayerStyled = styled(Video)`
   right: 0;
 `;
 
-const RecordScreen: React.FC<Props> = ({ navigation }) => {
-  const route = useRoute<RouteProp<RootStackParamList, 'Record'>>();
+const RecordScreen: React.FC<RecordScreenProps> = ({ navigation, route }) => {
   const { video: parentVideo } = route.params;
-
-  useEffect(() => {
-    console.log('Parent video data received in RecordScreen:', parentVideo);
-  }, [parentVideo]);
 
   const {
     hasPermission: hasCameraPermission,
@@ -85,7 +79,6 @@ const RecordScreen: React.FC<Props> = ({ navigation }) => {
 
   const device = useCameraDevice('front');
   const camera = useRef<Camera>(null);
-
   const videoPlayer = useRef<VideoRef>(null);
 
   const [isRecording, setIsRecording] = useState(false);
@@ -97,24 +90,6 @@ const RecordScreen: React.FC<Props> = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isEncoding, setIsEncoding] = useState(false);
 
-  const checkAndRequestStoragePermission = async (): Promise<boolean> => {
-    const androidApiVersion =
-      typeof Platform.Version === 'string'
-        ? parseInt(Platform.Version, 10)
-        : Platform.Version;
-
-    if (Platform.OS === 'ios') {
-      const result = await request(PERMISSIONS.IOS.PHOTO_LIBRARY);
-      return result === RESULTS.GRANTED;
-    }
-    if (androidApiVersion >= 33) {
-      const result = await request(PERMISSIONS.ANDROID.READ_MEDIA_VIDEO);
-      return result === RESULTS.GRANTED;
-    }
-    const result = await request(PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE);
-    return result === RESULTS.GRANTED;
-  };
-
   useEffect(() => {
     const checkPermissions = async () => {
       await requestCameraPermission();
@@ -124,70 +99,11 @@ const RecordScreen: React.FC<Props> = ({ navigation }) => {
     checkPermissions();
 
     return () => {
-      if (
-        Platform.OS === 'ios' &&
-        AudioSessionModule &&
-        AudioSessionModule.deactivateAudioSession
-      ) {
+      if (Platform.OS === 'ios' && AudioSessionModule?.deactivateAudioSession) {
         AudioSessionModule.deactivateAudioSession();
       }
     };
   }, [requestCameraPermission, requestMicrophonePermission]);
-
-  const handleSelectVideo = async () => {
-    try {
-      if (parentVideo) {
-        Alert.alert(
-          '알림',
-          '이미 합주할 비디오가 선택되어 있습니다. 선택을 변경하시겠습니까?',
-          [
-            { text: '아니오', style: 'cancel' },
-            { text: '예', onPress: () => pickAndProcessVideo() },
-          ],
-        );
-      } else {
-        await pickAndProcessVideo();
-      }
-    } catch (err) {
-      if (isErrorWithCode(err)) {
-        console.log('사용자가 파일 선택을 취소했습니다.');
-      } else {
-        console.error('동영상 선택 또는 처리 중 에러:', err);
-        Alert.alert('오류', '동영상을 불러오는 중 문제가 발생했습니다.');
-      }
-    }
-  };
-
-  const pickAndProcessVideo = async () => {
-    try {
-      const result = await pick({
-        type: [types.video],
-        allowMultiSelection: false,
-      });
-      const pickedUri = result[0]?.uri;
-      if (!pickedUri) return;
-
-      setIsEncoding(true);
-      const finalVideoUri = await downscaleVideoIfRequired(pickedUri);
-
-      if (finalVideoUri) {
-        setSelectedVideoUri(finalVideoUri);
-        videoPlayer.current?.seek(0);
-        setIsVideoPaused(true);
-      } else {
-        setSelectedVideoUri(null);
-        console.log(
-          '비디오 처리가 취소되었거나 실패하여 선택이 해제되었습니다.',
-        );
-        Alert.alert(
-          '알림',
-          '비디오 처리가 실패하거나 취소되었습니다. 다른 비디오를 선택해주세요.',
-        );
-      }
-    } finally {
-      setIsEncoding(false);
-    }
-  };
 
   const handleRecordButtonPress = async () => {
     if (!camera.current) return;
@@ -204,11 +120,6 @@ const RecordScreen: React.FC<Props> = ({ navigation }) => {
       return;
     }
 
-    const hasStoragePermission = await checkAndRequestStoragePermission();
-    if (!hasStoragePermission) {
-      return;
-    }
-
     if (!selectedVideoUri) {
       Alert.alert('알림', '먼저 합주할 배경 비디오를 선택해주세요.');
       return;
@@ -217,11 +128,7 @@ const RecordScreen: React.FC<Props> = ({ navigation }) => {
     try {
       setIsLoading(true);
 
-      if (
-        Platform.OS === 'ios' &&
-        AudioSessionModule &&
-        AudioSessionModule.activateAudioSession
-      ) {
+      if (Platform.OS === 'ios' && AudioSessionModule?.activateAudioSession) {
         await AudioSessionModule.activateAudioSession();
       }
 
@@ -235,8 +142,7 @@ const RecordScreen: React.FC<Props> = ({ navigation }) => {
           setIsVideoPaused(true);
           if (
             Platform.OS === 'ios' &&
-            AudioSessionModule &&
-            AudioSessionModule.deactivateAudioSession
+            AudioSessionModule?.deactivateAudioSession
           ) {
             AudioSessionModule.deactivateAudioSession();
           }
@@ -294,8 +200,7 @@ const RecordScreen: React.FC<Props> = ({ navigation }) => {
           Alert.alert('오류', '녹화 중 문제가 발생했습니다.');
           if (
             Platform.OS === 'ios' &&
-            AudioSessionModule &&
-            AudioSessionModule.deactivateAudioSession
+            AudioSessionModule?.deactivateAudioSession
           ) {
             AudioSessionModule.deactivateAudioSession();
           }
@@ -319,6 +224,7 @@ const RecordScreen: React.FC<Props> = ({ navigation }) => {
       </ScreenContainer>
     );
   }
+
   if (!hasCameraPermission || !hasMicrophonePermission) {
     return (
       <ScreenContainer>
@@ -326,6 +232,7 @@ const RecordScreen: React.FC<Props> = ({ navigation }) => {
       </ScreenContainer>
     );
   }
+
   if (!device) {
     return (
       <ScreenContainer>
@@ -359,9 +266,9 @@ const RecordScreen: React.FC<Props> = ({ navigation }) => {
             {...videoPlayerProps}
           />
         ) : (
-          <VideoPlaceholder
-            isEncoding={isEncoding}
-            onSelectVideo={handleSelectVideo}
+          <InfoDisplay
+            message="합주할 비디오를 불러오는 중입니다..."
+            showIndicator={true}
           />
         )}
       </TopContainer>

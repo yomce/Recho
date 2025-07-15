@@ -8,8 +8,8 @@ import Modal from "@/components/molecules/modal/Modal";
 import PrimaryButton from "@/components/atoms/button/PrimaryButton";
 import SecondaryButton from "@/components/atoms/button/SecondaryButton";
 import Navigation from "@/components/layout/Navigation";
-import { useSizeStore } from '@/stores/sizeStore';
-import { useVinylStore } from '@/stores/vinylStore';
+import { useSizeStore } from "@/stores/sizeStore";
+import { useVinylStore } from "@/stores/vinylStore";
 
 const SWIPE_VELOCITY_THRESHOLD = 500;
 const DRAG_THRESHOLD = 100;
@@ -42,8 +42,8 @@ const VinylPage: React.FC = () => {
       return;
     }
     const element = containerRef.current;
-    
-    const resizeObserver = new ResizeObserver(entries => {
+
+    const resizeObserver = new ResizeObserver((entries) => {
       if (entries[0]) {
         const { width, height } = entries[0].contentRect;
         // 2. React의 setState 대신 Zustand의 setSize 사용
@@ -68,7 +68,7 @@ const VinylPage: React.FC = () => {
       try {
         const videoData = await getVideos(1, 10);
 
-        console.log('vinyl page video')
+        console.log("vinyl page video");
         console.log(videoData);
 
         if (videoData.length === 0) {
@@ -138,15 +138,43 @@ const VinylPage: React.FC = () => {
       window.ReactNativeWebView.postMessage(
         JSON.stringify({
           type: "startEnsemble",
-          payload: {
+          data: {
             token,
-            childVideoId: selectedVideoId,
+            selectedVideoId: selectedVideoId,
           },
         })
       );
       closeModal();
     } else {
       alert("React Native 환경에서만 합주하기가 가능합니다.");
+    }
+  };
+
+  const handleStartRecording = () => {
+    if (!selectedVideoId) {
+      alert("촬영할 비디오를 선택해주세요.");
+      return;
+    }
+
+    const video = videos.find((v) => v.id === selectedVideoId);
+    if (!video) {
+      alert("선택된 비디오 정보를 찾을 수 없습니다.");
+      closeModal();
+      return;
+    }
+
+    if (window.ReactNativeWebView) {
+      window.ReactNativeWebView.postMessage(
+        JSON.stringify({
+          type: "startRecording",
+          data: {
+            video: video,
+          },
+        })
+      );
+      closeModal();
+    } else {
+      alert("React Native 환경에서만 촬영하기가 가능합니다.");
     }
   };
 
@@ -258,9 +286,7 @@ const VinylPage: React.FC = () => {
           <PrimaryButton onClick={handleStartEnsemble}>
             갤러리에서 선택
           </PrimaryButton>
-          <PrimaryButton onClick={() => alert("촬영하기")}>
-            촬영하기
-          </PrimaryButton>
+          <PrimaryButton onClick={handleStartRecording}>촬영하기</PrimaryButton>
           <SecondaryButton onClick={closeModal}>닫기</SecondaryButton>
         </div>
       </Modal>

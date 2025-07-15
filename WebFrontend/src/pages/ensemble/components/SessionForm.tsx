@@ -33,7 +33,7 @@ export const SessionForm: React.FC<SessionFormProps> = ({
   const inputStyles = "w-full py-3 px-4 bg-brand-inverse border border-gray-300 rounded-md box-border text-caption placeholder:text-gray-400 focus:border-[var(--color-brand-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-brand-primary)]";
 
   return (
-    <div className="w-full p-4 mb-4 border border-gray-300 rounded-xl shadow-sm bg-white space-y-4">
+    <div className="w-full p-4 mb-4 border border-gray-300 rounded-xl bg-white space-y-4">
       <div className="">
         <div className="flex flex-col space-y-1">
           <div className="flex flex-row justify-between items-end">

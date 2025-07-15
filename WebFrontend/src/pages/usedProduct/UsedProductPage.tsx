@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { type UsedProduct, type PaginatedUsedProductResponse } from '../../types/product';
+import { type UsedProduct, type PaginatedUsedProductResponse, CATEGORY_LABEL_TO_ID } from '../../types/product';
 import axiosInstance from '@/services/axiosInstance';
-
 import CategoryList from '@/components/layout/CategoryList';
 import ImageCard from '@/components/atoms/card/ImageCard';
 import FloatingWriteButton from '@/components/atoms/button/FloatingWriteButton';
@@ -19,7 +18,7 @@ const UsedProductPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [nextCursor, setNextCursor] = useState<Cursor | null>(null);
   const [hasNextPage, setHasNextPage] = useState(true);
-  const [selected, setSelected] = useState("전체");
+  const [selected, setSelected] = useState<string>("전체");
 
   const fetchItems = useCallback(async (isInitialFetch: boolean) => {
     if (loading || !hasNextPage) return;
@@ -29,6 +28,14 @@ const UsedProductPage: React.FC = () => {
 
     try {
       const params = new URLSearchParams({ limit: '12' });
+
+      if(selected !== "전체") {
+        const categoryId = CATEGORY_LABEL_TO_ID[selected];
+        if(categoryId) {
+          params.append("categoryId", String(categoryId));
+        }
+      }
+
       if (!isInitialFetch && nextCursor) {
         params.append('lastProductId', String(nextCursor.lastProductId));
         params.append('lastCreatedAt', nextCursor.lastCreatedAt);
@@ -41,7 +48,11 @@ const UsedProductPage: React.FC = () => {
 
       const { data, nextCursor: newCursor, hasNextPage: newHasNextPage } = response.data;
 
-      setItems(prev => (isInitialFetch ? data : [...prev, ...data]));
+      setItems(prev => (
+        isInitialFetch 
+        ? data 
+        : [...prev, ...data.filter(item => !prev.some(p => p.productId === item.productId))]
+      ));
       setNextCursor(newCursor ?? null);
       setHasNextPage(newHasNextPage);
 
@@ -51,14 +62,21 @@ const UsedProductPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [loading, hasNextPage, nextCursor]);
+  }, [loading, hasNextPage, nextCursor, selected]);
 
   useEffect(() => {
     fetchItems(true);
-  }, []);
+  }, [selected]);
 
   const handleLoadMore = () => {
     fetchItems(false);
+  };
+
+  const handleCategoryClick = (category: string) => {
+    setSelected(category);
+    setNextCursor(null);
+    setHasNextPage(true);
+    fetchItems(true);
   };
 
   return (
@@ -70,7 +88,7 @@ const UsedProductPage: React.FC = () => {
             {/* 카테고리 */}
             <CategoryList
               selectedCategory={selected}
-              onClickCategory={(c) => setSelected(c)}
+              onClickCategory={handleCategoryClick}
             />
               {/* 게시물 그리드 */}
             <div className="grid grid-cols-1 gap-[16px] max-w-[410px] mx-auto mt-[40px] mb-[52px]">

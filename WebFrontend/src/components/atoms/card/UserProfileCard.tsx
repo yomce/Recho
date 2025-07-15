@@ -7,6 +7,7 @@ interface UserProfileCardProps {
   location: string;
   status?: "판매중" | "예약중" | "판매완료";
   statusSlot?: React.ReactNode;   // 상태바 대신 버튼 같은 컴포넌트를 받을 수 있음
+  onClick?: () => void;
 }
 
 export const baseStatusStyle = "rounded-[10px] px-4 py-1 text-[14px] whitespace-nowrap";
@@ -47,6 +48,7 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
   location,
   status,
   statusSlot,
+  onClick,
 }) => {
   const style = status ? statusStyleMap[status] : { bg: "", text: "", hover: "" };
   
@@ -65,15 +67,16 @@ const UserProfileCard: React.FC<UserProfileCardProps> = ({
           <p className="text-sm text-left text-gray-500">{location}</p>
         </div>
       </div>
-      { statusSlot ? (
+      { statusSlot !== undefined ? (
         <>{statusSlot}</>
-      ) : (
-        <span
+      ) : status ? (
+        <button
         className={`${baseStatusStyle} ${style.bg ?? ""} ${style.text ?? ""} ${'hover' in style ? style.hover : ""}`}
+        onClick={onClick}
         >
           {status}
-        </span>
-      )}
+        </button>
+      ) : null }
     </div>
   );
 };

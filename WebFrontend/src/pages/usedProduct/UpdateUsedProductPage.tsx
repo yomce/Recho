@@ -20,7 +20,7 @@ const UpdateUsedProductPage: React.FC = () => {
     title: '', 
     description: '', 
     price: '', 
-    categoryId: '',
+    categoryId: 0,
     tradeType: TRADE_TYPE.IN_PERSON, 
     locationId: '',
   });
@@ -52,7 +52,7 @@ const UpdateUsedProductPage: React.FC = () => {
           title: product.title,
           description: product.description,
           price: String(product.price),
-          categoryId: String(product.categoryId),
+          categoryId: product.categoryId,
           tradeType: product.tradeType,
           locationId: String(product.location.locationId),
           // imageIds: imageIds.map((img) => img.id),
@@ -102,7 +102,7 @@ const UpdateUsedProductPage: React.FC = () => {
       const payload = {
         ...form,
         price: priceAsNumber,
-        categoryId: parseInt(form.categoryId, 10),
+        categoryId: form.categoryId,
         locationId: locationId,
         imageIds: imageIds.map((img) => img.id),
       };
@@ -127,6 +127,8 @@ const UpdateUsedProductPage: React.FC = () => {
         <ProductForm
           formState={form}
           onFormChange={handleChange}
+          onCategoryChange={handleChange}
+          onTradeTypeChange={handleChange}
           onFormSubmit={handleSubmit}
           isLoading={loading}
           errorMessage={error}

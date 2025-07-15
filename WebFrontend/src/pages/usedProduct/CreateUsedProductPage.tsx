@@ -16,7 +16,7 @@ const CreateUsedProductPage: React.FC = () => {
     title: '',
     description: '',
     price: '',
-    categoryId: '1',
+    categoryId: 0,
     tradeType: TRADE_TYPE.IN_PERSON,
     locationId: '',
   });
@@ -39,6 +39,21 @@ const CreateUsedProductPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [imageIds, setImageIds] = useState<{ id: number; url: string }[]>([]);
+
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setForm((prev) => ({
+      ...prev,
+      categoryId: Number(e.target.value),
+    }));
+  }
+
+
+  const handleTradeTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setForm((prev) => ({
+      ...prev,
+      tradeType: e.target.value as TRADE_TYPE,
+    }));
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -68,12 +83,12 @@ const CreateUsedProductPage: React.FC = () => {
         title: form.title,
         description: form.description,
         price: priceAsNumber,
-        categoryId: parseInt(form.categoryId, 10),
+        categoryId: Number(form.categoryId),
         tradeType: form.tradeType,
         locationId: String(locationId),
         imageIds: imageIds.map((img) => img.id),
       };
-
+      console.log(payload);
       const response = await axiosInstance.post('used-products', payload);
       alert('상품이 성공적으로 등록되었습니다!');
       navigate(`/used-products/${response.data.productId}`);
@@ -99,6 +114,8 @@ const CreateUsedProductPage: React.FC = () => {
         <ProductForm
           formState={form}
           onFormChange={handleChange}
+          onCategoryChange={handleCategoryChange}
+          onTradeTypeChange={handleTradeTypeChange}
           onFormSubmit={handleSubmit}
           isLoading={loading}
           errorMessage={error}

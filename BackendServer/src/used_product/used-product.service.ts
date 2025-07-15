@@ -11,6 +11,7 @@ import { UpdateUsedProductDto } from './dto/update-used-product.dto';
 import { PaginatedUsedProductResponse } from './dto/paginated-used-product.response.dto';
 import { Location } from 'src/map/entities/location.entity';
 import { ImageService } from 'src/image/image.service';
+import { Image } from 'src/image/entities/image.entity';
 
 
 @Injectable()
@@ -22,6 +23,8 @@ export class UsedProductService {
     @InjectRepository(Location)
     private readonly locationRepo: Repository<Location>,
     
+    @InjectRepository(Image)
+    private readonly imageRepo : Repository<Image>,
     private readonly imageService: ImageService,
   ) {}
 
@@ -29,6 +32,7 @@ export class UsedProductService {
     limit: number,
     lastProductId?: number,
     lastCreatedAt?: Date,
+    categoryId?: number,
   ): Promise<PaginatedUsedProductResponse> {
     const realLimit = limit + 1;
     const queryBuilder = this.usedProductRepo.createQueryBuilder('usedProduct');
@@ -39,6 +43,10 @@ export class UsedProductService {
         '(usedProduct.createdAt < :lastCreatedAtDate) OR (usedProduct.createdAt = :lastCreatedAtDate AND usedProduct.productId < :lastProductId)',
         { lastCreatedAtDate, lastProductId },
       );
+    }
+
+    if(categoryId) {
+      queryBuilder.andWhere('usedProduct.categoryId = :categoryId', { categoryId });
     }
 
     const results = await queryBuilder
@@ -59,8 +67,34 @@ export class UsedProductService {
           }
         : undefined;
 
+    // 대표 이미지 추출
+    const productIds = data.map((p) => p.productId);
+
+    // 참조하는 이미지가 없는 경우를 아래 쿼리를 실행하지 않음
+    if (productIds.length === 0) return { data: [], nextCursor, hasNextPage };
+
+    const thumbnails = await this.imageRepo
+      .createQueryBuilder('image')
+      .where('image.refPostId IN (:...productIds)', { productIds })
+      .andWhere('image.uploadOrder = 0')
+      .getMany();
+
+    const imageMap = new Map<number, string>();
+    thumbnails.forEach((img) => {
+      if(img.refPostId !== null && !imageMap.has(img.refPostId)){
+        imageMap.set(Number(img.refPostId), img.imageUrl);
+      }
+    });
+
+    const dataWithThumbnails = data.map((product) => ({
+      ...product,
+      imageUrl: imageMap.get(product.productId) || null,
+    }));
+
+    // console.log('[쿼리 결과 Datawiththumbnails]', dataWithThumbnails);
+
     return {
-      data,
+      data: dataWithThumbnails,
       nextCursor,
       hasNextPage,
     };
@@ -204,5 +238,14 @@ export class UsedProductService {
 
   async incrementViewCount(id: number): Promise<void> {
     await this.usedProductRepo.increment({ productId: id }, 'viewCount', 1);
+  }
+
+  async updateSalesStatus(productId: number, id: string, status: Status) {
+    const product = await this.usedProductRepo.findOneBy({ productId: productId });
+    if (!product) throw new NotFoundException(`Product with ID #${productId} not found.`);
+    if (id !== product.id) throw new ForbiddenException(`Unauthorized`);
+
+    product.status = status;
+    return this.usedProductRepo.save(product);
   }
 }

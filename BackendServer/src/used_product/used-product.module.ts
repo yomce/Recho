@@ -6,11 +6,12 @@ import { UsedProduct } from './entities/used-product.entity';
 import { LocationModule } from 'src/map/location.module';
 import { Location } from '../map/entities/location.entity';
 import { ImageModule } from 'src/image/image.module';
+import { Image } from 'src/image/entities/image.entity';
 
 // -- location import 추가합니다 --
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UsedProduct, Location]),
+    TypeOrmModule.forFeature([UsedProduct, Location, Image]),
     forwardRef(() => LocationModule),
     ImageModule,
   ],

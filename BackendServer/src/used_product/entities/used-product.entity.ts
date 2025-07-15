@@ -12,15 +12,15 @@ import { Location } from 'src/map/entities/location.entity';
 
 // 👇 STATUS Enum에 문자열 값을 할당합니다.
 export enum STATUS {
-  FOR_SALE,
-  IN_PROGRESS,
-  SOLD,
+  FOR_SALE = 'FOR_SALE',
+  IN_PROGRESS = 'IN_PROGRESS',
+  SOLD = 'SOLD',
 }
 
 // 👇 TRADE_TYPE Enum에 문자열 값을 할당합니다.
 export enum TRADE_TYPE {
-  IN_PERSON,
-  DELIVERY,
+  IN_PERSON = 'IN_PERSON',
+  DELIVERY = 'DELIVERY',
 }
 
 @Entity({ name: 'used_products' })

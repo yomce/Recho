@@ -1,6 +1,6 @@
 // src/pages/community/PostDetailPage.tsx
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams} from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import axiosInstance from '../../services/axiosInstance'; // 인증이 필요한 요청을 위한 Axios 인스턴스
@@ -82,6 +82,8 @@ const PostDetailPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const commentsEndRef = useRef<HTMLDivElement>(null);
+
   // 데이터 로딩 로직 
   useEffect(() => {
     if (!id) {
@@ -107,7 +109,6 @@ const PostDetailPage: React.FC = () => {
     };
     loadData();
   }, [id]);
-
   
   // 댓글 등록 로직
   const handleCommentSubmit = async (commentText: string) => {
@@ -122,7 +123,10 @@ const PostDetailPage: React.FC = () => {
             content: commentText,
         });
         setComments(prevComments => [...prevComments, createdComment]);
-        // 입력창 비우기는 MessageInputForm이 스스로 처리하므로 여기선 필요 없습니다.
+        
+        setTimeout(() => {
+          commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
     } catch (error) {
         alert('댓글 등록에 실패했습니다.');
         console.error(error);
@@ -181,6 +185,7 @@ const PostDetailPage: React.FC = () => {
                     formatDate={formatDate}
                   />
               ))}
+              <div ref={commentsEndRef} />
           </div>
         </section>
       </div> {/* <--- 1. 스크롤 영역 div가 여기서 끝납니다. */}

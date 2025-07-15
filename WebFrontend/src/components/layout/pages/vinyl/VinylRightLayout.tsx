@@ -19,7 +19,7 @@ const VinylRightLayout: React.FC<VideoActionPanelProps> = ({ likes, comments, di
       style={{
         position: 'absolute',
         top: `${divHeight * 0.42}px`,
-        right: '24px',
+        right: '16px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',

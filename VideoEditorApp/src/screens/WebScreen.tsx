@@ -179,6 +179,36 @@ const WebScreen: React.FC = () => {
               console.log(...H_DATA);
           }
           break;
+        case 'startRecording': {
+          const { video: webVideo } = message.data;
+          if (webVideo) {
+            // Web에서 받은 camelCase 데이터를 RN의 snake_case 타입으로 변환
+            const rnVideo: ServerVideo = {
+              id: webVideo.id,
+              user_id: webVideo.user.id,
+              parent_video_id: webVideo.parent_video_id,
+              depth: webVideo.depth,
+              like_count: webVideo.likeCount,
+              comment_count: webVideo.commentCount,
+              created_at: webVideo.created_at,
+              source_video_key: webVideo.source_video_key,
+              results_video_key: webVideo.results_video_key,
+              thumbnail_key: webVideo.thumbnail_key,
+              video_url: webVideo.videoUrl,
+              thumbnail_url: webVideo.thumbnailUrl,
+              user: {
+                id: webVideo.user.id,
+                nickname: webVideo.user.nickname,
+                profile_image_url: webVideo.user.profile_image_url,
+              },
+              startTime: webVideo.startTime,
+              endTime: webVideo.endTime,
+              timelinePosition: webVideo.timelinePosition,
+            };
+            navigation.navigate('Record', { video: rnVideo });
+          }
+          break;
+        }
         case 'CREATE_VIDEO':
           // '새 비디오 만들기' 버튼 클릭 시
           navigation.navigate('Home');
@@ -192,13 +222,12 @@ const WebScreen: React.FC = () => {
           await pickVideos(false); // 단일 비디오 선택
           break;
         case 'startEnsemble': {
-          const { token, childVideoId } = message.payload;
+          const { token, selectedVideoId } = message.data;
           if (token) {
             await AsyncStorage.setItem('accessToken', token);
           }
-          if (childVideoId) {
-            // 이제 API를 호출하는 대신, childVideoId를 가지고 바로 pickVideos를 호출합니다.
-            await pickVideos(false, childVideoId);
+          if (selectedVideoId) {
+            await pickVideos(false, selectedVideoId);
           }
           break;
         }

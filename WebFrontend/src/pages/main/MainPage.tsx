@@ -1,5 +1,5 @@
 // src/pages/main/MainPage.tsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { useUiStore } from "@/stores/uiStore";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -13,6 +13,8 @@ import PrimaryButton from "@/components/atoms/button/PrimaryButton";
 import SecondaryButton from "@/components/atoms/button/SecondaryButton";
 import CategoryIcon from "@/components/organisms/CategoryIcon";
 import PromotionCarousel from "@/components/organisms/PromotionCarousel";
+import { fetchPromotions, postPromotionByUrl } from '@/api';
+import type { Promotion } from '@/types/promotion';
 
 // --- Helper Components ---
 const QuickAction: React.FC<{
@@ -43,6 +45,9 @@ const MainPage: React.FC = () => {
     isVinylCreateModalOpen,
     actions: { closeVinylCreateModal },
   } = useUiStore();
+  const [promotionData, setPromotionData] = useState<Promotion[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   // --- 페이지 컨텐츠에 필요한 핸들러들만 남깁니다 ---
   const handleGoToUsedProducts = () => navigate("/used-products");
   const handleGoToEnsemble = () => navigate("/ensembles");
@@ -66,27 +71,41 @@ const MainPage: React.FC = () => {
     toast.success("앱에서 갤러리를 확인해주세요!");
     closeVinylCreateModal();
   };
-  // 캐러셀에 표시할 임시 데이터
-  const promotionData = [
-    {
-      id: 1,
-      imageUrl: "https://placehold.co/600x800/FFD700/000000?text=Let's+Rock",
-      title: "렛츠락 페스티벌",
-      subtitle: "2025.9.6 - 2025.9.7",
-    },
-    {
-      id: 2,
-      imageUrl: "https://placehold.co/600x800/87CEEB/FFFFFF?text=Concert",
-      title: "yomce 단독 콘서트",
-      subtitle: "서울, 대한민국",
-    },
-    {
-      id: 3,
-      imageUrl: "https://placehold.co/600x800/32CD32/FFFFFF?text=Musical",
-      title: "새로운 뮤지컬",
-      subtitle: "2025.10.1 - 2025.12.31",
-    },
-  ];
+
+  const handleSecretAddClick = async () => {
+    const url = window.prompt("추가할 공연의 전체 URL을 입력하세요:");
+
+    // 사용자가 URL을 입력하고 '확인'을 누른 경우
+    if (url) {
+      setIsSubmitting(true); // 로딩 시작
+      try {
+        await postPromotionByUrl(url);
+        toast.success("프로모션이 성공적으로 추가되었습니다! 목록을 새로고침합니다.");
+        // 성공 시 페이지를 새로고침하여 추가된 목록을 바로 확인
+        window.location.reload();
+      } catch (error: any) {
+        toast.error(error.message || "프로모션 추가 중 오류가 발생했습니다.");
+      } finally {
+        setIsSubmitting(false); // 로딩 종료
+      }
+    }
+  };
+
+  useEffect(() => {
+    const loadPromotions = async () => {
+      try {
+        const data = await fetchPromotions();
+        setPromotionData(data);
+      } catch (error) {
+        console.error(error);
+        toast.error("프로모션 정보를 불러오는데 실패했습니다.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadPromotions();
+  }, []);
 
   const handleSearchClick = () => navigate("/search");
   const handleCategoryClick = () => navigate("/category");
@@ -104,7 +123,25 @@ const MainPage: React.FC = () => {
       </div>
 
       <div className="mx-4 mt-2 rounded-card bg-brand-default p-4">
-        <PromotionCarousel items={promotionData} />
+        {isLoading ? (
+          // 1. 로딩 중일 때 표시할 스켈레톤
+          <div className="h-[200px] w-full animate-pulse rounded-lg bg-gray-200"></div>
+        ) : promotionData.length === 0 ? (
+          // 2. 로딩 후 데이터가 없을 때 표시할 플레이스홀더
+          <div className="flex h-[200px] flex-col items-center justify-center text-center">
+            {/* Icon 컴포넌트가 있다면 활용하여 시각적 효과를 줄 수 있습니다. */}
+            {/* <Icon name="megaphone" size={40} className="text-gray-400" /> */}
+            <p className="mt-2 font-medium text-gray-500">
+              진행 중인 프로모션이 없습니다.
+            </p>
+            <p className="mt-1 text-sm text-gray-400">
+              새로운 공연 정보를 추가해보세요!
+            </p>
+          </div>
+        ) : (
+          // 3. 데이터가 있을 때 실제 캐러셀 표시
+          <PromotionCarousel items={promotionData} />
+        )}
       </div>
 
       <CategoryIcon>
@@ -164,6 +201,21 @@ const MainPage: React.FC = () => {
           onClick={handleGoToPromotions}
         />
       </CategoryIcon>
+
+      <button
+        onClick={handleSecretAddClick}
+        disabled={isSubmitting}
+        className="fixed bottom-5 right-5 z-50 h-10 w-10 rounded-full bg-gray-700 p-2 text-white opacity-40 shadow-lg transition-all hover:opacity-100 hover:scale-110 disabled:cursor-not-allowed disabled:bg-gray-400"
+        aria-label="새 프로모션 추가"
+      >
+        {isSubmitting ? (
+          // 로딩 중일 때 스피너 아이콘 (예시)
+          <div className="h-full w-full animate-spin rounded-full border-2 border-t-transparent"></div>
+        ) : (
+          // 평상시 아이콘
+          <Icon name="plus" size={24} />
+        )}
+      </button>
 
       <Modal
         isOpen={isVinylCreateModalOpen}

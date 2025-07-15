@@ -78,7 +78,7 @@ export class User {
 
   // 소셜로그인 용
   @Column({ name: 'provider', type: 'varchar', length: 50, nullable: true })
-  provider?: string; // 예: 'kakao', 'google'
+  provider?: string; // 예: 'kakao', 'google', 'admin'
 
   @Column({ name: 'provider_id', type: 'varchar', length: 255, nullable: true })
   providerId?: string; // 소셜 로그인 플랫폼에서 제공하는 고유 ID

@@ -1,6 +1,8 @@
 import type { CONTENT_TYPE, LikePayload } from '@/types/likes';
 import axiosInstance from "../services/axiosInstance";
 import type { Video } from "../types/video";
+import type { Promotion } from '@/types/promotion';
+import axios from 'axios';
 
 // likes나 createdAt으로 정렬 할 듯
 // 무한 스크롤과 간단한 추천 시스템 추가 필요
@@ -43,4 +45,32 @@ export const togglePostLike = async (contentType: CONTENT_TYPE, postId: number):
 
   const response = await axiosInstance.post(`/likes`, newLikePayload);
   return response.data;
+};
+
+
+
+export const fetchPromotions = async (): Promise<Promotion[]> => {
+  try {
+    const response = await axiosInstance.get<Promotion[]>(`scraping/promotions`);
+    // axios는 응답 데이터를 data 속성에 담아 반환합니다.
+    return response.data;
+  } catch (error) {
+    // 에러를 콘솔에 출력하고, 호출한 쪽에서 처리할 수 있도록 다시 던집니다.
+    console.error('프로모션 정보를 불러오는데 실패했습니다:', error);
+    throw error;
+  }
+};
+
+export const postPromotionByUrl = async (url: string): Promise<Promotion> => {
+  try {
+    const response = await axiosInstance.post<Promotion>(`scraping/promotion`, { url });
+    return response.data;
+  } catch (error) {
+    console.error('프로모션 추가에 실패했습니다:', error);
+    // axios 에러 객체에서 서버가 보낸 메시지를 사용하는 것이 더 좋습니다.
+    if (axios.isAxiosError(error) && error.response) {
+      throw new Error(error.response.data.message || '서버 요청에 실패했습니다.');
+    }
+    throw error;
+  }
 };

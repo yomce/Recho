@@ -19,3 +19,14 @@ export const getVideos = async (page = 1, limit = 10): Promise<Video[]> => {
     return [];
   }
 };
+
+// --- 추가된 함수 ---
+/**
+ * ID로 특정 비디오 하나의 정보를 가져옵니다.
+ * @param videoId 비디오의 ID
+ * @returns 비디오 객체
+ */
+export const getVideoById = async (videoId: string): Promise<Video> => {
+  const response = await axiosInstance.get<Video>(`videos/${videoId}`);
+  return response.data;
+};

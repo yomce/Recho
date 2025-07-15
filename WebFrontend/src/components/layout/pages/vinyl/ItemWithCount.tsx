@@ -30,7 +30,7 @@ const IconWithCount: React.FC<IconWithCountProps> = ({
 
   const countStyle: React.CSSProperties = {
     display: 'block',
-    fontSize: '1rem',
+    fontSize: '13px',
     margin: '0px',
     padding: '0px',
     color: 'rgba(255, 255, 255, 0.8)',

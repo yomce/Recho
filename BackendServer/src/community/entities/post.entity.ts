@@ -5,20 +5,18 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToMany, 
-  ManyToOne, 
-  JoinColumn, 
-
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { Comment } from './comment.entity';
-import { PostLike } from './post-like.entity';
+import { Like } from '../../likes/entities/like.entity';
 import { User } from '../../auth/user/user.entity'; // ✅ User 엔티티 임포트
-
 
 @Entity('posts')
 export class Post {
   @PrimaryGeneratedColumn()
-  id: number;
+  postId: number;
 
   @Column({ length: 100 })
   author: string; // 표시용 닉네임은 그대로 유지
@@ -62,6 +60,6 @@ export class Post {
   @OneToMany(() => Comment, (comment) => comment.post)
   comments: Comment[];
 
-  @OneToMany(() => PostLike, (like) => like.post)
-  likes: PostLike[];
+  @OneToMany(() => Like, (like) => like.post)
+  likes: Like[];
 }

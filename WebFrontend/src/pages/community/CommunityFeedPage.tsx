@@ -8,10 +8,12 @@ import { useAuthStore } from '../../stores/authStore';
 import Icon from '../../components/atoms/icon/Icon';
 import PostLayout from '../../components/layout/PostLayout';
 import FloatingWriteButton from '../../components/atoms/button/FloatingWriteButton';
+import { togglePostLike } from '@/api';
+import { CONTENT_TYPE } from '@/types/likes';
 
 // --- 타입 정의 ---
 export interface Post {
-  id: number;
+  postId: number;
   userId: string; 
   author: string;
   authorProfileUrl?: string;
@@ -21,7 +23,7 @@ export interface Post {
   thumbnailUrl?: string;
   likeCount: number;      
   commentCount: number;
-  isLiked: boolean;      
+  userLiked: boolean;      
   createdAt: string;
   updatedAt: string;
 }
@@ -32,16 +34,14 @@ const fetchPosts = async (category: string): Promise<Post[]> => {
   const params = category && category !== '전체' ? { category } : {};
   
   const response = await axiosInstance.get('/posts', { params });
+
+  console.log('feed page data')
+  console.log(response.data);
   return response.data;
 };
 
 const deletePost = async (id: number): Promise<void> => {
   await axiosInstance.delete(`/posts/${id}`);
-};
-
-const togglePostLike = async (postId: number): Promise<{ liked: boolean; likeCount: number }> => {
-  const response = await axiosInstance.post(`/posts/${postId}/like`);
-  return response.data;
 };
 
 // --- 유틸리티 함수 ---
@@ -94,7 +94,7 @@ const CommunityFeedPage: React.FC = () => {
     if (window.confirm('정말로 이 글을 삭제하시겠습니까?\n관련된 모든 댓글도 함께 삭제됩니다.')) {
         try {
             await deletePost(postId);
-            setPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+            setPosts(prevPosts => prevPosts.filter(post => post.postId !== postId));
             alert('게시글이 삭제되었습니다.');
         } catch (error) {
             alert('게시글 삭제에 실패했습니다.');
@@ -109,27 +109,28 @@ const CommunityFeedPage: React.FC = () => {
         alert('로그인이 필요합니다.');
         return;
     }
-
-    setPosts(currentPosts => 
+    
+    try {
+        await togglePostLike(CONTENT_TYPE.COMMUNITY, postId);
+        setPosts(currentPosts => 
         currentPosts.map(p => {
-            if (p.id === postId) {
-                const iLikedIt = !p.isLiked;
+            if (p.postId === postId) {
+                const iLikedIt = !p.userLiked;
                 
                 // ⭐️ 이 부분을 수정합니다.
                 const currentLikes = p.likeCount || 0; // p.likeCount가 없으면 0을 사용
                 const newLikeCount = iLikedIt ? currentLikes + 1 : Math.max(0, currentLikes - 1); // 0 밑으로 내려가지 않도록 방지
 
-                return { ...p, isLiked: iLikedIt, likeCount: newLikeCount };
+                return { ...p, userLiked: iLikedIt, likeCount: newLikeCount };
             }
             return p;
         })
     );
-    
-    try {
-        await togglePostLike(postId);
     } catch (error) {
         alert('오류가 발생했습니다.');
     }
+
+    
   };
 
   return (
@@ -168,9 +169,9 @@ const CommunityFeedPage: React.FC = () => {
           ) : (
             posts.map((post) => (
               <article
-                key={post.id}
+                key={post.postId}
                 className="cursor-pointer bg-brand-default rounded-card p-4 hover:scale-101"
-                onClick={() => navigate(`/community/${post.id}`)}
+                onClick={() => navigate(`/community/${post.postId}`)}
               >
                 {/* 게시글 상단 정보 */}
                 <div className="flex items-center gap-3 mb-3">
@@ -182,7 +183,7 @@ const CommunityFeedPage: React.FC = () => {
                     </p>
                   </div>
                   {currentUser && currentUser.id === post.userId && (
-                    <button onClick={(e) => handleDeletePost(e, post.id)} className="text-footnote text-brand-disabled hover:text-brand-error-text">삭제</button>
+                    <button onClick={(e) => handleDeletePost(e, post.postId)} className="text-footnote text-brand-disabled hover:text-brand-error-text">삭제</button>
                   )}
                 </div>
 
@@ -196,10 +197,10 @@ const CommunityFeedPage: React.FC = () => {
                 {/* 게시글 하단 정보 (좋아요, 댓글) */}
                 <div className="flex items-center gap-6 mt-4 pt-3 border-t border-brand-frame">
                   <button
-                    className={`flex items-center gap-1.5 text-caption transition-colors ${post.isLiked ? 'text-red-500' : 'text-brand-gray hover:text-red-400'}`}
-                    onClick={(e) => handleToggleLike(e, post.id)}
+                    className={`flex items-center gap-1.5 text-caption transition-colors ${post.userLiked ? 'text-red-500' : 'text-brand-gray hover:text-red-400'}`}
+                    onClick={(e) => handleToggleLike(e, post.postId)}
                   >
-                    <Icon name="like" size={18} fill={post.isLiked ? 'currentColor' : 'none'} className={post.isLiked ? '' : 'stroke-current'} />
+                    <Icon name="like" size={18} fill={post.userLiked ? 'currentColor' : 'none'} className={post.userLiked ? '' : 'stroke-current'} />
                     <span>{post.likeCount}</span>
                   </button>
                   <div className="flex items-center gap-1.5 text-caption text-brand-gray">

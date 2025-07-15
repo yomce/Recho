@@ -9,12 +9,13 @@ import PrimaryButton from "@/components/atoms/button/PrimaryButton";
 import SecondaryButton from "@/components/atoms/button/SecondaryButton";
 import Navigation from "@/components/layout/Navigation";
 import { useSizeStore } from '@/stores/sizeStore';
+import { useVinylStore } from '@/stores/vinylStore';
 
 const SWIPE_VELOCITY_THRESHOLD = 500;
 const DRAG_THRESHOLD = 100;
 
 const VinylPage: React.FC = () => {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const { currentIndex, setCurrentIndex } = useVinylStore(); // 화면 전환 시 이전에 봤던 영상들이 다 보임
   const [containerWidth, setContainerWidth] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);

@@ -1,84 +1,58 @@
 // src/posts/posts.service.ts
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Post } from '../entities/post.entity';
 import { CreatePostDto } from './dto/create-post.dto';
-import { PostLike } from '../entities/post-like.entity';
-
-// ⭐️ req.user 객체의 타입을 명시적으로 정의하여 실수를 방지합니다.
-type AuthenticatedUser = { id: string; name: string; };
+import { CONTENT_TYPE, Like } from '../../likes/entities/like.entity';
+import { User } from 'src/auth/user/user.entity';
+import { LikesService } from 'src/likes/likes.service';
 
 @Injectable()
 export class PostsService {
   constructor(
     @InjectRepository(Post)
     private readonly postsRepository: Repository<Post>,
-    @InjectRepository(PostLike)
-    private readonly postLikesRepository: Repository<PostLike>,
+    @InjectRepository(Like)
+    private readonly postLikesRepository: Repository<Like>,
+
+    private readonly likesService: LikesService,
     private readonly dataSource: DataSource,
   ) {}
 
-  create(createPostDto: CreatePostDto, user: AuthenticatedUser): Promise<Post> {
-    if (!user || !user.name) {
-      throw new BadRequestException('유효한 사용자 정보가 없어 게시글을 생성할 수 없습니다.');
+  create(createPostDto: CreatePostDto, user: User): Promise<Post> {
+    console.log(user);
+
+    if (!user || !user.username) {
+      throw new BadRequestException(
+        '유효한 사용자 정보가 없어 게시글을 생성할 수 없습니다.',
+      );
     }
     const newPost = this.postsRepository.create({
       ...createPostDto,
-      author: user.name,
-      userId: user.id,  
+      author: user.username,
+      userId: user.id,
       likeCount: 0,
       commentCount: 0,
     });
     return this.postsRepository.save(newPost);
   }
 
-  async findAll(category: string | undefined, user: AuthenticatedUser | undefined): Promise<any[]> {
-    const queryBuilder = this.postsRepository.createQueryBuilder('post')
-        // ✅ User 엔티티를 조인하여 사용자 정보를 함께 선택합니다.
-        .leftJoinAndSelect('post.user', 'user')
-        .orderBy('post.createdAt', 'DESC');
-
-    if (category && category !== '전체') {
-      queryBuilder.where('post.category = :category', { category });
-    }
-    
-    const posts = await queryBuilder.getMany();
-
-    // ✅ 이제 post.user 객체에서 항상 최신 사용자 정보를 사용할 수 있습니다.
-    const responsePosts = posts.map(post => ({
-        ...post,
-        // post.author 대신 조인된 user 객체의 최신 username을 사용합니다.
-        author: post.user ? post.user.username : '탈퇴한 사용자',
-        authorProfileUrl: post.user ? post.user.profileUrl : null,
-    }));
-
-    if (user && user.id) {
-      const likedPostIds = (await this.postLikesRepository.find({
-        where: { userId: user.id },
-        select: ['postId'],
-      })).map(like => like.postId);
-
-      // isLiked 로직을 responsePosts에 적용합니다.
-      return responsePosts.map(post => ({
-        ...post,
-        isLiked: likedPostIds.includes(post.id),
-      }));
-    }
-    
-    return responsePosts.map(post => ({ ...post, isLiked: false }));
-  }
-
   async findOne(id: number): Promise<Post> {
-    const post = await this.postsRepository.findOneBy({ id });
+    const post = await this.postsRepository.findOneBy({ postId: id });
     if (!post) {
       throw new NotFoundException(`ID가 ${id}인 게시물을 찾을 수 없습니다.`);
     }
     return post;
   }
 
-  async remove(postId: number, user: AuthenticatedUser): Promise<void> {
-    const post = await this.postsRepository.findOneBy({ id: postId });
+  async remove(postId: number, user: User): Promise<void> {
+    const post = await this.postsRepository.findOneBy({ postId: postId });
     if (!post) {
       throw new NotFoundException('삭제하려는 게시물을 찾을 수 없습니다.');
     }
@@ -89,33 +63,70 @@ export class PostsService {
     await this.postsRepository.delete(postId);
   }
 
-  async toggleLike(postId: number, user: AuthenticatedUser): Promise<{ liked: boolean; likeCount: number }> {
-    if (!user || !user.id) {
-      throw new ForbiddenException('사용자 ID가 없어 좋아요를 처리할 수 없습니다.');
+  /**
+   * 모든 게시물을 조회하고, 각 게시물에 대해 현재 사용자의 좋아요 여부를 포함합니다.
+   * @param userId 로그인한 사용자의 ID (인증 가드를 통해 전달)
+   * @returns 게시물 리스트와 각 게시물의 좋아요 상태
+   */
+  async findAllPostsWithLikeStatus(
+    category: string | undefined,
+    user: User | undefined,
+  ): Promise<any[]> {
+    const queryBuilder = this.postsRepository
+      .createQueryBuilder('post')
+      // ✅ User 엔티티를 조인하여 사용자 정보를 함께 선택합니다.
+      .leftJoinAndSelect('post.user', 'user')
+      .orderBy('post.createdAt', 'DESC');
+
+    if (category && category !== '전체') {
+      queryBuilder.where('post.category = :category', { category });
     }
-    const userId = user.id;
 
-    return this.dataSource.transaction(async (manager) => {
-      const postRepository = manager.withRepository(this.postsRepository);
-      const postLikeRepository = manager.withRepository(this.postLikesRepository);
+    const posts = await queryBuilder.getMany();
 
-      const post = await postRepository.findOneBy({ id: postId });
-      if (!post) throw new NotFoundException('게시물을 찾을 수 없습니다.');
-      
-      const like = await postLikeRepository.findOneBy({ postId, userId });
+    if (posts.length === 0) {
+      return [];
+    }
 
-      if (like) {
-        await postLikeRepository.delete({ postId, userId });
-        post.likeCount = Math.max(0, post.likeCount - 1);
-        const updatedPost = await postRepository.save(post);
-        return { liked: false, likeCount: updatedPost.likeCount };
-      } else {
-        const newLike = postLikeRepository.create({ postId, userId });
-        await postLikeRepository.save(newLike);
-        post.likeCount = (post.likeCount || 0) + 1;
-        const updatedPost = await postRepository.save(post);
-        return { liked: true, likeCount: updatedPost.likeCount };
-      }
-    });
+    const responsePosts = posts.map((post) => ({
+      ...post,
+      author: post.user ? post.user.username : '탈퇴한 사용자',
+      authorProfileUrl: post.user ? post.user.profileUrl : null,
+      // 유저 정보 유출 방지
+      user: undefined,
+    }));
+
+    // 1. 모든 게시물의 ID를 추출
+    const postIds = posts.map((post) => post.postId);
+
+    // 2. LikesService를 통해 현재 사용자가 해당 게시물들에 좋아요를 눌렀는지 일괄 조회
+    //    'post'는 해당 게시물의 contentType에 맞게 변경해야 합니다 (예: CONTENT_TYPE.ARTICLE)
+    if (user) {
+      const userLikedPostIds =
+        await this.likesService.getUserLikedStatusesForContents(
+          user.id,
+          CONTENT_TYPE.COMMUNITY, // 또는 해당 게시물 엔티티의 CONTENT_TYPE
+          postIds,
+        );
+
+      // 3. 각 게시물 객체에 'userLiked' 속성 추가
+      const postsWithLikeStatus = responsePosts.map((post) => ({
+        ...post,
+        userLiked: userLikedPostIds.has(post.postId),
+        // (옵션) 좋아요 개수도 함께 가져오려면 LikesService에 배치 조회 메서드 추가 후 사용
+      }));
+
+      console.log(postsWithLikeStatus);
+
+      return postsWithLikeStatus;
+    } else {
+      const postsWithLikeStatus = responsePosts.map((post) => ({
+        ...post,
+        userLiked: false,
+        // (옵션) 좋아요 개수도 함께 가져오려면 LikesService에 배치 조회 메서드 추가 후 사용
+      }));
+
+      return postsWithLikeStatus;
+    }
   }
 }

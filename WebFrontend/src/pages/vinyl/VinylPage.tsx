@@ -67,6 +67,10 @@ const VinylPage: React.FC = () => {
 
       try {
         const videoData = await getVideos(1, 10);
+
+        console.log('vinyl page video')
+        console.log(videoData);
+
         if (videoData.length === 0) {
           // 비디오가 없으면 바로 로딩 종료 및 타임아웃 해제
           if (loadingTimeoutRef.current)
@@ -227,6 +231,7 @@ const VinylPage: React.FC = () => {
               >
                 <VinylContents
                   videoOwner={video.user}
+                  videoId={video.id}
                   size={globalSize}
                   likes={video.likeCount}
                   comments={video.commentCount}

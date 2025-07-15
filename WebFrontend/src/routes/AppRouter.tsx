@@ -36,6 +36,7 @@ import CommunityFeedPage from "@/pages/community/CommunityFeedPage";
 import CreatePostPage from "@/pages/community/CreatePostPage";
 import PostDetailPage from '@/pages/community/PostDetailPage';
 import SearchPage from '../pages/search/SearchPage';
+import VinylSpecificPage from '@/pages/vinyl/VinylSpecificPage';
 
 
 
@@ -66,6 +67,7 @@ const AppRouter: React.FC = () => {
           <Route path="/main" element={<MainPage />} />
           <Route path="/category" element={<CategoryPage />} />
           <Route path="/vinyl" element={<VinylPage />} />
+          <Route path="/vinyl/:videoId" element={<VinylSpecificPage />} />
           <Route path="/used-products" element={<UsedProductPage />} />
           <Route
             path="/used-products/create"

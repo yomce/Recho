@@ -134,7 +134,7 @@ export class VideosService {
     );
   }
 
-  async getVideoDetails(id: string): Promise<Video> {
+  async getVideoDetails(id: string): Promise<VideoResponseDto> {
     const video = await this.videoRepository.findOne({
       where: { id },
       relations: ['user', 'parent'],
@@ -148,7 +148,7 @@ export class VideosService {
         this.s3,
         new GetObjectCommand({
           Bucket: this.configService.get('AWS_S3_BUCKET'),
-          Key: video.source_video_key,
+          Key: video.results_video_key,
         }),
         { expiresIn: 3600 },
       ),
@@ -164,7 +164,10 @@ export class VideosService {
     video.video_url = videoUrl;
     video.thumbnail_url = thumbnailUrl;
 
-    return video;
+    const responseUser = UserResponseDto.from(video.user);
+    const responseVideo = VideoResponseDto.from(video, responseUser);
+
+    return responseVideo;
   }
 
   async findVideoLineage(id: string): Promise<Video[]> {

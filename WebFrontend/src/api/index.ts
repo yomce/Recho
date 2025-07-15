@@ -14,8 +14,6 @@ export const getVideos = async (page = 1, limit = 10): Promise<Video[]> => {
         limit,
       },
     });
-    console.log('videos');
-    console.log(response.data);
     return response.data;
   } catch (error) {
     console.error("Error fetching videos:", error);
@@ -23,7 +21,6 @@ export const getVideos = async (page = 1, limit = 10): Promise<Video[]> => {
   }
 };
 
-// --- 추가된 함수 ---
 /**
  * ID로 특정 비디오 하나의 정보를 가져옵니다.
  * @param videoId 비디오의 ID
@@ -31,6 +28,8 @@ export const getVideos = async (page = 1, limit = 10): Promise<Video[]> => {
  */
 export const getVideoById = async (videoId: string): Promise<Video> => {
   const response = await axiosInstance.get<Video>(`videos/${videoId}`);
+  console.log('get video by id');
+  console.log(response.data);
   return response.data;
 };
 

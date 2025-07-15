@@ -1,66 +1,143 @@
-import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom"; // 라우터 파라미터 hook
+import React, { useState, useRef, useEffect } from "react";
+import { motion, useAnimation, type PanInfo } from "framer-motion";
 import VinylContents from "../../components/organisms/vinyl/VinylContents";
-import { getVideoById } from "../../api"; // 특정 ID의 비디오를 가져오는 API 함수
+import { getVideoById } from "../../api";
 import type { Video } from "../../types/video";
 import Loading from "@/components/loading/Loading";
 import Modal from "@/components/molecules/modal/Modal";
 import PrimaryButton from "@/components/atoms/button/PrimaryButton";
 import SecondaryButton from "@/components/atoms/button/SecondaryButton";
 import Navigation from "@/components/layout/Navigation";
+import { useSizeStore } from '@/stores/sizeStore';
+import { useVinylStore } from '@/stores/vinylStore';
+import { useParams } from 'react-router-dom';
 
-// 컴포넌트 이름을 VinylSpecificPage로 변경
-const VinylSpecificPage: React.FC = () => {
-  const [video, setVideo] = useState<Video | null>(null);
+const SWIPE_VELOCITY_THRESHOLD = 500;
+const DRAG_THRESHOLD = 100;
+
+const VinylPage: React.FC = () => {
+  const { videoId: videoId } = useParams<{ videoId: string }>(); 
+  const { currentIndex, setCurrentIndex } = useVinylStore(); // 화면 전환 시 이전에 봤던 영상들이 다 보임
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const controls = useAnimation();
+  const [videos, setVideos] = useState<Video[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // URL에서 videoId 파라미터를 가져옴 (예: /vinyl/abc-123)
-  const { videoId } = useParams<{ videoId: string }>();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
+  const globalSize = useSizeStore();
 
   useEffect(() => {
-    // 페이지 진입 시 스크롤을 막고, 이탈 시 해제
+    // Lock body scroll when component mounts
     document.body.style.overflow = "hidden";
+    // Unlock body scroll when component unmounts
     return () => {
       document.body.style.overflow = "auto";
     };
   }, []);
 
   useEffect(() => {
-    const fetchVideo = async () => {
-      // videoId가 유효한지 확인
+    if (isLoading || !containerRef.current) {
+      return;
+    }
+    const element = containerRef.current;
+    
+    const resizeObserver = new ResizeObserver(entries => {
+      if (entries[0]) {
+        const { width, height } = entries[0].contentRect;
+        // 2. React의 setState 대신 Zustand의 setSize 사용
+        useSizeStore.getState().setSize({ width, height });
+      }
+    });
+
+    resizeObserver.observe(element);
+
+    return () => {
+      resizeObserver.unobserve(element);
+    };
+  }, [isLoading]);
+
+  useEffect(() => {
+    const fetchVideos = async () => {
       if (!videoId) {
-        console.error("비디오 ID가 URL에 없습니다.");
         setIsLoading(false);
+        console.error("비디오 ID가 URL에 없습니다.");
         return;
       }
-      setIsLoading(true);
+
+      // 5초 후 강제로 로딩을 종료하는 타임아웃 설정
+      loadingTimeoutRef.current = setTimeout(() => {
+        setIsLoading(false);
+      }, 1);
+
       try {
-        // videoId로 특정 비디오 데이터 요청
         const videoData = await getVideoById(videoId);
-        setVideo(videoData);
+
+        console.log('vinyl specific page video')
+        console.log(videoData);
+
+        if (!videoData) {
+          // 비디오가 없으면 바로 로딩 종료 및 타임아웃 해제
+          if (loadingTimeoutRef.current)
+            clearTimeout(loadingTimeoutRef.current);
+          setIsLoading(false);
+        }
+        setVideos([videoData]);
       } catch (error) {
         console.error("비디오 로딩 중 오류 발생:", error);
-      } finally {
-        setIsLoading(false);
+        if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
+        setIsLoading(false); // 에러 발생 시에도 로딩 종료 및 타임아웃 해제
       }
     };
 
-    fetchVideo();
-  }, [videoId]); // videoId가 바뀔 때마다 비디오를 다시 불러옴
+    fetchVideos();
 
-  const openModal = () => {
-    if (video) {
-      setIsModalOpen(true);
+    // 컴포넌트 언마운트 시 타임아웃 해제
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+    };
+  }, [videoId]);
+
+  useEffect(() => {
+    if (!isLoading && containerRef.current) {
+      setContainerWidth(containerRef.current.offsetWidth);
     }
+  }, [isLoading]);
+
+  useEffect(() => {
+    if (!isDragging) {
+      controls.start({
+        x: -currentIndex * containerWidth,
+        transition: { type: "tween", duration: 0.5, ease: "easeOut" },
+      });
+    }
+  }, [currentIndex, containerWidth, controls, isDragging]);
+
+  const handleFirstVideoReady = () => {
+    // 비디오가 준비되면 타임아웃을 해제하고 로딩 상태를 false로 변경
+    if (loadingTimeoutRef.current) {
+      clearTimeout(loadingTimeoutRef.current);
+    }
+    setIsLoading(false);
+  };
+
+  const openModal = (videoId: string) => {
+    setSelectedVideoId(videoId);
+    setIsModalOpen(true);
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
+    setSelectedVideoId(null);
   };
 
   const handleStartEnsemble = () => {
-    if (!video) {
+    if (!selectedVideoId) {
       alert("합주할 비디오를 선택해주세요.");
       return;
     }
@@ -71,9 +148,9 @@ const VinylSpecificPage: React.FC = () => {
           type: "startEnsemble",
           payload: {
             token,
-            childVideoId: video.id,
+            childVideoId: selectedVideoId,
           },
-        }),
+        })
       );
       closeModal();
     } else {
@@ -81,34 +158,103 @@ const VinylSpecificPage: React.FC = () => {
     }
   };
 
-  // 로딩 중일 때 로딩 화면 표시
+  const handlePan = (
+    _e: MouseEvent | TouchEvent | PointerEvent,
+    info: PanInfo
+  ) => {
+    if (Math.abs(info.offset.x) > DRAG_THRESHOLD) {
+      setIsDragging(true);
+      const dragOffset =
+        info.offset.x > 0
+          ? info.offset.x - DRAG_THRESHOLD
+          : info.offset.x + DRAG_THRESHOLD;
+      controls.set({
+        x: -currentIndex * containerWidth + dragOffset,
+      });
+    }
+  };
+
+  const handlePanEnd = (
+    _e: MouseEvent | TouchEvent | PointerEvent,
+    info: PanInfo
+  ) => {
+    setIsDragging(false);
+    const { offset, velocity } = info;
+
+    const swipeVelocity = Math.abs(velocity.x);
+    const dragDistance = Math.abs(offset.x);
+
+    let nextIndex = currentIndex;
+
+    if (
+      swipeVelocity > SWIPE_VELOCITY_THRESHOLD ||
+      dragDistance > DRAG_THRESHOLD
+    ) {
+      if (offset.x < 0) {
+        nextIndex = Math.min(videos.length - 1, currentIndex + 1);
+      } else {
+        nextIndex = Math.max(0, currentIndex - 1);
+      }
+    }
+
+    setCurrentIndex(nextIndex);
+  };
+
+  const isCurrentlyVisible = (index: number) => index === currentIndex;
+
+  const getRotationAngle = (index: number) => {
+    const distance = index - currentIndex;
+    return distance * 30;
+  };
+
   if (isLoading) {
     return <Loading />;
   }
 
-  // 비디오 데이터가 없을 때 (에러 또는 존재하지 않는 ID)
-  if (!video) {
-    return (
-      <div className="bg-black h-screen flex items-center justify-center text-white">
-        비디오를 찾을 수 없습니다.
-      </div>
-    );
-  }
-
-  // 비디오 데이터가 성공적으로 로드됐을 때
   return (
     <>
-      <div className="bg-black h-screen w-full overflow-hidden flex items-center justify-center">
-        <VinylContents
-          likes={video.like_count}
-          comments={video.comment_count}
-          videoInfo={video.id}
-          videoSrc={video.video_url}
-          isVisible={true}      // 항상 표시
-          rotationAngle={0}       // 회전 없음
-          depth={video.depth}
-          onStartEnsemble={openModal}
-        />
+      {isLoading && <Loading />}
+      <div
+        className=" bg-black h-screen "
+        ref={containerRef}
+        style={{
+          width: "100%",
+          overflow: "hidden",
+        }}
+      >
+        <motion.div
+          onPan={handlePan}
+          onPanEnd={handlePanEnd}
+          animate={controls}
+          style={{ display: "flex", cursor: "grab" }}
+        >
+          {videos.map((video, index) => {
+            return (
+              <div
+                key={index}
+                style={{
+                  flex: "0 0 100%",
+                  minWidth: "100%",
+                }}
+              >
+                <VinylContents
+                  videoOwner={video.user}
+                  videoId={video.id}
+                  size={globalSize}
+                  likes={video.likeCount}
+                  comments={video.commentCount}
+                  videoInfo={video.id}
+                  videoSrc={video.videoUrl}
+                  isVisible={isCurrentlyVisible(index)}
+                  rotationAngle={getRotationAngle(index)}
+                  depth={video.depth}
+                  onStartEnsemble={() => openModal(video.id)}
+                  onVideoReady={index === 0 ? handleFirstVideoReady : undefined}
+                />
+              </div>
+            );
+          })}
+        </motion.div>
       </div>
       <Navigation />
 
@@ -130,4 +276,4 @@ const VinylSpecificPage: React.FC = () => {
   );
 };
 
-export default VinylSpecificPage;
+export default VinylPage;

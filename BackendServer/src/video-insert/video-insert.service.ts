@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { S3Client, PutObjectCommand, S3ClientConfig } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
@@ -9,6 +9,7 @@ import { SaveVideoMetaDto } from '../videos/dto/save-video-meta.dto';
 import { GetUploadUrlDto, TFilePurpose } from './video-insert.controller';
 import { ConfigService } from '@nestjs/config';
 import { Video } from 'src/videos/entities';
+import { UserService } from 'src/auth/user/user.service';
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ export class VideoInsertService {
     @InjectRepository(Video)
     private readonly videoRepository: Repository<Video>,
     private readonly configService: ConfigService,
+    private readonly userService: UserService,
   ) {
     // 1. ConfigService에서 설정값 가져오기
     const region = this.configService.get<string>('AWS_REGION');
@@ -98,6 +100,13 @@ export class VideoInsertService {
 
   async saveFinalVideoMeta(dto: SaveVideoMetaDto) {
     const video = this.videoRepository.create(dto);
+
+    const user = await this.userService.findById(dto.user_id);
+
+    if (!user) {
+      throw new NotFoundException(`User with ID "${dto.user_id}" not found`);
+    }
+    video.user = user;
     return this.videoRepository.save(video);
   }
 }

@@ -94,7 +94,7 @@ const ForgotPasswordPage: React.FC = () => {
   return (
     <div className="centered-card-container px-4">
       <div className="w-full max-w-md">
-        {/* ... 로고, 헤더 부분은 동일 ... */}
+        {/* ... 로고, 헤더 부분 ... */}
         <div className="sm:mx-auto sm:w-full">
           <Link to="/login">
             <img className="mx-auto h-12 w-auto" src="/RechoLogo.png" alt="Recho Logo" />

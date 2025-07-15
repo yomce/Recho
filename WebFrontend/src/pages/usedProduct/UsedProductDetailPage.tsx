@@ -17,6 +17,7 @@ import SwiperImageCard from '@/components/atoms/card/SwipeImageCard';
 import { ToastMenu } from '@/components/atoms/button/ToastMenu';
 import { StatusToastMenu } from '@/components/atoms/button/StatusToastMenu';
 import toast from 'react-hot-toast';
+import VideoPreviewSection from '@/components/atoms/card/VideoPreviewCard';
 
 const TRADE_TYPE_TEXT = {
   [TRADE_TYPE.IN_PERSON]: '직거래',
@@ -206,6 +207,13 @@ const UsedProductDetailPage: React.FC = () => {
               />
             )}
           </div>
+
+          {product && (
+            <VideoPreviewSection
+              refIn="used_products"
+              refPostId={product.productId}
+            />
+          )}
         </div>
       </div>
       <MessageInputForm

@@ -79,6 +79,7 @@ export interface UsedProductForm {
   locationId: string; // 폼에서는 지역의 ID만 관리
   location?: Location;
   imageIds?: number[];
+  videoId?: string;
 }
 
 /**
@@ -92,6 +93,7 @@ export interface CreateUsedProductPayload {
   tradeType: TRADE_TYPE;
   locationId: string;
   imageIds: number[]; // 이미지 ID 배열
+  videoId?: string;
 }
 
 /**
@@ -106,3 +108,13 @@ export interface PaginatedUsedProductResponse {
   };
   hasNextPage: boolean;
 }
+
+// 프론트에서 비디오 목록 응답으로 쓸 타입
+export interface VideoPreview {
+  id: string;
+  thumbnailUrl: string;
+}
+
+// 프론트 비디오 썸네일 조립용
+export const S3_BASE = 'https://vinyl-media.s3.ap-northeast-2.amazonaws.com/';
+export const getThumbnailUrl = (key: string) => `${S3_BASE}${key}`;

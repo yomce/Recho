@@ -10,6 +10,7 @@ import TextInputForm from '@/components/atoms/input/TextInputForm';
 import TextAreaInput from '@/components/atoms/input/TextAreaInput';
 import PrimaryButton from '@/components/atoms/button/PrimaryButton';
 import ImageUploadPreview from '@/components/atoms/input/ImageUploadPreveiw';
+import MyVideoSelector from '@/components/atoms/input/MyVideoSelector';
 
 
 const categoryLabels = Object.entries(PRODUCT_CATEGORY_LABELS).map(([key, name]: [string, string]) => ({
@@ -36,6 +37,7 @@ interface ProductFormProps {
   setImageIds: React.Dispatch<React.SetStateAction<{ id: number; url: string }[]>>;   // 이미지 ID 배열을 관리하는 함수 (최초 생성 시 빈 배열로 시작)
   originalImages?: { id: number; url: string }[]; // 서버에서 받아온 기존 이미지
   onImageChange?: (images: { id: number; url: string }[]) => void; // 새로 추가된 이미지
+  videoId?: string;
 }
 
 export const ProductForm: React.FC<ProductFormProps> = ({
@@ -128,6 +130,20 @@ export const ProductForm: React.FC<ProductFormProps> = ({
       <div className="mb-6">
         <InputLabel htmlFor="description">상세 설명</InputLabel>
         <TextAreaInput id="description" name="description" value={formState.description} onChange={onFormChange} rows={6} required />
+      </div>
+
+      <div className="mb-6">
+        <MyVideoSelector
+          selectedId={formState.videoId}
+          onSelect={(video) =>
+            onFormChange({
+              target: {
+                name: 'videoId',
+                value: video.id,
+              },
+            } as React.ChangeEvent<HTMLInputElement>) // 강제 캐스팅
+          }
+        />
       </div>
 
       {errorMessage && (

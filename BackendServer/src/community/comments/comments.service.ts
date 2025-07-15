@@ -16,7 +16,7 @@ export class CommentsService {
   ) {}
 
   async create(createCommentDto: CreateCommentDto, user: User): Promise<Comment> {
-    const post = await this.postsRepository.findOneBy({ id: createCommentDto.postId });
+    const post = await this.postsRepository.findOneBy({ postId: createCommentDto.postId });
     if (!post) {
       throw new NotFoundException('게시물을 찾을 수 없습니다.');
     }
@@ -36,7 +36,7 @@ export class CommentsService {
 
   findByPostId(postId: number): Promise<Comment[]> {
     return this.commentsRepository.find({
-      where: { post: { id: postId } },
+      where: { post: { postId: postId } },
       order: { createdAt: 'ASC' },
     });
   }

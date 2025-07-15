@@ -1,8 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
 import PrimaryButton from "@/components/atoms/button/PrimaryButton";
+import type { User } from '@/stores/authStore';
+import VinylRightLayout from '@/components/layout/pages/vinyl/VinylRightLayout';
+import ProfileWithName from '@/components/atoms/button/ProfileWithName';
 
 interface VinylContentsProps {
+  videoOwner: User;
+  size: {width: number, height: number};
   likes: number;
   comments: number;
   videoInfo: string;
@@ -20,6 +25,21 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
   const [prevRotationAngle, setPrevRotationAngle] = useState(
     props.rotationAngle
   );
+  const [isPlaying, setIsPlaying] = useState(false); // 비디오 재생 상태 관리
+
+  const [divHeight, setDivHeight] = useState(0);
+
+  useEffect(() => {
+    const updateHeight = () => {
+      const height = props.size.width * 16 / 9;
+      setDivHeight(height);
+    };
+
+    updateHeight(); // 초기값 설정
+    window.addEventListener("resize", updateHeight); // 리사이즈 대응
+
+    return () => window.removeEventListener("resize", updateHeight);
+  }, [props.size.width]);
 
   const handleVideoCanPlay = () => {
     // 비디오가 재생 준비되면 재생 시도
@@ -27,10 +47,25 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
       videoRef.current.play().catch((error) => {
         console.log("자동 재생 실패. 사용자의 상호작용이 필요합니다.", error);
       });
+      setIsPlaying(true); // 재생 시작 시 상태 업데이트
     }
     // 부모 컴포넌트에게 로딩 완료 알림 (필요한 경우)
     if (props.onVideoReady) {
       props.onVideoReady();
+    }
+  };
+
+  const handleVideoClick = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        videoRef.current.play().catch((error) => {
+          console.log("재생 실패:", error);
+        });
+        setIsPlaying(true);
+      }
     }
   };
 
@@ -40,10 +75,13 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
       if (props.isVisible) {
         // 화면에 보일 때 비디오 로드를 시작 (재생은 onCanPlay에서)
         videoRef.current.load();
+        // isPlaying 상태를 true로 초기화하여 다음 렌더링 시 재생되도록 준비
+        setIsPlaying(true); 
       } else {
         // 보이지 않으면 일시정지하고 시간 리셋
         videoRef.current.pause();
         videoRef.current.currentTime = 0;
+        setIsPlaying(false); // 일시정지 시 상태 업데이트
       }
     }
   }, [props.isVisible]);
@@ -79,6 +117,8 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
       style={{
         position: "relative",
         transformOrigin: "50% 300%", // 회전 축을 하단으로 설정
+        width: "100%",
+        height: `${divHeight}px`,
       }}
       animate={controls}
     >
@@ -89,29 +129,38 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
         controls={false}
         playsInline
         crossOrigin="anonymous"
-        style={{ display: "block" }}
-        onCanPlay={handleVideoCanPlay}
-      />
-      <div
-        id="video_data"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          backgroundColor: "rgba(0, 0, 0, 0.5)",
-          color: "white",
-          padding: "10px",
+        style={{ 
+          display: "block",
         }}
-      >
-        <h1>{props.likes}</h1>
-        <h1>{props.comments}</h1>
+        onCanPlay={handleVideoCanPlay}
+        onClick={handleVideoClick}
+      />
+
+        {/* --- 왼쪽 위 프로필 및 구독 버튼 추가 --- */}
+    <div
+      style={{
+        position: "absolute",
+        top: `${divHeight * 0.84}px`,
+        left: "24px",
+        display: "flex",
+        alignItems: "center",
+        gap: "8px", // 아이콘과 버튼 사이 간격
+        zIndex: 10,
+      }}
+    >
+        <ProfileWithName
+          user={props.videoOwner}
+        />
       </div>
 
+      <VinylRightLayout
+        likes={props.likes}
+        comments={props.comments}
+        divHeight={divHeight}
+      />
+      
       {/* 버튼은 비디오 위에, 중앙에 위치 */}
-      {props.depth < 6 && (
+      {!isPlaying && props.depth < 6 && (
         <PrimaryButton
           onClick={() => props.onStartEnsemble(props.videoInfo)}
           style={{

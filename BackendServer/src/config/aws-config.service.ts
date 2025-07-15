@@ -138,7 +138,7 @@ export class AwsConfigService {
       this.config['BACKEND_URL'] + this.config['KAKAO_CALLBACK'];
 
     this.config['GOOGLE_CALLBACK_URL'] =
-      this.config['FRONTEND_URL'] + this.config['GOOGLE_CALLBACK'];
+      this.config['BACKEND_URL'] + this.config['GOOGLE_CALLBACK'];
 
     this.config['FRONTEND_CALLBACK_URL'] =
       this.config['FRONTEND_URL'] + this.config['FRONTEND_CALLBACK'];

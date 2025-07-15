@@ -11,6 +11,7 @@ export class ConfigController {
     return {
       kakaoMapAppKey: this.configService.get<string>('KAKAO_MAP_APP_KEY'),
       kakaoCallbackUrl: this.configService.get<string>('KAKAO_CALLBACK_URL'),
+      googleLoginUrl: this.configService.get<string>('GOOGLE_CALLBACK_URL'),
     };
   }
 }

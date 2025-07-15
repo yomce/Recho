@@ -11,7 +11,8 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.actions.login);
   const kakaoCallbackUrl = useConfigStore((state) => state.config?.kakaoCallbackUrl);
-
+  const googleLoginUrl = useConfigStore((state) => state.config?.googleLoginUrl);
+  
   const [id, setId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -139,7 +140,7 @@ const LoginPage: React.FC = () => {
 
             <div className="mt-6 grid grid-cols-2 gap-3">
               <a
-                href={import.meta.env.VITE_GOOGLE_LOGIN_URL}
+                href={googleLoginUrl}
                 className="inline-flex w-full justify-center rounded-[var(--radius-button)] border border-gray-300 bg-white py-2 px-4 text-navigation font-medium text-gray-500 hover:bg-gray-50"
               >
                 {/* --- Google 로고 SVG (수정됨) --- */}

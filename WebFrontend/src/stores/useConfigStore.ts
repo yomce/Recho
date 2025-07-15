@@ -5,6 +5,7 @@ import axiosInstance from '@/services/axiosInstance';
 interface AppConfig {
   kakaoMapAppKey: string;
   kakaoCallbackUrl: string;
+  googleLoginUrl?: string;
 }
 
 // 스토어의 상태와 액션을 정의하는 타입

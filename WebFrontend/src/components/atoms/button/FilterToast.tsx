@@ -3,24 +3,29 @@ import { toast } from "react-hot-toast";
 import PrimaryButton from "./PrimaryButton";
 import CustomDatePicker from "../input/CustomDatePicker";
 import IconButton from "./IconButton";
+import { INSTRUMENT, SKILL_LEVEL_DIC } from '@/pages/ensemble/types';
 
 interface FilterToastProps {
   activeTab: string; // 예: "날짜", "지역"
   toastId: string;
+  onApplyFilter: (filters: {
+    eventDate?: Date,
+    location?: string,
+    instrument?: string,
+    skillLevel?: string,
+  }) => void;
 }
 
 const REGIONS = [
-  "서울", "경기", "인천", "강원", "충북", "충남",
-  "세종", "대전", "광주", "전북", "경북", "대구",
-  "제주", "전남", "경남/울산", "부산",
-];
+  "서울", "경기", "인천", "강원", "충청",
+  "세종", "대전", "광주", "전라", "경상",
+  "대구", "제주", "울산", "부산",
+]; 
 
-const INSTRUMENT = [
-  "전체", "일렉기타", "베이스기타", "어쿠스틱기타", "피아노", "드럼",
-];
+const INSTRUMENT_OPTIONS = ["전체", ...Object.values(INSTRUMENT) as string[]];
 
 const skillLevel = [
-  "무관", "초급", "중급", "상급", "전문가",
+  "무관", ...Object.values(SKILL_LEVEL_DIC)
 ];
 
 const radioButtonStyle = (selected: boolean) =>
@@ -35,13 +40,17 @@ const radioCircleStyle = (selected: boolean) =>
 
 const radioDotStyle = `w-2 h-2 rounded-full bg-brand-primary`;
 
-const FilterToast: React.FC<FilterToastProps> = ({ activeTab, toastId }) => {
+const FilterToast: React.FC<FilterToastProps> = ({ activeTab, toastId, onApplyFilter }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [selectedInstrument, setSelectedInstrument] = useState("전체");
   const [selectedSkill, setSelectedSkill] = useState("무관");
+
+  const handleRegionSelect = (region: string) => {
+    onApplyFilter({ location: region });
+  };
   
   useEffect(() => {
     const el = document.getElementById(`filter-section-${activeTab}`);
@@ -49,6 +58,8 @@ const FilterToast: React.FC<FilterToastProps> = ({ activeTab, toastId }) => {
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, [activeTab]);
+
+  console.log('location:', selectedRegion)
 
   return (
     <div
@@ -82,9 +93,11 @@ const FilterToast: React.FC<FilterToastProps> = ({ activeTab, toastId }) => {
             {REGIONS.map((region) => (
               <button
                 key={region}
-                onClick={() =>
-                  setSelectedRegion((prev) => (prev === region ? null : region))
-                }
+                onClick={() => {
+                  setSelectedRegion(region);
+                  handleRegionSelect(region);
+                  // setSelectedRegion((prev) => (prev === region ? null : region))
+                }}
                 className={`text-sm px-3 py-2 border border-white rounded-[10px] ${
                   selectedRegion === region
                     ? "bg-[#8E4DF6] text-white border-[#8E4DF6]"
@@ -102,7 +115,7 @@ const FilterToast: React.FC<FilterToastProps> = ({ activeTab, toastId }) => {
           <p className="text-caption text-brand-gray">악기</p>
           {/* 악기 필터 컴포넌트 또는 내용 */}
           <div className="grid grid-cols-2 gap-4 mt-4">
-            {INSTRUMENT.map((item) => {
+            {INSTRUMENT_OPTIONS.map((item) => {
               const selected = selectedInstrument === item;
               return (
                 <button
@@ -146,7 +159,17 @@ const FilterToast: React.FC<FilterToastProps> = ({ activeTab, toastId }) => {
     </div>
     <PrimaryButton
       className="py-4"
-      onClick={() => toast.dismiss(toastId)}>
+      onClick={() => {
+        const filters = {
+          eventDate: selectedDate ?? undefined,
+          location: selectedRegion ?? undefined,
+          instrument: selectedInstrument !== "전체" ? selectedInstrument : undefined,
+          skillLevel: selectedSkill !== "무관" ? selectedSkill : undefined,
+        }
+        onApplyFilter?.(filters);
+        toast.dismiss(toastId)}
+      }
+      >
         적용하기
     </PrimaryButton>
     {/* Date-Picker를 위한 css 주입 */}

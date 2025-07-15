@@ -12,6 +12,7 @@ import {
 import { DataSource, EntityManager, In, Repository } from 'typeorm';
 import { SessionEnsemble } from './session/entities/session-ensemble.entity';
 import { PaginatedRecruitEnsembleResponse } from './dto/paginated-recruit-ensemble.response.dto';
+import { FilterRecruitEnsembleDto } from './dto/pagination-query-recruit-ensemble.dto';
 import { CreateRecruitEnsembleDto } from './dto/create-recruit-ensemble.dto';
 import { UpdateRecruitEnsembleDto } from './dto/update-recruit-ensemble.dto';
 import {
@@ -47,27 +48,98 @@ export class EnsembleService {
   ) {}
 
   async findEnsembleWithPagination(
-    limit: number,
-    lastPostId?: number,
-    lastCreatedAt?: Date,
+    filter: FilterRecruitEnsembleDto
   ): Promise<PaginatedRecruitEnsembleResponse> {
+    const {
+      limit = 20,
+      lastPostId,
+      lastCreatedAt,
+      eventDate,
+      skillLevel,
+      instrument,
+      location,
+    } = filter;
     const realLimit = limit + 1;
-    const queryBuilder = this.recruitEnsembleRepo
+
+    const postIdqueryBuilder = this.recruitEnsembleRepo
       .createQueryBuilder('recruitEnsemble')
-      .leftJoinAndSelect('recruitEnsemble.location', 'location');
+      .leftJoin('recruitEnsemble.location', 'location')
+      .leftJoin('recruitEnsemble.sessionEnsemble', 'sessionEnsemble')
+      .select([
+        'recruitEnsemble.postId',
+        'recruitEnsemble.createdAt',
+      ]);
+
+    
+
+    // 필터 조건 추가
+    if (eventDate) {
+      postIdqueryBuilder.andWhere('recruitEnsemble.eventDate >= :eventDate', {
+        eventDate,
+      });
+    }
+
+    if(skillLevel) {
+      postIdqueryBuilder.andWhere('recruitEnsemble.skillLevel = :skillLevel', {
+        skillLevel,
+      });
+    }
+
+    if(instrument) {
+      postIdqueryBuilder.andWhere('sessionEnsemble.instrument = :instrument', {
+        instrument,
+      });
+    }
+
+    if(location) {
+      // 지역 필터는 location.region_level1과 부분 일치
+      if (location === '전라') {
+        postIdqueryBuilder.andWhere(
+          '(location.region_level1 LIKE :jeollaNorth OR location.region_level1 LIKE :jeollaSouth)',
+          {
+            jeollaNorth: `%전북%`,   // 전라도만 전라남도, 전북으로 region_level1을 합쳐서 반환
+            jeollaSouth: `%전라%`,
+          },
+        );
+      } else {
+        postIdqueryBuilder.andWhere('location.region_level1 LIKE :location', {
+          location: `%${location}%`,  // ex) "경기" -> "경기도"
+        });
+      }
+    }
 
     if (lastPostId && lastCreatedAt) {
       const lastCreatedAtDate = new Date(lastCreatedAt);
-      queryBuilder.where(
+      postIdqueryBuilder.where(
         '(recruitEnsemble.createdAt < :lastCreatedAtDate) OR (recruitEnsemble.createdAt = :lastCreatedAtDate AND recruitEnsemble.postId < :lastPostId)',
         { lastCreatedAtDate, lastPostId },
       );
     }
 
-    const results = await queryBuilder
+    const postIdResults = await postIdqueryBuilder
       .orderBy('recruitEnsemble.createdAt', 'DESC')
       .addOrderBy('recruitEnsemble.postId', 'DESC')
       .take(realLimit)
+      .getMany();
+    
+    const postIds = postIdResults.map((row) => row.postId);
+
+    if (postIds.length === 0) {
+      return {
+        data: [],
+        nextCursor: undefined,
+        hasNextPage: false,
+      };
+    }
+
+    // 2차: 실제 데이터 조회 (위에서 추출한 postId 기반)
+    const results = await this.recruitEnsembleRepo
+      .createQueryBuilder('recruitEnsemble')
+      .leftJoinAndSelect('recruitEnsemble.location', 'location')
+      .leftJoinAndSelect('recruitEnsemble.sessionEnsemble', 'sessionEnsemble')
+      .whereInIds(postIds)
+      .orderBy('recruitEnsemble.createdAt', 'DESC')
+      .addOrderBy('recruitEnsemble.postId', 'DESC')
       .getMany();
 
     const hasNextPage = results.length > limit;

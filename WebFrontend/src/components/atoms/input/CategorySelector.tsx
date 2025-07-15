@@ -3,7 +3,7 @@ import Icon from '@/components/atoms/icon/Icon';
 
 interface CategoryProps {
   name: string;
-  value: string;
+  value: string | number;
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   categories: { id: number | string; name: string }[];
   showSubCategory?: boolean;
@@ -13,6 +13,7 @@ const inputStyles = "w-full py-3 px-4 bg-brand-inverse border border-gray-300 ro
 
 
 const CategorySelector: React.FC<CategoryProps> = ({
+  name,
   value,
   onChange,
   categories,
@@ -24,7 +25,7 @@ const CategorySelector: React.FC<CategoryProps> = ({
       <div className="relative flex-1">
         <select
           id="categoryId"
-          name="categoryId"
+          name={name}
           value={value}
           onChange={onChange}
           className={inputStyles}

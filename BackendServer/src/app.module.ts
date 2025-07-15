@@ -68,23 +68,24 @@ import { SearchModule } from './search/search.module';
     // MailerModule도 마찬가지입니다.
     MailerModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        transport: {
-          host: configService.get<string>('MAIL_HOST'), // .env 또는 AWS 값
-          port: 587,
-          secure: false,
-          auth: {
-            user: configService.get<string>('MAIL_USER'),
-            pass: configService.get<string>('MAIL_PASSWORD'),
+      useFactory: (configService: ConfigService) => {
+        return {
+          transport: {
+            host: configService.get<string>('GMAIL_HOST'), 
+            port: 587,
+            secure: false,
+            auth: {
+              user: configService.get<string>('GMAIL_USER'),
+              pass: configService.get<string>('GMAIL_PASSWORD'),
+            },
           },
-        },
-        defaults: {
-          from: configService.get<string>('MAIL_FROM'),
-        },
-      }),
+          defaults: {
+            from: configService.get<string>('GMAIL_FROM'),
+          },
+        };
+      },
     }),
 
-    // 다른 모듈들은 그대로 둡니다.
     AuthModule,
     UserModule,
     VideosModule,

@@ -32,13 +32,14 @@ const PostLayout: React.FC<LayoutProps> = ({ children, bgClassName = "bg-brand-f
     }
   };
   const handleGoToCategory = () => navigate('/category');
+  const handleGoToSearch = () => navigate('/search');
 
   return (
     <div className={`relative min-h-screen ${bgClassName}`}>
       <PostHeader   
         currentPath={location.pathname}
         onCategoryClick={handleGoToCategory}
-        onSearchClick={() => toast('준비 중입니다.')}
+        onSearchClick={handleGoToSearch} 
         onNotificationClick={() => toast('준비 중입니다.')}
       />
       <main className="py-14 pb-20">

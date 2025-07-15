@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { MailerService } from '@nestjs-modules/mailer';
+import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 
 interface VerificationInfo {
@@ -22,6 +23,7 @@ export class PasswordService {
   constructor(
     private readonly userService: UserService,
     private readonly mailerService: MailerService,
+    private readonly configService: ConfigService, 
   ) {}
 
   async sendVerificationEmail(id: string, email: string): Promise<void> {

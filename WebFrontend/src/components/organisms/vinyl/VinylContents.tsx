@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
+import { useNavigate } from "react-router-dom"; // react-router-dom에서 useNavigate를 가져옵니다.
 import PrimaryButton from "@/components/atoms/button/PrimaryButton";
 import type { User } from '@/stores/authStore';
 import VinylRightLayout from '@/components/layout/pages/vinyl/VinylRightLayout';
@@ -23,6 +24,7 @@ interface VinylContentsProps {
 const VinylContents: React.FC<VinylContentsProps> = (props) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const controls = useAnimation();
+  const navigate = useNavigate(); // useNavigate 훅을 사용하여 navigate 함수를 가져옵니다.
   const [prevRotationAngle, setPrevRotationAngle] = useState(
     props.rotationAngle
   );
@@ -120,7 +122,7 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
         // 화면에 보일 때 비디오 로드를 시작 (재생은 onCanPlay에서)
         videoRef.current.load();
         // isPlaying 상태를 true로 초기화하여 다음 렌더링 시 재생되도록 준비
-        setIsPlaying(true); 
+        setIsPlaying(true);
       } else {
         // 보이지 않으면 일시정지하고 시간 리셋
         videoRef.current.pause();
@@ -166,6 +168,32 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
       }}
       animate={controls}
     >
+      {/* --- 뒤로가기 버튼 추가 --- */}
+      <button
+        onClick={() => navigate(-1)}
+        style={{
+          position: "absolute",
+          top: "16px",
+          left: "16px",
+          zIndex: 10,
+          background: "rgba(0, 0, 0, 0.4)",
+          border: "none",
+          borderRadius: "50%",
+          width: "40px",
+          height: "40px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "white",
+          fontSize: "24px",
+          cursor: "pointer",
+          paddingBottom: '4px', // 아이콘 수직 정렬을 위한 미세 조정
+        }}
+        aria-label="Go back"
+      >
+        &lt;
+      </button>
+
       <video
         ref={videoRef}
         src={props.videoSrc}
@@ -173,7 +201,7 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
         controls={false}
         playsInline
         crossOrigin="anonymous"
-        style={{ 
+        style={{
           display: "block",
         }}
         onCanPlay={handleVideoCanPlay}
@@ -203,7 +231,7 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
         divHeight={divHeight}
         onClickShare={() => handleShare(props.videoId)}
       />
-      
+
       {/* 버튼은 비디오 위에, 중앙에 위치 */}
       {!isPlaying && props.depth < 6 && (
         <PrimaryButton

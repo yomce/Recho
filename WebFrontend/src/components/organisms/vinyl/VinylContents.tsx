@@ -7,6 +7,7 @@ import ProfileWithName from '@/components/atoms/button/ProfileWithName';
 
 interface VinylContentsProps {
   videoOwner: User;
+  videoId: string;
   size: {width: number, height: number};
   likes: number;
   comments: number;
@@ -68,6 +69,49 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
       }
     }
   };
+
+  const handleShare = async (videoId: string) => {
+  if (!videoId) return;
+
+  const shareData = {
+    title: "VINYL에서 멋진 합주를 발견했어요!",
+    text: "이 비디오를 함께 감상해보세요.",
+    // 현재 웹사이트 주소와 비디오 ID를 조합해 전체 URL을 만듭니다.
+    url: `${window.location.origin}/vinyl/${videoId}`,
+  };
+
+  // 1. React Native WebView 환경인지 확인
+  if (window.ReactNativeWebView) {
+    window.ReactNativeWebView.postMessage(
+      JSON.stringify({
+        type: "share", // RN에서 메시지를 식별할 타입
+        payload: shareData,
+      })
+    );
+    return;
+  }
+
+  // 2. 브라우저가 Web Share API를 지원하는지 확인
+  if (navigator.share) {
+    try {
+      await navigator.share(shareData);
+      // 성공 로그 (필요시 사용)
+      // console.log("콘텐츠가 성공적으로 공유되었습니다.");
+    } catch (error) {
+      console.error("공유 중 오류가 발생했습니다:", error);
+    }
+    return;
+  }
+
+  // 3. 위 방법들을 사용할 수 없을 때 클립보드에 복사 (폴백)
+  try {
+    await navigator.clipboard.writeText(shareData.url);
+    alert("비디오 링크가 클립보드에 복사되었습니다!");
+  } catch (error) {
+    console.error("클립보드 복사에 실패했습니다:", error);
+    alert("링크 복사에 실패했습니다. 수동으로 복사해주세요.");
+  }
+};
 
   useEffect(() => {
     if (videoRef.current) {
@@ -157,6 +201,7 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
         likes={props.likes}
         comments={props.comments}
         divHeight={divHeight}
+        onClickShare={() => handleShare(props.videoId)}
       />
       
       {/* 버튼은 비디오 위에, 중앙에 위치 */}

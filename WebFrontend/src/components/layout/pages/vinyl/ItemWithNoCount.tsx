@@ -4,7 +4,7 @@ import React from 'react';
 import IconButton from '@/components/atoms/button/IconButton';
 import type Icon from '@/components/atoms/icon/Icon';
 
-interface IconWithCountProps {
+interface IconWithNoCountProps {
   iconName: React.ComponentProps<typeof Icon>['name'];
   count: number;
   iconSize?: number;
@@ -12,9 +12,8 @@ interface IconWithCountProps {
   onClick?: () => void;
 }
 
-const IconWithCount: React.FC<IconWithCountProps> = ({
+const IconWithNoCount: React.FC<IconWithNoCountProps> = ({
   iconName,
-  count,
   iconSize = 30,
   style,
   onClick,
@@ -41,10 +40,10 @@ const IconWithCount: React.FC<IconWithCountProps> = ({
 
   return (
     <div style={{ textAlign: 'center' }}>
-      <IconButton iconName={iconName} iconSize={iconSize} style={baseStyle} onClick={onClick} />
-      <span style={countStyle}>{count}</span>
+      <IconButton iconName={iconName} iconSize={iconSize} style={baseStyle} onClick={onClick}/>
+      <span style={countStyle}> </span>
     </div>
   );
 };
 
-export default IconWithCount;
+export default IconWithNoCount;

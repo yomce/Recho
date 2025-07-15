@@ -86,6 +86,7 @@ export type RootStackParamList = {
   SideBySide: { videoUris: string[] };
   VideoPreview: { videoUri: string };
   NewVideoTest: { localVideoPath: string };
+  Record: { video: Video };
 };
 
 // VideoEditScreen의 라우트 prop 타입

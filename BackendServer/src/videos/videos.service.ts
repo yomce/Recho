@@ -1,5 +1,9 @@
 // src/videos/videos.service.ts
-import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { S3Client, GetObjectCommand, S3ClientConfig } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -7,6 +11,8 @@ import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Video } from './entities';
 import { UserService } from 'src/auth/user/user.service';
+import { UserResponseDto } from 'src/auth/user/dto/user.response.dto';
+import { VideoResponseDto } from './dto/video.response.dto';
 
 @Injectable()
 export class VideosService {
@@ -78,6 +84,7 @@ export class VideosService {
     sortBy: 'likes' | 'createdAt',
   ): Promise<any[]> {
     const videos = await this.videoRepository.find({
+      relations: ['user'],
       order: { [sortBy === 'likes' ? 'like_count' : 'created_at']: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
@@ -107,7 +114,13 @@ export class VideosService {
       }),
     );
 
-    return signedVideos;
+    const responseVideo = signedVideos.map((video) => {
+      const tmpResponseUser = UserResponseDto.from(video.user);
+      const tmpVideo = VideoResponseDto.from(video, tmpResponseUser);
+      return tmpVideo;
+    });
+
+    return responseVideo;
   }
 
   async getSourceVideoUrl(videoKey: string): Promise<string> {

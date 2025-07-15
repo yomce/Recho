@@ -23,7 +23,7 @@ interface CreatePostData {
 }
 
 const createPost = async (newPostData: CreatePostData) => {
-    const response = await axiosInstance.post('/posts', newPostData);
+    const response = await axiosInstance.post('posts', newPostData);
     return response.data;
 };
 

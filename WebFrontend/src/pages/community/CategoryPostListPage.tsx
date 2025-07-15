@@ -7,15 +7,12 @@ import PostLayout from '../../components/layout/PostLayout';
 import FloatingWriteButton from '../../components/atoms/button/FloatingWriteButton';
 import Icon from '../../components/atoms/icon/Icon';
 import { type Post } from './CommunityFeedPage'; // 타입 재사용
+import { togglePostLike } from '@/api';
+import { CONTENT_TYPE } from '@/types/likes';
 
 // --- 유틸리티 및 API 함수 ---
 const fetchPostsByCategory = async (category: string): Promise<Post[]> => {
   const response = await axiosInstance.get('/posts', { params: { category } });
-  return response.data;
-};
-
-const togglePostLike = async (postId: number): Promise<{ liked: boolean; likeCount: number }> => {
-  const response = await axiosInstance.post(`/posts/${postId}/like`);
   return response.data;
 };
 
@@ -79,11 +76,11 @@ const CategoryPostListPage: React.FC = () => {
     // (이하 로직은 CommunityFeedPage와 동일)
     setPosts(currentPosts => 
         currentPosts.map(p => 
-            p.id === postId ? { ...p, isLiked: !p.isLiked, likeCount: p.isLiked ? p.likeCount - 1 : p.likeCount + 1 } : p
+            p.postId === postId ? { ...p, userLiked: !p.userLiked, likeCount: p.userLiked ? p.likeCount - 1 : p.likeCount + 1 } : p
         )
     );
     try {
-        await togglePostLike(postId);
+        await togglePostLike(CONTENT_TYPE.COMMUNITY, postId);
     } catch (error) {
         alert('오류가 발생했습니다.');
     }
@@ -105,9 +102,9 @@ const CategoryPostListPage: React.FC = () => {
           posts.map((post) => (
             // 게시글 렌더링 UI (CommunityFeedPage와 동일한 구조 사용)
              <article
-                key={post.id}
+                key={post.postId}
                 className="cursor-pointer bg-brand-default rounded-card p-4 hover:shadow-lg transition-shadow duration-300"
-                onClick={() => navigate(`/community/posts/${post.id}`)}
+                onClick={() => navigate(`/community/posts/${post.postId}`)}
               >
                 {/* (이하 게시글 UI는 아래 CommunityFeedPage.tsx의 것과 동일하게 적용) */}
                 <div className="flex items-center gap-3 mb-3">
@@ -125,10 +122,10 @@ const CategoryPostListPage: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-6 mt-4 pt-3 border-t border-brand-frame">
                   <button
-                    className={`flex items-center gap-1.5 text-caption transition-colors ${post.isLiked ? 'text-red-500' : 'text-brand-gray hover:text-red-400'}`}
-                    onClick={(e) => handleToggleLike(e, post.id)}
+                    className={`flex items-center gap-1.5 text-caption transition-colors ${post.userLiked ? 'text-red-500' : 'text-brand-gray hover:text-red-400'}`}
+                    onClick={(e) => handleToggleLike(e, post.postId)}
                   >
-                    <Icon name="like" size={18} fill={post.isLiked ? 'currentColor' : 'none'} className={post.isLiked ? '' : 'stroke-current'} />
+                    <Icon name="like" size={18} fill={post.userLiked ? 'currentColor' : 'none'} className={post.userLiked ? '' : 'stroke-current'} />
                     <span>{post.likeCount}</span>
                   </button>
                   <div className="flex items-center gap-1.5 text-caption text-brand-gray">

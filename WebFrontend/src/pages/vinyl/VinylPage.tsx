@@ -8,12 +8,14 @@ import Modal from "@/components/molecules/modal/Modal";
 import PrimaryButton from "@/components/atoms/button/PrimaryButton";
 import SecondaryButton from "@/components/atoms/button/SecondaryButton";
 import Navigation from "@/components/layout/Navigation";
+import { useSizeStore } from '@/stores/sizeStore';
+import { useVinylStore } from '@/stores/vinylStore';
 
 const SWIPE_VELOCITY_THRESHOLD = 500;
 const DRAG_THRESHOLD = 100;
 
 const VinylPage: React.FC = () => {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const { currentIndex, setCurrentIndex } = useVinylStore(); // 화면 전환 시 이전에 봤던 영상들이 다 보임
   const [containerWidth, setContainerWidth] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -24,6 +26,7 @@ const VinylPage: React.FC = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
+  const globalSize = useSizeStore();
 
   useEffect(() => {
     // Lock body scroll when component mounts
@@ -35,6 +38,27 @@ const VinylPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    if (isLoading || !containerRef.current) {
+      return;
+    }
+    const element = containerRef.current;
+    
+    const resizeObserver = new ResizeObserver(entries => {
+      if (entries[0]) {
+        const { width, height } = entries[0].contentRect;
+        // 2. React의 setState 대신 Zustand의 setSize 사용
+        useSizeStore.getState().setSize({ width, height });
+      }
+    });
+
+    resizeObserver.observe(element);
+
+    return () => {
+      resizeObserver.unobserve(element);
+    };
+  }, [isLoading]);
+
+  useEffect(() => {
     const fetchVideos = async () => {
       // 5초 후 강제로 로딩을 종료하는 타임아웃 설정
       loadingTimeoutRef.current = setTimeout(() => {
@@ -43,7 +67,6 @@ const VinylPage: React.FC = () => {
 
       try {
         const videoData = await getVideos(1, 10);
-        console.log("Fetched video data:", videoData);
         if (videoData.length === 0) {
           // 비디오가 없으면 바로 로딩 종료 및 타임아웃 해제
           if (loadingTimeoutRef.current)
@@ -203,10 +226,12 @@ const VinylPage: React.FC = () => {
                 }}
               >
                 <VinylContents
-                  likes={video.like_count}
-                  comments={video.comment_count}
+                  videoOwner={video.user}
+                  size={globalSize}
+                  likes={video.likeCount}
+                  comments={video.commentCount}
                   videoInfo={video.id}
-                  videoSrc={video.video_url}
+                  videoSrc={video.videoUrl}
                   isVisible={isCurrentlyVisible(index)}
                   rotationAngle={getRotationAngle(index)}
                   depth={video.depth}

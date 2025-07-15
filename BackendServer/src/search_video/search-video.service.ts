@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import { Video } from '../videos/entities/video.entity';
 import { SearchVideoPreview } from './entities/search-video.entity';
 import { VideoPreviewDto } from './dto/search-video.dto';
+import { GetVideoPreviewDto } from './dto/get-video-preview.dto';
 import { CreateVideoPreviewDto } from './dto/create-video-preview.dto';
 import { ConfigService } from '@nestjs/config';
 import { UserService } from 'src/auth/user/user.service';
@@ -79,31 +80,66 @@ export class SearchVideoService {
     );
   }
 
-  async createVideoPreview(dto: CreateVideoPreviewDto): Promise<SearchVideoPreview> {
+  async createVideoPreview(dto: CreateVideoPreviewDto): Promise<GetVideoPreviewDto | null> {
     const entity = this.videoPreviewRepository.create({
       refIn: dto.refIn,
       refPostId: dto.refPostId || null,
-      video_id: dto.videoId,
+      video: { id: dto.videoId }, // ✅ 여기!
     });
 
-    return this.videoPreviewRepository.save(entity);
+    const saved = await this.videoPreviewRepository.save(entity);
+
+    return this.findVideoByRef(saved.refIn, saved.refPostId ?? 0);
   }
 
-  async findVideoByRef(refIn: string, refPostId: number): Promise<any | null> {
+  async findVideoByRef(refIn: string, refPostId: number): Promise<GetVideoPreviewDto | null> {
     const preview = await this.videoPreviewRepository.findOne({
       where: { refIn, refPostId },
       relations: ['video'],
     });
 
-    if (!preview || !preview.video) return null;
+    // console.log('🔍 preview 조회 결과:', preview);
+
+    if (!preview) {
+      return null;
+    }
+
+    if (!preview.video) {
+      return null;
+    }
+    console.log('preview.video:', preview.video);
+
+    const bucket = this.configService.get('AWS_S3_BUCKET');
+
+    const signedThumbnailUrl = await getSignedUrl(
+      this.s3,
+      new GetObjectCommand({
+        Bucket: bucket,
+        Key: preview.video.thumbnail_key,
+      }),
+      { expiresIn: 3600 },
+    );
+
+    const signedVideoUrl = await getSignedUrl(
+      this.s3,
+      new GetObjectCommand({
+        Bucket: bucket,
+        Key: preview.video.results_video_key,
+      }),
+      { expiresIn: 3600 },
+    );
+
+    console.log('signedVideoUrl:', signedVideoUrl);
+    console.log('signedThumbnailUrl:', signedThumbnailUrl);
+    console.log('preview:', preview);
 
     return {
       id: preview.id,
       refIn: preview.refIn,
-      refPostId: preview.refPostId,
+      refPostId: preview.refPostId ?? 0,
       video_id: preview.video.id,
-      videoUrl: preview.video.results_video_key.replace(/^results_video\//, ''),
-      thumbnailUrl: preview.video.thumbnail_key,
+      videoUrl: signedVideoUrl,
+      thumbnailUrl: signedThumbnailUrl,
       createdAt: preview.createdAt,
     };
   }

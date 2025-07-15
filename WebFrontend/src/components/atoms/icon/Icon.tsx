@@ -42,6 +42,7 @@ import {
   IoHeart,
   IoOptionsOutline,
   IoChevronDownOutline,
+  IoPlayCircle,
 } from 'react-icons/io5';
 
 // 아이콘 이름을 키로, 실제 컴포넌트를 값으로 매핑합니다.
@@ -86,6 +87,7 @@ const iconMap = {
   mapPin: IoLocationSharp, // 지도 핀
   options: IoOptionsOutline,
   downArrow: IoChevronDownOutline,   // 드롭다운용 다운
+  play: IoPlayCircle,
 };
 
 // Icon 컴포넌트가 받을 props 타입을 정의합니다.

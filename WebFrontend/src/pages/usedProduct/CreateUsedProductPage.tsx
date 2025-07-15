@@ -92,6 +92,18 @@ const CreateUsedProductPage: React.FC = () => {
       };
       console.log(payload);
       const response = await axiosInstance.post('used-products', payload);
+      const productId = response.data.productId;
+
+      // 3. videoId가 있을 경우 → search-video/preview 등록
+      if (form.videoId) {
+        await axiosInstance.post('/search-video/preview', {
+          refIn: 'used_products',
+          refPostId: productId,
+          videoId: form.videoId,
+        });
+        console.log('영상 preview 매핑 등록 완료');
+      }
+
       alert('상품이 성공적으로 등록되었습니다!');
       navigate(`/used-products/${response.data.productId}`);
     } catch (err) {

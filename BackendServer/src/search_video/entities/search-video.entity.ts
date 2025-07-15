@@ -19,9 +19,6 @@ export class SearchVideoPreview {
   @JoinColumn({ name: 'video_id' })
   video: Video;
 
-  @Column()
-  video_id: string;
-
   @CreateDateColumn()
   createdAt: Date;
 }

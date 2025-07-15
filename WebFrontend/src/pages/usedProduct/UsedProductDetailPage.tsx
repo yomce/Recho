@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { type UsedProduct, TRADE_TYPE } from '../../types/product';
+import { type UsedProduct, TRADE_TYPE, STATUS, STATUS_TEXT } from '../../types/product';
 import { useAuthStore } from '@/stores/authStore';
 import axiosInstance from '@/services/axiosInstance';
 import useViewCounter from '@/hooks/useViewCounter';
@@ -15,6 +15,8 @@ import MessageInputForm from '@/components/atoms/input/MessageInput';
 import IconButton from '@/components/atoms/button/IconButton';
 import SwiperImageCard from '@/components/atoms/card/SwipeImageCard';
 import { ToastMenu } from '@/components/atoms/button/ToastMenu';
+import { StatusToastMenu } from '@/components/atoms/button/StatusToastMenu';
+import toast from 'react-hot-toast';
 
 const TRADE_TYPE_TEXT = {
   [TRADE_TYPE.IN_PERSON]: '직거래',
@@ -92,6 +94,18 @@ const UsedProductDetailPage: React.FC = () => {
     }
   };
 
+  const handleStatusChange = async (status: STATUS) => {
+    if(!isOwner || !product) return;
+    console.log("상태변경요청");
+    try {
+      const res = await axiosInstance.patch(`/used-products/${product.productId}/status`, {status});
+      setProduct(res.data);
+      toast.success(`게시글 상태가 ${STATUS_TEXT}로 변경되었습니다.`);
+    } catch (err) {
+      toast.error('상태 변경에 실패했습니다.');
+    }
+  };
+
   /**
    * [신규] DM 보내기 버튼 클릭 시 실행되는 함수
    */
@@ -160,12 +174,20 @@ const UsedProductDetailPage: React.FC = () => {
               </div>
             )}
           </div>
-
           <UserProfileCard
-            imageUrl={product.imageUrl ?? ""}
-            name={product.id}
-            location={product.location.address}
-            status="판매중"
+          imageUrl={product.imageUrl ?? ""}
+          name={product.id}
+          location={product.location.address}
+          status={STATUS_TEXT[product.status] as "판매중" | "예약중" | "판매완료"}
+          onClick={() => {
+            console.log('UserProfileCard clicked', { isOwner, product });
+            if(isOwner) {
+            StatusToastMenu({
+              onChangeStatus: handleStatusChange,
+              currentStatus: product.status,
+            })
+            }
+          }}
           />
           {/* 정보 섹션 */}
           <div className="mt-6 md:mt-0 md:flex-1 flex flex-col mb-32">

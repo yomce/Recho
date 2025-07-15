@@ -81,15 +81,29 @@ const UserPage: React.FC = () => {
           thumbnailUrl: url,
         }));
         setThumbnails(formattedThumbnails);
+        setError(null); // 다른 유저 페이지 로딩 성공 시 에러 상태 초기화
       } catch (err) {
-        setError('사용자 정보를 가져오는 중 오류가 발생했습니다.');
+        const axiosError = err as AxiosError;
+        // [수정됨] 404 에러 처리
+        if (axiosError.response && axiosError.response.status === 404) {
+          toast.error('존재하지 않는 유저입니다.');
+          // 로그인된 사용자의 페이지로 이동
+          if (currentUser?.id) {
+            navigate(`/users/${currentUser.id}`, { replace: true });
+          } else {
+            navigate('/login', { replace: true });
+          }
+        } else {
+          // 그 외 다른 에러 처리
+          setError('사용자 정보를 가져오는 중 오류가 발생했습니다.');
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchUserData();
-  }, [id]);
+  }, [id, currentUser, navigate]);
 
   const handleSendDm = async () => {
     if (!user) return;

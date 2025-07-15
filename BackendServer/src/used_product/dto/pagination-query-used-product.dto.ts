@@ -19,4 +19,9 @@ export class PaginationQueryUsedProductDto {
   @Type(() => Date)
   @IsDate()
   lastCreatedAt?: Date; // <<< last_create_at -> lastCreatedAt (camelCase로 변경)
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  categoryId?: number;
 }

@@ -9,7 +9,7 @@ import TextAreaInput from '@/components/atoms/input/TextAreaInput';
 import CustomDatePicker from '@/components/atoms/input/CustomDatePicker';
 import CategorySelector from '@/components/atoms/input/CategorySelector';
 import PrimaryButton from '@/components/atoms/button/PrimaryButton';
-import { SKILL_LEVEL_DIC } from '../types';
+import { SKILL_LEVEL_DIC, SKILL_LEVEL } from '../types';
 
 export interface RecruitEnsembleFormState {
   title: string;
@@ -70,8 +70,11 @@ export const EnsembleForm: React.FC<RecruitEnsembleFormProps> = ({
   };
 
   const SKILL_CATEGORIES: CategoryOption[] = Object.entries(SKILL_LEVEL_DIC).map(
-    ([id, name]) => ({ id: id.toString(), name }) // 👈 key를 string으로 변환
+    ([id, name]) => ({ id , name }) // 👈 key를 string으로 변환
   );
+  console.log('▶️ 현재 skillLevel:', formState.skillLevel); // 숫자 or 문자열?
+  console.log('▶️ value로 들어가는 값:', SKILL_LEVEL_DIC[formState.skillLevel as SKILL_LEVEL]);
+
 
   return (
     <form onSubmit={onFormSubmit}>
@@ -104,7 +107,6 @@ export const EnsembleForm: React.FC<RecruitEnsembleFormProps> = ({
           selectedDate={selectedDate}
           onChange={handleDateChange}
         />
-        {/* <input type="date" id="eventDate" name="eventDate" value={formState.eventDate} onChange={onFormChange} required /> */}
       </div>
       <div className="mb-6">
         <InputLabel htmlFor="skillLevel">요구 실력</InputLabel>

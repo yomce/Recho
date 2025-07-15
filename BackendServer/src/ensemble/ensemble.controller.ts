@@ -15,7 +15,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { EnsembleService } from './ensemble.service';
-import { PaginationQueryRecruitEnsembleDto } from './dto/pagination-query-recruit-ensemble.dto';
+import { FilterRecruitEnsembleDto } from './dto/pagination-query-recruit-ensemble.dto';
 import { PaginatedRecruitEnsembleResponse } from './dto/paginated-recruit-ensemble.response.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { CreateRecruitEnsembleDto } from './dto/create-recruit-ensemble.dto';
@@ -30,18 +30,13 @@ export class EnsembleController {
 
   @Get()
   async getEnsemble(
-    @Query() paginationQuery: PaginationQueryRecruitEnsembleDto,
+    @Query() filter: FilterRecruitEnsembleDto,
   ): Promise<PaginatedRecruitEnsembleResponse> {
     this.logger.log('Fetching ensemble with pagination');
-    this.logger.log('paginationQuery:', paginationQuery); // ← 추가
 
-    const { limit = 20, lastPostId, lastCreatedAt } = paginationQuery;
+    // const { limit = 20, lastPostId, lastCreatedAt } = paginationQuery;
 
-    return this.ensembleService.findEnsembleWithPagination(
-      limit,
-      lastPostId,
-      lastCreatedAt,
-    );
+    return this.ensembleService.findEnsembleWithPagination(filter);
   }
 
   @Post()

@@ -9,28 +9,10 @@ import FilterButton from '@/components/atoms/button/FilterButton';
 import { toast } from 'react-hot-toast';
 import FilterToast from '@/components/atoms/button/FilterToast';
 import FloatingWriteButton from '@/components/atoms/button/FloatingWriteButton';
-import type { Location, RECRUIT_STATUS, SKILL_LEVEL } from './types';
+import type { RecruitEnsemble } from './types';
+import { useEnsembleFilter, type EnsembleFilterParams } from '@/pages/ensemble/hooks/fetchFilteredEnsembleList';
 
-// 모집 공고 데이터 타입 (서버 응답 기준, 필요에 따라 수정)
-interface RecruitEnsemble {
-  // 기본 정보
-  postId: number;
-  title: string;
-  content: string;
-  id: string;
-
-  // 날짜 정보 (API에서 문자열로 전달)
-  createdAt: string;
-  eventDate: string;
-
-  // 상태 및 숫자 정보
-  skillLevel: SKILL_LEVEL;         // 0 (BEGINNER), 1 (INTERMEDIATE) 등
-  recruitStatus: RECRUIT_STATUS;   // 0 (모집중) 등
-  totalRecruitCnt: number;
-  viewCount: number;
-  
-  location: Location;
-}
+// 모집 공고 데이터 타입은 '@/pages/ensemble/types'에서 import합니다.
 
 // 페이지네이션 커서 타입
 interface Cursor {
@@ -51,6 +33,13 @@ const RecruitEnsembleListPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [nextCursor, setNextCursor] = useState<Cursor | null>(null);
   const [hasNextPage, setHasNextPage] = useState(true);
+  const [isFiltered, setIsFiltered] = useState(false);
+  const { filteredData, fetchFilteredEnsembleList } = useEnsembleFilter();
+
+  const handleFilterApply = (filters: EnsembleFilterParams) => {
+    fetchFilteredEnsembleList(filters);
+    setIsFiltered(true);
+  };
 
   const tabs = ['합주모집', '주변모임', '즐겨찾기'];
   
@@ -99,7 +88,7 @@ const RecruitEnsembleListPage: React.FC = () => {
 
   const handleFilterClick = (tab: string) => {
     toast.custom((t) => (
-      <FilterToast activeTab={tab} toastId={t.id} />
+      <FilterToast activeTab={tab} toastId={t.id} onApplyFilter={handleFilterApply} />
     ), {
       position: "bottom-center",
       duration: Infinity,
@@ -130,7 +119,7 @@ const RecruitEnsembleListPage: React.FC = () => {
         </div>
         <SwiperTabs
           tabs={tabs}
-          contents={[items, [], []]}
+          contents={[isFiltered ? filteredData : items, [], []]}
           loading={loading}
           renderItem={(item) => (
             <PostCard

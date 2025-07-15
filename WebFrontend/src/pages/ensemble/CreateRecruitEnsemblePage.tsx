@@ -64,7 +64,10 @@ const CreateRecruitEnsemblePage: React.FC = () => {
   const handleRecruitChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     // skillLevel 값은 숫자로 변환하여 상태에 저장합니다.
-    const processedValue = name === 'skillLevel' ? Number(value) : value;
+    const processedValue = 
+      name === 'skillLevel' 
+        ? Number(value)
+        : value;
     setForm(prev => ({ ...prev, [name]: processedValue }));
   };
 

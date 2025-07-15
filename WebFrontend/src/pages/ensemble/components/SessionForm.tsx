@@ -1,6 +1,7 @@
 import Icon from "@/components/atoms/icon/Icon";
 import InputLabel from "@/components/atoms/input/InputLabel";
 import React, { useState } from "react";
+import { INSTRUMENT } from '@/pages/ensemble/types';
 
 export interface SessionEnsembleFormState {
   sessionId?: string;
@@ -21,9 +22,7 @@ export const SessionForm: React.FC<SessionFormProps> = ({
   onSessionFormListChange,
   onRemove // 추가
 }) => {
-  const INSTRUMENT_OPTIONS = [
-    "일렉기타", "베이스기타", "어쿠스틱기타", "피아노", "드럼", "보컬"
-  ];
+  const INSTRUMENT_OPTIONS = Object.values(INSTRUMENT) as string[];
 
   // true: 직접입력, false: 목록에서 선택
   const [isCustomInput, setIsCustomInput] = useState(

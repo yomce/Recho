@@ -1,7 +1,7 @@
 // WebFrontend/src/pages/community/CommunityFeedPage.tsx;
 
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom'; 
 // import axios from 'axios';
 import axiosInstance from '../../services/axiosInstance';
 import { useAuthStore } from '../../stores/authStore';
@@ -29,10 +29,17 @@ export interface Post {
 }
 
 // --- API 함수들 ---
-const fetchPosts = async (category: string): Promise<Post[]> => {
-  // '전체' 카테리이거나 값이 없는 경우, 파라미터 객체를 비워서 요청
-  const params = category && category !== '전체' ? { category } : {};
-  
+const fetchPosts = async (category: string, keyword?: string | null): Promise<Post[]> => {
+  const params: { category?: string; search?: string } = {};
+
+  if (keyword) {
+    // 키워드가 있으면 search 파라미터를 사용 (백엔드와 약속된 파라미터 이름)
+    params.search = keyword;
+  } else if (category && category !== '전체') {
+    // 키워드가 없고 카테고리가 있으면 category 파라미터 사용
+    params.category = category;
+  }
+
   const response = await axiosInstance.get('/posts', { params });
 
   console.log('feed page data')
@@ -71,12 +78,16 @@ const CommunityFeedPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('전체');
 
+
+  const [searchParams] = useSearchParams();
+  const keyword = searchParams.get('search');
+
   useEffect(() => {
     const loadPosts = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        const data = await fetchPosts(selectedCategory);
+        const data = await fetchPosts(selectedCategory, keyword);
         setPosts(data);
       } catch (err) {
         setError('게시물을 불러오는 데 실패했습니다.');
@@ -87,7 +98,7 @@ const CommunityFeedPage: React.FC = () => {
     };
 
     loadPosts();
-  }, [selectedCategory]);
+  }, [selectedCategory, keyword]); // keyword가 변경될 때도 데이터를 다시 불러오도록 추가
 
   const handleDeletePost = async (e: React.MouseEvent, postId: number) => {
     e.stopPropagation();
@@ -135,36 +146,42 @@ const CommunityFeedPage: React.FC = () => {
 
   return (
     <PostLayout>
-      <div className="p-4">
-        {/* 카테고리 네비게이션 */}
-        <nav className="mb-4 overflow-x-auto whitespace-nowrap smooth-scroll">
-          <div className="flex space-x-2">
-            {CATEGORIES.map((category) => (
-              <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors
-                  ${selectedCategory === category
-                    ? 'bg-brand-primary text-brand-inverse'
-                    : 'bg-brand-default text-brand-text-secondary hover:bg-gray-100'
-                  }`}
-              >
-                {category}
-              </button>
-            ))}
-          </div>
-        </nav>
+        <div className="p-4">
+            {keyword ? (
+                <h2 className="text-xl font-bold mb-4">
+                    '<span className="text-brand-primary">{keyword}</span>'에 대한 검색 결과
+                </h2>
+            ) : (
+                <nav className="mb-4 overflow-x-auto whitespace-nowrap smooth-scroll">
+                    <div className="flex space-x-2">
+                        {CATEGORIES.map((category) => (
+                            <button
+                                key={category}
+                                onClick={() => setSelectedCategory(category)}
+                                className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors
+                                  ${selectedCategory === category
+                                    ? 'bg-brand-primary text-brand-inverse'
+                                    : 'bg-brand-default text-brand-text-secondary hover:bg-gray-100'
+                                  }`}
+                            >
+                                {category}
+                            </button>
+                        ))}
+                    </div>
+                </nav>
+            )}
 
         {/* 메인 콘텐츠 (게시글 목록) */}
         <main className="space-y-4">
           {isLoading ? (
-            <p className="text-center text-brand-gray p-8">로딩 중...</p>
+            <p>로딩 중...</p>
           ) : error ? (
-            <p className="text-center text-brand-error-text p-8">{error}</p>
+            <p>{error}</p>
           ) : posts.length === 0 ? (
             <div className="text-center text-brand-gray p-8 bg-brand-default rounded-card">
-              <p>아직 게시글이 없어요.</p>
-              <p className="text-footnote mt-1">첫 번째 글을 작성해보세요!</p>
+              {/* 검색 결과가 없을 때 적절한 메시지 표시 */}
+              <p>{keyword ? '검색 결과가 없습니다.' : '아직 게시글이 없어요.'}</p>
+              {!keyword && <p className="text-footnote mt-1">첫 번째 글을 작성해보세요!</p>}
             </div>
           ) : (
             posts.map((post) => (

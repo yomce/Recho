@@ -104,7 +104,7 @@ const CategoryPostListPage: React.FC = () => {
              <article
                 key={post.postId}
                 className="cursor-pointer bg-brand-default rounded-card p-4 hover:shadow-lg transition-shadow duration-300"
-                onClick={() => navigate(`/community/posts/${post.postId}`)}
+                onClick={() => navigate(`/community/${post.postId}`)}
               >
                 {/* (이하 게시글 UI는 아래 CommunityFeedPage.tsx의 것과 동일하게 적용) */}
                 <div className="flex items-center gap-3 mb-3">

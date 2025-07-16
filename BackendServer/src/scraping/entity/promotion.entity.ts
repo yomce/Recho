@@ -1,9 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
-@Entity('promotions') // 'promotions' 라는 이름의 테이블과 매핑
+@Entity('promotions')
 export class Promotion {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid', { name: 'promotion_id' })
+  promotionId: string;
 
   @Column({ type: 'varchar', length: 255 })
   title: string;
@@ -11,6 +11,6 @@ export class Promotion {
   @Column({ type: 'varchar', length: 100, nullable: true })
   subtitle: string;
 
-  @Column({ name: 'image_url', type: 'text' }) // DB 컬럼명은 image_url로 지정
+  @Column({ name: 'image_url', type: 'text' })
   imageUrl: string;
 }

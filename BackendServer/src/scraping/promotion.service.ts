@@ -1,6 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Promotion } from './entity/promotion.entity';
 import { CreateManualPromotionDto } from './dto/create-manual-promotion.dto';
 
@@ -15,7 +15,7 @@ export class PromotionService {
     try {
       return this.promotionRepository.find({
         order: {
-          id: 'DESC',
+          promotionId: 'DESC',
         },
       });
     } catch (error) {
@@ -45,5 +45,17 @@ export class PromotionService {
         '데이터를 저장하는 중 오류가 발생했습니다.',
       );
     }
+  }
+
+  async deleteManyPromotions(ids: string[]): Promise<void> {
+    if (ids.length === 0) return; // 빈 배열이면 아무것도 안 함
+
+    console.log('delete promotion');
+    console.log(ids);
+
+    // In 연산자를 사용해 ids 배열에 포함된 모든 항목을 삭제
+    await this.promotionRepository.delete({
+      promotionId: In(ids),
+    });
   }
 }

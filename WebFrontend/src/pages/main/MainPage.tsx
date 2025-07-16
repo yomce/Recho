@@ -1,4 +1,3 @@
-// src/pages/main/MainPage.tsx
 import React, { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { useUiStore } from "@/stores/uiStore";
@@ -16,6 +15,7 @@ import PromotionCarousel from "@/components/organisms/PromotionCarousel";
 import { fetchPromotions } from '@/api';
 import type { Promotion } from '@/types/promotion';
 import { PromotionManualForm } from '@/components/layout/PromotionMaunalForm';
+import { DeletePromotionForm } from '@/components/layout/DeletePromotionForm';
 
 // --- Helper Components ---
 const QuickAction: React.FC<{
@@ -39,7 +39,6 @@ const QuickAction: React.FC<{
 const MainPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [, setIsModalOpen] = useState(false);
   const user = useAuthStore((state) => state.user);
   const accessToken = localStorage.getItem("accessToken");
   const {
@@ -48,16 +47,13 @@ const MainPage: React.FC = () => {
   } = useUiStore();
   const [promotionData, setPromotionData] = useState<Promotion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting] = useState(false);
-  const [isPromotionModalOpen, setIsPromotionModalOpen] = useState(false);
-  // --- 페이지 컨텐츠에 필요한 핸들러들만 남깁니다 ---
+
+  const [modalContent, setModalContent] = useState<'select' | 'add' | 'delete' | null>(null);
+
   const handleGoToUsedProducts = () => navigate("/used-products");
   const handleGoToEnsemble = () => navigate("/ensembles");
   const handleGoToPracticeRoom = () => navigate("/practice-room");
   const handleGoToPromotions = () => navigate("/promotions");
-
-  const openModal = () => setIsModalOpen(true);
-  // const closeModal = () => setIsModalOpen(false);
 
   const handleSelectVideoFromGallery = () => {
     if (!accessToken) {
@@ -74,12 +70,12 @@ const MainPage: React.FC = () => {
     closeVinylCreateModal();
   };
 
-  const handleOpenPromotionModal = () => setIsPromotionModalOpen(true);
-  const handleClosePromotionModal = () => setIsPromotionModalOpen(false);
+  const handleOpenActionModal = () => setModalContent('select');
+  const handleCloseModal = () => setModalContent(null);
 
-  const handlePromotionAdded = () => {
-    handleClosePromotionModal(); // 모달 닫기
-    window.location.reload();   // 페이지 새로고침
+  const handleActionSuccess = () => {
+    handleCloseModal();
+    window.location.reload();
   };
 
   useEffect(() => {
@@ -115,13 +111,9 @@ const MainPage: React.FC = () => {
 
       <div className="mx-4 mt-2 rounded-card bg-brand-default p-4">
         {isLoading ? (
-          // 1. 로딩 중일 때 표시할 스켈레톤
           <div className="h-[200px] w-full animate-pulse rounded-lg bg-gray-200"></div>
         ) : promotionData.length === 0 ? (
-          // 2. 로딩 후 데이터가 없을 때 표시할 플레이스홀더
           <div className="flex h-[200px] flex-col items-center justify-center text-center">
-            {/* Icon 컴포넌트가 있다면 활용하여 시각적 효과를 줄 수 있습니다. */}
-            {/* <Icon name="megaphone" size={40} className="text-gray-400" /> */}
             <p className="mt-2 font-medium text-gray-500">
               진행 중인 프로모션이 없습니다.
             </p>
@@ -130,7 +122,6 @@ const MainPage: React.FC = () => {
             </p>
           </div>
         ) : (
-          // 3. 데이터가 있을 때 실제 캐러셀 표시
           <PromotionCarousel items={promotionData} />
         )}
       </div>
@@ -145,7 +136,7 @@ const MainPage: React.FC = () => {
             />
           }
           label="바이닐제작"
-          onClick={openModal}
+          onClick={() => useUiStore.getState().actions.openVinylCreateModal()}
         />
         <QuickAction
           icon={
@@ -194,18 +185,11 @@ const MainPage: React.FC = () => {
       </CategoryIcon>
 
       <button
-        onClick={handleOpenPromotionModal}
-        disabled={isSubmitting}
-        className="fixed bottom-5 right-5 z-50 h-10 w-10 rounded-full bg-gray-700 p-2 text-white opacity-40 shadow-lg transition-all hover:opacity-100 hover:scale-110 disabled:cursor-not-allowed disabled:bg-gray-400"
-        aria-label="새 프로모션 추가"
+        onClick={handleOpenActionModal} // ✅ 플로팅 버튼은 이제 '선택' 모달을 엽니다.
+        className="fixed bottom-5 right-5 z-50 h-12 w-12 rounded-full bg-brand-primary p-2 text-white shadow-lg transition-all hover:scale-110"
+        aria-label="새 작업"
       >
-        {isSubmitting ? (
-          // 로딩 중일 때 스피너 아이콘 (예시)
-          <div className="h-full w-full animate-spin rounded-full border-2 border-t-transparent"></div>
-        ) : (
-          // 평상시 아이콘
-          <Icon name="plus" size={24} />
-        )}
+        <Icon name="plus" size={28} />
       </button>
 
       <Modal
@@ -232,11 +216,34 @@ const MainPage: React.FC = () => {
       </Modal>
 
       <Modal
-        isOpen={isPromotionModalOpen}
-        onClose={handleClosePromotionModal}
-        title="" // 폼 자체에 제목이 있으므로 모달 제목은 비워둡니다.
+        isOpen={!!modalContent}
+        onClose={handleCloseModal}
+        title={modalContent === 'select' ? "작업 선택" : ""}
       >
-        <PromotionManualForm onSuccess={handlePromotionAdded} />
+        {(() => {
+          switch (modalContent) {
+            case 'select':
+              return (
+                <div className="flex flex-col gap-3">
+                  <PrimaryButton onClick={() => setModalContent('add')}>
+                    프로모션 추가
+                  </PrimaryButton>
+                  <PrimaryButton onClick={() => setModalContent('delete')} className="bg-brand-danger hover:bg-red-700">
+                    프로모션 삭제
+                  </PrimaryButton>
+                  <SecondaryButton onClick={handleCloseModal} className="mt-2">
+                    닫기
+                  </SecondaryButton>
+                </div>
+              );
+            case 'add':
+              return <PromotionManualForm onSuccess={handleActionSuccess} />;
+            case 'delete':
+              return <DeletePromotionForm onSuccess={handleActionSuccess} />;
+            default:
+              return null;
+          }
+        })()}
       </Modal>
     </Layout>
   );

@@ -85,8 +85,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         <InputLabel htmlFor="categoryId">카테고리</InputLabel>
         <CategorySelector
           name="productCategories"
-          // value={String(form1.categoryId)}
-          // onChange={(e) => setForm1({ categoryId: e.target.value })}
           value={String(formState.categoryId)}
           onChange={onCategoryChange}
           categories={categoryLabels}
@@ -114,7 +112,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           name="tradeType"
           value={String(formState.tradeType)}
           onChange={onTradeTypeChange}
-          // onChange={(e) => setForm2({ TRADE_TYPE: e.target.value })}
           categories={tradeCategories}
           showSubCategory={false}
         />

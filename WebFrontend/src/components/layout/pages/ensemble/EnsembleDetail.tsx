@@ -79,7 +79,7 @@ export const RecruitEnsembleDetail: React.FC<RecruitEnsembleProps> = ({
         </div>
         <div className="flex flex-row items-center justify-start gap-2">
           <IconButton iconName="mapPin" iconSize={20} />
-          <p>{post.location.address}</p>
+          <p>{post.location.place_name}</p>
         </div>
         <div className="flex flex-row items-center justify-start gap-2">
           <p

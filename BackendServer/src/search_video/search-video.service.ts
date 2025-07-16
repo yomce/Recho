@@ -11,6 +11,23 @@ import { CreateVideoPreviewDto } from './dto/create-video-preview.dto';
 import { ConfigService } from '@nestjs/config';
 import { UserService } from 'src/auth/user/user.service';
 
+// -- helper function
+const getSignedS3Url = async (
+    s3: S3Client,
+    bucket: string,
+    key: string,
+    expiresIn = 3600,
+  ): Promise<string> => {
+    return getSignedUrl(
+      s3,
+      new GetObjectCommand({
+        Bucket: bucket,
+        Key: key,
+      }),
+      { expiresIn },
+    );
+  };
+
 @Injectable()
 export class SearchVideoService {
   private readonly s3: S3Client;
@@ -53,24 +70,20 @@ export class SearchVideoService {
   }
 
   async getMyVideos(userId: string): Promise<VideoPreviewDto[]> {
-    const videos = await this.searchVideoRepository.find({
-      where: { user: { id: userId } },
-      order: { created_at: 'DESC' },
-    });
+    const videos = await this.searchVideoRepository
+      .createQueryBuilder('video')
+      .leftJoin('video.user', 'user')
+      .where('user.id = :userId', { userId })
+      .orderBy('video.created_at', 'DESC')
+      .getMany();
+
+    console.log('[getMyVideos] 요청한 userId:', userId);
 
     const bucket = this.configService.get('AWS_S3_BUCKET');
 
     return Promise.all(
       videos.map(async (video) => {
-        const signedThumbnailUrl = await getSignedUrl(
-          this.s3,
-          new GetObjectCommand({
-            Bucket: bucket,
-            Key: video.thumbnail_key,
-          }),
-          { expiresIn: 3600 },
-        );
-
+        const signedThumbnailUrl = await getSignedS3Url(this.s3, bucket, video.thumbnail_key);
         return {
           id: video.id,
           videoUrl: video.results_video_key.replace(/^results_video\//, ''),
@@ -84,7 +97,7 @@ export class SearchVideoService {
     const entity = this.videoPreviewRepository.create({
       refIn: dto.refIn,
       refPostId: dto.refPostId || null,
-      video: { id: dto.videoId }, // ✅ 여기!
+      video: { id: dto.videoId },
     });
 
     const saved = await this.videoPreviewRepository.save(entity);
@@ -98,8 +111,6 @@ export class SearchVideoService {
       relations: ['video'],
     });
 
-    // console.log('🔍 preview 조회 결과:', preview);
-
     if (!preview) {
       return null;
     }
@@ -111,23 +122,8 @@ export class SearchVideoService {
 
     const bucket = this.configService.get('AWS_S3_BUCKET');
 
-    const signedThumbnailUrl = await getSignedUrl(
-      this.s3,
-      new GetObjectCommand({
-        Bucket: bucket,
-        Key: preview.video.thumbnail_key,
-      }),
-      { expiresIn: 3600 },
-    );
-
-    const signedVideoUrl = await getSignedUrl(
-      this.s3,
-      new GetObjectCommand({
-        Bucket: bucket,
-        Key: preview.video.results_video_key,
-      }),
-      { expiresIn: 3600 },
-    );
+    const signedThumbnailUrl = await getSignedS3Url(this.s3, bucket, preview.video.thumbnail_key);
+    const signedVideoUrl = await getSignedS3Url(this.s3, bucket, preview.video.results_video_key);
 
     console.log('signedVideoUrl:', signedVideoUrl);
     console.log('signedThumbnailUrl:', signedThumbnailUrl);

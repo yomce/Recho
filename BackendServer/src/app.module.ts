@@ -29,7 +29,7 @@ import * as path from 'path';
 import { PostsModule } from './community/posts/posts.module';
 import { CommentsModule } from './community/comments/comments.module';
 import { SearchModule } from './search/search.module';
-import { ScrapingModule } from './scraping/scraping.module';
+import { PromotionModule } from './scraping/promotion.module';
 
 @Module({
   imports: [
@@ -73,7 +73,7 @@ import { ScrapingModule } from './scraping/scraping.module';
       useFactory: (configService: ConfigService) => {
         return {
           transport: {
-            host: configService.get<string>('GMAIL_HOST'), 
+            host: configService.get<string>('GMAIL_HOST'),
             port: 587,
             secure: false,
             auth: {
@@ -103,7 +103,7 @@ import { ScrapingModule } from './scraping/scraping.module';
     CommentsModule,
     SearchModule,
     searchVideoModule,
-    ScrapingModule,
+    PromotionModule,
   ],
   controllers: [AppController, ConfigController],
   providers: [AppService],

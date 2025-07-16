@@ -4,3 +4,9 @@ export interface Promotion {
   title: string;
   subtitle: string;
 }
+
+export interface PromotionPost {
+  title: string;
+  imageUrl: string;
+  subtitle?: string;
+}

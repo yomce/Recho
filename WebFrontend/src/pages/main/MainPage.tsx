@@ -13,8 +13,9 @@ import PrimaryButton from "@/components/atoms/button/PrimaryButton";
 import SecondaryButton from "@/components/atoms/button/SecondaryButton";
 import CategoryIcon from "@/components/organisms/CategoryIcon";
 import PromotionCarousel from "@/components/organisms/PromotionCarousel";
-import { fetchPromotions, postPromotionByUrl } from '@/api';
+import { fetchPromotions } from '@/api';
 import type { Promotion } from '@/types/promotion';
+import { PromotionManualForm } from '@/components/layout/PromotionMaunalForm';
 
 // --- Helper Components ---
 const QuickAction: React.FC<{
@@ -47,7 +48,8 @@ const MainPage: React.FC = () => {
   } = useUiStore();
   const [promotionData, setPromotionData] = useState<Promotion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting] = useState(false);
+  const [isPromotionModalOpen, setIsPromotionModalOpen] = useState(false);
   // --- 페이지 컨텐츠에 필요한 핸들러들만 남깁니다 ---
   const handleGoToUsedProducts = () => navigate("/used-products");
   const handleGoToEnsemble = () => navigate("/ensembles");
@@ -72,23 +74,12 @@ const MainPage: React.FC = () => {
     closeVinylCreateModal();
   };
 
-  const handleSecretAddClick = async () => {
-    const url = window.prompt("추가할 공연의 전체 URL을 입력하세요:");
+  const handleOpenPromotionModal = () => setIsPromotionModalOpen(true);
+  const handleClosePromotionModal = () => setIsPromotionModalOpen(false);
 
-    // 사용자가 URL을 입력하고 '확인'을 누른 경우
-    if (url) {
-      setIsSubmitting(true); // 로딩 시작
-      try {
-        await postPromotionByUrl(url);
-        toast.success("프로모션이 성공적으로 추가되었습니다! 목록을 새로고침합니다.");
-        // 성공 시 페이지를 새로고침하여 추가된 목록을 바로 확인
-        window.location.reload();
-      } catch (error: any) {
-        toast.error(error.message || "프로모션 추가 중 오류가 발생했습니다.");
-      } finally {
-        setIsSubmitting(false); // 로딩 종료
-      }
-    }
+  const handlePromotionAdded = () => {
+    handleClosePromotionModal(); // 모달 닫기
+    window.location.reload();   // 페이지 새로고침
   };
 
   useEffect(() => {
@@ -203,7 +194,7 @@ const MainPage: React.FC = () => {
       </CategoryIcon>
 
       <button
-        onClick={handleSecretAddClick}
+        onClick={handleOpenPromotionModal}
         disabled={isSubmitting}
         className="fixed bottom-5 right-5 z-50 h-10 w-10 rounded-full bg-gray-700 p-2 text-white opacity-40 shadow-lg transition-all hover:opacity-100 hover:scale-110 disabled:cursor-not-allowed disabled:bg-gray-400"
         aria-label="새 프로모션 추가"
@@ -238,6 +229,14 @@ const MainPage: React.FC = () => {
             닫기
           </SecondaryButton>
         </div>
+      </Modal>
+
+      <Modal
+        isOpen={isPromotionModalOpen}
+        onClose={handleClosePromotionModal}
+        title="" // 폼 자체에 제목이 있으므로 모달 제목은 비워둡니다.
+      >
+        <PromotionManualForm onSuccess={handlePromotionAdded} />
       </Modal>
     </Layout>
   );

@@ -16,6 +16,7 @@ import MessageInput from "@/components/molecules/message/MessageInput";
 import Modal from "@/components/molecules/modal/Modal";
 import Icon from "@/components/atoms/icon/Icon";
 import Avatar from "@/components/atoms/avatar/Avatar";
+import { IoChevronDown } from 'react-icons/io5';
 // Axios 인스턴스 import
 import axiosInstance from "../../services/axiosInstance";
 
@@ -66,12 +67,17 @@ const ChatRoomPage: React.FC = () => {
   const [inviteeId, setInviteeId] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
   const dragX = useMotionValue(0);
-
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false); 
+  
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const handleScroll = () => {
     const container = scrollContainerRef.current;
     // 스크롤이 맨 위로 올라갔고, 로딩 중이 아니며, 더 불러올 메시지가 있을 때
-    if (container && container.scrollTop === 0 && !isLoadingMore && hasMore) {
+    if(container){
+      const isScrolledUp = container.scrollHeight - container.scrollTop - container.clientHeight > 100;
+      setShowScrollToBottom(isScrolledUp); // 상태 업데이트
+
+      if (container && container.scrollTop === 0 && !isLoadingMore && hasMore) {
       // 이전 스크롤 높이를 기록
       const prevScrollHeight = container.scrollHeight;
       
@@ -82,6 +88,7 @@ const ChatRoomPage: React.FC = () => {
           scrollContainerRef.current.scrollTop = newScrollHeight - prevScrollHeight;
         }
       });
+      }
     }
   };
   // --- 컴포넌트 생명주기와 스토어 액션 연결 ---
@@ -282,6 +289,15 @@ const ChatRoomPage: React.FC = () => {
           )}
         </div>
         <div ref={chatEndRef} />
+        {showScrollToBottom && (
+          <button
+            onClick={() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })}
+            className="absolute bottom-5 right-5 bg-blue-500 text-white rounded-full p-2 shadow-lg hover:bg-blue-600 focus:outline-none"
+            aria-label="Scroll to bottom"
+          >
+            <IoChevronDown size={20} />
+          </button>
+        )}
       </motion.main>
       {/* 푸터 */}
       <footer className="p-4 bg-white border-t border-gray-200">

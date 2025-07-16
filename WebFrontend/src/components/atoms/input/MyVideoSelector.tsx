@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import axiosInstance from '@/services/axiosInstance';
 import { type VideoPreview } from '@/types/product';
-import { useAuthStore } from '@/stores/authStore';
-
 
 const MyVideoSelector = ({
   onSelect,

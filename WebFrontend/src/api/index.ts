@@ -51,7 +51,7 @@ export const togglePostLike = async (contentType: CONTENT_TYPE, postId: number):
 
 export const fetchPromotions = async (): Promise<Promotion[]> => {
   try {
-    const response = await axiosInstance.get<Promotion[]>(`scraping/promotions`);
+    const response = await axiosInstance.get<Promotion[]>(`promotions`);
     // axios는 응답 데이터를 data 속성에 담아 반환합니다.
     return response.data;
   } catch (error) {

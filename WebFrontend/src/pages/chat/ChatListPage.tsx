@@ -90,10 +90,10 @@ const ChatListPage: React.FC = () => {
             value={newRoomName}
             onChange={(e) => setNewRoomName(e.target.value)}
             placeholder="새 그룹 채팅방 이름"
-            className="flex-1 px-4 py-2 rounded-card text-body bg-brand-default focus:outline-none focus:ring-1 focus:ring-brand-primary"
+            className="flex-3 px-4 py-2 rounded-card text-body bg-brand-default focus:outline-none focus:ring-1 focus:ring-brand-primary"
           />
-          <button type="submit" className="px-4 py-2 text-white rounded-card bg-brand-primary text-button hover:opacity-90">
-            <Icon name="plus" size={20} className="inline-block md:hidden" />
+          <button type="submit" className="flex-1 max-w-[60px] whitespace-nowrap overflow-hidden px-4 py-2 text-white rounded-card bg-brand-primary text-button hover:opacity-90">
+            <Icon name="plus" size={20} className="inline-block mb-1" />
           </button>
         </form>
 

@@ -12,12 +12,11 @@ const MyVideoSelector = ({
   const [videos, setVideos] = useState<VideoPreview[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 9;
-  // const { user } = useAuthStore();
 
   useEffect(() => {
     const fetchVideos = async () => {
       try {
-        const res = await axiosInstance.get<VideoPreview[]>(`/videos`);
+        const res = await axiosInstance.get<VideoPreview[]>(`/search-video`);
         setVideos(res.data); // ✅ 백엔드에서 [{ id, thumbnailUrl }] 형태로 응답한다고 가정
       } catch (e) {
         console.error('영상 썸네일 불러오기 실패:', e);

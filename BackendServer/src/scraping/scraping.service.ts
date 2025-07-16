@@ -74,7 +74,9 @@ export class ScrapingService {
 
       if (error.isAxiosError) {
         // Axios 에러의 경우, 응답 상태와 데이터를 함께 로깅
-        console.error(`AxiosError: Status ${error.response?.status} - ${error.message}`);
+        console.error(
+          `AxiosError: Status ${error.response?.status} - ${error.message}`,
+        );
         // 실제 멜론티켓이 보낸 에러 데이터도 확인
         console.error('Response Data:', error.response?.data);
       } else {
@@ -82,7 +84,6 @@ export class ScrapingService {
         console.error('Non-Axios Error:', error.message);
       }
       console.error('--------------------------------');
-
 
       if (error instanceof BadRequestException) {
         throw error;

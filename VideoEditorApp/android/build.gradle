@@ -1,3 +1,5 @@
+//빌드 잘 안되면 npx로 안드로이드 빌드 한 번하고 빌드하기
+
 buildscript {
     ext {
         buildToolsVersion = "35.0.0"

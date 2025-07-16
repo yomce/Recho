@@ -72,7 +72,7 @@ export class ChatService {
         roomId,
         createdAt: MoreThan(userRoom.joinedAt), // [수정] 사용자의 참여 시간보다 최신인 메시지만 필터링
       },
-      order: { createdAt: 'ASC' },
+      order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
       relations: ['sender'], // [추가] 메시지 보낸 사람의 정보를 함께 가져오도록 설정

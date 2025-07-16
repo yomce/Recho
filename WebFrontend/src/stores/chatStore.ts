@@ -36,9 +36,13 @@ interface ChatState {
   isModalOpen: boolean;
   modalType: 'invite' | 'leave' | null;
   
+  page: number;
+  hasMore: boolean; // 더 불러올 메시지가 있는지 여부
+  isLoadingMore: boolean; // 추가 메시지 로딩 중 상태
 
   // --- 액션 (Actions) ---
   initializeRoom: (roomId: string) => Promise<void>;
+  loadMoreMessages: () => Promise<void>;
   sendMessage: (content: string) => void;
   inviteUser: (inviteeId: string) => void;
   leaveCurrentRoom: () => void;
@@ -60,6 +64,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
   chatPartner: { id: null, username: '대화 상대 로딩...', profileUrl: null },
   isModalOpen: false,
   modalType: null,
+
+  page: 1,
+  hasMore: true,
+  isLoadingMore: false,
   /**
    * 소켓 이벤트 리스너를 초기화하는 액션 (앱 실행 시 한 번만 호출)
    */
@@ -135,11 +143,18 @@ export const useChatStore = create<ChatState>((set, get) => ({
       roomId,
       messages: [],
       chatPartner: { id: null, username: '로딩 중...', profileUrl: null },
+      page: 1,
+      hasMore: true,
+      isLoadingMore: false,
     });
     try {
-      const response = await axiosInstance.get(`chat/rooms/${roomId}/history`);
-      const messageHistory: Message[] = response.data;
-      set({ messages: messageHistory });
+      const response = await axiosInstance.get(`chat/rooms/${roomId}/history?page=1&limit=20`);
+      const messageHistory: Message[] = response.data.reverse();
+      set({ 
+        messages: messageHistory,
+        page: 2,
+        hasMore: response.data.length === 20, 
+      });
       const partner = messageHistory.find(
         (msg) => msg.senderId && msg.senderId !== currentUser.id
       )?.sender;
@@ -180,6 +195,33 @@ export const useChatStore = create<ChatState>((set, get) => ({
     if (!inviteeId.trim() || !roomId) return;
     socket.emit('inviteUser', { roomId, inviteeId });
     get().closeModal();
+  },
+  loadMoreMessages: async () => {
+    const { roomId, page, hasMore, isLoadingMore, messages } = get();
+    const { user: currentUser } = useAuthStore.getState();
+
+    if (!roomId || !currentUser || !hasMore || isLoadingMore) {
+      return;
+    }
+
+    set({ isLoadingMore: true });
+
+    try {
+      const response = await axiosInstance.get(`chat/rooms/${roomId}/history?page=${page}&limit=20`);
+      const olderMessages: Message[] = response.data.reverse();
+
+      set({
+        // 새로 불러온 메시지(과거)를 기존 메시지(현재) 앞에 추가
+        messages: [...olderMessages, ...messages],
+        page: page + 1,
+        hasMore: olderMessages.length === 20,
+      });
+
+    } catch (error) {
+      console.error('이전 메시지 로딩 실패:', error);
+    } finally {
+      set({ isLoadingMore: false });
+    }
   },
   leaveCurrentRoom: () => {
     const { roomId } = get();

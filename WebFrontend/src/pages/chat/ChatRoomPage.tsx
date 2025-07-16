@@ -16,6 +16,7 @@ import MessageInput from "@/components/molecules/message/MessageInput";
 import Modal from "@/components/molecules/modal/Modal";
 import Icon from "@/components/atoms/icon/Icon";
 import Avatar from "@/components/atoms/avatar/Avatar";
+import { IoChevronDown } from 'react-icons/io5';
 // Axios 인스턴스 import
 import axiosInstance from "../../services/axiosInstance";
 
@@ -40,6 +41,9 @@ const ChatRoomPage: React.FC = () => {
   const {
     isConnected,
     messages,
+    isLoadingMore,
+    hasMore,
+    loadMoreMessages,
     chatPartner,
     isModalOpen,
     modalType,
@@ -63,7 +67,30 @@ const ChatRoomPage: React.FC = () => {
   const [inviteeId, setInviteeId] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
   const dragX = useMotionValue(0);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false); 
+  
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const handleScroll = () => {
+    const container = scrollContainerRef.current;
+    // 스크롤이 맨 위로 올라갔고, 로딩 중이 아니며, 더 불러올 메시지가 있을 때
+    if(container){
+      const isScrolledUp = container.scrollHeight - container.scrollTop - container.clientHeight > 100;
+      setShowScrollToBottom(isScrolledUp); // 상태 업데이트
 
+      if (container && container.scrollTop === 0 && !isLoadingMore && hasMore) {
+      // 이전 스크롤 높이를 기록
+      const prevScrollHeight = container.scrollHeight;
+      
+      loadMoreMessages().then(() => {
+        // 비동기 로딩 후 스크롤 위치 조정
+        if (scrollContainerRef.current) {
+          const newScrollHeight = scrollContainerRef.current.scrollHeight;
+          scrollContainerRef.current.scrollTop = newScrollHeight - prevScrollHeight;
+        }
+      });
+      }
+    }
+  };
   // --- 컴포넌트 생명주기와 스토어 액션 연결 ---
   useEffect(() => {
     // 필수 정보가 없으면 실행을 중단합니다.
@@ -102,6 +129,12 @@ const ChatRoomPage: React.FC = () => {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    if (!isLoadingMore) { // 추가 로딩 시에는 맨 아래로 가지 않도록 함
+      chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages.length, isLoadingMore]);
 
   // --- 핸들러 함수들 ---
   const handleSendMessage = () => {
@@ -193,6 +226,8 @@ const ChatRoomPage: React.FC = () => {
       </header>
       {/* 채팅 메시지 목록 */}
       <motion.main
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
         className="flex-1 p-4 overflow-y-auto bg-brand-frame"
         style={{ x: dragX }}
         drag="x"
@@ -200,6 +235,11 @@ const ChatRoomPage: React.FC = () => {
         dragElastic={0.1}
         dragSnapToOrigin
       >
+        {isLoadingMore && (
+          <div className="text-center p-2 text-brand-gray">
+            이전 메시지를 불러오는 중...
+          </div>
+        )}
         <div className="flex flex-col gap-2">
           {messages.map((msg: Message) =>
             msg.isSystem ? (
@@ -249,6 +289,15 @@ const ChatRoomPage: React.FC = () => {
           )}
         </div>
         <div ref={chatEndRef} />
+        {showScrollToBottom && (
+          <button
+            onClick={() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })}
+            className="absolute bottom-5 right-5 bg-blue-500 text-white rounded-full p-2 shadow-lg hover:bg-blue-600 focus:outline-none"
+            aria-label="Scroll to bottom"
+          >
+            <IoChevronDown size={20} />
+          </button>
+        )}
       </motion.main>
       {/* 푸터 */}
       <footer className="p-4 bg-white border-t border-gray-200">

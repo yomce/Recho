@@ -68,19 +68,29 @@ export class ScrapingService {
 
       return savedPromotion;
     } catch (error) {
-      // Axios 에러인 경우 상태 코드를 포함하여 더 자세한 에러를 던져줍니다.
-      if (error.isAxiosError && error.response) {
-        console.error(error.response.data);
-        throw new InternalServerErrorException(
-          `데이터를 가져오는 중 오류가 발생했습니다. (상태 코드: ${error.response.status})`,
-        );
+      // 💡 에러 로깅 강화
+      console.error('--------------------------------');
+      console.error(`Scraping failed for URL: ${url}`);
+
+      if (error.isAxiosError) {
+        // Axios 에러의 경우, 응답 상태와 데이터를 함께 로깅
+        console.error(`AxiosError: Status ${error.response?.status} - ${error.message}`);
+        // 실제 멜론티켓이 보낸 에러 데이터도 확인
+        console.error('Response Data:', error.response?.data);
+      } else {
+        // 그 외의 에러
+        console.error('Non-Axios Error:', error.message);
       }
-      console.error(error);
+      console.error('--------------------------------');
+
+
       if (error instanceof BadRequestException) {
         throw error;
       }
+
+      // 어떤 에러든 최종적으로는 InternalServerErrorException을 던짐
       throw new InternalServerErrorException(
-        '데이터를 가져오고 저장하는 중 오류가 발생했습니다.',
+        `데이터를 가져오는 중 오류가 발생했습니다. (URL: ${url})`,
       );
     }
   }

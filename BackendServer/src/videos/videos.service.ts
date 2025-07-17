@@ -1,4 +1,3 @@
-// src/videos/videos.service.ts
 import {
   Injectable,
   InternalServerErrorException,
@@ -16,6 +15,7 @@ import { VideoResponseDto } from './dto/video.response.dto';
 import { CONTENT_TYPE } from 'src/likes/dto/toggle-like.dto';
 import { LikesService } from 'src/likes/likes.service';
 import { User } from 'src/auth/user/user.entity';
+import { CommentsService } from 'src/comment/comments.service';
 
 @Injectable()
 export class VideosService {
@@ -27,8 +27,8 @@ export class VideosService {
     private readonly configService: ConfigService,
     private readonly userService: UserService,
     private readonly likesService: LikesService,
+    private readonly commentsService: CommentsService,
   ) {
-    // 1. ConfigService에서 설정값 가져오기
     const region = this.configService.get<string>('AWS_REGION');
     const accessKeyId = this.configService.get<string>(
       'AWS_BUCKET_IAM_ACCESS_KEY_ID',
@@ -38,12 +38,10 @@ export class VideosService {
     );
 
     if (!region || !accessKeyId || !secretAccessKey) {
-      // 하나라도 없으면 서버 내부 오류 예외를 발생시켜 서버 실행을 중단
       throw new InternalServerErrorException(
         'S3 클라이언트 설정에 필요한 환경 변수가 누락되었습니다.',
       );
     }
-    // 2. 요청하신 형식으로 S3 클라이언트 설정 객체 생성
     const clientConfig: S3ClientConfig = {
       region: region,
       credentials: {
@@ -51,8 +49,6 @@ export class VideosService {
         secretAccessKey: secretAccessKey,
       },
     };
-
-    // 3. 생성된 설정 객체를 사용해 S3 클라이언트 초기화
     this.s3 = new S3Client(clientConfig);
   }
 
@@ -64,7 +60,7 @@ export class VideosService {
     }
 
     const videos = await this.videoRepository.find({
-      where: { user: { id: id } }, // user 객체의 id를 직접 지정
+      where: { user: { id: id } },
       select: ['thumbnail_key'],
     });
 
@@ -86,7 +82,7 @@ export class VideosService {
     page: number,
     limit: number,
     sortBy: 'likes' | 'createdAt',
-    user: User | undefined, // ✅ user 파라미터 추가
+    user: User | undefined,
   ): Promise<any[]> {
     const videos = await this.videoRepository.find({
       relations: ['user'],
@@ -99,15 +95,21 @@ export class VideosService {
       return [];
     }
 
-    // ✅ '좋아요' 상태 확인 로직 추가
     const videoIds = videos.map((video) => video.id);
-    const likedVideoIds = user
-      ? await this.likesService.getUserLikedStatusesForContents(
-          user.id,
-          CONTENT_TYPE.VINYL, // 콘텐츠 타입을 'VINYL'로 지정
-          videoIds,
-        )
-      : new Set<string>();
+
+    const [likedVideoIds, commentsMap] = await Promise.all([
+      user
+        ? this.likesService.getUserLikedStatusesForContents(
+            user.id,
+            CONTENT_TYPE.VINYL,
+            videoIds,
+          )
+        : new Set<string>(),
+      this.commentsService.findRecentCommentsForContents(
+        CONTENT_TYPE.VINYL,
+        videoIds,
+      ),
+    ]);
 
     const signedVideos = await Promise.all(
       videos.map(async (video) => {
@@ -134,38 +136,34 @@ export class VideosService {
     );
 
     const responseVideo = signedVideos.map((video) => {
+      const commentsForVideo = commentsMap.get(video.id) || [];
       const tmpResponseUser = UserResponseDto.from(video.user);
       const tmpVideo = VideoResponseDto.from(video, tmpResponseUser);
       return {
         ...tmpVideo,
-        userLiked: likedVideoIds.has(video.id), // '좋아요' 여부 추가
+        userLiked: likedVideoIds.has(video.id),
+        comments: commentsForVideo,
       };
     });
 
     return responseVideo;
   }
 
-  async getSourceVideoUrl(videoKey: string): Promise<string> {
-    return getSignedUrl(
-      this.s3,
-      new GetObjectCommand({
-        Bucket: this.configService.get('AWS_S3_BUCKET'),
-        Key: videoKey,
-      }),
-      { expiresIn: 3600 },
-    );
-  }
-
-  async getVideoDetails(id: string): Promise<VideoResponseDto> {
+  async getVideoDetails(id: string, user: User | undefined): Promise<any> {
     const video = await this.videoRepository.findOne({
       where: { id },
       relations: ['user', 'parent'],
     });
+
     if (!video) {
-      throw new Error('Video not found');
+      throw new NotFoundException(`Video with ID "${id}" not found`);
     }
 
-    const [videoUrl, thumbnailUrl] = await Promise.all([
+    const [userLiked, comments, videoUrl, thumbnailUrl] = await Promise.all([
+      user
+        ? this.likesService.hasUserLiked(user.id, CONTENT_TYPE.VINYL, id)
+        : false,
+      this.commentsService.getComments(CONTENT_TYPE.VINYL, id),
       getSignedUrl(
         this.s3,
         new GetObjectCommand({
@@ -183,13 +181,18 @@ export class VideosService {
         { expiresIn: 3600 },
       ),
     ]);
+
     video.video_url = videoUrl;
     video.thumbnail_url = thumbnailUrl;
 
     const responseUser = UserResponseDto.from(video.user);
     const responseVideo = VideoResponseDto.from(video, responseUser);
 
-    return responseVideo;
+    return {
+      ...responseVideo,
+      userLiked,
+      comments,
+    };
   }
 
   async findVideoLineage(id: string): Promise<Video[]> {
@@ -199,7 +202,7 @@ export class VideosService {
     while (currentVideoId) {
       const video = await this.videoRepository.findOne({
         where: { id: currentVideoId },
-        relations: ['parent'], // [수정] 부모 관계를 명시적으로 로드
+        relations: ['parent'],
         select: [
           'id',
           'parent_video_id',
@@ -208,22 +211,31 @@ export class VideosService {
           'endTime',
           'timelinePosition',
           'source_video_key',
-          'results_video_key', // globalStart/EndTime 계산을 위해 추가
-          'thumbnail_key', // 썸네일 표시를 위해 추가
+          'results_video_key',
+          'thumbnail_key',
         ],
       });
 
       if (!video) {
         break;
       }
-      // 소스 비디오의 URL을 생성하여 video_url에 할당
       video.video_url = await this.getSourceVideoUrl(video.source_video_key);
 
       lineage.push(video);
-      // [수정] 직접 ID를 사용하는 대신, 로드된 관계를 통해 다음 ID를 찾음
       currentVideoId = video.parent ? video.parent.id : null;
     }
 
     return lineage.reverse();
+  }
+
+  async getSourceVideoUrl(videoKey: string): Promise<string> {
+    return getSignedUrl(
+      this.s3,
+      new GetObjectCommand({
+        Bucket: this.configService.get('AWS_S3_BUCKET'),
+        Key: videoKey,
+      }),
+      { expiresIn: 3600 },
+    );
   }
 }

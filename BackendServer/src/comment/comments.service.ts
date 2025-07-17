@@ -7,13 +7,18 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Post } from 'src/community/posts/entities/post.entity';
 import { Video } from 'src/videos/entities';
 import { NumberIdComment } from './entities/number-id-comment.entity';
 import { StringIdComment } from './entities/string-id-comment.entity';
 import { CreateCommentDto } from './dto/create-comments.dto';
 import { CONTENT_TYPE } from 'src/likes/dto/toggle-like.dto';
+
+interface RankedCommentRaw {
+  sub_comment_id: number | string;
+  rank: string; // RANK() 결과는 문자열일 수 있으므로 string으로 처리 후 파싱
+}
 
 @Injectable()
 export class CommentsService {
@@ -187,37 +192,104 @@ export class CommentsService {
    * @param postIds 게시물 ID 배열
    * @returns Post ID를 키로, 댓글 배열을 값으로 가지는 Map 객체
    */
-  async findRecentCommentsForPosts(
+  /**
+   * [개선됨] 여러 콘텐츠(게시물, 비디오 등)에 대한 최신 댓글들을 일괄 조회합니다.
+   * RANK() 윈도우 함수를 사용하여 DB 레벨에서 효율적으로 그룹별 N개를 가져옵니다.
+   * @param contentType 댓글을 달 대상의 타입
+   * @param ids 콘텐츠 ID 배열 (숫자 또는 문자)
+   * @param limit 각 콘텐츠당 가져올 최신 댓글의 수 (기본값: 2)
+   * @returns 콘텐츠 ID를 키로, 댓글 객체 배열을 값으로 가지는 Map
+   */
+  async findRecentCommentsForContents(
     contentType: CONTENT_TYPE,
-    postIds: number[],
-  ): Promise<Map<number, NumberIdComment[]>> {
-    if (postIds.length === 0) {
+    ids: (number | string)[],
+    limit = 2,
+  ): Promise<Map<number | string, (NumberIdComment | StringIdComment)[]>> {
+    if (ids.length === 0) {
       return new Map();
     }
 
-    // 각 post_id별로 최신 댓글 2개를 가져오는 쿼리 (DB에 따라 SQL이 달라질 수 있음)
-    const comments = await this.numberCommentsRepository
-      .createQueryBuilder('comment')
-      .leftJoinAndSelect('comment.user', 'user') // 댓글 작성자 정보 조인
-      .where('comment.postId IN (:...postIds)', { postIds })
-      .andWhere('comment.contentType = :contentType', { contentType })
-      .orderBy('comment.createdAt', 'DESC')
-      // RANK() OVER PARTITION 등 window 함수를 사용하면 더 정확한 그룹별 N개 조회가 가능합니다.
-      // 여기서는 간단하게 전체에서 최신 순으로 가져온 후 로직에서 그룹핑합니다.
-      .getMany();
+    // 1. ID를 타입에 따라 분리합니다.
+    const numberIds = ids.filter((id): id is number => typeof id === 'number');
+    const stringIds = ids.filter((id): id is string => typeof id === 'string');
 
-    // 조회된 댓글들을 postId 기준으로 그룹핑
-    const commentsMap = new Map<number, NumberIdComment[]>();
-    for (const comment of comments) {
+    // 2. 각 타입별로 댓글을 병렬로 조회합니다.
+    const [numberComments, stringComments] = await Promise.all([
+      numberIds.length > 0
+        ? this.findRankedComments(
+            this.numberCommentsRepository,
+            numberIds,
+            contentType,
+            limit,
+          )
+        : Promise.resolve([]),
+      stringIds.length > 0
+        ? this.findRankedComments(
+            this.stringCommentsRepository,
+            stringIds,
+            contentType,
+            limit,
+          )
+        : Promise.resolve([]),
+    ]);
+
+    // 3. 조회된 모든 댓글을 하나의 배열로 합칩니다.
+    const allComments = [...numberComments, ...stringComments];
+
+    // 4. 콘텐츠 ID를 기준으로 댓글을 그룹핑하여 Map을 생성합니다.
+    const commentsMap = new Map<
+      number | string,
+      (NumberIdComment | StringIdComment)[]
+    >();
+    for (const comment of allComments) {
       const existing = commentsMap.get(comment.postId) || [];
-      // 각 게시물 당 최대 2개의 댓글만 포함
-      if (existing.length < 2) {
-        // user 객체에서 민감 정보 제거
-        if (comment.user) {}
-        existing.push(comment);
-        commentsMap.set(comment.postId, existing);
-      }
+      existing.push(comment);
+      commentsMap.set(comment.postId, existing);
     }
+
     return commentsMap;
+  }
+
+  /**
+   * [Private] RANK()를 사용하여 그룹별 최신 댓글을 가져오는 헬퍼 메서드
+   */
+  private async findRankedComments<T extends NumberIdComment | StringIdComment>(
+    repository: Repository<T>,
+    postIds: (number | string)[],
+    contentType: CONTENT_TYPE,
+    limit: number,
+  ): Promise<T[]> {
+    const subQuery = repository
+      .createQueryBuilder('sub_comment')
+      .select('sub_comment.id')
+      .addSelect(
+        `RANK() OVER (PARTITION BY sub_comment."postId" ORDER BY sub_comment."createdAt" DESC) as "rank"`,
+      )
+      .where('sub_comment."postId" IN (:...postIds)', { postIds })
+      .andWhere('sub_comment."contentType" = :contentType', { contentType });
+
+    const rawResults: RankedCommentRaw[] = await subQuery.getRawMany();
+
+    const rankedCommentIds = rawResults
+      .filter((c) => parseInt(c.rank, 10) <= limit)
+      .map((c) => c.sub_comment_id);
+
+    if (rankedCommentIds.length === 0) {
+      return [];
+    }
+
+    return repository.find({
+      // ✅ ESLint 규칙을 비활성화하여 as any 사용을 허용
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      where: {
+        id: In(rankedCommentIds),
+      } as any,
+      relations: ['user'],
+      // ✅ ESLint 규칙을 비활성화하여 as any 사용을 허용
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      order: {
+        createdAt: 'ASC',
+      } as any,
+    });
   }
 }

@@ -160,10 +160,11 @@ const PostDetailPage: React.FC = () => {
         {/* 게시글 본문 */}
         <main
           className="py-8 text-body text-brand-text-secondary"
-          dangerouslySetInnerHTML={{
-            __html: post.content.replace(/\n/g, "<br />"),
-          }}
-        />
+        >
+          <pre className="whitespace-pre-wrap break-words text-left">
+            {post.content}
+          </pre>
+        </main>
 
         {/* 댓글 섹션 */}
         <section className="mt-10 pt-6 border-t border-brand-frame border-top-1">

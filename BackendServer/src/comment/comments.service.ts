@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Post } from 'src/community/posts/entities/post.entity';
 import { Video } from 'src/videos/entities';
 import { NumberIdComment } from './entities/number-id-comment.entity';
@@ -79,14 +79,12 @@ export class CommentsService {
     };
 
     if (typeof postId === 'number') {
-      // ✅ postId가 number임을 타입스크립트가 아는 상태에서 옵션과 함께 호출
       return this.numberCommentsRepository.find({
         ...commonOptions,
         where: { contentType, postId }, // postId는 number 타입
       });
     }
     if (typeof postId === 'string') {
-      // ✅ postId가 string임을 타입스크립트가 아는 상태에서 옵션과 함께 호출
       return this.stringCommentsRepository.find({
         ...commonOptions,
         where: { contentType, postId }, // postId는 string 타입
@@ -100,7 +98,6 @@ export class CommentsService {
    */
   async deleteComment(userId: string, commentId: number | string) {
     if (typeof commentId === 'number') {
-      // ✅ NumberIdComment 삭제 로직
       const comment = await this.numberCommentsRepository.findOne({
         where: { commentId: commentId },
       });
@@ -118,7 +115,6 @@ export class CommentsService {
         -1,
       );
     } else {
-      // ✅ StringIdComment 삭제 로직
       const comment = await this.stringCommentsRepository.findOne({
         where: { commentId: commentId },
       });
@@ -182,42 +178,113 @@ export class CommentsService {
   }
 
   /**
-   * 여러 게시물 ID에 대한 최신 댓글들을 일괄 조회합니다.
+   * [개선됨] 여러 콘텐츠(게시물, 비디오 등)에 대한 최신 댓글들을 일괄 조회합니다.
+   * RANK() 윈도우 함수를 사용하여 DB 레벨에서 효율적으로 그룹별 N개를 가져옵니다.
    * @param contentType 댓글을 달 대상의 타입
-   * @param postIds 게시물 ID 배열
-   * @returns Post ID를 키로, 댓글 배열을 값으로 가지는 Map 객체
+   * @param ids 콘텐츠 ID 배열 (숫자 또는 문자)
+   * @param limit 각 콘텐츠당 가져올 최신 댓글의 수 (기본값: 2)
+   * @returns 콘텐츠 ID를 키로, 댓글 객체 배열을 값으로 가지는 Map
    */
-  async findRecentCommentsForPosts(
+  async findRecentCommentsForContents(
     contentType: CONTENT_TYPE,
-    postIds: number[],
-  ): Promise<Map<number, NumberIdComment[]>> {
-    if (postIds.length === 0) {
+    ids: (number | string)[],
+    limit = 2,
+  ): Promise<Map<number | string, (NumberIdComment | StringIdComment)[]>> {
+    if (ids.length === 0) {
       return new Map();
     }
 
-    // 각 post_id별로 최신 댓글 2개를 가져오는 쿼리 (DB에 따라 SQL이 달라질 수 있음)
-    const comments = await this.numberCommentsRepository
-      .createQueryBuilder('comment')
-      .leftJoinAndSelect('comment.user', 'user') // 댓글 작성자 정보 조인
-      .where('comment.postId IN (:...postIds)', { postIds })
-      .andWhere('comment.contentType = :contentType', { contentType })
-      .orderBy('comment.createdAt', 'DESC')
-      // RANK() OVER PARTITION 등 window 함수를 사용하면 더 정확한 그룹별 N개 조회가 가능합니다.
-      // 여기서는 간단하게 전체에서 최신 순으로 가져온 후 로직에서 그룹핑합니다.
-      .getMany();
+    const numberIds = ids.filter((id): id is number => typeof id === 'number');
+    const stringIds = ids.filter((id): id is string => typeof id === 'string');
 
-    // 조회된 댓글들을 postId 기준으로 그룹핑
-    const commentsMap = new Map<number, NumberIdComment[]>();
-    for (const comment of comments) {
+    const [numberComments, stringComments] = await Promise.all([
+      this.findRecentNumberComments(numberIds, contentType, limit),
+      this.findRecentStringComments(stringIds, contentType, limit),
+    ]);
+
+    const allComments = [...numberComments, ...stringComments];
+
+    const commentsMap = new Map<
+      number | string,
+      (NumberIdComment | StringIdComment)[]
+    >();
+    for (const comment of allComments) {
       const existing = commentsMap.get(comment.postId) || [];
-      // 각 게시물 당 최대 2개의 댓글만 포함
-      if (existing.length < 2) {
-        // user 객체에서 민감 정보 제거
-        if (comment.user) {}
-        existing.push(comment);
-        commentsMap.set(comment.postId, existing);
-      }
+      existing.push(comment);
+      commentsMap.set(comment.postId, existing);
     }
+
     return commentsMap;
+  }
+
+  /**
+   * [새로운 헬퍼] 숫자 ID를 사용하는 콘텐츠의 최신 댓글 조회
+   */
+  private async findRecentNumberComments(
+    postIds: number[],
+    contentType: CONTENT_TYPE,
+    limit: number,
+  ): Promise<NumberIdComment[]> {
+    if (postIds.length === 0) return [];
+
+    const subQuery = this.numberCommentsRepository
+      .createQueryBuilder('comment')
+      .select('comment.commentId', 'commentId')
+      .addSelect(
+        `RANK() OVER (PARTITION BY comment.postId ORDER BY comment.createdAt DESC) as "rank"`,
+      )
+      .where('comment.postId IN (:...postIds)', { postIds })
+      .andWhere('comment.contentType = :contentType', { contentType });
+
+    const rawResults: { commentId: number; rank: string }[] =
+      await subQuery.getRawMany();
+
+    const commentIds = rawResults
+      .filter((c) => parseInt(c.rank, 10) <= limit)
+      .map((c) => c.commentId);
+
+    if (commentIds.length === 0) return [];
+
+    return this.numberCommentsRepository.find({
+      where: { commentId: In(commentIds) },
+      relations: ['user'],
+      order: { createdAt: 'ASC' },
+    });
+  }
+
+  /**
+   * [새로운 헬퍼] 문자열 ID를 사용하는 콘텐츠의 최신 댓글 조회
+   */
+  private async findRecentStringComments(
+    postIds: string[],
+    contentType: CONTENT_TYPE,
+    limit: number,
+  ): Promise<StringIdComment[]> {
+    if (postIds.length === 0) return [];
+
+    const subQuery = this.stringCommentsRepository
+      .createQueryBuilder('comment')
+      .select('comment.commentId') // ✅ 엔티티 프로퍼티명 'commentId' 사용
+      .addSelect(
+        `RANK() OVER (PARTITION BY comment.postId ORDER BY comment.createdAt DESC) as "rank"`,
+      )
+      .where('comment.postId IN (:...postIds)', { postIds })
+      .andWhere('comment.contentType = :contentType', { contentType });
+
+    // ✅ raw 결과의 컬럼명은 'comment_commentId'가 됩니다.
+    const rawResults: { comment_commentId: string; rank: string }[] =
+      await subQuery.getRawMany();
+
+    const commentIds = rawResults
+      .filter((c) => parseInt(c.rank, 10) <= limit)
+      .map((c) => c.comment_commentId);
+
+    if (commentIds.length === 0) return [];
+
+    return this.stringCommentsRepository.find({
+      where: { commentId: In(commentIds) }, // ✅ 엔티티 프로퍼티명 'commentId' 사용
+      relations: ['user'],
+      order: { createdAt: 'ASC' },
+    });
   }
 }

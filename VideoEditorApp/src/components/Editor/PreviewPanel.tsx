@@ -37,14 +37,13 @@ const PADDING = 20;
 const CORNER_RADIUS = 15;
 
 const VirtualCanvas = styled.View<{ scale: number }>`
-  width: ${VIRTUAL_WIDTH}px;
-  height: ${VIRTUAL_HEIGHT}px;
   background-color: #000000;
   justify-content: center;
   align-items: center;
-  transform: ${({ scale }) => `scale(${scale})`};
   padding: ${PADDING}px;
   overflow: hidden;
+  width: ${({ scale }) => VIRTUAL_WIDTH * scale}px;
+  height: ${({ scale }) => VIRTUAL_HEIGHT * scale}px;
 `;
 
 const PreviewGridContainer = styled.View`
@@ -137,7 +136,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
               } else {
                 slotWidth = baseSlotWidth;
               }
-              const slotHeight = slotWidth * (3 / 4);
+              const slotHeight = slotWidth * (4 / 4);
 
               return (
                 <SlotContainer
@@ -178,7 +177,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
         }}
         pointerEvents={isCollapsed ? 'auto' : 'none'} // 보일 때만 터치 가능
       >
-        <Text style={{ fontSize: 24 }}>🐙</Text>
+        <Text style={{ fontSize: 24 }}>💿</Text>
       </OverlappingContainer>
     </PreviewArea>
   );

@@ -60,15 +60,16 @@ const CommunityFeedPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState("전체");
   const [currentPage, setCurrentPage] = useState(1);
   const POSTS_PER_PAGE = 10;
+  const [totalPages, setTotalPages] = useState(1); // 전체 페이지 수 상태 추가
 
   const [searchParams] = useSearchParams();
   const keyword = searchParams.get("search");
 
-  // 페이지네이션 계산
-  const totalPages = Math.ceil(posts.length / POSTS_PER_PAGE);
-  const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
-  const endIndex = startIndex + POSTS_PER_PAGE;
-  const currentPosts = posts.slice(startIndex, endIndex);
+  // 서버 사이드 페이지네이션을 사용하므로 클라이언트 사이드 계산 제거
+  // const totalPages = Math.ceil(posts.length / POSTS_PER_PAGE);
+  // const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
+  // const endIndex = startIndex + POSTS_PER_PAGE;
+  // const currentPosts = posts.slice(startIndex, endIndex);
 
   useEffect(() => {
     const loadPosts = async () => {
@@ -82,6 +83,14 @@ const CommunityFeedPage: React.FC = () => {
           POSTS_PER_PAGE
         );
         setPosts(data);
+
+        // 받은 데이터가 10개면 다음 페이지가 있다고 가정, 아니면 마지막 페이지
+        if (data.length === POSTS_PER_PAGE) {
+          setTotalPages(currentPage + 1);
+        } else {
+          setTotalPages(currentPage);
+        }
+
         if (currentPage === 1) window.scrollTo({ top: 0, behavior: "smooth" });
       } catch (err) {
         setError("게시물을 불러오는 데 실패했습니다.");
@@ -196,7 +205,7 @@ const CommunityFeedPage: React.FC = () => {
             </div>
           ) : (
             <CommunityFeed
-              posts={currentPosts}
+              posts={posts}
               currentUser={currentUser}
               handleDeletePost={handleDeletePost}
               handleToggleLike={handleToggleLike}
@@ -204,7 +213,7 @@ const CommunityFeedPage: React.FC = () => {
           )}
 
           {/* 페이지네이션 */}
-          {!isLoading && !error && posts.length > POSTS_PER_PAGE && (
+          {!isLoading && !error && totalPages > 1 && (
             <div className="flex justify-center items-center space-x-2 mt-6">
               <button
                 onClick={() => handlePageChange(currentPage - 1)}

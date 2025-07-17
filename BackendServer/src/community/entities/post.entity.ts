@@ -10,7 +10,6 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Comment } from './comment.entity';
-import { NumberIdLike } from '../../stringIdLikes/entities/numberIdLike.entity';
 import { User } from '../../auth/user/user.entity'; // ✅ User 엔티티 임포트
 
 @Entity('posts')

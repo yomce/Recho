@@ -10,8 +10,8 @@ import { Repository } from 'typeorm';
 import { Post } from '../entities/post.entity';
 import { CreatePostDto } from './dto/create-post.dto';
 import { User } from 'src/auth/user/user.entity';
-import { LikesService } from 'src/stringIdLikes/likes.service';
-import { CONTENT_TYPE } from 'src/stringIdLikes/dto/toggleLike.dto';
+import { LikesService } from 'src/likes/likes.service';
+import { CONTENT_TYPE } from 'src/likes/dto/toggle-like.dto';
 
 @Injectable()
 export class PostsService {

@@ -3,9 +3,9 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Post } from 'src/community/entities/post.entity';
-import { NumberIdLike } from './entities/numberIdLike.entity';
-import { StringIdLike } from './entities/stringIdLike.entity';
-import { CONTENT_TYPE, ToggleLikeDto } from './dto/toggleLike.dto';
+import { NumberIdLike } from './entities/number-id-like.entity';
+import { StringIdLike } from './entities/string-id-like.entity';
+import { CONTENT_TYPE, ToggleLikeDto } from './dto/toggle-like.dto';
 import { Video } from 'src/videos/entities';
 
 @Injectable()

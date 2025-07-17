@@ -47,7 +47,7 @@ const MessageInputForm: React.FC<MessageInputFormProps> = ({ onSubmit, onDmClick
 
       {/* 입력창 */}
       <TextareaAutosize
-        placeholder="메세지를 입력하세요."
+        placeholder="댓글을 입력하세요."
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         onKeyDown={handleKeyDown}

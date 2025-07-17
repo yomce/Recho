@@ -1,8 +1,17 @@
-// 기존 Post 인터페이스
+// WebFrontend/src/types/post.ts
+
 export interface Post {
-  id: number;
+  postId: number;
+  userId: string;
   author: string;
-  // ...
+  authorProfileUrl?: string;
+  category: string;
+  title: string;
+  content: string;
+  thumbnailUrl?: string;
+  likeCount: number;
+  commentCount: number;
+  userLiked: boolean;
   createdAt: string;
   updatedAt: string;
 }

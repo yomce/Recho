@@ -18,6 +18,7 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { Post as PostEntity } from '../entities/post.entity';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
+import { PaginationQueryPostDto } from './dto/pagination-query-post.dto';
 
 @Controller('posts')
 export class PostsController {
@@ -42,16 +43,22 @@ export class PostsController {
 
   @Get()
   @UseGuards(AuthGuard('jwt'))
-  findAll(@Query('category') category: string, @Req() req: Request) {
-    // ⭐️ req.user 객체 전체를 서비스로 전달합니다.
+  findAll(
+    @Query() paginationQuery: PaginationQueryPostDto,
+    @Query('category') category: string,
+    @Req() req: Request,
+  ) {
     if (!req.user || !req.user.id) {
       this.logger.error(
         'Authentication information missing from request user object.',
       );
       throw new ForbiddenException('사용자 인증 정보가 없습니다.');
     }
-
-    return this.postsService.findAllPostsWithLikeStatus(category, req.user);
+    return this.postsService.findAllPostsWithLikeStatus(
+      category,
+      req.user,
+      paginationQuery,
+    );
   }
 
   @Get(':id')

@@ -4,7 +4,7 @@ import { SearchController } from './search.controller';
 import { SearchService } from './search.service';
 
 // 실제 엔티티 파일들의 경로로 수정
-import { Post } from '../community/entities/post.entity';
+import { Post } from '../community/posts/entities/post.entity';
 import { UsedProduct } from '../used_product/entities/used-product.entity';
 import { RecruitEnsemble } from '../ensemble/entities/recruit-ensemble.entity';
 

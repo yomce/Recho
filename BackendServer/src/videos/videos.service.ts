@@ -13,8 +13,8 @@ import { Video } from './entities';
 import { UserService } from 'src/auth/user/user.service';
 import { UserResponseDto } from 'src/auth/user/dto/user.response.dto';
 import { VideoResponseDto } from './dto/video.response.dto';
-import { CONTENT_TYPE } from 'src/stringIdLikes/dto/toggleLike.dto';
-import { LikesService } from 'src/stringIdLikes/likes.service';
+import { CONTENT_TYPE } from 'src/likes/dto/toggle-like.dto';
+import { LikesService } from 'src/likes/likes.service';
 import { User } from 'src/auth/user/user.entity';
 
 @Injectable()

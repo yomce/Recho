@@ -27,9 +27,9 @@ import { searchVideoModule } from './search_video/search-video.module';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PostsModule } from './community/posts/posts.module';
-import { CommentsModule } from './community/comments/comments.module';
 import { SearchModule } from './search/search.module';
 import { PromotionModule } from './scraping/promotion.module';
+import { CommentsModule } from './comment/comments.module';
 
 @Module({
   imports: [

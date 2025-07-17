@@ -2,27 +2,27 @@ import React, { useEffect, useRef, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
 import { useNavigate } from "react-router-dom"; // react-router-dom에서 useNavigate를 가져옵니다.
 import PrimaryButton from "@/components/atoms/button/PrimaryButton";
-import type { User } from "@/stores/authStore";
+import { useAuthStore } from "@/stores/authStore";
 import VinylRightLayout from "@/components/layout/pages/vinyl/VinylRightLayout";
 import ProfileWithName from "@/components/atoms/button/ProfileWithName";
 import IconButton from "@/components/atoms/button/IconButton";
+import { toggleStringPostLike } from '@/api';
+import { CONTENT_TYPE } from '@/types/likes';
+import type { Video } from '@/types/video';
 
 interface VinylContentsProps {
-  videoOwner: User;
-  videoId: string;
+  currentVideo: Video;
   size: { width: number; height: number };
-  likes: number;
-  comments: number;
-  videoInfo: string;
-  videoSrc: string;
   isVisible: boolean; // 현재 화면에 보이는지 여부
   rotationAngle: number; // 회전 각도
   depth: number; // depth prop 추가
   onVideoReady?: () => void; // 비디오 로딩 완료 콜백
   onStartEnsemble: (videoId: string) => void; // prop 타입 정의 추가
+  setVideos: (value: React.SetStateAction<Video[]>) => void
 }
 
 const VinylContents: React.FC<VinylContentsProps> = (props) => {
+  const currentUser = useAuthStore((state) => state.user);
   const videoRef = useRef<HTMLVideoElement>(null);
   const controls = useAnimation();
   const navigate = useNavigate(); // useNavigate 훅을 사용하여 navigate 함수를 가져옵니다.
@@ -116,6 +116,32 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
     }
   };
 
+  const handleToggleLike = async (videoId: string) => {
+    if (!currentUser) {
+        alert('로그인이 필요합니다.');
+        return;
+    }
+    
+    try {
+        await toggleStringPostLike(CONTENT_TYPE.VINYL, videoId);
+        props.setVideos(currentVideos => 
+        currentVideos.map(v => {
+          if (v.id === videoId) {
+              const iLikedIt = !v.userLiked;
+              
+              const currentLikes = v.likeCount || 0; // p.likeCount가 없으면 0을 사용
+              const newLikeCount = iLikedIt ? currentLikes + 1 : Math.max(0, currentLikes - 1); // 0 밑으로 내려가지 않도록 방지
+
+              return { ...v, userLiked: iLikedIt, likeCount: newLikeCount };
+          }
+          return v;
+        })
+    );
+    } catch (error) {
+        alert('오류가 발생했습니다.');
+    }
+};
+
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.loop = true;
@@ -197,7 +223,7 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
 
       <video
         ref={videoRef}
-        src={props.videoSrc}
+        src={props.currentVideo.videoUrl}
         width="100%"
         controls={false}
         playsInline
@@ -221,20 +247,20 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
           zIndex: 10,
         }}
       >
-        <ProfileWithName user={props.videoOwner} />
+        <ProfileWithName user={props.currentVideo.user} />
       </div>
 
       <VinylRightLayout
-        likes={props.likes}
-        comments={props.comments}
+        video={props.currentVideo}
         divHeight={divHeight}
-        onClickShare={() => handleShare(props.videoId)}
+        onClickLike={() => handleToggleLike(props.currentVideo.id)}
+        onClickShare={() => handleShare(props.currentVideo.id)}
       />
 
       {/* 버튼은 비디오 위에, 중앙에 위치 */}
       {!isPlaying && props.depth < 6 && (
         <PrimaryButton
-          onClick={() => props.onStartEnsemble(props.videoInfo)}
+          onClick={() => props.onStartEnsemble(props.currentVideo.id)}
           style={{
             width: "50%",
             position: "absolute",

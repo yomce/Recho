@@ -13,4 +13,5 @@ export interface Video {
   createdAt: string;
   videoUrl: string;
   thumbnailUrl: string;
+  userLiked: boolean;
 }

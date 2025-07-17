@@ -3,9 +3,13 @@
 import React from 'react';
 import IconButton from '@/components/atoms/button/IconButton';
 import type Icon from '@/components/atoms/icon/Icon';
+import type { Video } from '@/types/video';
 
 interface IconWithCountProps {
+  video?: Video;
   iconName: React.ComponentProps<typeof Icon>['name'];
+  iconSecondName?: React.ComponentProps<typeof Icon>['name'];
+  iconSecondColor?: string;
   count: number;
   iconSize?: number;
   style?: React.CSSProperties;
@@ -13,7 +17,10 @@ interface IconWithCountProps {
 }
 
 const IconWithCount: React.FC<IconWithCountProps> = ({
+  video,
   iconName,
+  iconSecondName,
+  iconSecondColor,
   count,
   iconSize = 30,
   style,
@@ -41,7 +48,15 @@ const IconWithCount: React.FC<IconWithCountProps> = ({
 
   return (
     <div style={{ textAlign: 'center' }}>
-      <IconButton iconName={iconName} iconSize={iconSize} style={baseStyle} onClick={onClick} />
+      <IconButton 
+        isIt={video?.userLiked}
+        iconName={iconName}
+        iconSecondName={iconSecondName}
+        iconSecondColor={iconSecondColor}
+        iconSize={iconSize}
+        style={baseStyle}
+        onClick={onClick}
+      />
       <span style={countStyle}>{count}</span>
     </div>
   );

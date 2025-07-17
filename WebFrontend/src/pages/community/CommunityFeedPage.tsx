@@ -3,14 +3,17 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 // import axios from 'axios';
+
 import axiosInstance from "../../services/axiosInstance";
 import { useAuthStore } from "../../stores/authStore";
+import Icon from '../../components/atoms/icon/Icon';
 import PostLayout from "../../components/layout/PostLayout";
 import FloatingWriteButton from "../../components/atoms/button/FloatingWriteButton";
 import { togglePostLike } from "@/api";
 import { CONTENT_TYPE } from "@/types/likes";
 import CommunityFeed from "@/components/organisms/community/CommunityFeed";
 import type { Post } from "@/types/post";
+
 
 // --- 타입 정의 ---
 // Post 인터페이스는 @/types/post.ts 로 이동했습니다.

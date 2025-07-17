@@ -6,23 +6,20 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Post } from '../entities/post.entity';
 import { CreatePostDto } from './dto/create-post.dto';
-import { CONTENT_TYPE, Like } from '../../likes/entities/like.entity';
 import { User } from 'src/auth/user/user.entity';
-import { LikesService } from 'src/likes/likes.service';
+import { LikesService } from 'src/stringIdLikes/likes.service';
+import { CONTENT_TYPE } from 'src/stringIdLikes/dto/toggleLike.dto';
 
 @Injectable()
 export class PostsService {
   constructor(
     @InjectRepository(Post)
     private readonly postsRepository: Repository<Post>,
-    @InjectRepository(Like)
-    private readonly postLikesRepository: Repository<Like>,
 
     private readonly likesService: LikesService,
-    private readonly dataSource: DataSource,
   ) {}
 
   create(createPostDto: CreatePostDto, user: User): Promise<Post> {

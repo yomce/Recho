@@ -13,6 +13,9 @@ import { Video } from './entities';
 import { UserService } from 'src/auth/user/user.service';
 import { UserResponseDto } from 'src/auth/user/dto/user.response.dto';
 import { VideoResponseDto } from './dto/video.response.dto';
+import { CONTENT_TYPE } from 'src/stringIdLikes/dto/toggleLike.dto';
+import { LikesService } from 'src/stringIdLikes/likes.service';
+import { User } from 'src/auth/user/user.entity';
 
 @Injectable()
 export class VideosService {
@@ -23,6 +26,7 @@ export class VideosService {
     private readonly videoRepository: Repository<Video>,
     private readonly configService: ConfigService,
     private readonly userService: UserService,
+    private readonly likesService: LikesService,
   ) {
     // 1. ConfigService에서 설정값 가져오기
     const region = this.configService.get<string>('AWS_REGION');
@@ -82,6 +86,7 @@ export class VideosService {
     page: number,
     limit: number,
     sortBy: 'likes' | 'createdAt',
+    user: User | undefined, // ✅ user 파라미터 추가
   ): Promise<any[]> {
     const videos = await this.videoRepository.find({
       relations: ['user'],
@@ -89,6 +94,20 @@ export class VideosService {
       skip: (page - 1) * limit,
       take: limit,
     });
+
+    if (videos.length === 0) {
+      return [];
+    }
+
+    // ✅ '좋아요' 상태 확인 로직 추가
+    const videoIds = videos.map((video) => video.id);
+    const likedVideoIds = user
+      ? await this.likesService.getUserLikedStatusesForContents(
+          user.id,
+          CONTENT_TYPE.VINYL, // 콘텐츠 타입을 'VINYL'로 지정
+          videoIds,
+        )
+      : new Set<string>();
 
     const signedVideos = await Promise.all(
       videos.map(async (video) => {
@@ -117,7 +136,10 @@ export class VideosService {
     const responseVideo = signedVideos.map((video) => {
       const tmpResponseUser = UserResponseDto.from(video.user);
       const tmpVideo = VideoResponseDto.from(video, tmpResponseUser);
-      return tmpVideo;
+      return {
+        ...tmpVideo,
+        userLiked: likedVideoIds.has(video.id), // '좋아요' 여부 추가
+      };
     });
 
     return responseVideo;

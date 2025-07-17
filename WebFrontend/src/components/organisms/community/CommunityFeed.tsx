@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "@/components/atoms/icon/Icon";
+import IconButton from "@/components/atoms/button/IconButton";
 import type { Post } from "@/types/post";
 
 interface CommunityFeedProps {
@@ -91,18 +92,22 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({
 
           {/* 게시글 하단 정보 (좋아요, 댓글) */}
           <div className="flex items-center gap-4 mt-2 pt-2 border-t border-brand-frame">
-            <button
-              className={`flex items-center gap-1 text-caption transition-colors ${post.userLiked ? "text-red-500" : "text-brand-gray hover:text-red-400"}`}
-              onClick={(e) => handleToggleLike(e, post.postId)}
-            >
-              <Icon
-                name="like"
-                size={18}
-                fill={post.userLiked ? "currentColor" : "none"}
-                className={post.userLiked ? "" : "stroke-current"}
+            <div className="flex items-center gap-1 text-caption">
+              <IconButton
+                isIt={post.userLiked}
+                iconName="like"
+                iconSecondName="likeFill"
+                iconSecondColor="text-red-500"
+                iconSize={18}
+                onClick={(e) => handleToggleLike(e, post.postId)}
+                className="text-red-400"
               />
-              <span>{post.likeCount}</span>
-            </button>
+              <span
+                className={post.userLiked ? "text-red-500" : "text-brand-gray"}
+              >
+                {post.likeCount}
+              </span>
+            </div>
             <div className="flex items-center gap-1.5 text-caption text-brand-gray">
               <Icon name="chat" size={18} />
               <span>{post.commentCount}</span>

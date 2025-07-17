@@ -68,12 +68,19 @@ export class PostsService {
   async findAllPostsWithLikeStatus(
     category: string | undefined,
     user: User | undefined,
+    paginationQuery?: { page?: number; limit?: number },
   ): Promise<any[]> {
+    const page = paginationQuery?.page || 1;
+    const limit = paginationQuery?.limit || 10;
+    const skip = (page - 1) * limit;
+
     const queryBuilder = this.postsRepository
       .createQueryBuilder('post')
       // ✅ User 엔티티를 조인하여 사용자 정보를 함께 선택합니다.
       .leftJoinAndSelect('post.user', 'user')
-      .orderBy('post.createdAt', 'DESC');
+      .orderBy('post.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit);
 
     if (category && category !== '전체') {
       queryBuilder.where('post.category = :category', { category });

@@ -1,3 +1,4 @@
+// src/components/layout/PostHeader.tsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import IconButton from '../atoms/button/IconButton';
@@ -27,14 +28,17 @@ const PostHeader: React.FC<HeaderProps> = ({
     if (currentPath.startsWith('/used-products')) return '악기거래';
     if (currentPath.startsWith('/practice-room')) return '합주실예약';
     if (currentPath.startsWith('/ensembles')) return '세션모집';
-    if (currentPath.startsWith('/vinyls')) return '바이닐';
+    if (currentPath.startsWith('/vinyl')) return '바이닐';
+    if (currentPath.startsWith('/chat')) return '채팅';
+    if (currentPath.startsWith('/community')) return '커뮤니티';
+    if (currentPath.startsWith('/promotions')) return '공연홍보';
     if (isMapViewPage) return '상세 지도';
     return '';
   };
 
   return (
     <header
-      className="fixed top-0 left-1/2 z-10 h-14 w-full max-w-[430px] -translate-x-1/2 
+      className="fixed top-0 left-1/2 z-50 h-14 w-full max-w-[430px] -translate-x-1/2 
              flex items-center justify-between bg-brand-default px-4"
     >
       {/* 왼쪽 아이콘 */}

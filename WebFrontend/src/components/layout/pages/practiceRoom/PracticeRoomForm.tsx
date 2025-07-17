@@ -1,6 +1,11 @@
 import React from "react";
 import LocationSelector from "../../../map/LocationSelector";
 import type { PracticeRoomType } from "@/types/practiceRoom";
+import ImageUploadPreview from "@/components/atoms/input/ImageUploadPreveiw";
+import InputLabel from "@/components/atoms/input/InputLabel";
+import TextInputForm from "@/components/atoms/input/TextInputForm";
+import TextAreaInput from "@/components/atoms/input/TextAreaInput";
+import PrimaryButton from "@/components/atoms/button/PrimaryButton";
 
 interface PracticeRoomFormProps {
   formState: PracticeRoomType;
@@ -13,7 +18,7 @@ interface PracticeRoomFormProps {
 }
 
 // 공통 입력 필드 스타일
-const inputStyles = "w-full py-3 px-4 text-base border border-gray-400 rounded-md box-border transition-all duration-200 text-gray-800 bg-gray-50 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/50";
+// const inputStyles = "w-full py-3 px-4 text-base border border-gray-400 rounded-md box-border transition-all duration-200 text-gray-800 bg-gray-50 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/50";
 
 export const PracticeRoomForm: React.FC<PracticeRoomFormProps> = ({
   formState,
@@ -27,71 +32,39 @@ export const PracticeRoomForm: React.FC<PracticeRoomFormProps> = ({
   return (
     <form onSubmit={onFormSubmit}>
       <div className="mb-6">
-        <label htmlFor='title' className="text-subheadline">제목</label>
-        <input 
+        <ImageUploadPreview
+          refIn="PRACTICE-ROOM"
+        />
+      </div>
+      <div className="mb-6">
+        <InputLabel htmlFor="title">상호명</InputLabel>
+        <TextInputForm
           type="text" 
           id="title" 
           name="title" 
           value={formState.title} 
           onChange={onFormChange} 
           required
-          className={inputStyles}
         />
       </div>
 
       <div className="mb-6">
-        <label htmlFor="locationId" className="text-subheadline">지역</label>
-        <LocationSelector />
+        <InputLabel htmlFor="locationId">지역</InputLabel>
+        <LocationSelector
+          locationId={formState.locationId}
+        />
       </div>
 
       <div className="mb-6">
-        <label htmlFor='description' className="text-subheadline">본문</label>
-        <textarea 
-          id="description" 
+        <InputLabel htmlFor="description">본문</InputLabel>
+        <TextAreaInput
+          id="description"
           name="description" 
           value={formState.description} 
           onChange={onFormChange} 
           rows={8} 
           required
-          className={inputStyles}
         />
-      </div>
-
-      <div className="mb-6">
-        <label htmlFor="image" className="text-subheadline">사진</label>
-        <input
-          type="file"
-          id="image"
-          name="image"
-          accept="image/*"
-          multiple
-          // onChange={onFormChange}
-          onChange={ e => {
-            const files = e.target.files;
-            if(files && files.length > 0){
-              const fileArray = Array.from(files);
-              onFormChange({
-                target: {
-                  name: "image",
-                  value: fileArray,
-                }
-              } as any)
-            }
-          }}
-          className={inputStyles}
-        />
-      </div>
-
-      <div>
-        {formState.image && formState.image.length > 0 &&
-          formState.image.map((file: File, idx: number) => (
-          <img
-            key={idx}
-            src={URL.createObjectURL(file)}
-            alt={`preview-${idx}`}
-            className="w-20 h-20 object-cover rounded-[10px] border"
-          />
-        ))}
       </div>
 
       {errorMessage && (
@@ -100,14 +73,14 @@ export const PracticeRoomForm: React.FC<PracticeRoomFormProps> = ({
         </p>
       )}
 
-      <button
+      <PrimaryButton
         type="submit"
         disabled={isLoading}
-        className="w-full py-3 px-6 text-lg font-semibold text-white bg-blue-600 rounded-md cursor-pointer transition-colors mt-4 hover:bg-blue-700 disabled:bg-gray-500 disabled:cursor-not-allowed disabled:opacity-70"
+        className="mt-4"
+        style={{ borderRadius: "10px" }}
       >
         {isLoading ? loadingButtonText : submitButtonText}
-      </button>
-
+      </PrimaryButton>
     </form>
   )
 }

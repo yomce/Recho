@@ -10,6 +10,9 @@ import { CreateUsedProductDto } from './dto/create-used-product.dto';
 import { UpdateUsedProductDto } from './dto/update-used-product.dto';
 import { PaginatedUsedProductResponse } from './dto/paginated-used-product.response.dto';
 import { Location } from 'src/map/entities/location.entity';
+import { ImageService } from 'src/image/image.service';
+import { Image } from 'src/image/entities/image.entity';
+
 
 @Injectable()
 export class UsedProductService {
@@ -19,12 +22,17 @@ export class UsedProductService {
     // TODO: 실제 프로젝트에서는 Location 엔티티의 Repository를 주입받아야 합니다.
     @InjectRepository(Location)
     private readonly locationRepo: Repository<Location>,
+    
+    @InjectRepository(Image)
+    private readonly imageRepo : Repository<Image>,
+    private readonly imageService: ImageService,
   ) {}
 
   async findUsedProductWithPagination(
     limit: number,
     lastProductId?: number,
     lastCreatedAt?: Date,
+    categoryId?: number,
   ): Promise<PaginatedUsedProductResponse> {
     const realLimit = limit + 1;
     const queryBuilder = this.usedProductRepo.createQueryBuilder('usedProduct');
@@ -35,6 +43,10 @@ export class UsedProductService {
         '(usedProduct.createdAt < :lastCreatedAtDate) OR (usedProduct.createdAt = :lastCreatedAtDate AND usedProduct.productId < :lastProductId)',
         { lastCreatedAtDate, lastProductId },
       );
+    }
+
+    if(categoryId) {
+      queryBuilder.andWhere('usedProduct.categoryId = :categoryId', { categoryId });
     }
 
     const results = await queryBuilder
@@ -55,8 +67,34 @@ export class UsedProductService {
           }
         : undefined;
 
+    // 대표 이미지 추출
+    const productIds = data.map((p) => p.productId);
+
+    // 참조하는 이미지가 없는 경우를 아래 쿼리를 실행하지 않음
+    if (productIds.length === 0) return { data: [], nextCursor, hasNextPage };
+
+    const thumbnails = await this.imageRepo
+      .createQueryBuilder('image')
+      .where('image.refPostId IN (:...productIds)', { productIds })
+      .andWhere('image.uploadOrder = 0')
+      .getMany();
+
+    const imageMap = new Map<number, string>();
+    thumbnails.forEach((img) => {
+      if(img.refPostId !== null && !imageMap.has(img.refPostId)){
+        imageMap.set(Number(img.refPostId), img.imageUrl);
+      }
+    });
+
+    const dataWithThumbnails = data.map((product) => ({
+      ...product,
+      imageUrl: imageMap.get(product.productId) || null,
+    }));
+
+    // console.log('[쿼리 결과 Datawiththumbnails]', dataWithThumbnails);
+
     return {
-      data,
+      data: dataWithThumbnails,
       nextCursor,
       hasNextPage,
     };
@@ -66,13 +104,8 @@ export class UsedProductService {
     createDto: CreateUsedProductDto,
     id: string,
   ): Promise<UsedProduct> {
-    const { locationId, ...restOfDto } = createDto;
+    const { locationId, imageIds = [], ...restOfDto } = createDto;
 
-    // TODO: 실제 프로젝트에서는 주입받은 locationRepo를 사용해 ID로 지역 정보를 조회해야 합니다.
-    // const locationInfo = await this.locationRepo.findOneBy({ id: locationId });
-    // if (!locationInfo) {
-    //   throw new NotFoundException(`Location with ID #${locationId} not found.`);
-    // }
 
     // 실제로 locationRepo를 사용해 ID로 지역 정보를 조회
     const locationEntity = await this.locationRepo.findOneBy({
@@ -82,15 +115,7 @@ export class UsedProductService {
     if (!locationEntity) {
       throw new NotFoundException(`Location with ID #${locationId} not found.`);
     }
-    /*
-    // 임시로 location 객체를 생성합니다. (실제로는 위 주석처럼 DB에서 조회)
-    const locationDataForDb = {
-      location_id: locationEntity.locationId,
-      region_level_1: locationEntity.region_level1, // 임시 데이터
-      region_level_2: locationEntity.region_level2, // 임시 데이터
-      address: locationEntity.address,
-    };
-    */
+
     const newProduct = this.usedProductRepo.create({
       ...restOfDto,
       locationId: locationEntity.locationId,
@@ -98,10 +123,22 @@ export class UsedProductService {
       status: Status.FOR_SALE,
       viewCount: 0,
     });
-    return await this.usedProductRepo.save(newProduct);
+
+    const savedProduct = await this.usedProductRepo.save(newProduct);
+
+    // --- 이미지에 게시글 ID (refPostId) 매핑 ---
+    if(imageIds.length > 0) {
+      console.log('[이미지 매핑] 이미지 ID들:', imageIds);
+      await this.imageService.connectImagesToPost({
+        imageIds,
+        refPostId: savedProduct.productId,
+      });
+    }
+    
+    return savedProduct;
   }
 
-  async detailProduct(productId: number): Promise<UsedProduct> {
+  async detailProduct(productId: number): Promise<UsedProduct & { imageIds: number[] } & { imageUrl: string[] }> {
     const product = await this.usedProductRepo.findOne({
       where: { productId: productId },
       relations: ['location'],
@@ -109,7 +146,14 @@ export class UsedProductService {
     if (!product) {
       throw new NotFoundException(`Product with ID #${productId} not found.`);
     }
-    return product;
+    const images = await this.imageService.findImageByRefPostId(productId);
+    const imageIds = images.map(img => img.imageId);
+    const imageUrl = images.map(img => img.imageUrl)
+    return {
+      ...product,
+      imageIds,
+      imageUrl,
+    };
   }
 
   async deleteProduct(productId: number, id: string): Promise<void> {
@@ -148,6 +192,28 @@ export class UsedProductService {
       }
       locationEntity = found;
     }
+    // -- 이미지 수정 로직 추가
+    if (updateDto.imageIds) {
+      const allImages = await this.imageService.findImageByRefPostId(productId);
+      const existingImageIds = allImages.map((img) => img.imageId);
+
+      const toDisconnect = existingImageIds.filter(
+        (id) => !updateDto.imageIds?.includes(id),
+      );
+
+      const toConnect = updateDto.imageIds;
+
+      if(toDisconnect.length > 0) {
+        await this.imageService.disconnectImages(toDisconnect);
+      }
+
+      if(toConnect.length > 0) {
+        await this.imageService.connectImagesToPost({
+          imageIds: toConnect,
+          refPostId: productId,
+        });
+      }
+    }
 
     // 나머지 필드 병합
     const updatedProduct = this.usedProductRepo.merge(product, {
@@ -172,5 +238,14 @@ export class UsedProductService {
 
   async incrementViewCount(id: number): Promise<void> {
     await this.usedProductRepo.increment({ productId: id }, 'viewCount', 1);
+  }
+
+  async updateSalesStatus(productId: number, id: string, status: Status) {
+    const product = await this.usedProductRepo.findOneBy({ productId: productId });
+    if (!product) throw new NotFoundException(`Product with ID #${productId} not found.`);
+    if (id !== product.id) throw new ForbiddenException(`Unauthorized`);
+
+    product.status = status;
+    return this.usedProductRepo.save(product);
   }
 }

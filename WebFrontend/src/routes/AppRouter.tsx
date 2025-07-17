@@ -32,6 +32,13 @@ import UpdateRecruitEnsemblePage from "@/pages/ensemble/UpdateRecruitEnsemblePag
 import MapViewPage from "@/pages/map/MapViewPage";
 import ProtectedRoute from "./ProtectedRoute";
 import CategoryPage from "@/pages/main/CategoryPage";
+import CommunityFeedPage from "@/pages/community/CommunityFeedPage";
+import CreatePostPage from "@/pages/community/CreatePostPage";
+import PostDetailPage from '@/pages/community/PostDetailPage';
+import SearchPage from '../pages/search/SearchPage';
+import VinylSpecificPage from '@/pages/vinyl/VinylSpecificPage';
+
+
 
 const AppRouter: React.FC = () => {
   return ( 
@@ -50,12 +57,17 @@ const AppRouter: React.FC = () => {
           <Route path="/" element={<MainPage />} />
           <Route path="/main" element={<MainPage />} />
 
+          <Route path="/community" element={<CommunityFeedPage />} />
+          <Route path="/community/create" element={<CreatePostPage />} /> 
+          <Route path="/community/:id" element={<PostDetailPage />} /> 
+
           <Route path="/chat" element={<ChatListPage />} />
           <Route path="/chat/:roomId" element={<ChatRoomPage />} />
           <Route path="/users/:id" element={<UserPage />} />
           <Route path="/main" element={<MainPage />} />
           <Route path="/category" element={<CategoryPage />} />
           <Route path="/vinyl" element={<VinylPage />} />
+          <Route path="/vinyl/:videoId" element={<VinylSpecificPage />} />
           <Route path="/used-products" element={<UsedProductPage />} />
           <Route
             path="/used-products/create"
@@ -97,6 +109,8 @@ const AppRouter: React.FC = () => {
           />
           <Route path="/map-view" element={<MapViewPage />} />
           <Route path="/style-guide" element={<StyleGuideTest />} />
+
+          <Route path="/search" element={<SearchPage />} />
         </Route>
       </Routes>
       <Navigation />

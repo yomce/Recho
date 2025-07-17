@@ -15,7 +15,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { EnsembleService } from './ensemble.service';
-import { PaginationQueryRecruitEnsembleDto } from './dto/pagination-query-recruit-ensemble.dto';
+import { FilterRecruitEnsembleDto } from './dto/pagination-query-recruit-ensemble.dto';
 import { PaginatedRecruitEnsembleResponse } from './dto/paginated-recruit-ensemble.response.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { CreateRecruitEnsembleDto } from './dto/create-recruit-ensemble.dto';
@@ -30,17 +30,13 @@ export class EnsembleController {
 
   @Get()
   async getEnsemble(
-    @Query() paginationQuery: PaginationQueryRecruitEnsembleDto,
+    @Query() filter: FilterRecruitEnsembleDto,
   ): Promise<PaginatedRecruitEnsembleResponse> {
     this.logger.log('Fetching ensemble with pagination');
 
-    const { limit = 20, lastPostId, lastCreatedAt } = paginationQuery;
+    // const { limit = 20, lastPostId, lastCreatedAt } = paginationQuery;
 
-    return this.ensembleService.findEnsembleWithPagination(
-      limit,
-      lastPostId,
-      lastCreatedAt,
-    );
+    return this.ensembleService.findEnsembleWithPagination(filter);
   }
 
   @Post()
@@ -62,6 +58,26 @@ export class EnsembleController {
       createRecruitEnsembleDto,
       username,
     );
+  }
+
+  @Patch(':postId/complete')
+  @UseGuards(AuthGuard('jwt'))
+  async closeRecruitment(
+    @Param('postId', ParseIntPipe) postId: number,
+    @Req() req: Request,
+  ): Promise<RecruitEnsembleResponseDto> {
+    if (!req.user || !req.user.id) {
+      this.logger.error(
+        'Authentication information missing from request user object.',
+      );
+      throw new ForbiddenException('사용자 인증 정보가 없습니다.');
+    }
+    const userId = req.user.id;
+
+    this.logger.log(
+      `Closing recruitment for post ID #${postId} by user ${userId}`,
+    );
+    return this.ensembleService.closeRecruitment(postId, userId);
   }
 
   @Get(':postId')

@@ -4,9 +4,14 @@ import { ApplierEnsemble } from 'src/application/entities/applier-ensemble.entit
 import { ApplicationController } from './application.controller';
 import { ApplicationService } from './application.service';
 import { EnsembleModule } from 'src/ensemble/ensemble.module';
+import { UserModule } from 'src/auth/user/user.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ApplierEnsemble]), EnsembleModule],
+  imports: [
+    TypeOrmModule.forFeature([ApplierEnsemble]),
+    EnsembleModule,
+    UserModule,
+  ],
   controllers: [ApplicationController],
   providers: [ApplicationService],
 })

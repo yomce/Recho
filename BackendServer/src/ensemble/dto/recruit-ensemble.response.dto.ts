@@ -6,6 +6,7 @@ import {
   RecruitEnsemble,
   SKILL_LEVEL,
 } from '../entities/recruit-ensemble.entity';
+import { Location } from 'src/map/entities/location.entity';
 
 export class RecruitEnsembleResponseDto {
   postId: number;
@@ -14,7 +15,7 @@ export class RecruitEnsembleResponseDto {
   content: string;
   eventDate: Date;
   skillLevel: SKILL_LEVEL;
-  locationId: number;
+  location: Location;
   totalRecruitCnt: number;
   recruitStatus: RECRUIT_STATUS;
   createdAt: Date;
@@ -34,7 +35,7 @@ export class RecruitEnsembleResponseDto {
     dto.content = recruitEnsemble.content;
     dto.eventDate = recruitEnsemble.eventDate;
     dto.skillLevel = recruitEnsemble.skillLevel;
-    dto.locationId = recruitEnsemble.locationId;
+    dto.location = recruitEnsemble.location;
     dto.totalRecruitCnt = recruitEnsemble.totalRecruitCnt;
     dto.recruitStatus = recruitEnsemble.recruitStatus;
     dto.createdAt = recruitEnsemble.createdAt;

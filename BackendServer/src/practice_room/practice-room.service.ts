@@ -24,7 +24,7 @@ export class PracticeRoomService {
   ): Promise<PaginatedPracticeRoomResponse> {
     const realLimit = limit + 1;
     const queryBuilder =
-      this.practiceRoomRepo.createQueryBuilder('practiceRoom');
+      this.practiceRoomRepo.createQueryBuilder('practiceRoom').leftJoinAndSelect('practiceRoom.location', 'location');
 
     if (lastProductId && lastCreatedAt) {
       const lastCreatedAtDate = new Date(lastCreatedAt);

@@ -55,7 +55,7 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({ locationId }) => {
             resetLocation();
             setShowSearch(true);
           }}
-          className="inline-block bg-brand-primary text-white text-caption-bold rounded-md hover:opacity-70 transition py-3 px-4"
+          className="inline-block bg-brand-primary text-white text-caption-bold rounded-[var(--radius-card)] hover:opacity-70 transition py-3 px-4"
         >
           다른 장소 선택
         </button>

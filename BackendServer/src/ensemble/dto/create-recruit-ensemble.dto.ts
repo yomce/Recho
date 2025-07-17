@@ -21,9 +21,9 @@ export class CreateRecruitEnsembleDto {
   @IsNotEmpty()
   content: string;
 
-  @IsDate()
+  @IsString()
   @IsNotEmpty()
-  eventDate: Date;
+  eventDate: string;
 
   @IsEnum(SKILL_LEVEL)
   @IsNotEmpty()

@@ -7,12 +7,14 @@ import { UsedProductModule } from 'src/used_product/used-product.module';
 import { LocationCleanerService } from './location.cleaner.service';
 import { PracticeRoomModule } from 'src/practice_room/practice-room.module';
 import { HttpModule } from '@nestjs/axios';
+import { EnsembleModule } from 'src/ensemble/ensemble.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Location]),
     forwardRef(() => UsedProductModule),
     forwardRef(() => PracticeRoomModule),
+    forwardRef(() => EnsembleModule),
     HttpModule,
   ],
   controllers: [LocationController],

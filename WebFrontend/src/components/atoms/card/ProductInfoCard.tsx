@@ -38,7 +38,7 @@ const ProductInfoCard: React.FC<ProductInfoCardProps> = ({
       </div>
 
       <div className="mt-4">
-        <pre className="max-h-[300px] overflow-y-auto rounded bg-gray-50 p-4 text-[14px] leading-relaxed break-words whitespace-normal text-gray-800">
+        <pre className="max-h-[300px] overflow-y-auto rounded bg-gray-50 p-4 text-[14px] leading-relaxed break-words whitespace-pre-wrap text-left text-gray-800">
 {description}
         </pre>
       </div>

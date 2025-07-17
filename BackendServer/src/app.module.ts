@@ -22,9 +22,14 @@ import { ApplicationModule } from './application/application.module';
 import { ViewCountModule } from './hooks/view_count/view-count.module';
 import loadConfig from './config/env.config';
 import { ConfigController } from './config/config.controller';
+import { searchVideoModule } from './search_video/search-video.module';
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { PostsModule } from './community/posts/posts.module';
+import { CommentsModule } from './community/comments/comments.module';
+import { SearchModule } from './search/search.module';
+import { PromotionModule } from './scraping/promotion.module';
 
 @Module({
   imports: [
@@ -55,10 +60,9 @@ import * as path from 'path';
         timezone: 'UTC',
         ssl: cs.get('APP_ENV') === 'DEV' && {
           rejectUnauthorized: true,
-          ca: fs
-            .readFileSync(
-              path.join(__dirname, '../certs/ap-northeast-2-bundle.pem'),
-            )
+          ca: fs.readFileSync(
+            path.join(__dirname, '../certs/ap-northeast-2-bundle.pem'),
+          ),
         },
       }),
     }),
@@ -66,23 +70,24 @@ import * as path from 'path';
     // MailerModule도 마찬가지입니다.
     MailerModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        transport: {
-          host: configService.get<string>('MAIL_HOST'), // .env 또는 AWS 값
-          port: 587,
-          secure: false,
-          auth: {
-            user: configService.get<string>('MAIL_USER'),
-            pass: configService.get<string>('MAIL_PASSWORD'),
+      useFactory: (configService: ConfigService) => {
+        return {
+          transport: {
+            host: configService.get<string>('GMAIL_HOST'),
+            port: 587,
+            secure: false,
+            auth: {
+              user: configService.get<string>('GMAIL_USER'),
+              pass: configService.get<string>('GMAIL_PASSWORD'),
+            },
           },
-        },
-        defaults: {
-          from: configService.get<string>('MAIL_FROM'),
-        },
-      }),
+          defaults: {
+            from: configService.get<string>('GMAIL_FROM'),
+          },
+        };
+      },
     }),
 
-    // 다른 모듈들은 그대로 둡니다.
     AuthModule,
     UserModule,
     VideosModule,
@@ -94,6 +99,11 @@ import * as path from 'path';
     LocationModule,
     ApplicationModule,
     ViewCountModule,
+    PostsModule,
+    CommentsModule,
+    SearchModule,
+    searchVideoModule,
+    PromotionModule,
   ],
   controllers: [AppController, ConfigController],
   providers: [AppService],

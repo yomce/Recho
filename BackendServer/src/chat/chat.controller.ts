@@ -76,4 +76,14 @@ export class ChatController {
     const user = req.user; // 'as User' 타입 단언이 더 이상 필요 없습니다.
     return this.chatService.getRoomsForUser(user.id);
   }
+
+  @Get('rooms/:id')
+  @UseGuards(AuthGuard('jwt'))
+  async getRoomDetails(
+    @Param('id') roomId: string,
+    @Req() req: RequestWithUser,
+  ): Promise<Room> {
+    const userId = req.user.id;
+    return this.chatService.findRoomById(roomId, userId);
+  }
 }

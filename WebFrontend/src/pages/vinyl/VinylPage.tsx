@@ -8,22 +8,28 @@ import Modal from "@/components/molecules/modal/Modal";
 import PrimaryButton from "@/components/atoms/button/PrimaryButton";
 import SecondaryButton from "@/components/atoms/button/SecondaryButton";
 import Navigation from "@/components/layout/Navigation";
+import { useSizeStore } from "@/stores/sizeStore";
+import { useVinylStore } from "@/stores/vinylStore";
 
 const SWIPE_VELOCITY_THRESHOLD = 500;
 const DRAG_THRESHOLD = 100;
 
 const VinylPage: React.FC = () => {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const { currentIndex, setCurrentIndex } = useVinylStore(); // 화면 전환 시 이전에 봤던 영상들이 다 보임
   const [containerWidth, setContainerWidth] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const controls = useAnimation();
   const [videos, setVideos] = useState<Video[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
+  const globalSize = useSizeStore();
 
   useEffect(() => {
     // Lock body scroll when component mounts
@@ -35,38 +41,77 @@ const VinylPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const fetchVideos = async () => {
-      // 5초 후 강제로 로딩을 종료하는 타임아웃 설정
-      loadingTimeoutRef.current = setTimeout(() => {
-        setIsLoading(false);
-      }, 7000);
+    if (isLoading || !containerRef.current) {
+      return;
+    }
+    const element = containerRef.current;
 
+    const resizeObserver = new ResizeObserver((entries) => {
+      if (entries[0]) {
+        const { width, height } = entries[0].contentRect;
+        // 2. React의 setState 대신 Zustand의 setSize 사용
+        useSizeStore.getState().setSize({ width, height });
+      }
+    });
+
+    resizeObserver.observe(element);
+
+    return () => {
+      resizeObserver.unobserve(element);
+    };
+  }, [isLoading]);
+
+  useEffect(() => {
+    const fetchInitialVideos = async () => {
+      setIsLoading(true);
       try {
-        const videoData = await getVideos(1, 10);
-        console.log("Fetched video data:", videoData);
-        if (videoData.length === 0) {
-          // 비디오가 없으면 바로 로딩 종료 및 타임아웃 해제
-          if (loadingTimeoutRef.current)
-            clearTimeout(loadingTimeoutRef.current);
-          setIsLoading(false);
+        const videoData = await getVideos(1, 5); // 초기에 5개만 로드
+        if (videoData.length < 5) {
+          setHasMore(false);
         }
         setVideos(videoData);
       } catch (error) {
         console.error("비디오 로딩 중 오류 발생:", error);
-        if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
-        setIsLoading(false); // 에러 발생 시에도 로딩 종료 및 타임아웃 해제
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchVideos();
-
-    // 컴포넌트 언마운트 시 타임아웃 해제
-    return () => {
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current);
-      }
-    };
+    fetchInitialVideos();
   }, []);
+
+  const loadMoreVideos = async () => {
+    if (isFetchingMore || !hasMore) return;
+
+    setIsFetchingMore(true);
+    try {
+      const nextPage = page + 1;
+      const newVideos = await getVideos(nextPage, 5);
+      if (newVideos.length > 0) {
+        setVideos((prevVideos) => [...prevVideos, ...newVideos]);
+        setPage(nextPage);
+      } else {
+        setHasMore(false); // 더 이상 비디오가 없음을 표시
+      }
+    } catch (error) {
+      console.error("추가 비디오 로딩 중 오류 발생:", error);
+    } finally {
+      setIsFetchingMore(false);
+    }
+  };
+
+  useEffect(() => {
+    // 현재 인덱스가 5의 배수이고(인덱스 4, 9, 14...), 현재 로드된 비디오의 마지막에 도달했을 때
+    if (
+      (currentIndex + 1) % 5 === 0 &&
+      currentIndex > 0 &&
+      currentIndex + 1 === videos.length &&
+      hasMore &&
+      !isFetchingMore
+    ) {
+      loadMoreVideos();
+    }
+  }, [currentIndex, videos.length, hasMore, isFetchingMore]);
 
   useEffect(() => {
     if (!isLoading && containerRef.current) {
@@ -84,10 +129,7 @@ const VinylPage: React.FC = () => {
   }, [currentIndex, containerWidth, controls, isDragging]);
 
   const handleFirstVideoReady = () => {
-    // 비디오가 준비되면 타임아웃을 해제하고 로딩 상태를 false로 변경
-    if (loadingTimeoutRef.current) {
-      clearTimeout(loadingTimeoutRef.current);
-    }
+    // 비디오가 준비되면 로딩 상태를 false로 변경
     setIsLoading(false);
   };
 
@@ -111,15 +153,43 @@ const VinylPage: React.FC = () => {
       window.ReactNativeWebView.postMessage(
         JSON.stringify({
           type: "startEnsemble",
-          payload: {
+          data: {
             token,
-            childVideoId: selectedVideoId,
+            selectedVideoId: selectedVideoId,
           },
         })
       );
       closeModal();
     } else {
       alert("React Native 환경에서만 합주하기가 가능합니다.");
+    }
+  };
+
+  const handleStartRecording = () => {
+    if (!selectedVideoId) {
+      alert("촬영할 비디오를 선택해주세요.");
+      return;
+    }
+
+    const video = videos.find((v) => v.id === selectedVideoId);
+    if (!video) {
+      alert("선택된 비디오 정보를 찾을 수 없습니다.");
+      closeModal();
+      return;
+    }
+
+    if (window.ReactNativeWebView) {
+      window.ReactNativeWebView.postMessage(
+        JSON.stringify({
+          type: "startRecording",
+          data: {
+            video: video,
+          },
+        })
+      );
+      closeModal();
+    } else {
+      alert("React Native 환경에서만 촬영하기가 가능합니다.");
     }
   };
 
@@ -203,15 +273,14 @@ const VinylPage: React.FC = () => {
                 }}
               >
                 <VinylContents
-                  likes={video.like_count}
-                  comments={video.comment_count}
-                  videoInfo={video.id}
-                  videoSrc={video.video_url}
+                  currentVideo={video}
+                  size={globalSize}
                   isVisible={isCurrentlyVisible(index)}
                   rotationAngle={getRotationAngle(index)}
                   depth={video.depth}
                   onStartEnsemble={() => openModal(video.id)}
                   onVideoReady={index === 0 ? handleFirstVideoReady : undefined}
+                  setVideos={setVideos}
                 />
               </div>
             );
@@ -228,9 +297,7 @@ const VinylPage: React.FC = () => {
           <PrimaryButton onClick={handleStartEnsemble}>
             갤러리에서 선택
           </PrimaryButton>
-          <PrimaryButton onClick={() => alert("촬영하기")}>
-            촬영하기
-          </PrimaryButton>
+          <PrimaryButton onClick={handleStartRecording}>촬영하기</PrimaryButton>
           <SecondaryButton onClick={closeModal}>닫기</SecondaryButton>
         </div>
       </Modal>

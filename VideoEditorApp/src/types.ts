@@ -31,6 +31,9 @@ export interface TrimmerState {
   aspectRatio: string; // 현재 적용될 화면 비율 (예: "16:9", "1:1", "original")
   originalAspectRatioValue?: string; // 원본 비디오의 화면 비율 (예: "1.777")
   timelinePosition: number;
+  isPlaying: boolean;
+  isMuted: boolean;
+  waveform?: number[]; // [추가] 오디오 파형 데이터
 }
 
 // FFmpeg 필터에 전달될 트리머 데이터
@@ -40,11 +43,16 @@ export interface TrimmerDataForFilter {
   volume: number;
   aspectRatio: string;
   equalizer: Omit<EQBand, 'id'>[]; // EQ 밴드에서 'id'는 제외
+  timelinePosition: number; // [추가] 타임라인 위치 정보
+  duration: number; // [추가] 원본 비디오의 클립 길이
 }
 
 // FFmpeg 편집 데이터
 export interface EditData {
   trimmers: TrimmerDataForFilter[]; // 편집할 트리머 데이터 배열
+  globalStartTime: number; // [추가] 전체 타임라인의 시작 시간
+  globalEndTime: number; // [추가] 전체 타임라인의 종료 시간
+  hasAudio: boolean; // [추가] 오디오 트랙 존재 여부
 }
 
 // 시간 편집 유형 (시작 또는 종료)
@@ -70,6 +78,7 @@ export type RootStackParamList = {
   Processing: {
     sourceVideos: Video[];
     localVideos: MediaItem[];
+    parentVideoId?: string;
   };
   MediaLibrary: undefined;
   FFmpegTest: undefined;
@@ -77,6 +86,7 @@ export type RootStackParamList = {
   SideBySide: { videoUris: string[] };
   VideoPreview: { videoUri: string };
   NewVideoTest: { localVideoPath: string };
+  Record: { video: Video };
 };
 
 // VideoEditScreen의 라우트 prop 타입
@@ -89,16 +99,34 @@ export type VideoEditScreenRouteProp = RouteProp<
 export interface Video {
   id: string;
   user_id: string;
-  parent_video_id?: string;
+  parent_video_id: string | null;
   depth: number;
-  results_video_key: string;
-  source_video_key: string;
-  thumbnail_key: string;
   like_count: number;
   comment_count: number;
   created_at: string;
+  source_video_key: string;
+  results_video_key: string;
+  thumbnail_key: string;
   video_url: string;
   thumbnail_url: string;
+  user?: {
+    id: string;
+    nickname: string;
+    profile_image_url: string;
+  };
+  startTime: number;
+  endTime: number;
+  timelinePosition: number;
+}
+
+export interface CustomJwtPayload {
+  id: string;
+  [key: string]: any;
+}
+
+export interface PlaybackState {
+  currentTime: number;
+  isPaused: boolean;
 }
 
 // --- 유틸리티 함수 (여기서 직접 정의하거나 별도 파일로 분리 가능) ---
@@ -109,13 +137,18 @@ export const formatFrequency = (freq: number): string => {
   return `${freq}Hz`;
 };
 
-// 시간 포매팅 함수 (초를 "MM:SS.S" 형식으로)
+// 시간 포매팅 함수 (초를 "MM:SS.SS" 형식으로)
 export const formatTime = (seconds: number): string => {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes.toFixed(0).padStart(2, '0')}:${remainingSeconds
-    .toFixed(1)
-    .padStart(4, '0')}`;
+  const sign = seconds < 0 ? '-' : '';
+  const absTime = Math.abs(seconds);
+
+  const minutes = Math.floor(absTime / 60);
+  const secs = absTime - minutes * 60;
+
+  const paddedMinutes = minutes.toString().padStart(2, '0');
+  const paddedSeconds = secs.toFixed(2).padStart(5, '0');
+
+  return `${sign}${paddedMinutes}:${paddedSeconds}`;
 };
 
 // 파일 크기 포매팅 함수 (바이트를 "KB", "MB", "GB" 등으로)

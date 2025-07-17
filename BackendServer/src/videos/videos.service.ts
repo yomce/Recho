@@ -1,11 +1,21 @@
 // src/videos/videos.service.ts
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { S3Client, GetObjectCommand, S3ClientConfig } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Video } from '../entities/video.entity';
 import { ConfigService } from '@nestjs/config';
+import { Video } from './entities';
+import { UserService } from 'src/auth/user/user.service';
+import { UserResponseDto } from 'src/auth/user/dto/user.response.dto';
+import { VideoResponseDto } from './dto/video.response.dto';
+import { CONTENT_TYPE } from 'src/stringIdLikes/dto/toggleLike.dto';
+import { LikesService } from 'src/stringIdLikes/likes.service';
+import { User } from 'src/auth/user/user.entity';
 
 @Injectable()
 export class VideosService {
@@ -15,6 +25,8 @@ export class VideosService {
     @InjectRepository(Video)
     private readonly videoRepository: Repository<Video>,
     private readonly configService: ConfigService,
+    private readonly userService: UserService,
+    private readonly likesService: LikesService,
   ) {
     // 1. ConfigService에서 설정값 가져오기
     const region = this.configService.get<string>('AWS_REGION');
@@ -45,8 +57,14 @@ export class VideosService {
   }
 
   async getThumbnailsByUser(id: string): Promise<string[]> {
+    const user = await this.userService.findById(id);
+
+    if (!user) {
+      throw new NotFoundException(`User with ID "${id}" not found`);
+    }
+
     const videos = await this.videoRepository.find({
-      where: { user_id: id },
+      where: { user: { id: id } }, // user 객체의 id를 직접 지정
       select: ['thumbnail_key'],
     });
 
@@ -68,12 +86,28 @@ export class VideosService {
     page: number,
     limit: number,
     sortBy: 'likes' | 'createdAt',
+    user: User | undefined, // ✅ user 파라미터 추가
   ): Promise<any[]> {
     const videos = await this.videoRepository.find({
+      relations: ['user'],
       order: { [sortBy === 'likes' ? 'like_count' : 'created_at']: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
     });
+
+    if (videos.length === 0) {
+      return [];
+    }
+
+    // ✅ '좋아요' 상태 확인 로직 추가
+    const videoIds = videos.map((video) => video.id);
+    const likedVideoIds = user
+      ? await this.likesService.getUserLikedStatusesForContents(
+          user.id,
+          CONTENT_TYPE.VINYL, // 콘텐츠 타입을 'VINYL'로 지정
+          videoIds,
+        )
+      : new Set<string>();
 
     const signedVideos = await Promise.all(
       videos.map(async (video) => {
@@ -99,7 +133,16 @@ export class VideosService {
       }),
     );
 
-    return signedVideos;
+    const responseVideo = signedVideos.map((video) => {
+      const tmpResponseUser = UserResponseDto.from(video.user);
+      const tmpVideo = VideoResponseDto.from(video, tmpResponseUser);
+      return {
+        ...tmpVideo,
+        userLiked: likedVideoIds.has(video.id), // '좋아요' 여부 추가
+      };
+    });
+
+    return responseVideo;
   }
 
   async getSourceVideoUrl(videoKey: string): Promise<string> {
@@ -113,7 +156,7 @@ export class VideosService {
     );
   }
 
-  async getVideoDetails(id: string): Promise<Video> {
+  async getVideoDetails(id: string): Promise<VideoResponseDto> {
     const video = await this.videoRepository.findOne({
       where: { id },
       relations: ['user', 'parent'],
@@ -127,7 +170,7 @@ export class VideosService {
         this.s3,
         new GetObjectCommand({
           Bucket: this.configService.get('AWS_S3_BUCKET'),
-          Key: video.source_video_key,
+          Key: video.results_video_key,
         }),
         { expiresIn: 3600 },
       ),
@@ -143,7 +186,10 @@ export class VideosService {
     video.video_url = videoUrl;
     video.thumbnail_url = thumbnailUrl;
 
-    return video;
+    const responseUser = UserResponseDto.from(video.user);
+    const responseVideo = VideoResponseDto.from(video, responseUser);
+
+    return responseVideo;
   }
 
   async findVideoLineage(id: string): Promise<Video[]> {
@@ -151,12 +197,31 @@ export class VideosService {
     let currentVideoId: string | null = id;
 
     while (currentVideoId) {
-      const videoDetails = await this.getVideoDetails(currentVideoId);
-      if (!videoDetails) {
+      const video = await this.videoRepository.findOne({
+        where: { id: currentVideoId },
+        relations: ['parent'], // [수정] 부모 관계를 명시적으로 로드
+        select: [
+          'id',
+          'parent_video_id',
+          'depth',
+          'startTime',
+          'endTime',
+          'timelinePosition',
+          'source_video_key',
+          'results_video_key', // globalStart/EndTime 계산을 위해 추가
+          'thumbnail_key', // 썸네일 표시를 위해 추가
+        ],
+      });
+
+      if (!video) {
         break;
       }
-      lineage.push(videoDetails);
-      currentVideoId = videoDetails.parent_video_id || null;
+      // 소스 비디오의 URL을 생성하여 video_url에 할당
+      video.video_url = await this.getSourceVideoUrl(video.source_video_key);
+
+      lineage.push(video);
+      // [수정] 직접 ID를 사용하는 대신, 로드된 관계를 통해 다음 ID를 찾음
+      currentVideoId = video.parent ? video.parent.id : null;
     }
 
     return lineage.reverse();

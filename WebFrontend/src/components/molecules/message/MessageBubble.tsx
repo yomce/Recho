@@ -2,7 +2,6 @@
 
 import React from "react";
 import { motion, useTransform, MotionValue } from "framer-motion";
-import { formatToKST } from "../../../utils/dateUtils"; // 경로 확인 필요
 
 // 컴포넌트가 받을 props 타입
 interface MessageBubbleProps {
@@ -10,6 +9,7 @@ interface MessageBubbleProps {
     content: string;
     createdAt: string;
     senderId?: string;
+    time?: string;
   };
   currentUserId?: string | null;
   dragX: MotionValue<number>;
@@ -40,7 +40,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           style={{ opacity: timestampOpacity }}
           className="text-xs text-gray-400 whitespace-nowrap"
         >
-          {formatToKST(msg.createdAt)}
+          {msg.time}
         </motion.span>
       )}
 
@@ -74,7 +74,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           style={{ opacity: timestampOpacity }}
           className="text-xs text-gray-400 whitespace-nowrap"
         >
-          {formatToKST(msg.createdAt)}
+          {msg.time}
         </motion.span>
       )}
     </div>

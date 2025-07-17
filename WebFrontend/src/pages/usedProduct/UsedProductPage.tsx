@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { type UsedProduct, type PaginatedUsedProductResponse } from '../../types/product';
-import { useAuthStore } from '@/stores/authStore';
+import { type UsedProduct, type PaginatedUsedProductResponse, CATEGORY_LABEL_TO_ID } from '../../types/product';
 import axiosInstance from '@/services/axiosInstance';
-import UsedProductCard from '@/components/atoms/card/UsedProductCard';
 import CategoryList from '@/components/layout/CategoryList';
 import ImageCard from '@/components/atoms/card/ImageCard';
 import FloatingWriteButton from '@/components/atoms/button/FloatingWriteButton';
 import PostLayout from '@/components/layout/PostLayout';
+import PostCard from '@/components/atoms/card/PostCard';
 
 interface Cursor {
   lastProductId: number;
@@ -19,8 +18,7 @@ const UsedProductPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [nextCursor, setNextCursor] = useState<Cursor | null>(null);
   const [hasNextPage, setHasNextPage] = useState(true);
-  const [selected, setSelected] = useState("전체");
-  const { user } = useAuthStore();
+  const [selected, setSelected] = useState<string>("전체");
 
   const fetchItems = useCallback(async (isInitialFetch: boolean) => {
     if (loading || !hasNextPage) return;
@@ -30,6 +28,14 @@ const UsedProductPage: React.FC = () => {
 
     try {
       const params = new URLSearchParams({ limit: '12' });
+
+      if(selected !== "전체") {
+        const categoryId = CATEGORY_LABEL_TO_ID[selected];
+        if(categoryId) {
+          params.append("categoryId", String(categoryId));
+        }
+      }
+
       if (!isInitialFetch && nextCursor) {
         params.append('lastProductId', String(nextCursor.lastProductId));
         params.append('lastCreatedAt', nextCursor.lastCreatedAt);
@@ -42,7 +48,11 @@ const UsedProductPage: React.FC = () => {
 
       const { data, nextCursor: newCursor, hasNextPage: newHasNextPage } = response.data;
 
-      setItems(prev => (isInitialFetch ? data : [...prev, ...data]));
+      setItems(prev => (
+        isInitialFetch 
+        ? data 
+        : [...prev, ...data.filter(item => !prev.some(p => p.productId === item.productId))]
+      ));
       setNextCursor(newCursor ?? null);
       setHasNextPage(newHasNextPage);
 
@@ -52,26 +62,33 @@ const UsedProductPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [loading, hasNextPage, nextCursor]);
+  }, [loading, hasNextPage, nextCursor, selected]);
 
   useEffect(() => {
     fetchItems(true);
-  }, []);
+  }, [selected]);
 
   const handleLoadMore = () => {
     fetchItems(false);
+  };
+
+  const handleCategoryClick = (category: string) => {
+    setSelected(category);
+    setNextCursor(null);
+    setHasNextPage(true);
+    fetchItems(true);
   };
 
   return (
     <PostLayout>
       <div>
         <div className="relative w-full max-w-[410px] mx-auto min-h-screen bg-brand-frame">
-          <div className="py-4 px-16">
+          <div className="py-4 px-4">
             <ImageCard src="https://placehold.co/398x270" />
             {/* 카테고리 */}
             <CategoryList
               selectedCategory={selected}
-              onClickCategory={(c) => setSelected(c)}
+              onClickCategory={handleCategoryClick}
             />
               {/* 게시물 그리드 */}
             <div className="grid grid-cols-1 gap-[16px] max-w-[410px] mx-auto mt-[40px] mb-[52px]">
@@ -84,13 +101,15 @@ const UsedProductPage: React.FC = () => {
               {/* 예시 카드 */}
               {items.length > 0 ? (
                 items.map(item => (
-                  <UsedProductCard
+                  <PostCard
                     key={item.productId}
-                    productId={item.productId}
+                    id={item.productId}
                     title={item.title}
                     description={item.description}
                     price={item.price}
                     imageUrl={item.imageUrl}
+                    imageWrapperClassName="rounded-r-[10px]"
+                    cardClassName="bg-white"
                   />
                 ))
               ) : (

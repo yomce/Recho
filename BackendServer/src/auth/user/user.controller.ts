@@ -7,12 +7,18 @@ import {
   Param,
   NotFoundException,
   Req,
+  Patch,
+  UsePipes,
+  ValidationPipe,
+  ConflictException,
+  HttpCode,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { User } from './user.entity';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
+import { UpdateUserDto } from './dto/update-user.dto'; //
 
 interface RequestWithUser extends Request {
   user: User;
@@ -24,6 +30,42 @@ export class UserController {
   // 생성자를 통해 UserService를 주입(Inject)받습니다.
   // 이로 인해 컨트롤러 내에서 UserService의 메서드를 사용할 수 있습니다.
   constructor(private readonly userService: UserService) {}
+
+
+   @Post('check-id')
+  @HttpCode(200) // 성공 시 200 OK 반환
+  async checkUserId(@Body('id') id: string) {
+    const user = await this.userService.findById(id);
+    if (user) {
+      // 아이디가 이미 존재하면 409 Conflict 에러 발생
+      throw new ConflictException('이미 사용 중인 아이디입니다.');
+    }
+    // 존재하지 않으면 성공 메시지 반환
+    return { message: '사용 가능한 아이디입니다.' };
+  }
+
+  /**
+   * (신규) 닉네임 중복 확인
+   */
+  @Post('check-username')
+  @HttpCode(200)
+  async checkUsername(@Body('username') username: string) {
+    const user = await this.userService.findByUsername(username);
+    if (user) {
+      throw new ConflictException('이미 사용 중인 닉네임입니다.');
+    }
+    return { message: '사용 가능한 닉네임입니다.' };
+  }
+
+   @Post('check-email')
+  @HttpCode(200)
+  async checkEmail(@Body('email') email: string) {
+    const user = await this.userService.findByEmail(email); //
+    if (user) {
+      throw new ConflictException('이미 사용 중인 이메일입니다.');
+    }
+    return { message: '사용 가능한 이메일입니다.' };
+  }
 
   /**
    * 새로운 유저를 생성합니다.
@@ -83,4 +125,18 @@ export class UserController {
     // 4. 안전한 정보만 담긴 result 객체를 반환합니다.
     return result;
   }
+
+   @UseGuards(AuthGuard('jwt'))
+  @Patch('me')
+  @UsePipes(new ValidationPipe()) // DTO 유효성 검사를 자동으로 실행합니다.
+  async updateMyInfo(
+    @Req() req: RequestWithUser,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<Omit<User, 'password' | 'hashedRefreshToken'>> {
+    const userId = req.user.id;
+    console.log(`[UserController] updateMyInfo 호출. ID: ${userId}, 변경할 닉네임: ${updateUserDto.username}`);
+    return this.userService.updateUser(userId, updateUserDto);
+  }
+
+
 }

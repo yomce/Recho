@@ -1,3 +1,5 @@
+// src/components/atoms/avatar/Avatar.tsx
+
 import React from 'react';
 
 interface AvatarProps {
@@ -7,15 +9,17 @@ interface AvatarProps {
   size?: number;
   /** 이미지 설명을 위한 alt 텍스트입니다. */
   alt?: string;
+  onClick?: () => void;
 }
 
-const Avatar: React.FC<AvatarProps> = ({ src, size = 32, alt = 'profile image' }) => {
+const Avatar: React.FC<AvatarProps> = ({ src, size = 32, alt = 'profile image', onClick }) => {
   return (
     <img
       src={src}
       alt={alt}
       className="rounded-full object-cover"
       style={{ width: `${size}px`, height: `${size}px` }}
+      onClick={onClick}
     />
   );
 };

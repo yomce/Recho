@@ -17,12 +17,18 @@ const UpdateUsedProductPage: React.FC = () => {
   const location = useLocationStore((state) => state.location);
 
   const [form, setForm] = useState<UsedProductForm>({
-    title: '', description: '', price: '', categoryId: '',
-    tradeType: TRADE_TYPE.IN_PERSON, locationId: '',
+    title: '', 
+    description: '', 
+    price: '', 
+    categoryId: 0,
+    tradeType: TRADE_TYPE.IN_PERSON, 
+    locationId: '',
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [imageIds, setImageIds] = useState<{ id: number; url: string }[]>([]);
+  const [originalImages, setOriginalImages] = useState<{ id: number; url: string }[]>([]);
   const { user } = useAuthStore();
 
   useEffect(() => {
@@ -36,13 +42,21 @@ const UpdateUsedProductPage: React.FC = () => {
       try {
         const response = await axiosInstance.get<UsedProduct>(`used-products/${id}`);
         const product = response.data;
+        const originalImageData = (product.imageIds || []).map((id, idx) => ({
+          id,
+          url: product.imageUrl?.[idx] ?? '',
+        }));
+        setOriginalImages(originalImageData);
+        setImageIds(originalImageData);
         setForm({
           title: product.title,
           description: product.description,
           price: String(product.price),
-          categoryId: String(product.categoryId),
+          categoryId: product.categoryId,
           tradeType: product.tradeType,
           locationId: String(product.location.locationId),
+          // imageIds: imageIds.map((img) => img.id),
+          imageIds: originalImageData.map((img) => img.id),
         });
       } catch (err) {
         if (axios.isAxiosError(err)) { // err가 Axios 에러인지 확인하면 더 안전합니다.
@@ -60,6 +74,11 @@ const UpdateUsedProductPage: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleImageChange = (updateImage: { id: number; url: string }[]) => {
+    setOriginalImages(updateImage);   // ImageUploadPreview의 미리보기 상태 유지
+    setImageIds(updateImage);         // 실제 이미지 ID 상태 유지 (submit 때 사용됨)
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -83,8 +102,9 @@ const UpdateUsedProductPage: React.FC = () => {
       const payload = {
         ...form,
         price: priceAsNumber,
-        categoryId: parseInt(form.categoryId, 10),
+        categoryId: form.categoryId,
         locationId: locationId,
+        imageIds: imageIds.map((img) => img.id),
       };
       await axiosInstance.patch(`used-products/${id}`, payload);
       alert('상품이 성공적으로 수정되었습니다!');
@@ -107,11 +127,16 @@ const UpdateUsedProductPage: React.FC = () => {
         <ProductForm
           formState={form}
           onFormChange={handleChange}
+          onCategoryChange={handleChange}
+          onTradeTypeChange={handleChange}
           onFormSubmit={handleSubmit}
           isLoading={loading}
           errorMessage={error}
           submitButtonText="수정 완료"
           loadingButtonText="수정 중..."
+          setImageIds={setImageIds}
+          originalImages={originalImages}
+          onImageChange={handleImageChange}
         />
       </div>
     </PostLayout>

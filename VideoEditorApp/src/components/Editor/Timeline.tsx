@@ -1,23 +1,30 @@
-import React, { useRef, useState, useEffect, createRef, useMemo } from 'react';
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  forwardRef,
+  useImperativeHandle,
+  useMemo,
+  memo,
+} from 'react';
 import {
   PanGestureHandler,
   State,
   PanGestureHandlerStateChangeEvent,
-  LongPressGestureHandler,
-  LongPressGestureHandlerStateChangeEvent,
+  PanGestureHandlerGestureEvent,
 } from 'react-native-gesture-handler';
 import styled from 'styled-components/native';
-import { Animated } from 'react-native';
-import { TrimmerState } from '../../types';
+import { Animated, Easing } from 'react-native';
+import { TrimmerState, formatTime } from '../../types';
 
-const TRACK_HEIGHT = 60;
+const RULER_HEIGHT = 30;
+const TRACK_HEIGHT = 80;
 const TRACK_MARGIN = 5;
 const PIXELS_PER_SECOND = 60;
 
 // Styled Components (변경 없음)
 const TimelineContainer = styled.View`
   flex: 1;
-  justify-content: center;
   background-color: #1c1c1c;
   overflow: hidden;
 `;
@@ -36,14 +43,40 @@ const OverlayMarker = styled.View<{ left: number; width: number }>`
   height: 100%;
   left: ${({ left }) => left}px;
   width: ${({ width }) => width}px;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 100, 120, 0.3);
   z-index: 50;
   pointer-events: none;
 `;
 
-const TracksContainer = styled(Animated.View)`
-  background-color: #ffff00;
+const TracksContainerView = styled.View`
+  background-color: #cccccc;
   padding-vertical: 10px;
+`;
+
+const RulerContainer = styled.View`
+  height: ${RULER_HEIGHT}px;
+  background-color: #333;
+  width: 100%;
+`;
+
+const TickContainer = styled.View`
+  position: absolute;
+  height: 100%;
+  justify-content: flex-end;
+`;
+
+const TickView = styled.View<{ height: number }>`
+  width: 1px;
+  background-color: #888;
+  height: ${({ height }) => height}px;
+`;
+
+const TickLabel = styled.Text`
+  position: absolute;
+  top: 0;
+  left: 2px;
+  color: #ccc;
+  font-size: 10px;
 `;
 
 const TrackWrapper = styled.View`
@@ -52,378 +85,709 @@ const TrackWrapper = styled.View`
   position: relative;
 `;
 
-const TrackContent = styled.View`
-  position: absolute;
-  height: 100%;
-  background-color: #ff00ff;
-  border-radius: 5px;
-  justify-content: center;
-  align-items: center;
-`;
-
-const Handle = styled(Animated.View)`
+const WaveformContainer = styled.View`
   position: absolute;
   top: 0;
-  width: 16px;
-  height: 100%;
-  background-color: #ff0000;
-  border-radius: 4px;
-  z-index: 10;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px;
+  overflow: hidden;
 `;
 
-const MoveHandle = styled(Animated.View)`
+const WaveformBar = styled.View<{ height: number }>`
+  background-color: #ffffff;
+  width: 2px;
+  border-radius: 1px;
+  height: ${({ height }) => height / 1.2}%;
+`;
+
+const TrackContent = styled.TouchableOpacity<{ isActive: boolean }>`
+  position: absolute;
+  height: 100%;
+  background-color: ${({ isActive }) => (isActive ? '#8e4df6' : '#000000')};
+  border-radius: 20px;
+  overflow: hidden;
+  elevation: 5;
+`;
+
+const DebugText = styled.Text`
+  color: white;
+  font-size: 9px;
+  font-weight: bold;
+`;
+
+const DebugInfoPanel = styled.View`
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 20px;
-  background-color: rgba(80, 80, 80, 0.7);
-  border-bottom-left-radius: 5px;
-  border-bottom-right-radius: 5px;
-  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 5px;
+  z-index: 200;
   align-items: center;
 `;
 
-const TrackText = styled.Text`
-  color: white;
-  font-weight: bold;
+const TimeIndicatorLine = styled.View`
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: #007bff;
+  z-index: 101;
 `;
+
+const TimeDragHandle = styled(Animated.View)`
+  position: absolute;
+  top: 7px;
+  width: 23px;
+  height: 23px;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 7px;
+  z-index: 102;
+  cursor: ew-resize;
+`;
+
+export interface TimelineHandles {
+  scrollToTime: (time: number) => void;
+}
 
 interface TimelineProps {
   trimmers: TrimmerState[];
   globalStartTime: number;
   globalEndTime: number;
+  startPointThreshold: number;
+  endPointThreshold: number;
   currentTime: number;
+  isGloballyPlaying: boolean;
   onPositionChange: (time: number) => void;
-  onTrimmerUpdate: (
-    id: string,
-    newState: Partial<Omit<TrimmerState, 'id'>>,
-  ) => void;
   onHeightChange?: (height: number) => void;
-  isPlaying: boolean; // [추가]
+  onGlobalStartTimeChange: (time: number) => void;
+  onGlobalEndTimeChange: (time: number) => void;
+  onTrackPositionChange: (trackId: string, newPosition: number) => void;
+  onTrackSelectionChange: (trackId: string | null) => void;
+  onDragStateChange: (isDragging: boolean) => void;
+  onTrackDragEnd: () => void; // [추가] 트랙 드래그가 끝났을 때 호출
 }
 
-const Timeline: React.FC<TimelineProps> = ({
-  trimmers,
-  globalStartTime,
-  globalEndTime,
-  currentTime,
-  onPositionChange,
-  onTrimmerUpdate,
-  onHeightChange,
-  isPlaying, // [추가]
-}) => {
-  const [containerWidth, setContainerWidth] = useState(0);
-  const [localTrimmers, setLocalTrimmers] = useState(trimmers);
-  // --- Refs for simultaneous gesture handling ---
-  const trackGestureRefs = useMemo(
-    () => trimmers.map(() => [createRef(), createRef(), createRef()]),
-    [trimmers.length],
+interface WaveformProps {
+  data: number[];
+}
+
+const Waveform: React.FC<WaveformProps> = React.memo(({ data }) => {
+  if (!data || data.length === 0) {
+    return null;
+  }
+  return (
+    <WaveformContainer>
+      {data.map((amplitude, index) => (
+        <WaveformBar key={index} height={Math.max(5, amplitude * 90) + 10} />
+      ))}
+    </WaveformContainer>
   );
-  const flattenedGestureRefs = trackGestureRefs.flat();
+});
 
-  // --- 통합된 제스처 상태 ---
-  const [activeGesture, setActiveGesture] = useState<{
-    type: 'pan' | 'track' | 'start' | 'end';
-    trimmerId?: string;
-  } | null>(null);
-
-  const dragStartTrimmerState = useRef<TrimmerState | null>(null);
-
-  const [maxTotalDuration, setMaxTotalDuration] = useState(0);
-  const totalDuration = React.useMemo(() => {
-    if (localTrimmers.length === 0) {
-      return 30; // default minimum duration
-    }
-
-    // 1. Calculate the end time of the rightmost clip
-    const lastClipEndTime = Math.max(
-      ...localTrimmers.map(t => t.timelinePosition + (t.endTime - t.startTime)),
-    );
-
-    // 2. Find the duration of the longest single clip
-    const longestClipDuration = Math.max(
-      ...localTrimmers.map(t => t.endTime - t.startTime),
-    );
-
-    // 3. The timeline needs to be wide enough for dragging. User suggested 2x longest clip.
-    const desiredDragSpace = longestClipDuration * 2;
-
-    // The final duration must accommodate both the actual content and the desired drag space
-    return Math.max(30, globalEndTime, lastClipEndTime, desiredDragSpace);
-  }, [globalEndTime, localTrimmers]);
-
-  useEffect(() => {
-    if (totalDuration > maxTotalDuration) {
-      setMaxTotalDuration(totalDuration);
-    }
-  }, [totalDuration, maxTotalDuration]);
-
-  useEffect(() => {
-    // 부모의 `trimmers` 상태가 변경될 때만 로컬 상태를 동기화합니다.
-    // 사용자의 제스처가 끝난 직후, 부모의 상태가 업데이트되기 전에
-    // 로컬 상태가 과거로 되돌아가는 것을 방지합니다.
-    if (!activeGesture) {
-      setLocalTrimmers(trimmers);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [trimmers]);
-
-  useEffect(() => {
-    const requiredHeight =
-      localTrimmers.length * (TRACK_HEIGHT + TRACK_MARGIN) + 20;
-    onHeightChange?.(requiredHeight);
-  }, [localTrimmers.length, onHeightChange]);
-
-  // --- 통합된 Pan 로직 ---
-  const pan = useRef(new Animated.Value(0)).current;
-  const lastPanValue = useRef(0);
-
-  const tracksContainerWidth = maxTotalDuration * PIXELS_PER_SECOND;
-  const maxPan = containerWidth > 0 ? containerWidth / 2 : 0;
-  const minPan = containerWidth - tracksContainerWidth + maxPan;
-
-  const clampedPan = pan.interpolate({
-    inputRange: [minPan, maxPan],
-    outputRange: [minPan, maxPan],
-    extrapolate: 'clamp',
-  });
-
-  // --- 통합된 제스처 핸들러 ---
-  const onTimelinePanStateChange = ({
-    nativeEvent,
-  }: PanGestureHandlerStateChangeEvent) => {
-    if (nativeEvent.state === State.BEGAN) {
-      setActiveGesture({ type: 'pan' });
-      // [수정] pan의 현재 값을 offset으로 설정
-      pan.setOffset(lastPanValue.current);
-      pan.setValue(0);
-    } else if (
-      [State.END, State.FAILED, 'cancelled'].includes(nativeEvent.state as any)
-    ) {
-      // [수정] flattenOffset으로 최종 위치를 정확하게 반영하고 중복 계산 제거
-      pan.flattenOffset();
-      setActiveGesture(null);
-    }
-  };
-
-  const onTimelinePanGestureEvent = Animated.event(
-    [{ nativeEvent: { translationX: pan } }],
-    { useNativeDriver: false },
-  );
-
-  const handleGenericStateChange = (
-    { nativeEvent }: PanGestureHandlerStateChangeEvent,
-    trimmer: TrimmerState,
-    handleType: 'start' | 'end' | 'track',
-  ) => {
-    if (nativeEvent.state === State.BEGAN) {
-      setActiveGesture({ type: handleType, trimmerId: trimmer.id });
-      dragStartTrimmerState.current = { ...trimmer };
-    } else if (
-      [State.END, State.FAILED, State.CANCELLED].includes(
-        nativeEvent.state as any,
-      )
-    ) {
-      if (
-        activeGesture?.trimmerId === trimmer.id &&
-        activeGesture?.type === handleType
-      ) {
-        const finalTrimmer = localTrimmers.find(t => t.id === trimmer.id);
-        if (finalTrimmer) {
-          onTrimmerUpdate(finalTrimmer.id, {
-            startTime: finalTrimmer.startTime,
-            endTime: finalTrimmer.endTime,
-            timelinePosition: finalTrimmer.timelinePosition,
-          });
-        }
-        setActiveGesture(null);
-      }
-    }
-  };
-
-  const onDragGestureEvent = (
-    event: any, // eslint-disable-line @typescript-eslint/no-explicit-any
-    trimmerId: string,
-  ) => {
-    if (!activeGesture || !dragStartTrimmerState.current) return;
-
-    const { translationX } = event.nativeEvent;
-    if (typeof translationX !== 'number') return;
-
-    const timeChange = translationX / PIXELS_PER_SECOND;
-    const startState = dragStartTrimmerState.current;
-    let newState: Partial<Omit<TrimmerState, 'id'>> = {};
-
-    if (activeGesture.type === 'start') {
-      const newStartTime = Math.max(
-        0,
-        Math.min(startState.startTime + timeChange, startState.endTime - 0.1),
-      );
-      const startTimeDelta = newStartTime - startState.startTime;
-      newState = {
-        startTime: newStartTime,
-        timelinePosition: startState.timelinePosition + startTimeDelta,
-      };
-    } else if (activeGesture.type === 'end') {
-      newState = {
-        endTime: Math.min(
-          startState.duration,
-          Math.max(startState.startTime + 0.1, startState.endTime + timeChange),
-        ),
-      };
-    } else if (activeGesture.type === 'track') {
-      newState = {
-        timelinePosition: Math.max(0, startState.timelinePosition + timeChange),
-      };
-    }
-    setLocalTrimmers(currentTrimmers =>
-      currentTrimmers.map(t =>
-        t.id === trimmerId ? { ...t, ...newState } : t,
-      ),
-    );
-  };
-
-  // --- 통합된 Listener 및 자동 스크롤 ---
-  useEffect(() => {
-    const listenerId = clampedPan.addListener(({ value }) => {
-      lastPanValue.current = value;
-      if (containerWidth > 0) {
-        const centerTime = (containerWidth / 2 - value) / PIXELS_PER_SECOND;
-        onPositionChange(centerTime);
-      }
-    });
-    return () => clampedPan.removeListener(listenerId);
-  }, [clampedPan, containerWidth, onPositionChange]);
-
-  useEffect(() => {
-    if (isPlaying && activeGesture === null && containerWidth > 0) {
-      const newPanValue = containerWidth / 2 - currentTime * PIXELS_PER_SECOND;
-      const clampedPosition = Math.max(minPan, Math.min(newPanValue, maxPan));
-
-      // [수정] Animated.timing 대신 setValue로 직접 위치를 설정하여 재생과 완벽하게 동기화
-      pan.setValue(clampedPosition);
-    }
-  }, [
-    currentTime,
-    activeGesture,
-    containerWidth,
-    pan,
-    minPan,
-    maxPan,
-    isPlaying,
-  ]);
-
-  const tracksHeight =
-    localTrimmers.length * (TRACK_HEIGHT + TRACK_MARGIN) + 20;
+// [추가] 트랙 렌더링을 위한 별도의 메모이즈된 컴포넌트
+const MemoizedTrack = memo<{
+  trimmer: TrimmerState;
+  isActive: boolean;
+  onTrackPress: (id: string) => void;
+  onTrackPan: (event: PanGestureHandlerGestureEvent, trackId: string) => void;
+  onTrackPanStateChange: (
+    event: PanGestureHandlerStateChangeEvent,
+    trackId: string,
+    currentPosition: number,
+  ) => void;
+}>(({ trimmer, isActive, onTrackPress, onTrackPan, onTrackPanStateChange }) => {
+  const trackWidth = (trimmer.endTime - trimmer.startTime) * PIXELS_PER_SECOND;
+  const trackLeft = trimmer.timelinePosition * PIXELS_PER_SECOND;
 
   return (
-    <TimelineContainer
-      onLayout={e => {
-        if (containerWidth === 0) {
-          const newWidth = e.nativeEvent.layout.width;
-          setContainerWidth(newWidth);
-          const initialPan = newWidth / 2;
-          lastPanValue.current = initialPan;
-          // [수정] pan의 초기값을 설정
-          pan.setValue(initialPan);
-        }
-      }}
+    <PanGestureHandler
+      enabled={isActive}
+      onGestureEvent={e => onTrackPan(e, trimmer.id)}
+      onHandlerStateChange={e =>
+        onTrackPanStateChange(e, trimmer.id, trimmer.timelinePosition)
+      }
     >
-      <Playhead style={{ height: tracksHeight, top: 0 }} />
-      <PanGestureHandler
-        enabled={activeGesture === null || activeGesture?.type === 'pan'}
-        onGestureEvent={onTimelinePanGestureEvent}
-        onHandlerStateChange={onTimelinePanStateChange}
-        waitFor={flattenedGestureRefs} // [수정] 모든 자식 핸들러 ref를 전달
-      >
-        <TracksContainer
+      <TrackWrapper>
+        <TrackContent
+          isActive={isActive}
+          onPress={() => onTrackPress(trimmer.id)}
+          activeOpacity={0.8}
           style={{
-            transform: [{ translateX: clampedPan }],
-            width: tracksContainerWidth,
+            width: trackWidth,
+            left: trackLeft,
           }}
         >
-          <OverlayMarker left={0} width={globalStartTime * PIXELS_PER_SECOND} />
-          <OverlayMarker
-            left={globalEndTime * PIXELS_PER_SECOND}
-            width={Math.max(
-              0,
-              tracksContainerWidth - globalEndTime * PIXELS_PER_SECOND,
-            )}
-          />
-          {localTrimmers.map((trimmer, index) => {
-            const trackWidth =
-              (trimmer.endTime - trimmer.startTime) * PIXELS_PER_SECOND;
-            const trackLeft = trimmer.timelinePosition * PIXELS_PER_SECOND;
-            const isGestureActiveOnThis =
-              activeGesture?.trimmerId === trimmer.id;
-
-            const isStartHandleActive =
-              isGestureActiveOnThis && activeGesture?.type === 'start';
-            const isEndHandleActive =
-              isGestureActiveOnThis && activeGesture?.type === 'end';
-            const isTrackActive =
-              isGestureActiveOnThis && activeGesture?.type === 'track';
-
-            const [startRef, endRef, moveRef] = trackGestureRefs[index];
-
-            return (
-              <TrackWrapper key={trimmer.id}>
-                <TrackContent
-                  style={{
-                    width: trackWidth,
-                    left: trackLeft,
-                    backgroundColor: isTrackActive ? 'red' : '#ff00ff',
-                  }}
-                >
-                  {/* [수정] 트랙 이동을 위한 제스처 핸들러 단순화 */}
-                  <PanGestureHandler
-                    ref={startRef}
-                    onHandlerStateChange={e =>
-                      handleGenericStateChange(e, trimmer, 'start')
-                    }
-                    onGestureEvent={e => onDragGestureEvent(e, trimmer.id)}
-                  >
-                    <Handle
-                      style={{
-                        left: 0,
-                        backgroundColor: isStartHandleActive ? 'red' : 'white',
-                      }}
-                    />
-                  </PanGestureHandler>
-                  <PanGestureHandler
-                    ref={endRef}
-                    onHandlerStateChange={e =>
-                      handleGenericStateChange(e, trimmer, 'end')
-                    }
-                    onGestureEvent={e => onDragGestureEvent(e, trimmer.id)}
-                  >
-                    <Handle
-                      style={{
-                        right: 0,
-                        backgroundColor: isEndHandleActive ? 'red' : 'white',
-                      }}
-                    />
-                  </PanGestureHandler>
-
-                  {/* 이동 전용 핸들 추가 */}
-                  <PanGestureHandler
-                    ref={moveRef}
-                    onHandlerStateChange={e =>
-                      handleGenericStateChange(e, trimmer, 'track')
-                    }
-                    onGestureEvent={e => onDragGestureEvent(e, trimmer.id)}
-                  >
-                    <MoveHandle />
-                  </PanGestureHandler>
-                </TrackContent>
-              </TrackWrapper>
-            );
-          })}
-        </TracksContainer>
-      </PanGestureHandler>
-    </TimelineContainer>
+          {trimmer.waveform && trimmer.waveform.length > 0 && (
+            <Waveform data={trimmer.waveform} />
+          )}
+        </TrackContent>
+      </TrackWrapper>
+    </PanGestureHandler>
   );
-};
+});
 
-export default Timeline;
+const TimelineComponent = forwardRef<TimelineHandles, TimelineProps>(
+  (
+    {
+      trimmers,
+      globalStartTime,
+      globalEndTime,
+      startPointThreshold,
+      endPointThreshold,
+      currentTime,
+      isGloballyPlaying,
+      onPositionChange,
+      onHeightChange,
+      onGlobalStartTimeChange,
+      onGlobalEndTimeChange,
+      onTrackPositionChange,
+      onTrackSelectionChange,
+      onDragStateChange,
+      onTrackDragEnd, // [추가]
+    },
+    ref,
+  ) => {
+    const [containerWidth, setContainerWidth] = useState(0);
+    const [isPanning, setIsPanning] = useState(false);
+    const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
+
+    // [추가] 핸들러 위치를 위한 애니메이션 값
+    const startHandlePosition = useRef(
+      new Animated.Value(globalStartTime * PIXELS_PER_SECOND),
+    ).current;
+    const endHandlePosition = useRef(
+      new Animated.Value(globalEndTime * PIXELS_PER_SECOND),
+    ).current;
+
+    // [수정] 부모로부터 받은 globalStartTime/EndTime이 변경되면 애니메이션 값을 '즉시' 업데이트
+    useEffect(() => {
+      startHandlePosition.setValue(globalStartTime * PIXELS_PER_SECOND);
+    }, [globalStartTime, startHandlePosition]);
+
+    useEffect(() => {
+      endHandlePosition.setValue(globalEndTime * PIXELS_PER_SECOND);
+    }, [globalEndTime, endHandlePosition]);
+
+    // =================================================================================
+    // =================================================================================
+
+    // 편집 데이터 명시 !!!!!!!(중요!!!!!!)
+
+    // =================================================================================
+    // =================================================================================
+
+    // 아마도 글로벌 타임으로 모두 대체 가능 할 듯??
+    // const startPoint = globalStartTime;
+    // const endPoint = globalEndTime;
+
+    // [추가] 트랙 위치에 따른 동적 핸들 제약 조건
+    const { latestTrackStartTime, earliestTrackEndTime } = useMemo(() => {
+      if (trimmers.length === 0) {
+        return { latestTrackStartTime: Infinity, earliestTrackEndTime: 0 };
+      }
+      const startPositions = trimmers.map(t => t.timelinePosition);
+      const endPositions = trimmers.map(
+        t => t.timelinePosition + (t.endTime - t.startTime),
+      );
+      return {
+        latestTrackStartTime: Math.max(...startPositions),
+        earliestTrackEndTime: Math.min(...endPositions),
+      };
+    }, [trimmers]);
+
+    // Notify parent component about the active track change
+    useEffect(() => {
+      onTrackSelectionChange(activeTrackId);
+    }, [activeTrackId, onTrackSelectionChange]);
+
+    const totalDuration = useMemo(() => {
+      if (trimmers.length === 0) {
+        return 30; // default minimum duration
+      }
+
+      // 1. Calculate the end time of the rightmost clip
+      const lastClipEndTime = Math.max(
+        ...trimmers.map(t => t.timelinePosition + (t.endTime - t.startTime)),
+      );
+
+      // 2. Find the duration of the longest single clip
+      const longestClipDuration = Math.max(
+        ...trimmers.map(t => t.endTime - t.startTime),
+      );
+
+      // 3. The timeline needs to be wide enough for dragging. User suggested 2x longest clip.
+      const desiredDragSpace = longestClipDuration * 2;
+
+      // The final duration must accommodate both the actual content and the desired drag space
+      return Math.max(30, globalEndTime, lastClipEndTime, desiredDragSpace);
+    }, [globalEndTime, trimmers]);
+
+    const [maxTotalDuration, setMaxTotalDuration] = useState(
+      totalDuration || 30,
+    );
+    useEffect(() => {
+      if (totalDuration > maxTotalDuration) {
+        setMaxTotalDuration(totalDuration);
+      }
+    }, [totalDuration, maxTotalDuration]);
+
+    const handleTrackPress = (trackId: string) => {
+      setActiveTrackId(currentActiveId =>
+        currentActiveId === trackId ? null : trackId,
+      );
+    };
+
+    const dragStartPosRef = useRef(0);
+
+    const onTrackPan = (
+      event: PanGestureHandlerGestureEvent,
+      trackId: string,
+    ) => {
+      const { translationX } = event.nativeEvent;
+      const snapThreshold = 7; // 7px threshold for snapping
+
+      const track = trimmers.find(t => t.id === trackId);
+      if (!track) return;
+
+      // Calculate the potential new position in seconds without snapping
+      const timeDelta = translationX / PIXELS_PER_SECOND;
+      let newPosition = dragStartPosRef.current + timeDelta;
+
+      // Calculate positions in pixels for snapping check
+      const newPositionPx =
+        (dragStartPosRef.current + timeDelta) * PIXELS_PER_SECOND;
+      const playheadPx = currentTime * PIXELS_PER_SECOND;
+      const trackDuration = track.endTime - track.startTime;
+      const trackDurationPx = trackDuration * PIXELS_PER_SECOND;
+
+      // Check for start snap
+      if (Math.abs(newPositionPx - playheadPx) < snapThreshold) {
+        newPosition = currentTime;
+      }
+      // Check for end snap
+      else if (
+        Math.abs(newPositionPx + trackDurationPx - playheadPx) < snapThreshold
+      ) {
+        newPosition = currentTime - trackDuration;
+      }
+
+      onTrackPositionChange(trackId, newPosition);
+    };
+
+    const onTrackPanStateChange = (
+      event: PanGestureHandlerStateChangeEvent,
+      trackId: string,
+      currentPosition: number,
+    ) => {
+      if (event.nativeEvent.oldState === State.ACTIVE) {
+        onTrackDragEnd(); // [추가] 드래그가 끝나면 콜백 호출
+      }
+
+      if (event.nativeEvent.state === State.BEGAN) {
+        dragStartPosRef.current = currentPosition;
+      }
+    };
+
+    useEffect(() => {
+      const requiredHeight =
+        RULER_HEIGHT + trimmers.length * (TRACK_HEIGHT + TRACK_MARGIN) + 20;
+      onHeightChange?.(requiredHeight);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [trimmers.length]);
+
+    // --- Pan Logic Refactor ---
+    const panPosition = useRef(new Animated.Value(0)).current;
+    const dragTranslationX = useRef(new Animated.Value(0)).current;
+    const lastPanPosition = useRef(0);
+    const lastDragTranslation = useRef(0);
+
+    useEffect(() => {
+      panPosition.addListener(({ value }) => (lastPanPosition.current = value));
+      dragTranslationX.addListener(
+        ({ value }) => (lastDragTranslation.current = value),
+      );
+      return () => {
+        panPosition.removeAllListeners();
+        dragTranslationX.removeAllListeners();
+      };
+    }, [panPosition, dragTranslationX]);
+
+    const finalTranslateX = Animated.add(panPosition, dragTranslationX);
+
+    const tracksContainerWidth = maxTotalDuration * PIXELS_PER_SECOND;
+    const maxPan = containerWidth > 0 ? containerWidth / 2 : 0;
+
+    const longestClipDuration = React.useMemo(() => {
+      if (trimmers.length === 0) return 0;
+      return Math.max(...trimmers.map(t => t.endTime - t.startTime));
+    }, [trimmers]);
+    const leftPadding = longestClipDuration * PIXELS_PER_SECOND;
+    const oldMinPan =
+      containerWidth - tracksContainerWidth - leftPadding + maxPan;
+
+    // [수정] 플레이헤드가 endPointThreshold를 시각적으로 넘지 못하도록 최소 패닝 값을 재계산
+    const minPanBasedOnThreshold =
+      containerWidth / 2 - endPointThreshold * PIXELS_PER_SECOND;
+
+    // 두 최소 패닝 값 중 더 제한적인(더 큰) 값을 최종 minPan으로 사용
+    const minPan = Math.max(oldMinPan, minPanBasedOnThreshold);
+
+    const clampedPan = finalTranslateX.interpolate({
+      inputRange: [minPan, maxPan],
+      outputRange: [minPan, maxPan],
+      extrapolate: 'clamp',
+    });
+
+    // =================================================================================
+    // =================================================================================
+
+    // 편집 데이터 명시 !!!!!!!(중요!!!!!!)
+
+    // =================================================================================
+    // =================================================================================
+
+    // 글로벌 타임 핸들 드래그 로직
+    const dragStartHandleTimeRef = useRef(0);
+
+    const onStartHandleStateChange = (
+      event: PanGestureHandlerStateChangeEvent,
+    ) => {
+      if (event.nativeEvent.state === State.BEGAN) {
+        dragStartHandleTimeRef.current = globalStartTime;
+        onDragStateChange(true);
+      } else if (
+        event.nativeEvent.state === State.END ||
+        event.nativeEvent.state === State.FAILED ||
+        event.nativeEvent.state === State.CANCELLED
+      ) {
+        onDragStateChange(false);
+      }
+    };
+
+    const onStartHandleDrag = (event: any) => {
+      const { translationX } = event.nativeEvent;
+      const timeChange = translationX / PIXELS_PER_SECOND;
+      let newStartTime = dragStartHandleTimeRef.current + timeChange;
+
+      const snapThreshold = 7; // 7px threshold for snapping
+      const pixelDistanceToPlayhead =
+        (newStartTime - currentTime) * PIXELS_PER_SECOND;
+      if (Math.abs(pixelDistanceToPlayhead) < snapThreshold) {
+        newStartTime = currentTime;
+      }
+
+      // 시작점은 (가장 늦게 시작하는 트랙의 시작점)보다 앞으로 갈 수 없다.
+      let clampedTime = Math.min(
+        globalEndTime,
+        Math.max(newStartTime, startPointThreshold, latestTrackStartTime),
+      );
+      clampedTime = parseFloat(clampedTime.toFixed(2));
+      console.log('[Timeline] onStartHandleDrag new time:', clampedTime);
+      onGlobalStartTimeChange(clampedTime);
+    };
+
+    const onEndHandleStateChange = (
+      event: PanGestureHandlerStateChangeEvent,
+    ) => {
+      if (event.nativeEvent.state === State.BEGAN) {
+        dragStartHandleTimeRef.current = globalEndTime;
+        onDragStateChange(true);
+      } else if (
+        event.nativeEvent.state === State.END ||
+        event.nativeEvent.state === State.FAILED ||
+        event.nativeEvent.state === State.CANCELLED
+      ) {
+        onDragStateChange(false);
+      }
+    };
+
+    const onEndHandleDrag = (event: any) => {
+      const { translationX } = event.nativeEvent;
+      const timeChange = translationX / PIXELS_PER_SECOND;
+      let newEndTime = dragStartHandleTimeRef.current + timeChange;
+
+      const snapThreshold = 7; // 7px threshold for snapping
+      const pixelDistanceToPlayhead =
+        (newEndTime - currentTime) * PIXELS_PER_SECOND;
+      if (Math.abs(pixelDistanceToPlayhead) < snapThreshold) {
+        newEndTime = currentTime;
+      }
+
+      // 끝점은 (가장 일찍 끝나는 트랙의 끝점)보다 뒤로 갈 수 없다.
+      let clampedTime = Math.max(
+        globalStartTime,
+        Math.min(newEndTime, endPointThreshold, earliestTrackEndTime),
+      );
+      clampedTime = parseFloat(clampedTime.toFixed(2));
+      console.log('[Timeline] onEndHandleDrag new time:', clampedTime);
+      onGlobalEndTimeChange(clampedTime);
+    };
+
+    const onTimelinePanStateChange = ({
+      nativeEvent,
+    }: PanGestureHandlerStateChangeEvent) => {
+      if (nativeEvent.state === State.BEGAN) {
+        setIsPanning(true);
+        // [추가] 사용자가 드래그를 시작하면 진행 중인 애니메이션을 즉시 중지
+        panPosition.stopAnimation();
+      } else if (
+        [State.END, State.FAILED, 'cancelled'].includes(
+          nativeEvent.state as any,
+        )
+      ) {
+        // [수정] 드래그가 끝나면 최종 위치를 계산하고 부모에게 명시적으로 알림
+        const finalPanPosition =
+          lastPanPosition.current + lastDragTranslation.current;
+        panPosition.setValue(finalPanPosition);
+        dragTranslationX.setValue(0);
+
+        setIsPanning(false);
+      }
+    };
+
+    const onTimelinePanGestureEvent = Animated.event(
+      [{ nativeEvent: { translationX: dragTranslationX } }],
+      {
+        useNativeDriver: false,
+        listener: (event: {
+          nativeEvent: PanGestureHandlerGestureEvent['nativeEvent'];
+        }) => {
+          const { translationX } = event.nativeEvent;
+          const currentPanValue = lastPanPosition.current + translationX;
+          if (containerWidth > 0) {
+            let centerTime =
+              (containerWidth / 2 - currentPanValue) / PIXELS_PER_SECOND;
+            centerTime = Math.max(
+              startPointThreshold,
+              Math.min(centerTime, endPointThreshold),
+            );
+            onPositionChange(centerTime);
+          }
+        },
+      },
+    );
+
+    // --- Ruler Marks Calculation ---
+    const rulerMarks = useMemo(() => {
+      const duration = maxTotalDuration;
+      if (duration === 0) return [];
+      const marks = [];
+      const totalSeconds = Math.floor(duration);
+      for (let i = 0; i <= totalSeconds; i++) {
+        const isMajorTick = i % 5 === 0;
+        marks.push({
+          position: i * PIXELS_PER_SECOND,
+          isMajor: isMajorTick,
+          label: isMajorTick ? formatTime(i) : null,
+        });
+      }
+      return marks;
+    }, [maxTotalDuration]);
+
+    // --- Listener & Auto-scroll ---
+    useEffect(() => {
+      const listenerId = clampedPan.addListener(({ value }) => {
+        if (isPanning) return; // 사용자가 드래그 중일 때는 리스너가 개입하지 않음
+
+        if (containerWidth > 0) {
+          let centerTime = (containerWidth / 2 - value) / PIXELS_PER_SECOND;
+          // 플레이헤드 위치가 임계점을 넘지 않도록 제한
+          centerTime = Math.max(
+            startPointThreshold,
+            Math.min(centerTime, endPointThreshold),
+          );
+          onPositionChange(centerTime);
+        }
+      });
+      return () => clampedPan.removeListener(listenerId);
+    }, [
+      clampedPan,
+      containerWidth,
+      onPositionChange,
+      startPointThreshold,
+      endPointThreshold,
+      isPanning,
+    ]);
+
+    useEffect(() => {
+      // 재생 중이거나, 사용자가 직접 타임라인을 패닝하고 있지 않을 때
+      // currentTime(플레이헤드 위치)에 맞춰 타임라인 스크롤 위치(panPosition)를 동기화합니다.
+      if (!isPanning && containerWidth > 0 && isGloballyPlaying) {
+        const newPanValue =
+          containerWidth / 2 - currentTime * PIXELS_PER_SECOND;
+        const clampedPosition = Math.max(minPan, Math.min(newPanValue, maxPan));
+
+        // 부드러운 이동을 위해 Animated.timing 사용
+        Animated.timing(panPosition, {
+          toValue: clampedPosition,
+          duration: 200, // onProgress 이벤트(250ms)보다 약간 짧게 설정
+          useNativeDriver: true, // 네이티브 스레드에서 애니메이션 처리
+          easing: Easing.linear, // 일정한 속도로 이동
+        }).start();
+      }
+    }, [
+      currentTime,
+      containerWidth,
+      panPosition,
+      minPan,
+      maxPan,
+      isPanning,
+      isGloballyPlaying,
+    ]);
+
+    useImperativeHandle(ref, () => ({
+      scrollToTime: (time: number) => {
+        if (containerWidth > 0) {
+          const newPanValue = containerWidth / 2 - time * PIXELS_PER_SECOND;
+          const clampedPosition = Math.max(
+            minPan,
+            Math.min(newPanValue, maxPan),
+          );
+          panPosition.setValue(clampedPosition);
+        }
+      },
+    }));
+
+    const tracksHeight =
+      RULER_HEIGHT + trimmers.length * (TRACK_HEIGHT + TRACK_MARGIN) + 20;
+
+    const activeTrack = trimmers.find(t => t.id === activeTrackId);
+
+    return (
+      <TimelineContainer
+        onLayout={e => {
+          if (containerWidth === 0) {
+            const newWidth = e.nativeEvent.layout.width;
+            setContainerWidth(newWidth);
+            const initialPan = newWidth / 2;
+            panPosition.setValue(initialPan);
+          }
+        }}
+      >
+        <Playhead style={{ height: RULER_HEIGHT + tracksHeight, top: 0 }} />
+        <PanGestureHandler
+          onGestureEvent={onTimelinePanGestureEvent}
+          onHandlerStateChange={onTimelinePanStateChange}
+        >
+          <Animated.View
+            style={{
+              transform: [{ translateX: clampedPan }],
+              width: tracksContainerWidth + leftPadding,
+              marginLeft: -leftPadding,
+            }}
+          >
+            <RulerContainer style={{ paddingLeft: leftPadding }}>
+              {rulerMarks.map(mark => (
+                <TickContainer
+                  key={mark.position}
+                  style={{ left: mark.position }}
+                >
+                  {mark.label && <TickLabel>{mark.label}</TickLabel>}
+                  <TickView height={mark.isMajor ? 15 : 8} />
+                </TickContainer>
+              ))}
+
+              {/* [추가] Threshold 시각적 헤드 */}
+              <TimeIndicatorLine
+                style={{
+                  left: leftPadding + startPointThreshold * PIXELS_PER_SECOND,
+                  height: RULER_HEIGHT + tracksHeight,
+                  backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                  zIndex: 100,
+                }}
+              />
+              {isFinite(endPointThreshold) && (
+                <TimeIndicatorLine
+                  style={{
+                    left: leftPadding + endPointThreshold * PIXELS_PER_SECOND,
+                    height: RULER_HEIGHT + tracksHeight,
+                    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                    zIndex: 100,
+                  }}
+                />
+              )}
+
+              {/* Global Time Handles - Now inside Ruler for correct positioning */}
+              <TimeIndicatorLine
+                style={{
+                  left: leftPadding + globalStartTime * PIXELS_PER_SECOND,
+                  height: RULER_HEIGHT + tracksHeight,
+                }}
+              />
+              <PanGestureHandler
+                onGestureEvent={onStartHandleDrag}
+                onHandlerStateChange={onStartHandleStateChange}
+              >
+                <TimeDragHandle
+                  style={{
+                    left: Animated.add(startHandlePosition, leftPadding - 10),
+                  }}
+                />
+              </PanGestureHandler>
+              <TimeIndicatorLine
+                style={{
+                  left: leftPadding + globalEndTime * PIXELS_PER_SECOND,
+                  height: RULER_HEIGHT + tracksHeight,
+                }}
+              />
+              <PanGestureHandler
+                onGestureEvent={onEndHandleDrag}
+                onHandlerStateChange={onEndHandleStateChange}
+              >
+                <TimeDragHandle
+                  style={{
+                    left: Animated.add(endHandlePosition, leftPadding - 10),
+                  }}
+                />
+              </PanGestureHandler>
+            </RulerContainer>
+            <TracksContainerView style={{ paddingLeft: leftPadding }}>
+              <OverlayMarker
+                left={0}
+                width={leftPadding + globalStartTime * PIXELS_PER_SECOND}
+              />
+              <OverlayMarker
+                left={leftPadding + globalEndTime * PIXELS_PER_SECOND}
+                width={Math.max(
+                  0,
+                  totalDuration * PIXELS_PER_SECOND -
+                    globalEndTime * PIXELS_PER_SECOND,
+                )}
+              />
+              {trimmers.map(trimmer => {
+                const isActive = trimmer.id === activeTrackId;
+                return (
+                  <MemoizedTrack
+                    key={trimmer.id}
+                    trimmer={trimmer}
+                    isActive={isActive}
+                    onTrackPress={handleTrackPress}
+                    onTrackPan={onTrackPan}
+                    onTrackPanStateChange={onTrackPanStateChange}
+                  />
+                );
+              })}
+            </TracksContainerView>
+          </Animated.View>
+        </PanGestureHandler>
+        <DebugInfoPanel>
+          {activeTrack ? (
+            <DebugText>
+              Active Track Position: {activeTrack.timelinePosition.toFixed(2)}
+            </DebugText>
+          ) : (
+            <DebugText>트랙을 선택하여 정보를 확인하세요.</DebugText>
+          )}
+        </DebugInfoPanel>
+      </TimelineContainer>
+    );
+  },
+);
+
+export default memo(TimelineComponent);

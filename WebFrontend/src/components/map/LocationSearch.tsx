@@ -80,7 +80,7 @@ const LocationSearch = () => {
         <button
           type="button"
           onClick={handleSearch}
-          className="inline-block bg-brand-primary text-white text-caption rounded-md hover:opacity-70 transition px-4 py-3"
+          className="inline-block bg-brand-primary text-white text-caption rounded-[var(--radius-card))] hover:opacity-70 transition px-5 py-3"
         >
           검색
         </button>

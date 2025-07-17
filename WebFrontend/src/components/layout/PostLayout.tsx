@@ -1,4 +1,4 @@
-// src/components/layout/MainLayout.tsx
+// src/components/layout/PostLayout.tsx
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
@@ -8,18 +8,21 @@ import MainFooter from './MainFooter';
 
 interface LayoutProps {
   children: React.ReactNode;
-  bgClassName?: string; // 배경색 클래스 prop 추가
+  bgClassName?: string;
+  onSearchClick?: () => void;
 }
 
-const PostLayout: React.FC<LayoutProps> = ({ children, bgClassName = "bg-brand-frame" }) => {
+const PostLayout: React.FC<LayoutProps> = ({ children, bgClassName = "bg-brand-frame", onSearchClick }) => {
   const navigate = useNavigate();
-  const user = useAuthStore((state) => state.user); // user 정보 가져오기
+  const user = useAuthStore((state) => state.user);
   const location = useLocation();
 
   // Footer에서 사용할 페이지 이동 함수들
   const handleGoToHome = () => navigate('/');
   const handleGoToChat = () => navigate('/chat');
-  const handleGoToVinyls = () => navigate('/vinyls');
+  const handleGoToVinyl = () => navigate('/vinyl');
+  const handleGoToCommunity = () => navigate('/community');
+  const handleGoToSearchPage = () => navigate('/search');
   
   // '마이페이지' 이동 로직을 Layout이 직접 처리
   const handleGoToMyPage = () => {
@@ -37,7 +40,7 @@ const PostLayout: React.FC<LayoutProps> = ({ children, bgClassName = "bg-brand-f
       <PostHeader   
         currentPath={location.pathname}
         onCategoryClick={handleGoToCategory}
-        onSearchClick={() => toast('준비 중입니다.')}
+        onSearchClick={onSearchClick || handleGoToSearchPage} 
         onNotificationClick={() => toast('준비 중입니다.')}
       />
       <main className="py-14 pb-20">
@@ -46,8 +49,8 @@ const PostLayout: React.FC<LayoutProps> = ({ children, bgClassName = "bg-brand-f
       <MainFooter 
         currentPath={location.pathname}
         onHomeClick={handleGoToHome}
-        onCommunityClick={() => toast('커뮤니티 페이지는 준비 중입니다.')}
-        onVinylClick={handleGoToVinyls}
+        onCommunityClick={handleGoToCommunity}
+        onVinylClick={handleGoToVinyl}
         onChatClick={handleGoToChat}
         onMyPageClick={handleGoToMyPage}
       />

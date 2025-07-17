@@ -1,13 +1,13 @@
 // src/pages/RecruitEnsembleDetailPage.tsx
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import axiosInstance from '@/services/axiosInstance';
 import axios from 'axios';
-import type { SessionEnsemble, RecruitEnsemble, ApplicationEnsemble } from './types';
-import { SessionDetail } from './components/SessionDetail';
+import type { RecruitEnsemble, ApplicationEnsemble } from './types';
 import useViewCounter from '@/hooks/useViewCounter';
+import RecruitEnsembleDetail from '@/components/layout/pages/ensemble/EnsembleDetail';
 
 // 목록 페이지에서 사용했던 타입과 텍스트 매핑 객체를 가져옵니다.
 // 별도 types 파일로 분리하여 관리하는 것이 좋습니다.
@@ -18,9 +18,7 @@ const RecruitEnsembleDetailPage: React.FC = () => {
   // URL 파라미터에서 게시글 ID를 가져옵니다.
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  useViewCounter({ type: 'ensembles' });
 
-  const [sessionList, setSessionList] = useState<SessionEnsemble[] | null>(null);
   const [ensemble, setEnsemble] = useState<RecruitEnsemble | null>(null);
   const [applicationList, setApplicationList] = useState<ApplicationEnsemble[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -28,10 +26,11 @@ const RecruitEnsembleDetailPage: React.FC = () => {
   const [isApplied, setIsApplied] = useState(false);
 
   // 현재 로그인한 사용자가 게시글 작성자인지 확인하는 변수
-  const isOwner = ensemble && user && ensemble.user.id === user.id;
+  const isOwner = Boolean(ensemble && user && ensemble.user.id === user.id);
 
-  console.log("ensemble", ensemble?.user.id);
-  console.log("auth store", user);
+  if(id){
+    useViewCounter({ type: 'ensembles', id });
+  }
 
   useEffect(() => {
     if (!id) {
@@ -46,9 +45,7 @@ const RecruitEnsembleDetailPage: React.FC = () => {
       try {
         // API 엔드포인트를 합주단원 모집 공고 상세 조회로 변경
         const response = await axiosInstance.get<RecruitEnsemble>(`ensembles/${id}`);
-        console.log(response.data);
 
-        setSessionList(response.data.sessionEnsemble)
         setEnsemble(response.data);
       } catch (err) {
         if (axios.isAxiosError(err) && err.response?.status === 404) {
@@ -85,7 +82,7 @@ const RecruitEnsembleDetailPage: React.FC = () => {
 
   useEffect(() => {
     if (applicationList) {
-      setIsApplied(applicationList.some((app) => app.id === user?.id));
+      setIsApplied(applicationList.some((app) => app.user.id === user?.id));
     } else {
       setIsApplied(false);
     }
@@ -94,6 +91,18 @@ const RecruitEnsembleDetailPage: React.FC = () => {
   const handleEdit = () => {
     navigate(`/ensembles/edit/${id}`);
   };
+
+  const handleComplete = async () => {
+    if (window.confirm('정말로 이 멤버와 합주하시겠습니까?\n 공고가 종료되면 되돌릴 수 없습니다.')) {
+      try {
+        await axiosInstance.patch(`ensembles/${id}/complete`);
+        alert('모집 공고가 성공적으로 종료되었습니다.\n 합주를 위한 채팅방이 개설되었습니다.');
+        navigate(`/ensembles/${id}`); // 목록 페이지로 이동
+      } catch (err) {
+        setError('공고 종료 중 오류가 발생했습니다.');
+      }
+    }
+  }
 
   const handleDelete = async () => {
     if (window.confirm('정말로 이 모집 공고를 삭제하시겠습니까?')) {
@@ -123,81 +132,15 @@ const RecruitEnsembleDetailPage: React.FC = () => {
   if (!ensemble) return renderStatusMessage('모집 공고 정보가 없습니다.', true);
 
   return (
-    <div className="max-w-4xl mx-auto my-8 p-8 bg-white rounded-lg shadow-lg text-slate-800">
-      {/* --- 헤더 섹션 --- */}
-      <header className="pb-4 mb-6 border-b border-gray-200">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">{ensemble.title}</h1>
-          <span className={`py-1 px-3 rounded-full text-sm font-semibold ${ensemble.recruitStatus}`}>
-            {ensemble.recruitStatus}
-          </span>
-        </div>
-        <div className="text-sm text-gray-500 mt-2 flex justify-between">
-          <span>작성자: {ensemble.user.id}</span>
-          <span>등록일: {new Date(ensemble.createdAt).toLocaleDateString()} (조회수: {ensemble.viewCount})</span>
-        </div>
-      </header>
-
-      {/* --- 정보 섹션 --- */}
-      <div className="grid md:grid-cols-2 gap-x-8 gap-y-4 mb-8 p-4 bg-gray-50 rounded-md">
-        <p><strong>지역 ID:</strong> {ensemble.locationId}</p>
-        <p><strong>요구 실력:</strong> {ensemble.skillLevel}</p>
-        <p><strong>모집 인원:</strong> {ensemble.totalRecruitCnt}명</p>
-        <p className="md:col-span-2"><strong>연주 일자:</strong> {new Date(ensemble.eventDate).toLocaleDateString()}</p>
-      </div>
-
-      {/* --- 내용(본문) 섹션 --- */}
-      <div className="mt-4">
-        <h2 className="text-lg font-bold border-b-2 border-gray-100 pb-2 mb-4">상세 내용</h2>
-        <pre className="whitespace-pre-wrap break-words text-base leading-relaxed text-gray-800 bg-gray-50 p-6 rounded-md min-h-[200px]">
-          {ensemble.content}
-        </pre>
-      </div>
-
-      {applicationList && sessionList?.map((item, index) => {
-        const matchingApplication = applicationList.filter(
-          (app) => app.sessionEnsemble.sessionId === item.sessionId
-        );
-
-        return (
-          <SessionDetail
-            key={index}
-            item={item}
-            ensemble={ensemble}
-            applicationEnsembleList={matchingApplication}
-            isApplied={isApplied}
-          />
-        )}
-      )}
-
-      {/* --- 버튼 섹션 --- */}
-      <div className="mt-8 pt-6 flex justify-between items-center border-t border-gray-200">
-        <Link
-          to="/ensembles" // 목록 페이지 경로
-          className="py-2 px-5 border border-gray-400 rounded-md font-semibold bg-white text-gray-700 no-underline transition-all hover:bg-gray-50 hover:text-black"
-        >
-          목록으로
-        </Link>
-        
-        {/* 작성자일 경우에만 수정/삭제 버튼 표시 */}
-        {isOwner && (
-          <div className="flex gap-2">
-            <button
-              onClick={handleEdit}
-              className="py-2 px-5 rounded-md font-semibold text-white bg-blue-500 cursor-pointer transition-colors hover:bg-blue-700"
-            >
-              수정
-            </button>
-            <button
-              onClick={handleDelete}
-              className="py-2 px-5 rounded-md font-semibold text-white bg-red-600 cursor-pointer transition-colors hover:bg-red-700"
-            >
-              삭제
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
+    <RecruitEnsembleDetail
+      post={ensemble}
+      isOwner={isOwner}
+      onEdit={handleEdit}
+      onComplete={handleComplete}
+      onDelete={handleDelete}
+      applicationEnsembleList={applicationList || []}
+      isApplied={isApplied}
+    />
   );
 };
 

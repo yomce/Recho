@@ -1,14 +1,23 @@
 import React from 'react'
 import { type PracticeRoom } from '@/types/practiceRoom';
-import { Link } from 'react-router-dom'
 import KakaoMapApi from '../../../map/KakaoMapComponent';
+import PostLayout from '../../PostLayout';
+import SwiperImageCard from '@/components/atoms/card/SwipeImageCard';
+import UserProfileCard from '@/components/atoms/card/UserProfileCard';
+import MapPreviewCard from '@/components/atoms/card/MapViewCard';
+import IconButton from '@/components/atoms/button/IconButton';
+import { baseStatusStyle, statusStyleMap } from '@/components/atoms/card/UserProfileCard';
+import { ToastMenu } from '@/components/atoms/button/ToastMenu';
 
 interface PracticeRoomDetailProps {
   post: PracticeRoom;
   isOwner?:boolean;
   onEdit?: () => void;
+  onComplete?: () => void;
   onDelete?: () => void;
 }
+
+const styles = statusStyleMap["예약하기"];
 
 export const PracticeRoomDetail: React.FC<PracticeRoomDetailProps> = ({
   post,
@@ -17,88 +26,68 @@ export const PracticeRoomDetail: React.FC<PracticeRoomDetailProps> = ({
   onDelete,
 }) => {
   return (
-    <div className="max-w-5xl mx-auto my-8 p-8 bg-white rounded-lg shadow-lg text-slate-800">
-      <div className="flex flex-col md:flex-row md:gap-12">
+    <PostLayout bgClassName="bg-brand-inverse">
+      <div className="mx-auto p-4 w-full">
+        <div className="relative">
         {/* 이미지 섹션 */}
-        <div className="md:flex-1 md:max-w-md">
-          <img
-            src={post.imageUrl || 'https://placehold.co/600x400'}
-            alt={post.title}
-            className="w-full h-auto rounded-lg border border-gray-200"
+          <SwiperImageCard
+            images={[
+              "https://placehold.co/400x270/EEE/333?text=1",
+              "https://placehold.co/400x270/DDD/333?text=2",
+              "https://placehold.co/400x270/CCC/333?text=3"
+            ]}
+            slideClassName="rounded-[var(--radius-card)]"
+            showPagination={true}
           />
-        </div>
-
-        {/* 정보 섹션 */}
-        <div className="mt-6 md:mt-0 md:flex-1 flex flex-col">
-          <h1 className="text-3xl font-bold mb-2">{post.title}</h1>
-          <div className="my-4 text-base text-gray-600 leading-relaxed">
-            <p className="my-2">
-              <strong>작성자:</strong> {post.id}
-            </p>
-
-            <p className="my-2">
-              <strong>등록일:</strong> {post.createdAt}
-            </p>
-
-            <p className="my-2">
-              <strong>주소:</strong> {post.location?.address}
-            </p>
-          </div>
-          
-          {post.location?.lat && post.location?.lng && (
-            <div className='my-4'>
-              <h3 className="text-lg font-semibold mb-2">지도 미리보기</h3>
-              <div className="border rounded-lg overflow-hidden">
-                <KakaoMapApi lat={post.location.lat} lng={post.location.lng} />
-              </div>
-
-              {/* 지도 페이지로 이동 버튼 */}
-              <button
-                type="button"
-                className="text-sm text-white font-semibold bg-blue-500 py-2 px-2 rounded-lg mt-8 hover:bg-blue-700"
-                onClick={() =>
-                  window.open(`/map-view?lat=${post.location.lat}&lng=${post.location.lng}`, "_blank")
+          {isOwner && (
+            <div className="absolute top-1 right-4 z-10">
+              <IconButton
+              iconName="moreFill"
+              onClick={() =>
+                ToastMenu({
+                  onEdit: () => onEdit?.(),
+                  onDelete: () => onDelete?.(),
+                })
                 }
-              >
-                지도에서 크게 보기
-              </button>
+              />
             </div>
           )}
-          <div className="mt-4">
-            <h2 className="text-lg font-bold border-b-2 border-gray-100 pb-2 mb-4">설명</h2>
-            <pre className="whitespace-pre-wrap break-words text-base leading-relaxed text-gray-800 bg-gray-50 p-4 rounded">
-              {post.description}
-            </pre>
-          </div>
-
-          <div className="mt-auto pt-6 flex justify-between items-center border-t border-gray-200">
-            <Link
-              to="/practice-room"
-              className="py-3 px-6 border border-gray-400 rounded-md font-semibold bg-white text-gray-700 no-underline transition-all hover:bg-gray-50 hover:text-black"
-            >
-              목록으로
-            </Link>
-            {isOwner && (
-              <div className="flex gap-2">
-                <button
-                  onClick={onEdit}
-                  className="py-2 px-5 rounded-md font-semibold text-white bg-blue-500 cursor-pointer transition-colors hover:bg-blue-700"
-                >
-                  수정
-                </button>
-                <button
-                  onClick={onDelete}
-                  className="py-2 px-5 rounded-md font-semibold text-white bg-red-600 cursor-pointer transition-colors hover:bg-red-700"
-                >
-                  삭제
-                </button>
-              </div>
-            )}
-          </div>
-
         </div>
+        <div className="flex flex-col w-full mx-auto px-4 gap-4">
+          <UserProfileCard
+            imageUrl={post.imageUrl || 'https://placehold.co/40x40'}
+            name={post.id}
+            location={post.location.address}
+            statusSlot={<button className={`${baseStatusStyle} ${styles.bg} ${styles.text} ${styles.hover}`}>예약하기</button>}
+          />
 
+          {/* 정보 섹션 */}
+          <div className="text-left flex flex-row justify-between items-center mt-8">
+            <h1 className="text-headline mb-2">{post.title}</h1>
+            <IconButton iconName="likeFill" iconSize={24} className="text-brand-disabled"/>
+          </div>
+          <pre className="whitespace-pre-wrap break-words text-base leading-relaxed text-gray-800 bg-gray-50 p-4 rounded">
+              {post.description}
+          </pre>
+          
+          {post.location?.lat && post.location?.lng && (
+            <div className="border-t border-gray-200 mt-4 py-4">
+              <KakaoMapApi lat={post.location.lat} lng={post.location.lng} />
+
+              {/* 지도 페이지로 이동 버튼 */}
+              {post.location?.lat && post.location?.lng && (
+                <div>
+                  <p className="text-body text-left">위치 상세</p>
+                  <MapPreviewCard
+                    lat={post.location.lat}
+                    lng={post.location.lng}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </PostLayout>
   )
 }

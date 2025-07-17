@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -11,6 +12,7 @@ import {
 import { DataSource, EntityManager, In, Repository } from 'typeorm';
 import { SessionEnsemble } from './session/entities/session-ensemble.entity';
 import { PaginatedRecruitEnsembleResponse } from './dto/paginated-recruit-ensemble.response.dto';
+import { FilterRecruitEnsembleDto } from './dto/pagination-query-recruit-ensemble.dto';
 import { CreateRecruitEnsembleDto } from './dto/create-recruit-ensemble.dto';
 import { UpdateRecruitEnsembleDto } from './dto/update-recruit-ensemble.dto';
 import {
@@ -20,6 +22,10 @@ import {
 import { UserService } from 'src/auth/user/user.service';
 import { RecruitEnsembleResponseDto } from './dto/recruit-ensemble.response.dto';
 import { UserResponseDto } from 'src/auth/user/dto/user.response.dto';
+import { Location } from 'src/map/entities/location.entity';
+import { ChatService } from 'src/chat/chat.service';
+import { ApplierEnsemble } from 'src/application/entities/applier-ensemble.entity';
+import { RoomType } from 'src/chat/dto/create-room.dto';
 
 @Injectable()
 export class EnsembleService {
@@ -30,31 +36,110 @@ export class EnsembleService {
     @InjectRepository(SessionEnsemble)
     private readonly sessionEnsembleRepo: Repository<SessionEnsemble>,
 
+    @InjectRepository(ApplierEnsemble)
+    private readonly applierEnsembleRepo: Repository<ApplierEnsemble>,
+
+    @InjectRepository(Location)
+    private readonly locationRepo: Repository<Location>,
+
     private readonly userService: UserService,
     private readonly dataSource: DataSource,
+    private readonly chatService: ChatService,
   ) {}
 
   async findEnsembleWithPagination(
-    limit: number,
-    lastPostId?: number,
-    lastCreateAt?: Date,
+    filter: FilterRecruitEnsembleDto
   ): Promise<PaginatedRecruitEnsembleResponse> {
+    const {
+      limit = 20,
+      lastPostId,
+      lastCreatedAt,
+      eventDate,
+      skillLevel,
+      instrument,
+      location,
+    } = filter;
     const realLimit = limit + 1;
-    const queryBuilder =
-      this.recruitEnsembleRepo.createQueryBuilder('recruitEnsemble');
 
-    if (lastPostId && lastCreateAt) {
-      const lastCreatedAtDate = new Date(lastCreateAt);
-      queryBuilder.where(
+    const postIdqueryBuilder = this.recruitEnsembleRepo
+      .createQueryBuilder('recruitEnsemble')
+      .leftJoin('recruitEnsemble.location', 'location')
+      .leftJoin('recruitEnsemble.sessionEnsemble', 'sessionEnsemble')
+      .select([
+        'recruitEnsemble.postId',
+        'recruitEnsemble.createdAt',
+      ]);
+
+    
+
+    // 필터 조건 추가
+    if (eventDate) {
+      postIdqueryBuilder.andWhere('recruitEnsemble.eventDate >= :eventDate', {
+        eventDate,
+      });
+    }
+
+    if(skillLevel) {
+      postIdqueryBuilder.andWhere('recruitEnsemble.skillLevel = :skillLevel', {
+        skillLevel,
+      });
+    }
+
+    if(instrument) {
+      postIdqueryBuilder.andWhere('sessionEnsemble.instrument = :instrument', {
+        instrument,
+      });
+    }
+
+    if(location) {
+      // 지역 필터는 location.region_level1과 부분 일치
+      if (location === '전라') {
+        postIdqueryBuilder.andWhere(
+          '(location.region_level1 LIKE :jeollaNorth OR location.region_level1 LIKE :jeollaSouth)',
+          {
+            jeollaNorth: `%전북%`,   // 전라도만 전라남도, 전북으로 region_level1을 합쳐서 반환
+            jeollaSouth: `%전라%`,
+          },
+        );
+      } else {
+        postIdqueryBuilder.andWhere('location.region_level1 LIKE :location', {
+          location: `%${location}%`,  // ex) "경기" -> "경기도"
+        });
+      }
+    }
+
+    if (lastPostId && lastCreatedAt) {
+      const lastCreatedAtDate = new Date(lastCreatedAt);
+      postIdqueryBuilder.where(
         '(recruitEnsemble.createdAt < :lastCreatedAtDate) OR (recruitEnsemble.createdAt = :lastCreatedAtDate AND recruitEnsemble.postId < :lastPostId)',
         { lastCreatedAtDate, lastPostId },
       );
     }
 
-    const results = await queryBuilder
+    const postIdResults = await postIdqueryBuilder
       .orderBy('recruitEnsemble.createdAt', 'DESC')
       .addOrderBy('recruitEnsemble.postId', 'DESC')
       .take(realLimit)
+      .getMany();
+    
+    const postIds = postIdResults.map((row) => row.postId);
+
+    if (postIds.length === 0) {
+      return {
+        data: [],
+        nextCursor: undefined,
+        hasNextPage: false,
+      };
+    }
+
+    // 2차: 실제 데이터 조회 (위에서 추출한 postId 기반)
+    const results = await this.recruitEnsembleRepo
+      .createQueryBuilder('recruitEnsemble')
+      .leftJoinAndSelect('recruitEnsemble.location', 'location')
+      .leftJoinAndSelect('recruitEnsemble.sessionEnsemble', 'sessionEnsemble')
+      .whereInIds(postIds)
+      .orderBy('recruitEnsemble.createdAt', 'DESC')
+      .addOrderBy('recruitEnsemble.postId', 'DESC')
       .getMany();
 
     const hasNextPage = results.length > limit;
@@ -65,7 +150,7 @@ export class EnsembleService {
       hasNextPage && lastItem
         ? {
             lastPostId: lastItem.postId,
-            lastCreateAt: lastItem.createdAt.toISOString(),
+            lastCreatedAt: lastItem.createdAt.toISOString(),
           }
         : undefined;
     return {
@@ -80,11 +165,21 @@ export class EnsembleService {
     id: string,
   ): Promise<RecruitEnsembleResponseDto> {
     return this.dataSource.transaction(async (transactionalEntityManager) => {
-      const recruitEnsembleDto = createDto;
+      const { locationId, ...recruitEnsembleDto } = createDto;
       const user = await this.userService.findById(id);
 
       if (!user) {
         throw new NotFoundException(`User with ID "${id}" not found`);
+      }
+
+      const locationEntity = await this.locationRepo.findOneBy({
+        locationId: Number(locationId),
+      });
+
+      if (!locationEntity) {
+        throw new NotFoundException(
+          `Location with ID#${locationId} not found.`,
+        );
       }
 
       const newEnsemble = this.recruitEnsembleRepo.create({
@@ -92,6 +187,7 @@ export class EnsembleService {
         user: user,
         recruitStatus: RECRUIT_STATUS.RECRUITING,
         viewCount: 0,
+        location: locationEntity,
       });
 
       const savedEnsemble = await transactionalEntityManager.save(newEnsemble);
@@ -125,10 +221,74 @@ export class EnsembleService {
     await manager.save(SessionEnsemble, newSessionEnsemble);
   }
 
+  async closeRecruitment(
+    postId: number,
+    userId: string,
+  ): Promise<RecruitEnsembleResponseDto> {
+    // 1. 게시물을 DB에서 찾습니다. 이때 작성자 정보(user)도 함께 가져옵니다.
+    const recruitEnsemble = await this.recruitEnsembleRepo.findOne({
+      where: { postId },
+      relations: ['user'], // 작성자 ID를 비교하기 위해 user 관계를 로드합니다.
+    });
+
+    // 게시물이 없는 경우
+    if (!recruitEnsemble) {
+      throw new NotFoundException(
+        `Recruitment post with ID #${postId} not found.`,
+      );
+    }
+
+    // 2. 요청한 사용자가 게시물 작성자가 맞는지 권한을 확인합니다.
+    if (recruitEnsemble.user.id !== userId) {
+      throw new ForbiddenException(
+        'You are not authorized to close this recruitment.',
+      );
+    }
+
+    // 이미 모집 종료된 게시물인지 확인합니다.
+    if (recruitEnsemble.recruitStatus !== RECRUIT_STATUS.RECRUITING) {
+      throw new ConflictException('This recruitment is already closed.'); // 409 Conflict 에러
+    }
+
+    // 3. 모집 상태를 '모집 완료'로 변경합니다.
+    // RECRUIT_STATUS에 '모집 완료'에 해당하는 상태값이 정의되어 있어야 합니다.
+    // 예: export enum RECRUIT_STATUS { RECRUITING = 'RECRUITING', CLOSED = 'CLOSED' }
+    recruitEnsemble.recruitStatus = RECRUIT_STATUS.COMPLETE;
+
+    // 4. 변경된 내용을 저장합니다.
+    const updatedEnsemble =
+      await this.recruitEnsembleRepo.save(recruitEnsemble);
+
+    const savedAppliers = await this.applierEnsembleRepo
+      .createQueryBuilder('applier')
+      .innerJoinAndSelect('applier.user', 'user')
+      .innerJoinAndSelect('applier.sessionEnsemble', 'sessionEnsemble')
+      .innerJoin('applier.recruitEnsemble', 'recruitEnsemble')
+      .where('recruitEnsemble.postId = :postId', { postId })
+      .getMany();
+
+    const ensembleRoom = await this.chatService.createRoom(
+      recruitEnsemble.title,
+      RoomType.GROUP,
+      recruitEnsemble.user.id,
+    );
+
+    await Promise.all(
+      savedAppliers.map(async (applier) => {
+        await this.chatService.joinRoom(applier.user.id, ensembleRoom.id);
+      }),
+    );
+
+    // 5. 업데이트된 게시물 정보를 DTO로 변환하여 반환합니다.
+    const userResponse = UserResponseDto.from(updatedEnsemble.user);
+
+    return RecruitEnsembleResponseDto.from(updatedEnsemble, userResponse);
+  }
+
   async detailEnsemble(id: number): Promise<RecruitEnsembleResponseDto> {
     const ensemble = await this.recruitEnsembleRepo.findOne({
       where: { postId: id },
-      relations: ['sessionEnsemble', 'applierEnsemble', 'user'],
+      relations: ['sessionEnsemble', 'applierEnsemble', 'user', 'location'],
     });
     if (!ensemble) {
       throw new NotFoundException(`Ensemble with ID #${id} not found.`);
@@ -204,16 +364,12 @@ export class EnsembleService {
       // 2. 권한 확인 (트랜잭션 내에서 데이터를 다시 조회하여 최신 상태 보장)
       const ensemble = await queryRunner.manager.findOne(RecruitEnsemble, {
         where: { postId },
-        relations: ['sessionEnsemble', 'user'],
+        relations: ['sessionEnsemble', 'user', 'location'],
       });
 
       if (!ensemble) {
         throw new NotFoundException(`Ensemble with ID #${postId} not found.`);
       }
-      console.log('-----------');
-      console.log(id);
-      console.log(ensemble);
-      console.log('-----------');
 
       if (id !== ensemble.user.id) {
         throw new ForbiddenException(`Unauthorized`);
@@ -270,9 +426,28 @@ export class EnsembleService {
       }
 
       // 4. 부모 엔티티(Ensemble)의 필드 머지(업데이트) 처리
+      const locationEntity = await this.locationRepo.findOneBy({
+        locationId: Number(updateDto.locationId),
+      });
+
+      if (!locationEntity) {
+        throw new NotFoundException(
+          `Location with ID#${updateDto.locationId} not found.`,
+        );
+      }
+
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { sessionList, ...ensembleDto } = updateDto;
-      await queryRunner.manager.update(RecruitEnsemble, postId, ensembleDto);
+
+      const newEnsemble = this.recruitEnsembleRepo.create({
+        ...updateDto,
+        user: ensemble.user,
+        recruitStatus: ensemble.recruitStatus,
+        viewCount: ensemble.viewCount,
+        location: locationEntity,
+      });
+
+      await queryRunner.manager.update(RecruitEnsemble, postId, newEnsemble);
 
       // 5. 모든 작업이 성공하면 트랜잭션을 커밋합니다.
       await queryRunner.commitTransaction();

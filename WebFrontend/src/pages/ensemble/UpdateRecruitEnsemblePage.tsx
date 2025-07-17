@@ -4,9 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from '@/services/axiosInstance';
 import { useAuthStore } from '@/stores/authStore';
-import { EnsembleForm, type RecruitEnsembleFormState, SKILL_LEVEL } from '@/pages/ensemble/components/EnsembleForm';
+import { EnsembleForm, type RecruitEnsembleFormState } from '@/pages/ensemble/components/EnsembleForm';
 import type { SessionEnsembleFormState } from './components/SessionForm';
-import type { RecruitEnsemble } from './types';
+import { SKILL_LEVEL, type RecruitEnsemble } from './types';
 
 // API 응답 타입 (상세 페이지와 동일)
 interface UpdateSessionEnsemblePayload {
@@ -67,7 +67,6 @@ const UpdateRecruitEnsemblePage: React.FC = () => {
         // eventDate는 'YYYY-MM-DD' 형식으로 변환해야 <input type="date">에 표시됩니다.
         const formattedEventDate = new Date(ensemble.eventDate).toISOString().split('T')[0];
 
-        console.log(ensemble);
         const newSessionForm : SessionEnsembleFormState[] = ensemble.sessionEnsemble.map(item => ({
           sessionId: String(item.sessionId),
           instrument: item.instrument,
@@ -79,7 +78,7 @@ const UpdateRecruitEnsemblePage: React.FC = () => {
           content: ensemble.content,
           eventDate: formattedEventDate,
           skillLevel: ensemble.skillLevel,
-          locationId: String(ensemble.locationId),
+          locationId: String(ensemble.location.locationId),
           totalRecruitCnt: String(ensemble.totalRecruitCnt),
           sessionEnsemble: newSessionForm
         });
@@ -154,9 +153,6 @@ const UpdateRecruitEnsemblePage: React.FC = () => {
         totalRecruitCnt: Number(form.totalRecruitCnt),
         sessionList: sessionListPayLoad,
       };
-
-      console.log('patch');
-      console.log(payload);
 
       // PATCH 메서드로 수정 요청
       await axiosInstance.patch(`ensembles/${id}`, payload);

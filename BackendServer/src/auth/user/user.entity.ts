@@ -10,6 +10,10 @@ import { Exclude } from 'class-transformer';
 import { Message } from '../../chat/entities/message.entity';
 import { UserRoom } from '../../chat/entities/user-room.entity';
 import { RecruitEnsemble } from 'src/ensemble/entities/recruit-ensemble.entity';
+import { NumberIdLike } from '../../stringIdLikes/entities/numberIdLike.entity';
+import { Post } from '../../community/entities/post.entity';
+import { ApplierEnsemble } from 'src/application/entities/applier-ensemble.entity';
+import { Video } from 'src/videos/entities';
 
 @Entity('Users')
 export class User {
@@ -74,7 +78,7 @@ export class User {
 
   // 소셜로그인 용
   @Column({ name: 'provider', type: 'varchar', length: 50, nullable: true })
-  provider?: string; // 예: 'kakao', 'google'
+  provider?: string; // 예: 'kakao', 'google', 'admin'
 
   @Column({ name: 'provider_id', type: 'varchar', length: 255, nullable: true })
   providerId?: string; // 소셜 로그인 플랫폼에서 제공하는 고유 ID
@@ -103,4 +107,16 @@ export class User {
   /** 이 사용자의 합주 포스터 */
   @OneToMany(() => RecruitEnsemble, (recruitEnsemble) => recruitEnsemble.user)
   recruitEnsemble: RecruitEnsemble[];
+
+  @OneToMany(() => ApplierEnsemble, (applierEnsemble) => applierEnsemble.user)
+  applierEnsemble: ApplierEnsemble[];
+
+  @OneToMany(() => NumberIdLike, (like) => like.user)
+  likes: NumberIdLike[];
+
+  @OneToMany(() => Post, (post) => post.user)
+  posts: Post[]; // 👈 2. 이 코드를 추가하여 관계를 설정합니다.**
+
+  @OneToMany(() => Video, (video) => video.user)
+  videos: Video[];
 }

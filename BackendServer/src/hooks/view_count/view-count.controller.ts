@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { ViewCountableType, ViewCountService } from './view-count.service';
 
-@Controller('/api/count-view')
+@Controller('count-view')
 export class ViewCountController {
   constructor(private readonly viewCountService: ViewCountService) {}
 

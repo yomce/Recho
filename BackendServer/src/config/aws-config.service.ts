@@ -108,18 +108,37 @@ export class AwsConfigService {
       this.config['IP'] = this.config['DEV_IP'];
     }
 
-    this.config['FRONTEND_URL'] =
-      `${this.config['PROTOCOL']}${this.config['IP']}:${this.config['FRONT_PORT']}`;
-    this.config['BACKEND_URL'] =
-      `${this.config['PROTOCOL']}${this.config['IP']}:${this.config['BACK_PORT']}`;
-    this.config['DB_URL'] =
-      `${this.config['PROTOCOL']}${this.config['IP']}:${this.config['DB_PORT']}`;
+    const isDev =
+      process.env.APP_ENV !== 'LOCAL' && process.env.APP_ENV !== 'LOCAL_IP';
 
+    const makeUrl = (protocol: string, ip: string, port: string) =>
+      isDev ? `${protocol}${ip}` : `${protocol}${ip}:${port}`;
+
+    // 기본 URL 설정
+    this.config['FRONTEND_URL'] = makeUrl(
+      this.config['PROTOCOL'],
+      this.config['IP'],
+      this.config['FRONT_PORT'],
+    );
+
+    this.config['BACKEND_URL'] = makeUrl(
+      this.config['PROTOCOL'],
+      this.config['IP'],
+      this.config['BACK_PORT'],
+    );
+
+    this.config['DB_URL'] = makeUrl(
+      this.config['PROTOCOL'],
+      this.config['IP'],
+      this.config['DB_PORT'],
+    );
+
+    // 콜백 URL 설정
     this.config['KAKAO_CALLBACK_URL'] =
       this.config['BACKEND_URL'] + this.config['KAKAO_CALLBACK'];
 
     this.config['GOOGLE_CALLBACK_URL'] =
-      this.config['FRONTEND_URL'] + this.config['GOOGLE_CALLBACK'];
+      this.config['BACKEND_URL'] + this.config['GOOGLE_CALLBACK'];
 
     this.config['FRONTEND_CALLBACK_URL'] =
       this.config['FRONTEND_URL'] + this.config['FRONTEND_CALLBACK'];

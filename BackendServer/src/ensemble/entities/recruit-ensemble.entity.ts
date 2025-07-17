@@ -12,6 +12,7 @@ import {
 import { SessionEnsemble } from '../session/entities/session-ensemble.entity';
 import { ApplierEnsemble } from 'src/application/entities/applier-ensemble.entity';
 import { User } from 'src/auth/user/user.entity';
+import { Location } from 'src/map/entities/location.entity';
 
 export enum SKILL_LEVEL {
   BEGINNER,
@@ -34,7 +35,7 @@ export class RecruitEnsemble {
   @ManyToOne(() => User, (user) => user.recruitEnsemble, {
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'user' })
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
   @Column()
@@ -49,8 +50,9 @@ export class RecruitEnsemble {
   @Column()
   skillLevel: SKILL_LEVEL;
 
-  @Column()
-  locationId: number;
+  @ManyToOne(() => Location, { eager: true })
+  @JoinColumn({ name: 'location' })
+  location: Location;
 
   @Column()
   totalRecruitCnt: number;

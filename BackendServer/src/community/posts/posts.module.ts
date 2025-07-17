@@ -1,0 +1,16 @@
+// src/posts/posts.module.ts
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { PostsService } from './posts.service';
+import { PostsController } from './posts.controller';
+import { Post } from '../entities/post.entity'; // 엔티티 임포트
+import { NumberIdLike } from 'src/stringIdLikes/entities/numberIdLike.entity';
+import { LikesModule } from 'src/stringIdLikes/likes.module';
+
+@Module({
+  imports: [TypeOrmModule.forFeature([Post, NumberIdLike]), LikesModule], // Post Repository를 주입하기 위해 추가
+  providers: [PostsService],
+  controllers: [PostsController],
+  exports: [PostsService],
+})
+export class PostsModule {}

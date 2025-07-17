@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
@@ -72,7 +72,7 @@ export class ChatService {
         roomId,
         createdAt: MoreThan(userRoom.joinedAt), // [수정] 사용자의 참여 시간보다 최신인 메시지만 필터링
       },
-      order: { createdAt: 'ASC' },
+      order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
       relations: ['sender'], // [추가] 메시지 보낸 사람의 정보를 함께 가져오도록 설정
@@ -148,6 +148,27 @@ export class ChatService {
       if (!user2InRoom) {
         await this.joinRoom(user2Id, room.id);
       }
+    }
+
+    return room;
+  }
+
+  async findRoomById(roomId: string, userId: string): Promise<Room> {
+    const room = await this.roomRepo.findOne({
+      where: { id: roomId },
+      // 이 방에 속한 사용자들의 정보를 함께 가져옵니다.
+      relations: ['userRooms', 'userRooms.user'],
+    });
+
+    // 1. 방이 존재하지 않을 경우
+    if (!room) {
+      throw new NotFoundException(`Room with ID ${roomId} not found.`);
+    }
+
+    // 2. 방에 참여한 사용자 목록에 요청한 사용자가 없는 경우
+    const isUserInRoom = room.userRooms.some(userRoom => userRoom.user.id === userId);
+    if (!isUserInRoom) {
+      throw new ForbiddenException('You do not have permission to access this room.');
     }
 
     return room;

@@ -1,33 +1,23 @@
 // src/pages/user/UsedProductDetailPage.tsx
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { type UsedProduct, STATUS, TRADE_TYPE } from '../../types/product';
+import { type UsedProduct, TRADE_TYPE, STATUS, STATUS_TEXT } from '../../types/product';
 import { useAuthStore } from '@/stores/authStore';
 import axiosInstance from '@/services/axiosInstance';
 import useViewCounter from '@/hooks/useViewCounter';
 import PostLayout from '@/components/layout/PostLayout';
-import ImageCard from '@/components/atoms/card/ImageCard';
 import UserProfileCard from '@/components/atoms/card/UserProfileCard';
 import ProductInfoCard from '@/components/atoms/card/ProductInfoCard';
 import MapPreviewCard from '@/components/atoms/card/MapViewCard';
 import MessageInputForm from '@/components/atoms/input/MessageInput';
 import IconButton from '@/components/atoms/button/IconButton';
-
-// Enum 값에 따른 한글 텍스트 매핑
-const STATUS_TEXT = {
-  [STATUS.FOR_SALE]: '판매중',
-  [STATUS.IN_PROGRESS]: '예약중',
-  [STATUS.SOLD]: '판매완료',
-};
-
-// Enum 값에 따른 Tailwind 클래스 매핑
-const STATUS_CLASSES = {
-  [STATUS.FOR_SALE]: 'bg-green-500 text-white',
-  [STATUS.IN_PROGRESS]: 'bg-yellow-400 text-black',
-  [STATUS.SOLD]: 'bg-gray-500 text-white',
-};
+import SwiperImageCard from '@/components/atoms/card/SwipeImageCard';
+import { ToastMenu } from '@/components/atoms/button/ToastMenu';
+import { StatusToastMenu } from '@/components/atoms/button/StatusToastMenu';
+import toast from 'react-hot-toast';
+import VideoPreviewSection from '@/components/atoms/card/VideoPreviewCard';
 
 const TRADE_TYPE_TEXT = {
   [TRADE_TYPE.IN_PERSON]: '직거래',
@@ -105,6 +95,18 @@ const UsedProductDetailPage: React.FC = () => {
     }
   };
 
+  const handleStatusChange = async (status: STATUS) => {
+    if(!isOwner || !product) return;
+    console.log("상태변경요청");
+    try {
+      const res = await axiosInstance.patch(`/used-products/${product.productId}/status`, {status});
+      setProduct(res.data);
+      toast.success(`게시글 상태가 ${STATUS_TEXT}로 변경되었습니다.`);
+    } catch (err) {
+      toast.error('상태 변경에 실패했습니다.');
+    }
+  };
+
   /**
    * [신규] DM 보내기 버튼 클릭 시 실행되는 함수
    */
@@ -141,26 +143,55 @@ const UsedProductDetailPage: React.FC = () => {
 
   return (
     <PostLayout bgClassName="bg-white">
-      <div className="mx-auto max-w-6xl px-4">
+      <div className="mx-auto max-w-6xl px-4 mb-8">
         <div className="flex flex-col">
           {/* 이미지 섹션 */}
-          <div className="md:flex-1 md:max-w-md my-8">
-            <ImageCard
-              src={product.imageUrl || 'https://placehold.co/400x300'}
-              alt={product.title}
-              width={600}
-              height={400}
-            />
+          <div className="relative">
+            <SwiperImageCard
+              images={
+                Array.isArray(product.imageUrl)
+                ? product.imageUrl
+                : product.imageUrl
+                  ? [product.imageUrl] // string인 경우 배열로 변환
+                  : []
+              }
+              width={400}
+              height={300}
+              slideClassName="py-4"
+              imgClassName='rounded-[var(--radius-card)]'
+              showPagination={true}
+              />
+            {isOwner && (
+              <div className="absolute top-5 right-2 z-10">
+                <IconButton
+                iconName="moreFill"
+                onClick={() =>
+                  ToastMenu({
+                    onEdit: () => handleEdit?.(),
+                    onDelete: () => handleDelete?.(),
+                  })
+                  }
+                />
+              </div>
+            )}
           </div>
-
           <UserProfileCard
-            imageUrl={product.imageUrl || 'https://placehold.co/40x40'}
-            name={product.id}
-            location={product.location.address}
-            status="판매중"
+          imageUrl={product.imageUrl ?? ""}
+          name={product.id}
+          location={product.location.address}
+          status={STATUS_TEXT[product.status] as "판매중" | "예약중" | "판매완료"}
+          onClick={() => {
+            console.log('UserProfileCard clicked', { isOwner, product });
+            if(isOwner) {
+            StatusToastMenu({
+              onChangeStatus: handleStatusChange,
+              currentStatus: product.status,
+            })
+            }
+          }}
           />
           {/* 정보 섹션 */}
-          <div className="mt-6 md:mt-0 md:flex-1 flex flex-col">
+          <div className="mt-6 md:mt-0 md:flex-1 flex flex-col mb-32">
             <ProductInfoCard
               title={product.title}
               price={product.price}
@@ -176,11 +207,12 @@ const UsedProductDetailPage: React.FC = () => {
               />
             )}
           </div>
-          {isOwner && (
-            <div className="flex justify-end items-center gap-1">
-              <IconButton iconName="edit" iconSize={20} onClick={handleEdit} />
-              <IconButton iconName="delete" iconSize={20} onClick={handleDelete} />
-            </div>
+
+          {product && (
+            <VideoPreviewSection
+              refIn="used_products"
+              refPostId={product.productId}
+            />
           )}
         </div>
       </div>

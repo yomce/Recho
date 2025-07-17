@@ -1,9 +1,15 @@
-// src/pages/ChatListPage.tsx
+// src/pages/ChatListPage.tsx (수정된 최종본)
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../services/axiosInstance';
-// import { socket } from '../../services/socket'; // ⬅️ 직접 사용하지 않으므로 삭제해도 무방
 import { useAuthStore } from '../../stores/authStore';
+
+// 공통 컴포넌트를 import 합니다.
+import PostLayout from '@/components/layout/PostLayout';
+import Avatar from '@/components/atoms/avatar/Avatar';
+import Icon from '@/components/atoms/icon/Icon';
+import SearchOverlay from '@/components/organisms/SearchOverlay';
 
 // --- 타입 정의 ---
 interface ChatUser {
@@ -20,26 +26,6 @@ interface ChatRoom {
   type: 'PRIVATE' | 'GROUP';
   userRooms: UserRoom[];
 }
-// --- Avatar 컴포넌트 ---
-const Avatar: React.FC<{
-  src?: string | null;
-  alt?: string;
-  style?: React.CSSProperties;
-}> = ({ src, alt = '?', style }) => (
-  <img
-    src={
-      src || `https://placehold.co/32x32/e9ecef/495057?text=${alt.charAt(0)}`
-    }
-    alt={alt}
-    style={{
-      width: '32px',
-      height: '32px',
-      borderRadius: '50%',
-      objectFit: 'cover',
-      ...style,
-    }}
-  />
-);
 
 const ChatListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -48,19 +34,19 @@ const ChatListPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
+
   const { user } = useAuthStore();
 
-  // ❗️ useEffect에서 socket 직접 제어 로직 제거
   useEffect(() => {
     if (!user) {
       setLoading(false);
       return;
     }
-
     const fetchChatRooms = async () => {
       setLoading(true);
       try {
-        const response = await axiosInstance.get<ChatRoom[]>('/chat/my-rooms');
+        const response = await axiosInstance.get<ChatRoom[]>('chat/my-rooms');
         setRooms(response.data);
       } catch (err) {
         console.error('채팅방 목록을 불러오는 데 실패했습니다.', err);
@@ -69,127 +55,113 @@ const ChatListPage: React.FC = () => {
         setLoading(false);
       }
     };
-
     fetchChatRooms();
-    
-    // ❗️ socket.connect() 와 socket.disconnect()를 여기서 호출하지 않습니다.
-    // 소켓 관리는 App.tsx와 chatStore가 전역으로 담당합니다.
-
   }, [user]);
-
-  // ... (이하 핸들러 및 렌더링 코드는 모두 동일)
+  
   const handleCreateRoom = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!newRoomName.trim()) return alert('채팅방 이름을 입력해주세요.');
-
     try {
-      const response = await axiosInstance.post<ChatRoom>('/chat/rooms', {
-        name: newRoomName,
-        type: 'GROUP',
-      });
+      const response = await axiosInstance.post<ChatRoom>('/chat/rooms', { name: newRoomName, type: 'GROUP' });
       setNewRoomName('');
       alert(`'${response.data.name}' 방이 생성되었습니다!`);
-      const roomsResponse = await axiosInstance.get<ChatRoom[]>('/chat/my-rooms');
+      const roomsResponse = await axiosInstance.get<ChatRoom[]>('chat/my-rooms');
       setRooms(roomsResponse.data);
     } catch (err) {
-      console.error('채팅방 생성에 실패했습니다.', err);
       alert('채팅방 생성에 실패했습니다.');
     }
   };
   const handleEnterRoom = (roomId: string) => {
     navigate(`/chat/${roomId}`);
   };
-  const handleGoBack = () => {
-    navigate(-1);
-  };
 
-  if (loading) return <div style={styles.container}><h2>채팅방 정보를 불러오고 있습니다...</h2></div>;
-  if (error) return <div style={styles.container}><h2>에러: {error}</h2></div>;
+  if (loading) return <PostLayout><div className="p-4 text-center">채팅방 정보를 불러오고 있습니다...</div></PostLayout>;
+  if (error) return <PostLayout><div className="p-4 text-center text-brand-error-text">에러: {error}</div></PostLayout>;
 
   return (
-    <div style={styles.container}>
-      <h1 style={styles.header}>채팅</h1>
-      <form onSubmit={handleCreateRoom} style={styles.createForm}>
-        <input
-          type="text"
-          value={newRoomName}
-          onChange={(e) => setNewRoomName(e.target.value)}
-          placeholder="새 그룹 채팅방 이름"
-          style={styles.input}
-        />
-        <button type="submit" style={styles.createButton}>
-          만들기
-        </button>
-      </form>
-      <h2 style={styles.subHeader}>채팅방 목록</h2>
-      <div style={styles.roomList}>
-        {rooms.length > 0 ? (
-          rooms.map((room) => {
-            const isPrivate = room.type === 'PRIVATE';
-            const participants = room.userRooms?.map((ur) => ur.user) || [];
-            const chatPartner = isPrivate
-              ? participants.find((p) => p.id !== user?.id)
-              : null;
-            const participantNamesString = participants
-              .map(p => p.username)
-              .join(', ');
-            return (
-              <div key={room.id} style={styles.roomItem} onClick={() => handleEnterRoom(room.id)}>
-                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  {isPrivate ? (
-                    <Avatar
-                      src={chatPartner?.profileUrl}
-                      alt={chatPartner?.username}
+    // PostLayout을 사용하고, 배경색을 흰색으로 지정합니다.
+    <PostLayout bgClassName="bg-brand-frame" onSearchClick={() => setIsSearchOverlayOpen(true)}
+    >
+      <div className="p-4">
+        {/* 그룹 채팅방 생성 폼 */}
+        <form onSubmit={handleCreateRoom} className="flex gap-2 mb-6">
+          <input
+            type="text"
+            value={newRoomName}
+            onChange={(e) => setNewRoomName(e.target.value)}
+            placeholder="새 그룹 채팅방 이름"
+            className="flex-3 px-4 py-2 rounded-card text-body bg-brand-default focus:outline-none focus:ring-1 focus:ring-brand-primary"
+          />
+          <button type="submit" className="flex-1 max-w-[60px] whitespace-nowrap overflow-hidden px-4 py-2 text-white rounded-card bg-brand-primary text-button hover:opacity-90">
+            <Icon name="plus" size={20} className="inline-block mb-1" />
+          </button>
+        </form>
+
+        {/* 채팅방 목록 */}
+        <div className="space-y-3">
+          {rooms.length > 0 ? (
+            rooms.map((room) => {
+              const isPrivate = room.type === 'PRIVATE';
+              const participants = room.userRooms?.map((ur) => ur.user) || [];
+              const chatPartner = isPrivate ? participants.find((p) => p.id !== user?.id) : null;
+              
+              const roomName = isPrivate ? chatPartner?.username || '알 수 없는 사용자' : room.name;
+              const avatarAlt = isPrivate ? chatPartner?.username || '?' : room.name?.charAt(0) || 'G';
+
+              return (
+                <div 
+                  key={room.id} 
+                  className="flex items-center justify-between p-3 transition-colors rounded-card bg-brand-default hover:bg-gray-200 cursor-pointer" 
+                  onClick={() => handleEnterRoom(room.id)}
+                >
+                  <div className="flex items-center gap-3">
+                    {/* 아바타 표시 */}
+                    {isPrivate ? (
+                      <Avatar 
+                      src={chatPartner?.profileUrl || `https://placehold.co/48x48/e9ecef/495057?text=${avatarAlt.charAt(0)}`} 
+                      alt={avatarAlt} 
+                      size={48} 
                     />
-                  ) : (
-                    <div style={{ display: 'flex', position: 'relative', width: '48px', height: '32px' }}>
-                      {participants.slice(0, 2).map((p, index) => (
-                        <div key={p.id} style={{ position: 'absolute', left: `${index * 16}px` }}>
-                           <Avatar src={p.profileUrl} alt={p.username} style={{ border: '2px solid white' }}/>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <div>
-                    <p style={styles.roomName}>
-                      {isPrivate ? chatPartner?.username || '개인 채팅' : room.name}
-                    </p>
-                    {!isPrivate && (
-                        <p style={styles.participantCount}>
-                        {participantNamesString}
-                        </p>
+                    ) : (
+                      <div className="relative flex w-12 h-12">
+                        {participants.slice(0, 2).map((p, index) => (
+                          <div key={p.id} className={`absolute ${index === 0 ? 'top-0 left-0 z-10' : 'bottom-0 right-0'}`}>
+                            <Avatar 
+                              src={p.profileUrl || `https://placehold.co/32x32/e9ecef/495057?text=${p.username.charAt(0)}`} 
+                              alt={p.username} 
+                              size={32} 
+                            />
+                          </div>
+                        ))}
+                      </div>
                     )}
+                    {/* 채팅방 이름 및 정보 */}
+                    <div>
+                      <p className="text-caption-bold text-brand-text-primary">{roomName}</p>
+                      {!isPrivate && (
+                        <p className="text-footnote text-brand-gray">
+                          {participants.length}명 참여중
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
-                <span style={styles.roomType}>{room.type}</span>
-              </div>
-            );
-          })
-        ) : (
-          <p>참여하고 있는 채팅방이 없습니다.</p>
-        )}
+              );
+            })
+          ) : (
+            <div className="py-20 text-center text-brand-gray">
+              <p>참여하고 있는 채팅방이 없습니다.</p>
+              <p className="text-footnote">새로운 그룹 채팅방을 만들어보세요!</p>
+            </div>
+          )}
+        </div>
       </div>
-      <button onClick={handleGoBack} style={styles.backButton}>
-        메인으로
-      </button>
-    </div>
+      <SearchOverlay
+        isOpen={isSearchOverlayOpen}
+        onClose={() => setIsSearchOverlayOpen(false)}
+      />
+    </PostLayout>
   );
-};
-
-// ... (스타일 객체는 동일)
-const styles: { [key: string]: React.CSSProperties } = {
-  container: { maxWidth: '600px', margin: '40px auto', padding: '20px', fontFamily: 'sans-serif', border: '1px solid #eee', borderRadius: '10px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' },
-  header: { textAlign: 'center', marginBottom: '20px', color: '#333' },
-  subHeader: { fontSize: '1.2em', color: '#555', borderTop: '1px solid #eee', paddingTop: '20px', marginTop: '30px' },
-  createForm: { display: 'flex', gap: '10px', marginBottom: '20px' },
-  input: { flexGrow: 1, padding: '12px', border: '1px solid #ccc', borderRadius: '5px', fontSize: '16px' },
-  createButton: { padding: '0 20px', border: 'none', borderRadius: '5px', backgroundColor: '#007bff', color: 'white', cursor: 'pointer', fontSize: '16px' },
-  roomList: { display: 'flex', flexDirection: 'column', gap: '10px' },
-  roomItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', cursor: 'pointer', transition: 'background-color 0.2s', backgroundColor: '#f8f9fa', borderRadius: '8px' },
-  roomName: { margin: 0, fontWeight: 'bold', color: '#495057' },
-  participantCount: { margin: '4px 0 0 0', fontSize: '12px', color: '#868e96' },
-  roomType: { padding: '4px 8px', borderRadius: '12px', backgroundColor: '#e9ecef', fontSize: '12px', color: '#868e96', alignSelf: 'flex-start' },
-  backButton: { marginTop: '30px', padding: '10px 15px', border: 'none', borderRadius: '5px', backgroundColor: '#6c757d', color: 'white', cursor: 'pointer', fontSize: '14px' }
 };
 
 export default ChatListPage;

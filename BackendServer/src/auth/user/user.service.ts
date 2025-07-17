@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { User } from './user.entity'; // 경로 수정
 import { CreateUserDto } from './dto/create-user.dto'; // 경로 수정
 import * as bcrypt from 'bcrypt';
+import { UpdateUserDto } from './dto/update-user.dto'; // [1] UpdateUserDto import
 
 @Injectable()
 export class UserService {
@@ -82,5 +83,31 @@ export class UserService {
     await this.userRepository.update(id, {
       hashedRefreshToken: refreshToken,
     });
+  }
+
+
+   /**
+   * [2] 사용자 정보 업데이트 메서드 추가
+   * @param id 사용자 ID
+   * @param updateUserDto 업데이트할 정보
+   * @returns 업데이트된 사용자 정보 (비밀번호 제외)
+   */
+  async updateUser(
+    id: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<Omit<User, 'password' | 'hashedRefreshToken'>> {
+    const user = await this.userRepository.findOneBy({ id });
+    if (!user) {
+      throw new NotFoundException(`ID가 '${id}'인 사용자를 찾을 수 없습니다.`);
+    }
+
+    // DTO에 담긴 정보로 사용자 닉네임 업데이트
+    user.username = updateUserDto.username;
+
+    const updatedUser = await this.userRepository.save(user);
+
+    // 보안을 위해 민감 정보 제외 후 반환
+    const { password, hashedRefreshToken, ...result } = updatedUser;
+    return result;
   }
 }

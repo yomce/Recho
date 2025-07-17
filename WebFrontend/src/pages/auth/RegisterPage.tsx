@@ -3,57 +3,140 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import PrimaryButton from "@/components/atoms/button/PrimaryButton";
+import SecondaryButton from "@/components/atoms/button/SecondaryButton";
 import TextInput from "@/components/atoms/input/TextInput";
+import axiosInstance from "@/services/axiosInstance";
+import { AxiosError } from "axios";
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
 
-  // 폼 입력 및 로딩 상태
+  // 폼 입력 상태
   const [id, setId] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false); // 로딩 상태 추가
 
+  // 에러 및 로딩 상태
+  const [error, setError] = useState("");
+  const [loadingState, setLoadingState] = useState<"id" | "username" | "email" | "submit" | null>(null);
+
+  // 단계별 인증 완료 상태 (ForgotPasswordPage와 동일한 로직)
+  const [isIdVerified, setIsIdVerified] = useState(false);
+  const [isUsernameVerified, setIsUsernameVerified] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  
+  // 1. 아이디 중복 확인 핸들러
+  const handleCheckId = async () => {
+    setError("");
+    if (!id) {
+      setError("아이디를 입력해주세요.");
+      return;
+    }
+    const hasLetter = /[a-zA-Z]/;
+    const hasNumber = /[0-9]/;
+    if (!hasLetter.test(id) || !hasNumber.test(id)) {
+      setError("아이디는 영문과 숫자를 모두 포함해야 합니다.");
+      return;
+    }
+    setLoadingState("id");
+    try {
+      await axiosInstance.post("/users/check-id", { id });
+      alert("사용 가능한 아이디입니다.");
+      setIsIdVerified(true);
+    } catch (err) {
+      const axiosError = err as AxiosError<{ message: string }>;
+      setError(axiosError.response?.data?.message || "사용할 수 없는 아이디입니다.");
+    } finally {
+      setLoadingState(null);
+    }
+  };
+
+  // 2. 닉네임 중복 확인 핸들러
+  const handleCheckUsername = async () => {
+    setError("");
+    if (!username) {
+      setError("닉네임을 입력해주세요.");
+      return;
+    }
+    setLoadingState("username");
+    try {
+      await axiosInstance.post("/users/check-username", { username });
+      alert("사용 가능한 닉네임입니다.");
+      setIsUsernameVerified(true);
+    } catch (err) {
+      const axiosError = err as AxiosError<{ message: string }>;
+      setError(axiosError.response?.data?.message || "사용할 수 없는 닉네임입니다.");
+    } finally {
+      setLoadingState(null);
+    }
+  };
+
+  // 3. 이메일 중복 확인 핸들러
+  const handleCheckEmail = async () => {
+    setError("");
+    if (!email) {
+      setError("이메일을 입력해주세요.");
+      return;
+    }
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      setError("올바른 이메일 형식이 아닙니다.");
+      return;
+    }
+    setLoadingState("email");
+    try {
+      await axiosInstance.post("/users/check-email", { email });
+      alert("사용 가능한 이메일입니다.");
+      setIsEmailVerified(true);
+    } catch (err) {
+      const axiosError = err as AxiosError<{ message: string }>;
+      setError(axiosError.response?.data?.message || "사용할 수 없는 이메일입니다.");
+    } finally {
+      setLoadingState(null);
+    }
+  };
+
+  // 4. 최종 가입하기 핸들러
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError(null);
+    setError("");
 
+    if (!isIdVerified || !isUsernameVerified || !isEmailVerified) {
+      setError("모든 항목의 중복 확인을 완료해주세요.");
+      return;
+    }
+    const hasMinLength = password.length >= 8;
+    const hasLetter = /[a-zA-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    if (!password || !confirmPassword) {
+      setError("비밀번호를 입력해주세요.");
+      return;
+    }
+    if (!hasMinLength || !hasLetter || !hasNumber || !hasSpecialChar) {
+      setError("비밀번호는 8자 이상이며, 영문, 숫자, 특수문자를 모두 포함해야 합니다.");
+      return;
+    }
     if (password !== confirmPassword) {
       setError("비밀번호가 일치하지 않습니다.");
       return;
     }
 
-    setIsLoading(true); // 로딩 시작
-
+    setLoadingState("submit");
     try {
-      const apiUrl = import.meta.env.VITE_API_URL;
-      const response = await fetch(`${apiUrl}/users`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id, username, email, password }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message[0] || "회원가입에 실패했습니다.");
-      }
-
+      await axiosInstance.post("users", { id, username, email, password });
       alert("회원가입에 성공했습니다! 로그인 페이지로 이동합니다.");
       navigate("/login");
     } catch (err) {
-      if (err instanceof Error) {
-        console.error("Registration error:", err);
-        setError(err.message);
-      } else {
-        setError("알 수 없는 에러가 발생했습니다.");
-      }
+      const axiosError = err as AxiosError<{ message: string | string[] }>;
+      const errorMessage = Array.isArray(axiosError.response?.data?.message)
+        ? axiosError.response?.data?.message[0]
+        : axiosError.response?.data?.message || "회원가입 중 오류가 발생했습니다.";
+      setError(errorMessage);
     } finally {
-      setIsLoading(false); // 로딩 종료
+      setLoadingState(null);
     }
   };
 
@@ -61,89 +144,79 @@ const RegisterPage: React.FC = () => {
     <div className="centered-card-container px-4">
       <div className="w-full max-w-md">
         <div className="sm:mx-auto sm:w-full">
-          <img
-            className="mx-auto h-12 w-auto"
-            src="/RechoLogo.png"
-            alt="Recho Logo"
-          />
+          <img className="mx-auto h-12 w-auto" src="/RechoLogo.png" alt="Recho Logo" />
           <h2 className="mt-6 text-center text-subheadline text-[var(--color-brand-text-primary)]">
             회원가입
           </h2>
         </div>
 
-        {/* 폼 UI를 로그인 페이지와 통일 */}
         <div>
           <form className="space-y-4 mt-4" onSubmit={handleSubmit}>
             {/* 아이디 */}
-            <TextInput
-              id="id"
-              type="text"
-              required
-              value={id}
-              onChange={(e) => setId(e.target.value)}
-              placeholder="아이디를 입력해주세요"
-              icon={
-                <svg
-                  className="h-5 w-5 text-gray-400"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              }
-            />
+            <div className="flex items-center space-x-2">
+              <TextInput
+                id="id"
+                type="text"
+                required
+                value={id}
+                onChange={(e) => setId(e.target.value)}
+                placeholder="아이디 (영문, 숫자 조합)"
+                disabled={isIdVerified}
+              />
+              <SecondaryButton
+                type="button"
+                onClick={handleCheckId}
+                disabled={isIdVerified || loadingState !== null}
+                style={{ height: '34.8px', flexShrink: 0 }}
+              >
+                {loadingState === "id" ? "확인 중..." : "중복 확인"}
+              </SecondaryButton>
+            </div>
+
             {/* 닉네임 */}
-            <TextInput
-              id="username"
-              type="text"
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="닉네임을 입력해주세요"
-              icon={
-                <svg
-                  className="h-5 w-5 text-gray-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-              }
-            />
+            <div className="flex items-center space-x-2">
+              <TextInput
+                id="username"
+                type="text"
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="닉네임"
+                disabled={!isIdVerified || isUsernameVerified}
+              />
+              <SecondaryButton
+                type="button"
+                onClick={handleCheckUsername}
+                disabled={!isIdVerified || isUsernameVerified || loadingState !== null}
+                style={{ height: '34.8px', flexShrink: 0 }}
+              >
+                {loadingState === "username" ? "확인 중..." : "중복 확인"}
+              </SecondaryButton>
+            </div>
+
             {/* 이메일 */}
-            <TextInput
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="이메일을 입력해주세요"
-              icon={
-                <svg
-                  className="h-5 w-5 text-gray-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"
-                  />
-                </svg>
-              }
-            />
+            <div className="flex items-center space-x-2">
+              <TextInput
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="이메일"
+                disabled={!isUsernameVerified || isEmailVerified}
+              />
+              <SecondaryButton
+                type="button"
+                onClick={handleCheckEmail}
+                disabled={!isUsernameVerified || isEmailVerified || loadingState !== null}
+                style={{ height: '34.8px', flexShrink: 0 }}
+              >
+                {loadingState === "email" ? "확인 중..." : "중복 확인"}
+              </SecondaryButton>
+            </div>
+            
+            {isEmailVerified && <div className="border-t border-gray-200" />}
+
             {/* 비밀번호 */}
             <TextInput
               id="password"
@@ -151,21 +224,10 @@ const RegisterPage: React.FC = () => {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="비밀번호를 입력해주세요"
-              icon={
-                <svg
-                  className="h-5 w-5 text-gray-400"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              }
+              placeholder="비밀번호 (영문, 숫자, 특수문자 조합 8자 이상)"
+              disabled={!isEmailVerified}
             />
+
             {/* 비밀번호 확인 */}
             <TextInput
               id="confirmPassword"
@@ -173,27 +235,15 @@ const RegisterPage: React.FC = () => {
               required
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="비밀번호를 한번 더 입력해주세요"
-              icon={
-                <svg
-                  className="h-5 w-5 text-gray-400"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              }
+              placeholder="비밀번호 확인"
+              disabled={!isEmailVerified}
             />
 
             {error && <p className="text-center text-error">{error}</p>}
 
             <div className="pt-2">
-              <PrimaryButton type="submit" disabled={isLoading}>
-                {isLoading ? "가입하는 중..." : "가입하기"}
+              <PrimaryButton type="submit" disabled={!isEmailVerified || loadingState !== null}>
+                {loadingState === "submit" ? "가입하는 중..." : "가입하기"}
               </PrimaryButton>
             </div>
           </form>
@@ -201,10 +251,7 @@ const RegisterPage: React.FC = () => {
 
         <p className="mt-10 text-center text-caption text-[var(--color-brand-gray)]">
           이미 계정이 있으신가요?{" "}
-          <Link
-            to="/login"
-            className="text-navigation font-semibold text-[var(--color-brand-blue)] hover:opacity-80"
-          >
+          <Link to="/login" className="text-navigation font-semibold text-[var(--color-brand-blue)] hover:opacity-80">
             로그인 하기
           </Link>
         </p>

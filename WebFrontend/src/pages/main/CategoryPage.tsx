@@ -1,6 +1,6 @@
 // src/pages/main/CategoryPage.tsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import Layout from '@/components/layout/MainLayout';
 import CategoryIcon from '@/components/organisms/CategoryIcon';
@@ -18,6 +18,7 @@ const QuickAction: React.FC<{ icon: React.ReactNode; label: string; onClick?: ()
     </div>
 );
 const CategoryPage: React.FC = () => {
+    const location = useLocation();
     const navigate = useNavigate();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const handleGoToUsedProducts = () => navigate('/used-products');
@@ -31,9 +32,7 @@ const CategoryPage: React.FC = () => {
         closeModal();
     };
     return (
-        <Layout>
-            <h1>카테고리 목록</h1>
-
+        <Layout currentPath={location.pathname}>
             <CategoryIcon>
                 <QuickAction 
                     icon={<Icon name="vinyl" size={28} className="text-gray-600 transition-colors group-hover:text-brand-primary" />} 

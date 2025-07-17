@@ -1,10 +1,10 @@
 // src/components/atoms/icon/Icon.tsx
 
-import React from 'react';
-import { 
-  IoPaperPlaneOutline, 
-  IoChevronBack, 
-  IoExitOutline, 
+import React from "react";
+import {
+  IoPaperPlaneOutline,
+  IoChevronBack,
+  IoExitOutline,
   IoPersonAddOutline,
   IoHeartOutline,
   IoEllipsisHorizontalOutline,
@@ -30,10 +30,10 @@ import {
   IoMenuOutline,
   IoDisc,
   IoDiscOutline,
-  IoMusicalNotesOutline, 
-  IoStorefrontOutline, 
-  IoCalendarOutline, 
-  IoMegaphoneOutline, 
+  IoMusicalNotesOutline,
+  IoStorefrontOutline,
+  IoCalendarOutline,
+  IoMegaphoneOutline,
   IoImageOutline,
   IoNotificationsOutline,
   IoDocumentTextOutline,
@@ -44,12 +44,12 @@ import {
   IoOptionsOutline,
   IoChevronDownOutline,
   IoPlayCircle,
-} from 'react-icons/io5';
+} from "react-icons/io5";
 
 // 아이콘 이름을 키로, 실제 컴포넌트를 값으로 매핑합니다.
 const iconMap = {
   send: IoPaperPlaneOutline, // 전송
-  back: IoChevronBack, // 뒤로가기  
+  back: IoChevronBack, // 뒤로가기
   exit: IoExitOutline, // 나가기
   addUser: IoPersonAddOutline, // 초대
   like: IoHeartOutline, // 좋아요
@@ -58,8 +58,8 @@ const iconMap = {
   moreFill: IoEllipsisHorizontalSharp, // 더보기
   close: IoCloseOutline, // 닫기
   check: IoCheckmarkOutline, // 체크
-  delete: IoTrashOutline, // 삭제       
-  edit: IoPencilOutline, // 수정    
+  delete: IoTrashOutline, // 삭제
+  edit: IoPencilOutline, // 수정
   search: IoSearchOutline, // 검색
   plus: IoAddOutline, // 추가
   minus: IoRemoveOutline, // 제거
@@ -77,18 +77,18 @@ const iconMap = {
   menu: IoMenuOutline, // 메뉴
   fullVinyl: IoDisc, // 바이닐
   vinyl: IoDiscOutline, // 바이닐
-  music: IoMusicalNotesOutline,        // 음악 (합주모집)
-  store: IoStorefrontOutline,        // 상점 (악기거래)
-  calendar: IoCalendarOutline,         // 캘린더 (합주예약)
-  megaphone: IoMegaphoneOutline,       // 확성기 (공연홍보)
-  image: IoImageOutline,           // 이미지 (플레이스홀더)
-  notification: IoNotificationsOutline,// 알림
+  music: IoMusicalNotesOutline, // 음악 (합주모집)
+  store: IoStorefrontOutline, // 상점 (악기거래)
+  calendar: IoCalendarOutline, // 캘린더 (합주예약)
+  megaphone: IoMegaphoneOutline, // 확성기 (공연홍보)
+  image: IoImageOutline, // 이미지 (플레이스홀더)
+  notification: IoNotificationsOutline, // 알림
   memo: IoDocumentTextOutline, // 커뮤니티
   category: IoListOutline, // 카테고리
   camera: IoCameraOutline, // 카메라
   mapPin: IoLocationSharp, // 지도 핀
   options: IoOptionsOutline,
-  downArrow: IoChevronDownOutline,   // 드롭다운용 다운
+  downArrow: IoChevronDownOutline, // 드롭다운용 다운
   play: IoPlayCircle,
 };
 
@@ -99,7 +99,12 @@ interface IconProps extends React.SVGProps<SVGSVGElement> {
   className?: string;
 }
 
-const Icon: React.FC<IconProps> = ({ name, size = 24, className, ...props }) => {
+const Icon: React.FC<IconProps> = ({
+  name,
+  size = 24,
+  className,
+  ...props
+}) => {
   // name prop에 해당하는 아이콘 컴포넌트를 찾습니다.
   const IconComponent = iconMap[name];
 
@@ -108,8 +113,18 @@ const Icon: React.FC<IconProps> = ({ name, size = 24, className, ...props }) => 
     return null;
   }
 
+  // className을 그대로 사용 (기본 색상 없음)
+  const finalClassName = className || "";
+
   // 찾은 아이콘 컴포넌트를 props와 함께 렌더링합니다.
-  return <IconComponent size={size} className={className} {...props} cursor="pointer" />;
+  return (
+    <IconComponent
+      size={size}
+      className={finalClassName}
+      {...props}
+      cursor="pointer"
+    />
+  );
 };
 
 export default Icon;

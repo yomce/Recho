@@ -4,7 +4,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CommentsService } from './comments.service';
 import { CommentsController } from './comments.controller';
-import { Post } from 'src/community/entities/post.entity';
+import { Post } from 'src/community/posts/entities/post.entity';
 import { Video } from 'src/videos/entities';
 import { AuthModule } from 'src/auth/auth.module'; // Assuming you have an AuthModule
 import { NumberIdComment } from './entities/number-id-comment.entity';

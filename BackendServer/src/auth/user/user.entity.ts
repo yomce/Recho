@@ -11,7 +11,7 @@ import { Message } from '../../chat/entities/message.entity';
 import { UserRoom } from '../../chat/entities/user-room.entity';
 import { RecruitEnsemble } from 'src/ensemble/entities/recruit-ensemble.entity';
 import { NumberIdLike } from '../../likes/entities/number-id-like.entity';
-import { Post } from '../../community/entities/post.entity';
+import { Post } from '../../community/posts/entities/post.entity';
 import { ApplierEnsemble } from 'src/application/entities/applier-ensemble.entity';
 import { Video } from 'src/videos/entities';
 

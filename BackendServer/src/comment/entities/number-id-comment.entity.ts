@@ -8,16 +8,14 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  Index,
 } from 'typeorm';
 import { User } from '../../auth/user/user.entity';
 import { CONTENT_TYPE } from 'src/likes/dto/toggle-like.dto';
 
 @Entity('number_id_comment')
-@Index(['content_type', 'post_id']) // 스네이크 케이스 인덱스
 export class NumberIdComment {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn({ name: 'comment_id' })
+  commentId: number;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id', referencedColumnName: 'id' })

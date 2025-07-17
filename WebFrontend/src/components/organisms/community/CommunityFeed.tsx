@@ -90,6 +90,22 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({
             )}
           </div>
 
+          {/* 최신 댓글 미리보기 섹션 ⭐️ */}
+          {post.comments && post.comments.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-brand-frame space-y-2">
+              {post.comments.map((comment) => (
+                <div key={comment.commentId} className="flex items-center gap-2 text-footnote">
+                  <p className="text-brand-text-primary font-semibold">
+                    {comment.user.username}
+                  </p>
+                  <p className="text-brand-text-secondary truncate">
+                    {comment.content}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* 게시글 하단 정보 (좋아요, 댓글) */}
           <div className="flex items-center gap-4 mt-2 pt-2 border-t border-brand-frame">
             <div className="flex items-center gap-1 text-caption">

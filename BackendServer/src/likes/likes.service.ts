@@ -2,7 +2,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { Post } from 'src/community/entities/post.entity';
+import { Post } from 'src/community/posts/entities/post.entity';
 import { NumberIdLike } from './entities/number-id-like.entity';
 import { StringIdLike } from './entities/string-id-like.entity';
 import { CONTENT_TYPE, ToggleLikeDto } from './dto/toggle-like.dto';

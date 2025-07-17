@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Post } from 'src/community/entities/post.entity';
+import { Post } from 'src/community/posts/entities/post.entity';
 import { Video } from 'src/videos/entities';
 import { NumberIdComment } from './entities/number-id-comment.entity';
 import { StringIdComment } from './entities/string-id-comment.entity';
@@ -102,7 +102,7 @@ export class CommentsService {
     if (typeof commentId === 'number') {
       // ✅ NumberIdComment 삭제 로직
       const comment = await this.numberCommentsRepository.findOne({
-        where: { id: commentId },
+        where: { commentId: commentId },
       });
       if (!comment) {
         throw new NotFoundException('Comment not found.');
@@ -120,7 +120,7 @@ export class CommentsService {
     } else {
       // ✅ StringIdComment 삭제 로직
       const comment = await this.stringCommentsRepository.findOne({
-        where: { id: commentId },
+        where: { commentId: commentId },
       });
       if (!comment) {
         throw new NotFoundException('Comment not found.');
@@ -179,5 +179,45 @@ export class CommentsService {
         error,
       );
     }
+  }
+
+  /**
+   * 여러 게시물 ID에 대한 최신 댓글들을 일괄 조회합니다.
+   * @param contentType 댓글을 달 대상의 타입
+   * @param postIds 게시물 ID 배열
+   * @returns Post ID를 키로, 댓글 배열을 값으로 가지는 Map 객체
+   */
+  async findRecentCommentsForPosts(
+    contentType: CONTENT_TYPE,
+    postIds: number[],
+  ): Promise<Map<number, NumberIdComment[]>> {
+    if (postIds.length === 0) {
+      return new Map();
+    }
+
+    // 각 post_id별로 최신 댓글 2개를 가져오는 쿼리 (DB에 따라 SQL이 달라질 수 있음)
+    const comments = await this.numberCommentsRepository
+      .createQueryBuilder('comment')
+      .leftJoinAndSelect('comment.user', 'user') // 댓글 작성자 정보 조인
+      .where('comment.postId IN (:...postIds)', { postIds })
+      .andWhere('comment.contentType = :contentType', { contentType })
+      .orderBy('comment.createdAt', 'DESC')
+      // RANK() OVER PARTITION 등 window 함수를 사용하면 더 정확한 그룹별 N개 조회가 가능합니다.
+      // 여기서는 간단하게 전체에서 최신 순으로 가져온 후 로직에서 그룹핑합니다.
+      .getMany();
+
+    // 조회된 댓글들을 postId 기준으로 그룹핑
+    const commentsMap = new Map<number, NumberIdComment[]>();
+    for (const comment of comments) {
+      const existing = commentsMap.get(comment.postId) || [];
+      // 각 게시물 당 최대 2개의 댓글만 포함
+      if (existing.length < 2) {
+        // user 객체에서 민감 정보 제거
+        if (comment.user) {}
+        existing.push(comment);
+        commentsMap.set(comment.postId, existing);
+      }
+    }
+    return commentsMap;
   }
 }

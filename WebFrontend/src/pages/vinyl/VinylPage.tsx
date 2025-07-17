@@ -23,6 +23,10 @@ const VinylPage: React.FC = () => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // 안드로이드 터치 이벤트를 위한 상태
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
@@ -235,6 +239,32 @@ const VinylPage: React.FC = () => {
     setCurrentIndex(nextIndex);
   };
 
+  // 안드로이드용 네이티브 터치 이벤트 핸들러
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > DRAG_THRESHOLD;
+    const isRightSwipe = distance < -DRAG_THRESHOLD;
+
+    if (isLeftSwipe && currentIndex < videos.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    } else if (isRightSwipe && currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+    }
+
+    setTouchStart(null);
+    setTouchEnd(null);
+  };
+
   const isCurrentlyVisible = (index: number) => index === currentIndex;
 
   const getRotationAngle = (index: number) => {
@@ -260,6 +290,10 @@ const VinylPage: React.FC = () => {
         <motion.div
           onPan={handlePan}
           onPanEnd={handlePanEnd}
+          onPanStart={() => setIsDragging(true)}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           animate={controls}
           style={{ display: "flex", cursor: "grab" }}
         >

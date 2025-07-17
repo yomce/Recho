@@ -7,7 +7,7 @@ import axiosInstance from "../../services/axiosInstance";
 import { useAuthStore } from "../../stores/authStore";
 import PostLayout from "../../components/layout/PostLayout";
 import FloatingWriteButton from "../../components/atoms/button/FloatingWriteButton";
-import { togglePostLike } from "@/api";
+import { toggleNumberPostLike } from "@/api";
 import { CONTENT_TYPE } from "@/types/likes";
 import CommunityFeed from "@/components/organisms/community/CommunityFeed";
 import type { Post } from "@/types/post";
@@ -137,7 +137,7 @@ const CommunityFeedPage: React.FC = () => {
     }
 
     try {
-      await togglePostLike(CONTENT_TYPE.COMMUNITY, postId);
+      await toggleNumberPostLike(CONTENT_TYPE.COMMUNITY, postId);
       setPosts((currentPosts) =>
         currentPosts.map((p) => {
           if (p.postId === postId) {

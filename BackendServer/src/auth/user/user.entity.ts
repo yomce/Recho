@@ -10,7 +10,7 @@ import { Exclude } from 'class-transformer';
 import { Message } from '../../chat/entities/message.entity';
 import { UserRoom } from '../../chat/entities/user-room.entity';
 import { RecruitEnsemble } from 'src/ensemble/entities/recruit-ensemble.entity';
-import { Like } from '../../likes/entities/like.entity';
+import { NumberIdLike } from '../../stringIdLikes/entities/numberIdLike.entity';
 import { Post } from '../../community/entities/post.entity';
 import { ApplierEnsemble } from 'src/application/entities/applier-ensemble.entity';
 import { Video } from 'src/videos/entities';
@@ -111,8 +111,8 @@ export class User {
   @OneToMany(() => ApplierEnsemble, (applierEnsemble) => applierEnsemble.user)
   applierEnsemble: ApplierEnsemble[];
 
-  @OneToMany(() => Like, (like) => like.user)
-  likes: Like[];
+  @OneToMany(() => NumberIdLike, (like) => like.user)
+  likes: NumberIdLike[];
 
   @OneToMany(() => Post, (post) => post.user)
   posts: Post[]; // 👈 2. 이 코드를 추가하여 관계를 설정합니다.**

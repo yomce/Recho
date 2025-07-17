@@ -7,7 +7,7 @@ import PostLayout from '../../components/layout/PostLayout';
 import FloatingWriteButton from '../../components/atoms/button/FloatingWriteButton';
 import Icon from '../../components/atoms/icon/Icon';
 import { type Post } from './CommunityFeedPage'; // 타입 재사용
-import { togglePostLike } from '@/api';
+import { toggleNumberPostLike } from '@/api';
 import { CONTENT_TYPE } from '@/types/likes';
 
 // --- 유틸리티 및 API 함수 ---
@@ -80,7 +80,7 @@ const CategoryPostListPage: React.FC = () => {
         )
     );
     try {
-        await togglePostLike(CONTENT_TYPE.COMMUNITY, postId);
+        await toggleNumberPostLike(CONTENT_TYPE.COMMUNITY, postId);
     } catch (error) {
         alert('오류가 발생했습니다.');
     }

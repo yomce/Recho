@@ -10,7 +10,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Comment } from './comment.entity';
-import { Like } from '../../likes/entities/like.entity';
+import { NumberIdLike } from '../../stringIdLikes/entities/numberIdLike.entity';
 import { User } from '../../auth/user/user.entity'; // ✅ User 엔티티 임포트
 
 @Entity('posts')
@@ -59,7 +59,4 @@ export class Post {
 
   @OneToMany(() => Comment, (comment) => comment.post)
   comments: Comment[];
-
-  @OneToMany(() => Like, (like) => like.post)
-  likes: Like[];
 }

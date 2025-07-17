@@ -6,5 +6,5 @@ export enum CONTENT_TYPE {
 
 export interface LikePayload {
   contentType: CONTENT_TYPE;
-  postId: number;
+  postId: number | string;
 }

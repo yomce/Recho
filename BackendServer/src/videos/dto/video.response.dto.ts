@@ -33,7 +33,7 @@ export class VideoResponseDto {
     responseDto.timelinePosition = video.timelinePosition;
     responseDto.resultsVideoKeys = video.results_video_key;
     responseDto.thumbnailKey = video.thumbnail_key;
-    responseDto.likeCount = video.like_count;
+    responseDto.likeCount = video.likeCount;
     responseDto.commentCount = video.comment_count;
     responseDto.createAt = video.created_at;
     responseDto.videoUrl = video.video_url;

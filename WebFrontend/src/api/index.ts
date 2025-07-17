@@ -16,6 +16,8 @@ export const getVideos = async (page = 1, limit = 10): Promise<Video[]> => {
         limit,
       },
     });
+    console.log("video response");
+    console.log(response.data);
     return response.data;
   } catch (error) {
     console.error("Error fetching videos:", error);
@@ -35,19 +37,25 @@ export const getVideoById = async (videoId: string): Promise<Video> => {
   return response.data;
 };
 
-export const togglePostLike = async (contentType: CONTENT_TYPE, postId: number): Promise<{ liked: boolean; likeCount: number }> => {
+export const toggleNumberPostLike = async (contentType: CONTENT_TYPE, postId: number): Promise<{ liked: boolean; likeCount: number }> => {
   const newLikePayload : LikePayload = {
     contentType: contentType,
     postId: postId
   }
-  console.log('payload of like');
-  console.log(newLikePayload);
 
   const response = await axiosInstance.post(`/likes`, newLikePayload);
   return response.data;
 };
 
+export const toggleStringPostLike = async (contentType: CONTENT_TYPE, postId: string): Promise<{ liked: boolean; likeCount: number }> => {
+  const newLikePayload : LikePayload = {
+    contentType: contentType,
+    postId: postId
+  }
 
+  const response = await axiosInstance.post(`/likes`, newLikePayload);
+  return response.data;
+};
 
 export const fetchPromotions = async (): Promise<Promotion[]> => {
   try {

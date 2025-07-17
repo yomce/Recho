@@ -3,17 +3,17 @@
 import React from 'react';
 import IconWithCount from './ItemWithCount';
 import IconWithNoCount from './ItemWithNoCount';
+import type { Video } from '@/types/video';
 
 interface VideoActionPanelProps {
-  likes: number;
-  comments: number;
+  video: Video;
   divHeight: number;
   onClickLike?: () => void;
   onClickComments?: () => void;
   onClickShare?: () => void;
 }
 
-const VinylRightLayout: React.FC<VideoActionPanelProps> = ({ likes, comments, divHeight, onClickLike, onClickComments, onClickShare }) => {
+const VinylRightLayout: React.FC<VideoActionPanelProps> = ({ video, divHeight, onClickLike, onClickComments, onClickShare }) => {
   return (
     <div
       style={{
@@ -28,9 +28,9 @@ const VinylRightLayout: React.FC<VideoActionPanelProps> = ({ likes, comments, di
       }}
     >
 
-      <IconWithCount iconName="vinyl" count={likes} onClick={onClickLike}/>
-      <IconWithCount iconName="chat" count={comments} onClick={onClickComments}/>
-      <IconWithNoCount iconName="share" count={likes} onClick={onClickShare}/>
+      <IconWithCount iconName="vinyl" iconSecondColor='pink' count={video.likeCount} onClick={onClickLike} video={video}/>
+      <IconWithCount iconName="chat" count={video.commentCount} onClick={onClickComments}/>
+      <IconWithNoCount iconName="share" onClick={onClickShare}/>
     </div>
   );
 };

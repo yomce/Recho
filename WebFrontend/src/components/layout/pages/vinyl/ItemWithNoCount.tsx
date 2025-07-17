@@ -6,7 +6,6 @@ import type Icon from '@/components/atoms/icon/Icon';
 
 interface IconWithNoCountProps {
   iconName: React.ComponentProps<typeof Icon>['name'];
-  count: number;
   iconSize?: number;
   style?: React.CSSProperties;
   onClick?: () => void;

@@ -15,8 +15,7 @@ import {
 import { LikesService } from './likes.service';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
-import { CreateLikeDto } from './dto/like.dto';
-import { CONTENT_TYPE } from './entities/like.entity';
+import { CONTENT_TYPE, ToggleLikeDto } from './dto/toggleLike.dto';
 
 @Controller('likes')
 @UseGuards(AuthGuard('jwt')) // 컨트롤러 레벨에서 JWT 가드를 적용하여 모든 엔드포인트에 인증 요구
@@ -39,14 +38,14 @@ export class LikesController {
   /**
    * 좋아요 토글 (누르지 않았다면 추가, 눌렀다면 취소)
    * @param req 요청 객체 (user.id가 담겨 있다고 가정)
-   * @param createLikeDto 좋아요 대상 정보 (contentType, postId)
+   * @param toggleLikeDto 좋아요 대상 정보 (contentType, postId)
    * @returns 토글 후 좋아요 상태 { liked: boolean }
    */
   @Post() // POST /likes/toggle
   @HttpCode(HttpStatus.OK) // 200 OK
-  async toggle(@Req() req: Request, @Body() createLikeDto: CreateLikeDto) {
+  async toggle(@Req() req: Request, @Body() toggleLikeDto: ToggleLikeDto) {
     const userId = this.getUserId(req);
-    const isLiked = await this.likesService.toggleLike(userId, createLikeDto);
+    const isLiked = await this.likesService.toggleLike(userId, toggleLikeDto);
     return { liked: isLiked };
   }
 

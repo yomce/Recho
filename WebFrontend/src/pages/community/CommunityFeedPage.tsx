@@ -8,7 +8,7 @@ import { useAuthStore } from '../../stores/authStore';
 import Icon from '../../components/atoms/icon/Icon';
 import PostLayout from '../../components/layout/PostLayout';
 import FloatingWriteButton from '../../components/atoms/button/FloatingWriteButton';
-import { togglePostLike } from '@/api';
+import { toggleNumberPostLike } from '@/api';
 import { CONTENT_TYPE } from '@/types/likes';
 
 // --- 타입 정의 ---
@@ -122,7 +122,7 @@ const CommunityFeedPage: React.FC = () => {
     }
     
     try {
-        await togglePostLike(CONTENT_TYPE.COMMUNITY, postId);
+        await toggleNumberPostLike(CONTENT_TYPE.COMMUNITY, postId);
         setPosts(currentPosts => 
         currentPosts.map(p => {
             if (p.postId === postId) {
@@ -140,8 +140,6 @@ const CommunityFeedPage: React.FC = () => {
     } catch (error) {
         alert('오류가 발생했습니다.');
     }
-
-    
   };
 
   return (

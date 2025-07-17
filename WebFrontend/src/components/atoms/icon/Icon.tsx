@@ -28,6 +28,7 @@ import {
   IoPersonOutline,
   IoSettingsOutline,
   IoMenuOutline,
+  IoDisc,
   IoDiscOutline,
   IoMusicalNotesOutline, 
   IoStorefrontOutline, 
@@ -74,6 +75,7 @@ const iconMap = {
   user: IoPersonOutline, // 사용자
   settings: IoSettingsOutline, // 설정
   menu: IoMenuOutline, // 메뉴
+  fullVinyl: IoDisc, // 바이닐
   vinyl: IoDiscOutline, // 바이닐
   music: IoMusicalNotesOutline,        // 음악 (합주모집)
   store: IoStorefrontOutline,        // 상점 (악기거래)

@@ -53,7 +53,7 @@ export class Video {
   likeCount: number;
 
   @Column({ default: 0 })
-  comment_count: number;
+  commentCount: number;
 
   @CreateDateColumn()
   created_at: Date;

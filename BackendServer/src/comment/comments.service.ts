@@ -79,14 +79,12 @@ export class CommentsService {
     };
 
     if (typeof postId === 'number') {
-      // ✅ postId가 number임을 타입스크립트가 아는 상태에서 옵션과 함께 호출
       return this.numberCommentsRepository.find({
         ...commonOptions,
         where: { contentType, postId }, // postId는 number 타입
       });
     }
     if (typeof postId === 'string') {
-      // ✅ postId가 string임을 타입스크립트가 아는 상태에서 옵션과 함께 호출
       return this.stringCommentsRepository.find({
         ...commonOptions,
         where: { contentType, postId }, // postId는 string 타입

@@ -2,14 +2,15 @@ import React, { useEffect, useRef, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
 import { useNavigate } from "react-router-dom"; // react-router-dom에서 useNavigate를 가져옵니다.
 import PrimaryButton from "@/components/atoms/button/PrimaryButton";
-import type { User } from '@/stores/authStore';
-import VinylRightLayout from '@/components/layout/pages/vinyl/VinylRightLayout';
-import ProfileWithName from '@/components/atoms/button/ProfileWithName';
+import type { User } from "@/stores/authStore";
+import VinylRightLayout from "@/components/layout/pages/vinyl/VinylRightLayout";
+import ProfileWithName from "@/components/atoms/button/ProfileWithName";
+import IconButton from "@/components/atoms/button/IconButton";
 
 interface VinylContentsProps {
   videoOwner: User;
   videoId: string;
-  size: {width: number, height: number};
+  size: { width: number; height: number };
   likes: number;
   comments: number;
   videoInfo: string;
@@ -34,7 +35,7 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
 
   useEffect(() => {
     const updateHeight = () => {
-      const height = props.size.width * 16 / 9;
+      const height = (props.size.width * 16) / 9;
       setDivHeight(height);
     };
 
@@ -73,47 +74,47 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
   };
 
   const handleShare = async (videoId: string) => {
-  if (!videoId) return;
+    if (!videoId) return;
 
-  const shareData = {
-    title: "VINYL에서 멋진 합주를 발견했어요!",
-    text: "이 비디오를 함께 감상해보세요.",
-    // 현재 웹사이트 주소와 비디오 ID를 조합해 전체 URL을 만듭니다.
-    url: `${window.location.origin}/vinyl/${videoId}`,
-  };
+    const shareData = {
+      title: "VINYL에서 멋진 합주를 발견했어요!",
+      text: "이 비디오를 함께 감상해보세요.",
+      // 현재 웹사이트 주소와 비디오 ID를 조합해 전체 URL을 만듭니다.
+      url: `${window.location.origin}/vinyl/${videoId}`,
+    };
 
-  // 1. React Native WebView 환경인지 확인
-  if (window.ReactNativeWebView) {
-    window.ReactNativeWebView.postMessage(
-      JSON.stringify({
-        type: "share", // RN에서 메시지를 식별할 타입
-        payload: shareData,
-      })
-    );
-    return;
-  }
-
-  // 2. 브라우저가 Web Share API를 지원하는지 확인
-  if (navigator.share) {
-    try {
-      await navigator.share(shareData);
-      // 성공 로그 (필요시 사용)
-      // console.log("콘텐츠가 성공적으로 공유되었습니다.");
-    } catch (error) {
-      console.error("공유 중 오류가 발생했습니다:", error);
+    // 1. React Native WebView 환경인지 확인
+    if (window.ReactNativeWebView) {
+      window.ReactNativeWebView.postMessage(
+        JSON.stringify({
+          type: "share", // RN에서 메시지를 식별할 타입
+          payload: shareData,
+        })
+      );
+      return;
     }
-    return;
-  }
 
-  // 3. 위 방법들을 사용할 수 없을 때 클립보드에 복사 (폴백)
-  try {
-    await navigator.clipboard.writeText(shareData.url);
-    alert("비디오 링크가 클립보드에 복사되었습니다!");
-  } catch (error) {
-    console.error("클립보드 복사에 실패했습니다:", error);
-    alert("링크 복사에 실패했습니다. 수동으로 복사해주세요.");
-  }
-};
+    // 2. 브라우저가 Web Share API를 지원하는지 확인
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        // 성공 로그 (필요시 사용)
+        // console.log("콘텐츠가 성공적으로 공유되었습니다.");
+      } catch (error) {
+        console.error("공유 중 오류가 발생했습니다:", error);
+      }
+      return;
+    }
+
+    // 3. 위 방법들을 사용할 수 없을 때 클립보드에 복사 (폴백)
+    try {
+      await navigator.clipboard.writeText(shareData.url);
+      alert("비디오 링크가 클립보드에 복사되었습니다!");
+    } catch (error) {
+      console.error("클립보드 복사에 실패했습니다:", error);
+      alert("링크 복사에 실패했습니다. 수동으로 복사해주세요.");
+    }
+  };
 
   useEffect(() => {
     if (videoRef.current) {
@@ -169,7 +170,9 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
       animate={controls}
     >
       {/* --- 뒤로가기 버튼 추가 --- */}
-      <button
+      <IconButton
+        iconName="back"
+        iconSize={24}
         onClick={() => navigate(-1)}
         style={{
           position: "absolute",
@@ -187,12 +190,10 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
           color: "white",
           fontSize: "24px",
           cursor: "pointer",
-          paddingBottom: '4px', // 아이콘 수직 정렬을 위한 미세 조정
+          paddingBottom: "4px", // 아이콘 수직 정렬을 위한 미세 조정
         }}
         aria-label="Go back"
-      >
-        &lt;
-      </button>
+      />
 
       <video
         ref={videoRef}
@@ -208,21 +209,19 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
         onClick={handleVideoClick}
       />
 
-        {/* --- 왼쪽 위 프로필 및 구독 버튼 추가 --- */}
-    <div
-      style={{
-        position: "absolute",
-        top: `${divHeight * 0.84}px`,
-        left: "24px",
-        display: "flex",
-        alignItems: "center",
-        gap: "8px", // 아이콘과 버튼 사이 간격
-        zIndex: 10,
-      }}
-    >
-        <ProfileWithName
-          user={props.videoOwner}
-        />
+      {/* --- 왼쪽 위 프로필 및 구독 버튼 추가 --- */}
+      <div
+        style={{
+          position: "absolute",
+          top: `${divHeight * 0.84}px`,
+          left: "24px",
+          display: "flex",
+          alignItems: "center",
+          gap: "8px", // 아이콘과 버튼 사이 간격
+          zIndex: 10,
+        }}
+      >
+        <ProfileWithName user={props.videoOwner} />
       </div>
 
       <VinylRightLayout

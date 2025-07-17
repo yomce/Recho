@@ -22,7 +22,12 @@ const VinylPage: React.FC = () => {
   const controls = useAnimation();
   const [videos, setVideos] = useState<Video[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // --- 추가된 상태 변수들 ---
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  // ---
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
@@ -59,41 +64,56 @@ const VinylPage: React.FC = () => {
   }, [isLoading]);
 
   useEffect(() => {
-    const fetchVideos = async () => {
-      // 5초 후 강제로 로딩을 종료하는 타임아웃 설정
-      loadingTimeoutRef.current = setTimeout(() => {
-        setIsLoading(false);
-      }, 1);
-
+    const fetchInitialVideos = async () => {
+      setIsLoading(true);
       try {
-        const videoData = await getVideos(1, 10);
-
-        console.log("vinyl page video");
-        console.log(videoData);
-
-        if (videoData.length === 0) {
-          // 비디오가 없으면 바로 로딩 종료 및 타임아웃 해제
-          if (loadingTimeoutRef.current)
-            clearTimeout(loadingTimeoutRef.current);
-          setIsLoading(false);
+        const videoData = await getVideos(1, 5); // 초기에 5개만 로드
+        if (videoData.length < 5) {
+          setHasMore(false);
         }
         setVideos(videoData);
       } catch (error) {
         console.error("비디오 로딩 중 오류 발생:", error);
-        if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
-        setIsLoading(false); // 에러 발생 시에도 로딩 종료 및 타임아웃 해제
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchVideos();
-
-    // 컴포넌트 언마운트 시 타임아웃 해제
-    return () => {
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current);
-      }
-    };
+    fetchInitialVideos();
   }, []);
+
+  const loadMoreVideos = async () => {
+    if (isFetchingMore || !hasMore) return;
+
+    setIsFetchingMore(true);
+    try {
+      const nextPage = page + 1;
+      const newVideos = await getVideos(nextPage, 5);
+      if (newVideos.length > 0) {
+        setVideos((prevVideos) => [...prevVideos, ...newVideos]);
+        setPage(nextPage);
+      } else {
+        setHasMore(false); // 더 이상 비디오가 없음을 표시
+      }
+    } catch (error) {
+      console.error("추가 비디오 로딩 중 오류 발생:", error);
+    } finally {
+      setIsFetchingMore(false);
+    }
+  };
+
+  useEffect(() => {
+    // 현재 인덱스가 5의 배수이고(인덱스 4, 9, 14...), 현재 로드된 비디오의 마지막에 도달했을 때
+    if (
+      (currentIndex + 1) % 5 === 0 &&
+      currentIndex > 0 &&
+      currentIndex + 1 === videos.length &&
+      hasMore &&
+      !isFetchingMore
+    ) {
+      loadMoreVideos();
+    }
+  }, [currentIndex, videos.length, hasMore, isFetchingMore]);
 
   useEffect(() => {
     if (!isLoading && containerRef.current) {
@@ -111,10 +131,7 @@ const VinylPage: React.FC = () => {
   }, [currentIndex, containerWidth, controls, isDragging]);
 
   const handleFirstVideoReady = () => {
-    // 비디오가 준비되면 타임아웃을 해제하고 로딩 상태를 false로 변경
-    if (loadingTimeoutRef.current) {
-      clearTimeout(loadingTimeoutRef.current);
-    }
+    // 비디오가 준비되면 로딩 상태를 false로 변경
     setIsLoading(false);
   };
 

@@ -7,6 +7,9 @@ import { NumberIdLike } from './entities/number-id-like.entity';
 import { StringIdLike } from './entities/string-id-like.entity';
 import { CONTENT_TYPE, ToggleLikeDto } from './dto/toggle-like.dto';
 import { Video } from 'src/videos/entities';
+import { NotificationsService } from 'src/notifications/notifications.service';
+import { NotificationType } from 'src/notifications/entities/notification.entity';
+import { User } from 'src/auth/user/user.entity';
 
 @Injectable()
 export class LikesService {
@@ -19,6 +22,9 @@ export class LikesService {
     private readonly postsRepository: Repository<Post>,
     @InjectRepository(Video)
     private readonly videoRepository: Repository<Video>,
+    private readonly notificationsService: NotificationsService,
+    @InjectRepository(User)
+    private readonly usersRepository: Repository<User>,
   ) {}
 
   /**
@@ -75,6 +81,18 @@ export class LikesService {
       });
       await this.numberLikesRepository.save(newLike);
       isLiked = true;
+
+      if (contentType === CONTENT_TYPE.COMMUNITY) {
+        const post = await this.postsRepository.findOne({ where: { postId }, relations: ['user'] });
+        const sender = await this.usersRepository.findOneBy({ id: userId });
+        if (post?.user && sender && post.user.id !== userId) {
+          await this.notificationsService.createAndSendNotification(
+            post.user, sender, NotificationType.LIKE,
+            `${sender.username}님이 회원님의 게시물을 좋아합니다.`,
+            `/community/post/${post.postId}`,
+          );
+        }
+      }
     }
 
     // 해당 콘텐츠의 좋아요 카운트 업데이트
@@ -107,6 +125,18 @@ export class LikesService {
       });
       await this.stringLikesRepository.save(newLike);
       isLiked = true;
+      
+      if (contentType === CONTENT_TYPE.VINYL) {
+        const video = await this.videoRepository.findOne({ where: { id: postId }, relations: ['user'] });
+        const sender = await this.usersRepository.findOneBy({ id: userId });
+        if (video?.user && sender && video.user.id !== userId) {
+          await this.notificationsService.createAndSendNotification(
+            video.user, sender, NotificationType.LIKE,
+            `${sender.username}님이 회원님의 영상을 좋아합니다.`,
+            `/shorts/${video.id}`,
+          );
+        }
+      }
     }
 
     await this.updateContentLikesCount(contentType, postId, isLiked ? 1 : -1);

@@ -23,11 +23,9 @@ const VinylPage: React.FC = () => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // --- 추가된 상태 변수들 ---
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
-  // ---
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
@@ -275,18 +273,14 @@ const VinylPage: React.FC = () => {
                 }}
               >
                 <VinylContents
-                  videoOwner={video.user}
-                  videoId={video.id}
+                  currentVideo={video}
                   size={globalSize}
-                  likes={video.likeCount}
-                  comments={video.commentCount}
-                  videoInfo={video.id}
-                  videoSrc={video.videoUrl}
                   isVisible={isCurrentlyVisible(index)}
                   rotationAngle={getRotationAngle(index)}
                   depth={video.depth}
                   onStartEnsemble={() => openModal(video.id)}
                   onVideoReady={index === 0 ? handleFirstVideoReady : undefined}
+                  setVideos={setVideos}
                 />
               </div>
             );

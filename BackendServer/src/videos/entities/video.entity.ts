@@ -49,8 +49,8 @@ export class Video {
   @Column()
   thumbnail_key: string;
 
-  @Column({ default: 0 })
-  like_count: number;
+  @Column({ name: 'like_count', default: 0 })
+  likeCount: number;
 
   @Column({ default: 0 })
   comment_count: number;

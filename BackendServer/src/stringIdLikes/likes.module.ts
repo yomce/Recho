@@ -1,16 +1,16 @@
 // src/likes/likes.module.ts
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LikesService } from './likes.service';
 import { LikesController } from './likes.controller';
-import { Like } from './entities/like.entity';
-import { PostsModule } from 'src/community/posts/posts.module';
+import { NumberIdLike } from './entities/numberIdLike.entity';
 import { Post } from 'src/community/entities/post.entity';
+import { StringIdLike } from './entities/stringIdLike.entity';
+import { Video } from 'src/videos/entities';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Like, Post]), // Like 엔티티를 이 모듈에서 사용할 수 있도록 등록
-    forwardRef(() => PostsModule),
+    TypeOrmModule.forFeature([NumberIdLike, StringIdLike, Post, Video]), // Like 엔티티를 이 모듈에서 사용할 수 있도록 등록,
   ],
   providers: [LikesService],
   controllers: [LikesController],

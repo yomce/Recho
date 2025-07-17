@@ -1,15 +1,9 @@
 import { Entity, PrimaryColumn, ManyToOne, JoinColumn, Column } from 'typeorm';
 import { User } from '../../auth/user/user.entity';
-import { Post } from '../../community/entities/post.entity';
+import { CONTENT_TYPE } from '../dto/toggleLike.dto';
 
-export enum CONTENT_TYPE {
-  VINYL = 'vinyl',
-  COMMUNITY = 'community',
-  COMMENT = 'comment',
-}
-
-@Entity('like')
-export class Like {
+@Entity('numberIdLike')
+export class NumberIdLike {
   @ManyToOne(() => User, (user) => user.likes, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId', referencedColumnName: 'id' })
   user: User;
@@ -23,8 +17,4 @@ export class Like {
 
   @PrimaryColumn()
   postId: number;
-
-  @ManyToOne(() => Post, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'postId', referencedColumnName: 'postId' })
-  post: Post;
 }

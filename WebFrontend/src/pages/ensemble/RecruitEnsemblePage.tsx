@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axiosInstance from '@/services/axiosInstance';
 import PostLayout from '@/components/layout/PostLayout';
 import SwiperTabs from '@/components/organisms/PostNavigationTabs';
-import PostCard from '@/components/atoms/card/PostCard';
+import EnsembleCard from '@/components/layout/pages/ensemble/EnsembleCard';
 import FilterButton from '@/components/atoms/button/FilterButton';
 import { toast } from 'react-hot-toast';
 import FilterToast from '@/components/atoms/button/FilterToast';
@@ -129,19 +129,7 @@ const RecruitEnsembleListPage: React.FC = () => {
           contents={[isFiltered ? filteredData : items, [], []]}
           loading={loading}
           renderItem={(item) => (
-            <PostCard
-              key={item.postId}
-              id={item.postId}
-              title={item.title}
-              eventDate={item.eventDate.slice(0,10)}
-              recruitStatus={item.recruitStatus}
-              totalRecruitCnt={item.totalRecruitCnt}
-              skillLevel={item.skillLevel}
-              cardClassName="h-[140px] items-center mt-2"
-              textWrapperClassName="flex flex-col items-start justify-center w-full p-4 ml-2 gap-1"
-              imagePosition="left"
-              imageWrapperClassName="min-h-[140px] min-w-[140px] rounded-[20px]"
-            />
+            <EnsembleCard posts={[item]} /> // 한 개짜리 배열로 넘겨도 문제 없음
           )}
         />
         {/* --- 로딩 스피너 --- */}

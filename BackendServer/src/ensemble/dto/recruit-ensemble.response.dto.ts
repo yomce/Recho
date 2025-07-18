@@ -6,6 +6,7 @@ import {
   SKILL_LEVEL,
 } from '../entities/recruit-ensemble.entity';
 import { Location } from 'src/map/entities/location.entity';
+import { User } from 'src/auth/user/user.entity';
 
 export class RecruitEnsembleResponseDto {
   postId: number;
@@ -20,6 +21,11 @@ export class RecruitEnsembleResponseDto {
   viewCount: number;
   sessionEnsemble: SessionEnsemble[];
   applierEnsemble: ApplierEnsemble[];
+
+  user: {
+    username: string;
+    profileUrl: string | null;
+  };
 
   static from(recruitEnsemble: RecruitEnsemble): RecruitEnsembleResponseDto {
     const dto = new RecruitEnsembleResponseDto();
@@ -37,6 +43,10 @@ export class RecruitEnsembleResponseDto {
     dto.sessionEnsemble = recruitEnsemble.sessionEnsemble;
     dto.applierEnsemble = recruitEnsemble.applierEnsemble;
 
+    dto.user = {
+      username: recruitEnsemble.user.username,
+      profileUrl: recruitEnsemble.user.profileUrl,
+    };
     return dto;
   }
 }

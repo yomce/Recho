@@ -64,6 +64,7 @@ export class EnsembleService {
       .createQueryBuilder('recruitEnsemble')
       .leftJoin('recruitEnsemble.location', 'location')
       .leftJoin('recruitEnsemble.sessionEnsemble', 'sessionEnsemble')
+      .leftJoin('recruitEnsemble.user', 'user')
       .select(['recruitEnsemble.postId', 'recruitEnsemble.createdAt']);
 
     // 필터 조건 추가
@@ -131,6 +132,7 @@ export class EnsembleService {
       .createQueryBuilder('recruitEnsemble')
       .leftJoinAndSelect('recruitEnsemble.location', 'location')
       .leftJoinAndSelect('recruitEnsemble.sessionEnsemble', 'sessionEnsemble')
+      .leftJoinAndSelect('recruitEnsemble.user', 'user')
       .whereInIds(postIds)
       .orderBy('recruitEnsemble.createdAt', 'DESC')
       .addOrderBy('recruitEnsemble.postId', 'DESC')
@@ -148,7 +150,7 @@ export class EnsembleService {
           }
         : undefined;
     return {
-      data,
+      data : results.map(RecruitEnsembleResponseDto.from),
       nextCursor,
       hasNextPage,
     };

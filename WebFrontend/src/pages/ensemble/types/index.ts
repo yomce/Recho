@@ -31,6 +31,7 @@ export interface SessionEnsemble {
   sessionId: number;
   instrument: string;
   recruitCount: number;
+  nowRecruitCount: number;
 }
 
 export interface RecruitEnsemble {

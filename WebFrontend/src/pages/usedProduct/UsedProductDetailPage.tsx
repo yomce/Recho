@@ -137,6 +137,13 @@ const UsedProductDetailPage: React.FC = () => {
     </div>
   );
 
+  // toast unmount 시 close. DOM 에서 토스트가 내려가면 호출됩니다
+  useEffect(() => {
+    return () => {
+      toast.dismiss("status-toast");
+    };
+  }, []);
+
   if (loading) return renderStatusMessage('로딩 중...');
   if (error) return renderStatusMessage(error, true);
   if (!product) return renderStatusMessage('상품 정보가 없습니다.', true);

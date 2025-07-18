@@ -3,65 +3,49 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useAuthStore } from "../../stores/authStore";
-import axiosInstance from "../../services/axiosInstance"; // 인증이 필요한 요청을 위한 Axios 인스턴스
+import axiosInstance from "../../services/axiosInstance";
 
 // Layout 및 컴포넌트 import
 import PostLayout from "@/components/layout/PostLayout";
 import CommentItem from "@/components/molecules/comment/CommentItem";
 import MessageInputForm from "@/components/atoms/input/MessageInput";
-import Icon from "@/components/atoms/icon/Icon";
+import type { Post } from '@/types/post';
+import type { Comment } from '@/types/comment';
+import { CONTENT_TYPE } from '@/types/likes';
 
 // --- 타입 정의 ---
-// User 타입은 authStore 또는 user.entity.ts를 기반으로 정의합니다.
-interface User {
-  id: string;
-  username: string;
-}
 
-// 게시물 타입
-interface Post {
-  id: number;
-  userId: string;
-  author: string;
-  category: string;
-  title: string;
-  content: string;
-  createdAt: string;
-}
-
-// 댓글 타입 (백엔드와 일치하도록 author를 User 객체로 변경)
-interface Comment {
-  id: number;
-  content: string;
-  createdAt: string;
-  author: User;
-}
-
-// 댓글 생성 시 API로 보낼 데이터 타입
+// 댓글 생성 시 API로 보낼 데이터 타입 (contentType 추가)
 interface CreateCommentData {
+  contentType: 'community'; // 또는 다른 콘텐츠 타입
   postId: number;
   content: string;
 }
 
 // --- API 통신 함수 ---
-// 인증이 필요한 요청은 모두 axiosInstance를 사용합니다.
+
+/**
+ * ID로 단일 게시물을 조회합니다. (댓글이 포함되어 반환됩니다)
+ */
 const fetchPostById = async (id: string): Promise<Post> => {
   const response = await axiosInstance.get(`/posts/${id}`);
   return response.data;
 };
 
-const fetchCommentsByPostId = async (postId: string): Promise<Comment[]> => {
-  const response = await axiosInstance.get(`/comments/post/${postId}`);
-  return response.data;
-};
-
+/**
+ * 새로운 댓글을 생성합니다.
+ */
 const createComment = async (data: CreateCommentData): Promise<Comment> => {
   const response = await axiosInstance.post("/comments", data);
   return response.data;
 };
 
-const deleteComment = async (id: number): Promise<void> => {
-  await axiosInstance.delete(`/comments/${id}`);
+/**
+ * 댓글을 삭제합니다. (ID 타입에 따라 동적으로 경로를 설정합니다)
+ */
+const deleteComment = async (id: number | string): Promise<void> => {
+  const path = typeof id === 'number' ? 'number' : 'string';
+  await axiosInstance.delete(`/comments/${path}/${id}`);
 };
 
 // --- 날짜 포맷 함수 ---
@@ -86,7 +70,7 @@ const PostDetailPage: React.FC = () => {
 
   const commentsEndRef = useRef<HTMLDivElement>(null);
 
-  // 데이터 로딩 로직
+  // [수정됨] 데이터 로딩 로직
   useEffect(() => {
     if (!id) {
       setError("유효하지 않은 게시물 ID입니다.");
@@ -96,12 +80,10 @@ const PostDetailPage: React.FC = () => {
     const loadData = async () => {
       try {
         setIsLoading(true);
-        const [postData, commentsData] = await Promise.all([
-          fetchPostById(id),
-          fetchCommentsByPostId(id),
-        ]);
+        // fetchPostById 호출 한 번으로 게시물과 댓글 데이터를 모두 가져옵니다.
+        const postData = await fetchPostById(id);
         setPost(postData);
-        setComments(commentsData);
+        setComments(postData.comments || []); // postData에 포함된 댓글을 상태로 설정
       } catch (err) {
         setError("데이터를 불러오는 데 실패했습니다.");
         console.error(err);
@@ -112,7 +94,7 @@ const PostDetailPage: React.FC = () => {
     loadData();
   }, [id]);
 
-  // 댓글 등록 로직
+  // [수정됨] 댓글 등록 로직
   const handleCommentSubmit = async (commentText: string) => {
     if (!commentText.trim() || !currentUser || !id) {
       alert("댓글 내용을 입력해주세요.");
@@ -120,7 +102,9 @@ const PostDetailPage: React.FC = () => {
     }
 
     try {
+      // API 요청 시 contentType을 포함시킵니다.
       const createdComment = await createComment({
+        contentType: CONTENT_TYPE.COMMUNITY,
         postId: parseInt(id, 10),
         content: commentText,
       });
@@ -135,13 +119,13 @@ const PostDetailPage: React.FC = () => {
     }
   };
 
-  // 댓글 삭제 로직
-  const handleDeleteComment = async (commentId: number) => {
+  // [수정됨] 댓글 삭제 로직 (id 타입을 number | string으로 확장)
+  const handleDeleteComment = async (commentId: number | string) => {
     if (window.confirm("정말로 이 댓글을 삭제하시겠습니까?")) {
       try {
         await deleteComment(commentId);
         setComments((prevComments) =>
-          prevComments.filter((comment) => comment.id !== commentId)
+          prevComments.filter((comment) => comment.commentId !== commentId)
         );
         alert("댓글이 삭제되었습니다.");
       } catch (error) {
@@ -158,7 +142,6 @@ const PostDetailPage: React.FC = () => {
 
   return (
     <PostLayout bgClassName="text-left bg-brand-frame bg-brand-inverse">
-      {/* --- 1. 스크롤이 필요한 모든 콘텐츠를 이 div 안에 배치합니다. --- */}
       <div className="p-4">
         {/* 게시글 헤더 */}
         <header className="mb-4 pb-4 border-b border-brand-frame">
@@ -177,21 +160,21 @@ const PostDetailPage: React.FC = () => {
         {/* 게시글 본문 */}
         <main
           className="py-8 text-body text-brand-text-secondary"
-          dangerouslySetInnerHTML={{
-            __html: post.content.replace(/\n/g, "<br />"),
-          }}
-        />
+        >
+          <pre className="whitespace-pre-wrap break-words text-left">
+            {post.content}
+          </pre>
+        </main>
 
         {/* 댓글 섹션 */}
         <section className="mt-10 pt-6 border-t border-brand-frame border-top-1">
           <h2 className="text-body text-brand-text-primary mb-2 flex items-center gap-2">
             <span>댓글 ({comments.length})</span>
           </h2>
-          {/* 댓글 목록 */}
           <div className="space-y-2 mb-4">
             {comments.map((comment) => (
               <CommentItem
-                key={comment.id}
+                key={comment.commentId}
                 comment={comment}
                 currentUser={currentUser}
                 onDelete={handleDeleteComment}
@@ -201,9 +184,7 @@ const PostDetailPage: React.FC = () => {
             <div ref={commentsEndRef} />
           </div>
         </section>
-      </div>{" "}
-      {/* <--- 1. 스크롤 영역 div가 여기서 끝납니다. */}
-      {/* --- 2. 하단에 고정될 댓글 입력 폼은 스크롤 영역 밖에 배치합니다. --- */}
+      </div>
       {currentUser && <MessageInputForm onSubmit={handleCommentSubmit} />}
     </PostLayout>
   );

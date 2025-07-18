@@ -40,6 +40,8 @@ const fetchPosts = async (
   }
 
   const response = await axiosInstance.get("/posts", { params });
+  console.log('fetch post');
+  console.log(response.data);
   return response.data;
 };
 

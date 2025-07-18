@@ -1,20 +1,21 @@
+// src/likes/entities/number_id_like.entity.ts
+
 import { Entity, PrimaryColumn, ManyToOne, JoinColumn, Column } from 'typeorm';
 import { User } from '../../auth/user/user.entity';
-import { CONTENT_TYPE } from '../dto/toggleLike.dto';
+import { CONTENT_TYPE } from '../dto/toggle-like.dto';
 
-@Entity('numberIdLike')
+@Entity('number_id_like')
 export class NumberIdLike {
   @ManyToOne(() => User, (user) => user.likes, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId', referencedColumnName: 'id' })
+  @JoinColumn({ name: 'user_id', referencedColumnName: 'id' })
   user: User;
 
-  @PrimaryColumn()
+  @PrimaryColumn({ name: 'user_id' })
   userId: string;
 
-  // 'article', 'photo', 'video', 'comment' 등 좋아요 대상의 타입
-  @Column()
+  @Column({ name: 'content_type' })
   contentType: CONTENT_TYPE;
 
-  @PrimaryColumn()
+  @PrimaryColumn({ name: 'post_id' })
   postId: number;
 }

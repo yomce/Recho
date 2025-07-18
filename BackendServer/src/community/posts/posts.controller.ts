@@ -15,7 +15,7 @@ import {
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
-import { Post as PostEntity } from '../entities/post.entity';
+import { Post as PostEntity } from './entities/post.entity';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
 import { PaginationQueryPostDto } from './dto/pagination-query-post.dto';
@@ -54,7 +54,7 @@ export class PostsController {
       );
       throw new ForbiddenException('사용자 인증 정보가 없습니다.');
     }
-    return this.postsService.findAllPostsWithLikeStatus(
+    return this.postsService.findAllPostsWithDetails(
       category,
       req.user,
       paginationQuery,
@@ -62,8 +62,12 @@ export class PostsController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number): Promise<PostEntity> {
-    return this.postsService.findOne(id);
+  @UseGuards(AuthGuard('jwt'))
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: Request,
+  ): Promise<PostEntity> {
+    return this.postsService.findOne(id, req.user);
   }
 
   @Delete(':id')

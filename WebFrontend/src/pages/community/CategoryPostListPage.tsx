@@ -7,10 +7,11 @@ import PostLayout from "../../components/layout/PostLayout";
 import FloatingWriteButton from "../../components/atoms/button/FloatingWriteButton";
 import Icon from "../../components/atoms/icon/Icon";
 import IconButton from "../../components/atoms/button/IconButton";
-import { type Post } from "./CommunityFeedPage"; // 타입 재사용
 import { toggleNumberPostLike } from "@/api";
 import { CONTENT_TYPE } from "@/types/likes";
 import { DEFAULT_IMAGES } from "@/constants/images";
+import type { Post } from '@/types/post';
+
 
 // --- 유틸리티 및 API 함수 ---
 const fetchPostsByCategory = async (category: string): Promise<Post[]> => {
@@ -125,7 +126,7 @@ const CategoryPostListPage: React.FC = () => {
                 />
                 <div className="flex-1">
                   <p className="text-caption-bold text-brand-text-primary">
-                    {post.author}
+                    {post.user.username}
                   </p>
                   <p className="text-footnote text-brand-gray">
                     {timeSince(new Date(post.createdAt))}

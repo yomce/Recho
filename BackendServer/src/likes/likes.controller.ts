@@ -15,7 +15,7 @@ import {
 import { LikesService } from './likes.service';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
-import { CONTENT_TYPE, ToggleLikeDto } from './dto/toggleLike.dto';
+import { CONTENT_TYPE, ToggleLikeDto } from './dto/toggle-like.dto';
 
 @Controller('likes')
 @UseGuards(AuthGuard('jwt')) // 컨트롤러 레벨에서 JWT 가드를 적용하여 모든 엔드포인트에 인증 요구

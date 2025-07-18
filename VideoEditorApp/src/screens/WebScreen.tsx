@@ -1,5 +1,5 @@
-import React, { useRef } from 'react';
-import { SafeAreaView, StyleSheet, Alert } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { SafeAreaView, StyleSheet, Alert, BackHandler } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { type StackNavigationProp } from '@react-navigation/stack';
@@ -13,13 +13,35 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isErrorWithCode, pick, types } from '@react-native-documents/picker';
 import axiosInstance from '../api/axiosInstance';
 import { WEB_FRONTEND_URL } from '@env';
+import { WebViewNavigationEvent } from 'react-native-webview/lib/RNCWebViewNativeComponent';
 
 type WebScreenRouteProp = RouteProp<RootStackParamList, 'Web'>;
 
 const WebScreen: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const route = useRoute<WebScreenRouteProp>();
-  const webviewRef = useRef<WebView>(null);
+  const webViewRef = useRef<WebView>(null);
+  const [canGoBack, setCanGoBack] = useState<boolean>(false);
+
+  const onNavigationStateChange = (event: WebViewNavigationEvent) => {
+    setCanGoBack(event.canGoBack);
+  };
+
+  useEffect(() => {
+    const handleBackPress = () => {
+      if (canGoBack && webViewRef.current) {
+        webViewRef.current.goBack();
+        return true; 
+      }
+      return false;
+    };
+    
+    // BackHandler 이벤트 리스너를 등록합니다.
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', handleBackPress);
+    
+    // 컴포넌트가 언마운트될 때 리스너를 제거합니다.
+    return () => backHandler.remove();
+  }, [canGoBack]);
 
   const webFrontendUrl = route.params?.url ?? WEB_FRONTEND_URL;
 
@@ -86,9 +108,9 @@ const WebScreen: React.FC = () => {
 
   const sendTokenToWebView = async () => {
     const token = await AsyncStorage.getItem('accessToken');
-    if (token && webviewRef.current) {
+    if (token && webViewRef.current) {
       const message = JSON.stringify({ type: 'SET_TOKEN', token });
-      webviewRef.current.postMessage(message);
+      webViewRef.current.postMessage(message);
     }
   };
 
@@ -260,8 +282,9 @@ const WebScreen: React.FC = () => {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: '#FFFFFF' }]}>
       <WebView
-        ref={webviewRef}
+        ref={webViewRef}
         source={{ uri: webFrontendUrl }}
+        onNavigationStateChange={onNavigationStateChange}
         style={styles.webview}
         javaScriptEnabled={true}
         domStorageEnabled={true}

@@ -32,9 +32,11 @@ const Navigation: React.FC = () => {
   const handleCreateVideo = () => {
     const accessToken = localStorage.getItem("accessToken");
     if (window.ReactNativeWebView) {
-      window.ReactNativeWebView.postMessage(
-        JSON.stringify({ type: "CREATE_VIDEO", token: accessToken }),
-      );
+      // CREATE_VIDEO 메시지 전송 비활성화
+      console.log("CREATE_VIDEO 메시지 전송 비활성화됨");
+      // window.ReactNativeWebView.postMessage(
+      //   JSON.stringify({ type: "CREATE_VIDEO", token: accessToken }),
+      // );
     } else {
       toast.error("비디오 생성은 앱에서만 가능합니다.");
     }

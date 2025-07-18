@@ -25,7 +25,7 @@ const AppNavigator = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Web"
+        // initialRouteName="Web"
         screenOptions={{
           // headerStyle은 View 컴포넌트에 직접 적용되므로 styled-components로 감싸서 사용
           headerStyle: {

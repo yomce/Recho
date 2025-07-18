@@ -2,19 +2,18 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import IconButton from "../atoms/button/IconButton";
+import NotificationIcon from "./NotificationIcon";
 
 interface HeaderProps {
   currentPath: string;
   onCategoryClick?: () => void;
   onSearchClick?: () => void;
-  onNotificationClick?: () => void;
 }
 
 const PostHeader: React.FC<HeaderProps> = ({
   currentPath,
   onCategoryClick,
   onSearchClick,
-  onNotificationClick,
 }) => {
   const navigate = useNavigate();
   const isCategoryActive = currentPath === "/category";
@@ -71,14 +70,11 @@ const PostHeader: React.FC<HeaderProps> = ({
         style={{ width: 56 }}
       >
         <IconButton iconName="search" iconSize={24} onClick={onSearchClick} />
-        <IconButton
-          iconName="notification"
-          iconSize={24}
-          onClick={onNotificationClick}
-        />
+        <NotificationIcon />
       </div>
     </header>
   );
 };
 
 export default PostHeader;
+

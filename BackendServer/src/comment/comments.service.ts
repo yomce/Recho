@@ -64,19 +64,24 @@ export class CommentsService {
     await this.updateContentCommentsCount(dto.contentType, dto.postId, 1);
 
     if (dto.contentType === CONTENT_TYPE.COMMUNITY) {
-      const post = await this.postsRepository.findOne({ where: { postId: dto.postId }, relations: ['user'] });
+      const post = await this.postsRepository.findOne({
+        where: { postId: dto.postId },
+        relations: ['user'],
+      });
       const sender = await this.usersRepository.findOneBy({ id: userId });
 
       if (post?.user && sender && post.user.id !== userId) {
-          await this.notificationsService.createAndSendNotification(
-              post.user, sender, NotificationType.COMMENT,
-              `${sender.username}님이 회원님의 게시물에 댓글을 남겼습니다.`,
-              `/community/post/${post.postId}`
-          );
+        await this.notificationsService.createAndSendNotification(
+          post.user,
+          sender,
+          NotificationType.COMMENT,
+          `${sender.username}님이 회원님의 게시물에 댓글을 남겼습니다.`,
+          `/community/${post.postId}`,
+        );
       }
+      return newComment;
+    }
   }
-  return newComment;
-}
 
   private async createStringIdComment(
     userId: string,
@@ -87,16 +92,21 @@ export class CommentsService {
     await this.updateContentCommentsCount(dto.contentType, dto.postId, 1);
 
     if (dto.contentType === CONTENT_TYPE.VINYL) {
-        const video = await this.videoRepository.findOne({ where: { id: dto.postId }, relations: ['user'] });
-        const sender = await this.usersRepository.findOneBy({ id: userId });
+      const video = await this.videoRepository.findOne({
+        where: { id: dto.postId },
+        relations: ['user'],
+      });
+      const sender = await this.usersRepository.findOneBy({ id: userId });
 
-        if (video?.user && sender && video.user.id !== userId) {
-            await this.notificationsService.createAndSendNotification(
-                video.user, sender, NotificationType.COMMENT,
-                `${sender.username}님이 회원님의 영상에 댓글을 남겼습니다.`,
-                `/shorts/${video.id}`
-            );
-        }
+      if (video?.user && sender && video.user.id !== userId) {
+        await this.notificationsService.createAndSendNotification(
+          video.user,
+          sender,
+          NotificationType.COMMENT,
+          `${sender.username}님이 회원님의 영상에 댓글을 남겼습니다.`,
+          `/vinyl/${video.id}`,
+        );
+      }
     }
     return newComment;
   }

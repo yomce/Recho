@@ -31,7 +31,7 @@ export class LikesService {
    * [Public] 클라이언트가 호출하는 유일한 '좋아요' 토글 엔드포인트입니다.
    * postId의 타입에 따라 적절한 내부 토글 메서드를 호출합니다.
    * @param userId - 좋아요를 누른 사용자의 ID
-   * @param toggleLikeDto - 좋아요 대상 정보 (contentType, postId)
+   * @param toggleLikeDto - 좋아요 대상 정보 (contentType, postId)/
    * @returns 좋아요가 추가되면 true, 삭제되면 false를 반환합니다.
    */
   async toggleLike(
@@ -83,13 +83,18 @@ export class LikesService {
       isLiked = true;
 
       if (contentType === CONTENT_TYPE.COMMUNITY) {
-        const post = await this.postsRepository.findOne({ where: { postId }, relations: ['user'] });
+        const post = await this.postsRepository.findOne({
+          where: { postId },
+          relations: ['user'],
+        });
         const sender = await this.usersRepository.findOneBy({ id: userId });
         if (post?.user && sender && post.user.id !== userId) {
           await this.notificationsService.createAndSendNotification(
-            post.user, sender, NotificationType.LIKE,
+            post.user,
+            sender,
+            NotificationType.LIKE,
             `${sender.username}님이 회원님의 게시물을 좋아합니다.`,
-            `/community/post/${post.postId}`,
+            `/community/${post.postId}`,
           );
         }
       }
@@ -125,15 +130,20 @@ export class LikesService {
       });
       await this.stringLikesRepository.save(newLike);
       isLiked = true;
-      
+
       if (contentType === CONTENT_TYPE.VINYL) {
-        const video = await this.videoRepository.findOne({ where: { id: postId }, relations: ['user'] });
+        const video = await this.videoRepository.findOne({
+          where: { id: postId },
+          relations: ['user'],
+        });
         const sender = await this.usersRepository.findOneBy({ id: userId });
         if (video?.user && sender && video.user.id !== userId) {
           await this.notificationsService.createAndSendNotification(
-            video.user, sender, NotificationType.LIKE,
+            video.user,
+            sender,
+            NotificationType.LIKE,
             `${sender.username}님이 회원님의 영상을 좋아합니다.`,
-            `/shorts/${video.id}`,
+            `/vinyl/${video.id}`,
           );
         }
       }

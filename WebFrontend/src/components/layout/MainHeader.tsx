@@ -2,20 +2,19 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import IconButton from '../atoms/button/IconButton';
+import NotificationIcon from './NotificationIcon';
 
 // Header가 받을 props 타입을 정의
 interface HeaderProps {
     currentPath: string;
     onCategoryClick?: () => void;
     onSearchClick?: () => void;
-    onNotificationClick?: () => void;
   }
   
   const MainHeader: React.FC<HeaderProps> = ({
     currentPath,
     onCategoryClick,
     onSearchClick,
-    onNotificationClick,
   }) => {
     const navigate = useNavigate();
     
@@ -57,7 +56,7 @@ interface HeaderProps {
       {/* 오른쪽 아이콘들 */}
       <div className="flex flex-shrink-0 items-center justify-end gap-4" style={{ width: '56px' }}>
         <IconButton iconName="search" iconSize={24} onClick={onSearchClick} />
-        <IconButton iconName="notification" iconSize={24} onClick={onNotificationClick} />
+        <NotificationIcon />
       </div>
     </header>
   );

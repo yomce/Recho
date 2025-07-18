@@ -16,9 +16,10 @@ import MessageInput from "@/components/molecules/message/MessageInput";
 import Modal from "@/components/molecules/modal/Modal";
 import Icon from "@/components/atoms/icon/Icon";
 import Avatar from "@/components/atoms/avatar/Avatar";
-import { IoChevronDown } from 'react-icons/io5';
+import { IoChevronDown } from "react-icons/io5";
 // Axios 인스턴스 import
 import axiosInstance from "../../services/axiosInstance";
+import { DEFAULT_IMAGES } from "@/constants/images";
 
 // 시간 포맷팅을 위한 간단한 헬퍼 함수 (컴포넌트 외부에 추가)
 const formatTime = (dateString: string | Date) => {
@@ -67,27 +68,30 @@ const ChatRoomPage: React.FC = () => {
   const [inviteeId, setInviteeId] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
   const dragX = useMotionValue(0);
-  const [showScrollToBottom, setShowScrollToBottom] = useState(false); 
-  
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const handleScroll = () => {
     const container = scrollContainerRef.current;
     // 스크롤이 맨 위로 올라갔고, 로딩 중이 아니며, 더 불러올 메시지가 있을 때
-    if(container){
-      const isScrolledUp = container.scrollHeight - container.scrollTop - container.clientHeight > 100;
+    if (container) {
+      const isScrolledUp =
+        container.scrollHeight - container.scrollTop - container.clientHeight >
+        100;
       setShowScrollToBottom(isScrolledUp); // 상태 업데이트
 
       if (container && container.scrollTop === 0 && !isLoadingMore && hasMore) {
-      // 이전 스크롤 높이를 기록
-      const prevScrollHeight = container.scrollHeight;
-      
-      loadMoreMessages().then(() => {
-        // 비동기 로딩 후 스크롤 위치 조정
-        if (scrollContainerRef.current) {
-          const newScrollHeight = scrollContainerRef.current.scrollHeight;
-          scrollContainerRef.current.scrollTop = newScrollHeight - prevScrollHeight;
-        }
-      });
+        // 이전 스크롤 높이를 기록
+        const prevScrollHeight = container.scrollHeight;
+
+        loadMoreMessages().then(() => {
+          // 비동기 로딩 후 스크롤 위치 조정
+          if (scrollContainerRef.current) {
+            const newScrollHeight = scrollContainerRef.current.scrollHeight;
+            scrollContainerRef.current.scrollTop =
+              newScrollHeight - prevScrollHeight;
+          }
+        });
       }
     }
   };
@@ -131,7 +135,8 @@ const ChatRoomPage: React.FC = () => {
   }, [messages]);
 
   useEffect(() => {
-    if (!isLoadingMore) { // 추가 로딩 시에는 맨 아래로 가지 않도록 함
+    if (!isLoadingMore) {
+      // 추가 로딩 시에는 맨 아래로 가지 않도록 함
       chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages.length, isLoadingMore]);
@@ -195,12 +200,7 @@ const ChatRoomPage: React.FC = () => {
           disabled={!chatPartner.id}
         >
           <Avatar
-            src={
-              chatPartner.profileUrl ||
-              `https://placehold.co/32x32/e9ecef/495057?text=${chatPartner.username?.charAt(
-                0
-              )}`
-            }
+            src={chatPartner.profileUrl || DEFAULT_IMAGES.PROFILE}
             alt={chatPartner.username}
             size={32}
           />
@@ -264,12 +264,7 @@ const ChatRoomPage: React.FC = () => {
                   // 상대방이 보낸 메시지
                   <div className="flex items-end gap-2">
                     <Avatar
-                      src={
-                        msg.sender?.profileUrl ||
-                        `https://placehold.co/32x32/e9ecef/495057?text=${msg.sender?.username.charAt(
-                          0
-                        )}`
-                      }
+                      src={msg.sender?.profileUrl || DEFAULT_IMAGES.PROFILE}
                       alt={msg.sender?.username}
                     />
                     <div className="flex flex-col">
@@ -291,7 +286,9 @@ const ChatRoomPage: React.FC = () => {
         <div ref={chatEndRef} />
         {showScrollToBottom && (
           <button
-            onClick={() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })}
+            onClick={() =>
+              chatEndRef.current?.scrollIntoView({ behavior: "smooth" })
+            }
             className="absolute bottom-5 right-5 bg-blue-500 text-white rounded-full p-2 shadow-lg hover:bg-blue-600 focus:outline-none"
             aria-label="Scroll to bottom"
           >

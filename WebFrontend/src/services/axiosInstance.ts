@@ -80,6 +80,11 @@ axiosInstance.interceptors.response.use(
           });
       }
 
+    if (originalRequest.url === "auth/login") {
+      console.log("로그인 실패로 인한 401 에러입니다. 토큰 재발급을 시도하지 않습니다.");
+      return Promise.reject(error);
+    }
+
       originalRequest._retry = true;
       isRefreshing = true;
 

@@ -19,8 +19,7 @@ const VideoContainer = styled.View`
   border-radius: 8px;
   overflow: hidden;
   background-color: #333333;
-  width: 100%;
-  height: 100%;
+  aspect-ratio: 16 / 9; /* 16:9 화면 비율 유지 */
 `;
 
 const StyledVideo = styled(Video)<ReactVideoSourceProperties>`

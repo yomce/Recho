@@ -751,22 +751,31 @@ const VideoEditScreen: React.FC<{
     const trackEndTimes = trimmers.map(t => {
       const clipDuration = t.endTime - t.startTime;
       const trackEndTime = t.timelinePosition + clipDuration;
-      
+
       // timelinePosition이 음수인 경우, 실제 비디오의 끝점을 올바르게 계산
       if (t.timelinePosition < 0) {
         // 음수 timelinePosition을 보정하여 실제 끝점 계산
         return Math.max(trackEndTime, t.endTime);
       }
-      
+
       return trackEndTime;
     });
 
     let maxStart = Math.max(...trackStartTimes);
     let minEnd = Math.min(...trackEndTimes);
 
-    // [추가] 계산된 값에 임계값 적용
-    maxStart = Math.max(startPointThreshold, maxStart); // 시작점은 임계값보다 작을 수 없음
-    minEnd = Math.min(endPointThreshold, minEnd); // 끝점은 임계값을 넘을 수 없음
+    // [수정] 시작점 임계값 적용
+    maxStart = Math.max(startPointThreshold, maxStart);
+
+    // [수정] 엔드포인트 임계점을 스타트 포인트 임계점부터 가장 긴 트랙의 길이까지의 거리로 계산
+    const longestTrackDuration = Math.max(
+      ...trimmers.map(t => t.endTime - t.startTime),
+    );
+    const calculatedEndPointThreshold =
+      startPointThreshold + longestTrackDuration;
+
+    // 계산된 엔드포인트 임계점과 실제 트랙들의 끝점 중 더 작은 값 사용
+    minEnd = Math.min(calculatedEndPointThreshold, minEnd);
 
     // 계산된 시작점이 현재 시작점보다 앞서는 경우, 수동 설정을 존중하여 덮어쓰지 않음
     if (maxStart > globalStartTime) {
@@ -783,7 +792,6 @@ const VideoEditScreen: React.FC<{
     globalStartTime,
     globalEndTime,
     startPointThreshold,
-    endPointThreshold,
   ]);
 
   // =================================================================================

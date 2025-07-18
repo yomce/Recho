@@ -323,8 +323,8 @@ const WebScreen: React.FC = () => {
           break;
         }
         case 'CREATE_VIDEO':
-          // '새 비디오 만들기' 버튼 클릭 시
-          navigation.navigate('Home');
+          // '새 비디오 만들기' 버튼 클릭 시 - 무시
+          console.log('CREATE_VIDEO 메시지 무시됨');
           break;
         case 'CREATE_VIDEO_FROM_GALLERY':
           // '갤러리에서 영상 선택' 버튼 클릭 시

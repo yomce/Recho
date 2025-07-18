@@ -15,6 +15,7 @@ import Modal from "@/components/molecules/modal/Modal";
 import { useAuthStore } from "@/stores/authStore";
 import { toast } from "react-hot-toast";
 import { AxiosError } from "axios"; // AxiosError 타입 import
+import type { Video } from '@/types/video';
 
 // 타입 정의
 interface UserProfile {
@@ -38,7 +39,7 @@ const UserPage: React.FC = () => {
 
   const [user, setUser] = useState<UserProfile | null>(null);
   const [thumbnails, setThumbnails] = useState<
-    { id: string; thumbnailUrl: string }[]
+    { id: string; linkId: string; thumbnailUrl: string }[]
   >([]);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isVinylModalOpen, setIsVinylModalOpen] = useState(false);
@@ -77,15 +78,16 @@ const UserPage: React.FC = () => {
     const fetchUserData = async () => {
       setLoading(true);
       try {
-        const [userResponse, thumbnailsResponse] = await Promise.all([
+        const [userResponse, videosResponse] = await Promise.all([
           axiosInstance.get<UserProfile>(`users/${id}`),
-          axiosInstance.get<string[]>(`videos/thumbnails?id=${id}`),
+          axiosInstance.get<Video[]>(`videos/user/${id}`),
         ]);
         setUser(userResponse.data);
-        const formattedThumbnails = thumbnailsResponse.data.map(
-          (url, index) => ({
+        console.log(videosResponse.data);
+        const formattedThumbnails = videosResponse.data.map((video, index) => ({
             id: `thumb-${index}`,
-            thumbnailUrl: url,
+            linkId: video.id,
+            thumbnailUrl: video.thumbnail_url
           })
         );
 

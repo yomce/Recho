@@ -29,6 +29,14 @@ export class VideosController {
     return this.videosService.getThumbnailsByUser(id);
   }
 
+  @Get('user/:id')
+  async getVideoByUser(@Param('id') id: string) {
+    if (!id) {
+      throw new NotFoundException('User not found');
+    }
+    return this.videosService.getVideosByUser(id);
+  }
+
   @Get()
   @UseGuards(AuthGuard('jwt'))
   async getVideos(

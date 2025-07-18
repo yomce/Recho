@@ -77,6 +77,47 @@ export class VideosService {
     );
   }
 
+  async getVideosByUser(id: string): Promise<Video[]> {
+    const user = await this.userService.findById(id);
+
+    if (!user) {
+      throw new NotFoundException(`User with ID "${id}" not found`);
+    }
+
+    const videos = await this.videoRepository.find({
+      where: { user: { id: id } },
+    });
+
+    const signedVideos = await Promise.all(
+      videos.map(async (video) => {
+        const [videoUrl, thumbnailUrl] = await Promise.all([
+          getSignedUrl(
+            this.s3,
+            new GetObjectCommand({
+              Bucket: this.configService.get('AWS_S3_BUCKET'),
+              Key: video.results_video_key,
+            }),
+            { expiresIn: 3600 },
+          ),
+          getSignedUrl(
+            this.s3,
+            new GetObjectCommand({
+              Bucket: this.configService.get('AWS_S3_BUCKET'),
+              Key: video.thumbnail_key,
+            }),
+            { expiresIn: 3600 },
+          ),
+        ]);
+        video.video_url = videoUrl;
+        video.thumbnail_url = thumbnailUrl;
+
+        return video;
+      }),
+    );
+
+    return signedVideos;
+  }
+
   async getVideos(
     page: number,
     limit: number,
@@ -130,7 +171,9 @@ export class VideosService {
             { expiresIn: 3600 },
           ),
         ]);
-        return { ...video, video_url: videoUrl, thumbnail_url: thumbnailUrl };
+        video.video_url = videoUrl;
+        video.thumbnail_url = thumbnailUrl;
+        return video;
       }),
     );
 

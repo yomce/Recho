@@ -8,10 +8,16 @@ import "swiper/css";
 
 import Icon from "../atoms/icon/Icon";
 
+interface ContentDataType {
+  id: string;
+  linkId?: string;
+  thumbnailUrl: string;
+}
+
 interface ProfileContentTabsProps {
-  shorts: { id: string; thumbnailUrl: string }[];
-  usedProducts: { id: string; thumbnailUrl: string }[];
-  posts: { id: string; thumbnailUrl: string }[];
+  shorts: ContentDataType[];
+  usedProducts: ContentDataType[];
+  posts: ContentDataType[];
   onVinylCreateClick?: () => void;
 }
 
@@ -28,7 +34,7 @@ const ProfileContentTabs: React.FC<ProfileContentTabsProps> = ({
   const [activeIndex, setActiveIndex] = useState(0);
 
   // 각 탭에 맞는 컨텐츠 데이터와 생성 페이지 링크
-  const contentData = [shorts, usedProducts, posts];
+  const contentData: ContentDataType[][] = [shorts, usedProducts, posts];
   const createLinks = [
     "/vinyl/create",
     "/used-products/create",
@@ -86,6 +92,11 @@ const ProfileContentTabs: React.FC<ProfileContentTabsProps> = ({
                 <div
                   key={item.id}
                   className="aspect-square cursor-pointer bg-gray-100 "
+                  onClick={() => {
+                    if (item.linkId) {
+                      navigate(`/vinyl/${item.linkId}`); // navigate는 react-router-dom의 useNavigate() 훅입니다.
+                    }
+                  }}
                 >
                   <img
                     src={item.thumbnailUrl}

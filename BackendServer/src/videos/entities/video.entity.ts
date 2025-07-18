@@ -1,3 +1,4 @@
+import { Exclude } from 'class-transformer';
 import { User } from 'src/auth/user/user.entity';
 import {
   Entity,
@@ -40,12 +41,15 @@ export class Video {
   @Column({ type: 'float', default: 0 })
   timelinePosition: number;
 
+  @Exclude()
   @Column()
   results_video_key: string;
 
+  @Exclude()
   @Column()
   source_video_key: string;
 
+  @Exclude()
   @Column()
   thumbnail_key: string;
 

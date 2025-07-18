@@ -208,26 +208,11 @@ const VideoEditScreen: React.FC<{
 
   // [추가] parentStartTime이 변경될 때마다 플레이 헤드와 전역 시작 시간을 업데이트
   useEffect(() => {
-    console.log('[VideoEditScreen] parentStartTime:', parentStartTime);
-    console.log('[VideoEditScreen] serverVideos:', serverVideos);
-
     if (parentStartTime > 0) {
-      console.log(
-        '[VideoEditScreen] Setting globalStartTime and timelinePosition to:',
-        parentStartTime,
-      );
       setGlobalStartTime(parentStartTime);
       setTimelinePosition(parentStartTime);
     }
   }, [parentStartTime, serverVideos]);
-
-  // [추가] timelinePosition 상태 변화 추적
-  useEffect(() => {
-    console.log(
-      '[VideoEditScreen] timelinePosition changed to:',
-      timelinePosition,
-    );
-  }, [timelinePosition]);
 
   // 비디오 처리 로직을 커스텀 훅으로 분리
   const { isProcessing, uploading, startVideoProcessing } = useVideoProcessor();
@@ -506,10 +491,6 @@ const VideoEditScreen: React.FC<{
 
   // [추가 -> 수정] 타임라인 위치 변경 핸들러 (useCallback으로 최적화)
   const handleTimelinePositionChange = useCallback((time: number) => {
-    console.log(
-      '[VideoEditScreen] handleTimelinePositionChange called with:',
-      time,
-    );
     setTimelinePosition(time);
   }, []);
 
@@ -567,7 +548,7 @@ const VideoEditScreen: React.FC<{
       duration: video.endTime - video.startTime, // 부모 트랙의 실제 길이는 구간 길이
       startTime: video.startTime,
       endTime: video.endTime,
-      timelinePosition: video.timelinePosition,
+      timelinePosition: video.timelinePosition, // [수정] 원래 값 그대로 사용
       isPlaying: false,
       isMuted: false,
       volume: 1,
@@ -625,7 +606,7 @@ const VideoEditScreen: React.FC<{
       initialPlaybackStates[t.id] = { currentTime: 0, isPaused: true };
     });
     setPlaybackStates(initialPlaybackStates);
-  }, [serverVideos, localVideos, route.params]);
+  }, [serverVideos, localVideos, route.params, parentStartTime]);
 
   useEffect(() => {
     // 모든 비디오의 duration이 로드되었는지 확인
@@ -875,9 +856,13 @@ const VideoEditScreen: React.FC<{
     } else {
       const isOutside =
         timelinePosition < globalStartTime || timelinePosition >= globalEndTime;
+
       if (isOutside) {
-        setSeekAndPlayRequest(globalStartTime);
+        // 엔드포인트에 있으면 시작점으로 이동 후 재생
+        handleGlobalSeekToStart();
+        setPlayRequest(true);
       } else {
+        // 현재 위치에서 재생
         setPlayRequest(true);
       }
     }
@@ -889,6 +874,7 @@ const VideoEditScreen: React.FC<{
     globalStartTime,
     globalEndTime,
     preSoloMuteStates,
+    handleGlobalSeekToStart,
   ]);
 
   // 비디오 재생 중 주기적으로 호출 (onProgress)
@@ -910,25 +896,68 @@ const VideoEditScreen: React.FC<{
       const currentTimelinePosition =
         trimmer.timelinePosition + timeSinceClipStart;
 
-      const finalPosition = Math.min(
-        currentTimelinePosition,
-        endPointThresholdRef.current,
-      );
+      // [수정] 엔드포인트 임계값 계산
       const stopThreshold = Math.min(
         globalEndTimeRef.current,
         endPointThresholdRef.current,
       );
       const epsilon = 0.05;
 
-      if (stopThreshold > 0 && finalPosition >= stopThreshold - epsilon) {
+      // 음수 값 처리
+      if (currentTimelinePosition < 0) {
+        return;
+      }
+
+      // [수정] 엔드포인트에 도달했는지 확인
+      if (
+        stopThreshold > 0 &&
+        currentTimelinePosition >= stopThreshold - epsilon
+      ) {
+        console.log('[handleProgress] 엔드포인트 도달 - 정지 실행');
+        // 정확히 엔드포인트 위치로 멈춤
         handleGlobalPause();
         setTimelinePosition(stopThreshold);
+
+        // 모든 비디오를 정확한 위치로 이동
+        currentTrimmers.forEach(t => {
+          const ref = previewSlotRefs.current[t.id];
+          if (ref) {
+            const clipDuration = t.endTime - t.startTime;
+            const trackStartTime = t.timelinePosition;
+            const trackEndTime = trackStartTime + clipDuration;
+
+            let seekTime;
+            if (stopThreshold < trackStartTime) {
+              seekTime = t.startTime;
+            } else if (stopThreshold > trackEndTime) {
+              seekTime = t.endTime;
+            } else {
+              const timeIntoClip = stopThreshold - trackStartTime;
+              seekTime = t.startTime + timeIntoClip;
+            }
+
+            console.log(
+              '[handleProgress] 비디오 정확한 위치로 이동:',
+              t.id,
+              'seekTime:',
+              seekTime,
+            );
+
+            if (isFinite(seekTime)) {
+              ref.seek(seekTime);
+              handlePlaybackUpdate(t.id, {
+                currentTime: seekTime,
+                isPaused: true,
+              });
+            }
+          }
+        });
       } else {
-        setTimelinePosition(finalPosition);
+        setTimelinePosition(currentTimelinePosition);
       }
     },
     // 의존성 배열에서 trimmers, globalEndTime, endPointThreshold 제거하여 함수를 안정화
-    [isGloballyPlaying, handleGlobalPause],
+    [isGloballyPlaying, handleGlobalPause, handlePlaybackUpdate],
   );
 
   // 비디오 로딩 완료 시 (onLoad), 비디오 길이(duration) 상태 업데이트
@@ -996,9 +1025,23 @@ const VideoEditScreen: React.FC<{
     handleGlobalPause();
     trimmers.forEach(t => {
       if (previewSlotRefs.current[t.id]) {
-        previewSlotRefs.current[t.id]?.seek(globalStartTime);
+        const clipDuration = t.endTime - t.startTime;
+        const trackStartTime = t.timelinePosition;
+        const trackEndTime = trackStartTime + clipDuration;
+
+        let seekTime;
+        if (globalStartTime < trackStartTime) {
+          seekTime = t.startTime;
+        } else if (globalStartTime > trackEndTime) {
+          seekTime = t.endTime;
+        } else {
+          const timeIntoClip = globalStartTime - trackStartTime;
+          seekTime = t.startTime + timeIntoClip;
+        }
+
+        previewSlotRefs.current[t.id]?.seek(seekTime);
         handlePlaybackUpdate(t.id, {
-          currentTime: globalStartTime,
+          currentTime: seekTime,
           isPaused: true,
         });
       }
@@ -1152,6 +1195,7 @@ const VideoEditScreen: React.FC<{
   }, []);
 
   const handlePositionChange = useCallback((time: number) => {
+    console.log('[handlePositionChange] timelinePosition 변경:', time);
     setTimelinePosition(time);
   }, []);
 
@@ -1169,29 +1213,68 @@ const VideoEditScreen: React.FC<{
 
   // [수정] 재생 요청이 들어오면 비디오를 재생하는 useEffect
   useEffect(() => {
+    console.log('[useEffect] seekAndPlayRequest 변경:', seekAndPlayRequest);
+
     if (seekAndPlayRequest !== null) {
       const videoId = trimmers[0]?.id;
+      console.log('[useEffect] seekAndPlayRequest 처리 - videoId:', videoId);
+
       if (videoId && previewSlotRefs.current[videoId]) {
         // seek가 완료된 후 실행할 콜백 설정
         seekCompleteCallback.current = () => {
           setTimelinePosition(seekAndPlayRequest);
-          setPlayRequest(true); // 2단계(재생) 트리거
+
+          // 모든 비디오를 새로운 위치로 이동
+          trimmersRef.current.forEach((t: any) => {
+            const ref = previewSlotRefs.current[t.id];
+            if (ref) {
+              const trackStartTime = t.timelinePosition;
+              const trackEndTime = trackStartTime + (t.endTime - t.startTime);
+
+              let seekTime;
+              if (seekAndPlayRequest < trackStartTime) {
+                seekTime = t.startTime;
+              } else if (seekAndPlayRequest > trackEndTime) {
+                seekTime = t.endTime;
+              } else {
+                const timeIntoClip = seekAndPlayRequest - trackStartTime;
+                seekTime = t.startTime + timeIntoClip;
+              }
+
+              if (isFinite(seekTime)) {
+                ref.seek(seekTime);
+                handlePlaybackUpdate(t.id, {
+                  currentTime: seekTime,
+                  isPaused: true,
+                });
+              }
+            }
+          });
+
+          setPlayRequest(true);
           seekCompleteCallback.current = null;
         };
         // seek 실행
+        console.log('[useEffect] seek 실행:', seekAndPlayRequest);
         previewSlotRefs.current[videoId]?.seek(seekAndPlayRequest);
       }
     } else {
       // 재생 요청이 취소되면 콜백도 취소
+      console.log('[useEffect] seekAndPlayRequest null - 콜백 취소');
       seekCompleteCallback.current = null;
     }
-  }, [seekAndPlayRequest, trimmers]);
+  }, [seekAndPlayRequest, trimmers, playbackStates, handlePlaybackUpdate]);
 
   // [수정] 2단계: 재생 요청 처리
   useEffect(() => {
+    console.log('[useEffect] playRequest 변경:', playRequest);
+
     if (!playRequest) return;
+
+    console.log('[useEffect] 재생 시작 - isGloballyPlaying: true');
     setIsGloballyPlaying(true);
     trimmers.forEach(trimmer => {
+      console.log('[useEffect] 비디오 재생:', trimmer.id);
       handlePlaybackUpdate(trimmer.id, { isPaused: false });
     });
     setPlayRequest(false);

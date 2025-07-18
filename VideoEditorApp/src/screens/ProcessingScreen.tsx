@@ -56,11 +56,6 @@ const ProcessingScreen: React.FC = () => {
         const parentStartTime = parentVideo?.startTime ?? 0;
         const parentEndTime = parentVideo?.endTime;
 
-        console.log('[ProcessingScreen] parentVideoId:', parentVideoId);
-        console.log('[ProcessingScreen] parentVideo:', parentVideo);
-        console.log('[ProcessingScreen] parentStartTime:', parentStartTime);
-        console.log('[ProcessingScreen] parentEndTime:', parentEndTime);
-
         navigation.replace('VideoEdit', {
           videos: [...localVideos, ...downloadedMediaItems],
           sourceVideos,

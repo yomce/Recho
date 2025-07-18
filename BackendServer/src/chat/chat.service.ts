@@ -1,20 +1,21 @@
-import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
-
-
-import { Room } from './entities/room.entity'
-import { UserRoom } from './entities/user-room.entity'
-import { Message } from './entities/message.entity'
+import { Room } from './entities/room.entity';
+import { UserRoom } from './entities/user-room.entity';
+import { Message } from './entities/message.entity';
 import { RoomType } from './dto/create-room.dto';
-
 
 // src/chat/chat.service.ts
 @Injectable()
 export class ChatService {
   private readonly logger = new Logger(ChatService.name);
-
 
   constructor(
     @InjectRepository(Room) private roomRepo: Repository<Room>,
@@ -23,7 +24,11 @@ export class ChatService {
     @InjectRepository(UserRoom) private userRoomRepo: Repository<UserRoom>,
   ) {}
 
-  async createRoom(name: string, type: RoomType, creatorId?: string): Promise<Room> {
+  async createRoom(
+    name: string,
+    type: RoomType,
+    creatorId?: string,
+  ): Promise<Room> {
     const room = this.roomRepo.create({
       id: uuidv4(),
       name,
@@ -46,7 +51,12 @@ export class ChatService {
   }
 
   // 3) 메시지 저장
-  async saveMessage(dto: { roomId: string; senderId: string; content: string; type?: string; }): Promise<Message> {
+  async saveMessage(dto: {
+    roomId: string;
+    senderId: string;
+    content: string;
+    type?: string;
+  }): Promise<Message> {
     const msg = this.msgRepo.create({
       roomId: dto.roomId,
       senderId: dto.senderId,
@@ -57,7 +67,12 @@ export class ChatService {
   }
 
   // 4) 방 내 대화 이력 조회 (페이징) - 수정된 함수
-  async getHistory(roomId: string, id: string, page = 1, limit = 20): Promise<Message[]> {
+  async getHistory(
+    roomId: string,
+    id: string,
+    page = 1,
+    limit = 20,
+  ): Promise<Message[]> {
     // 1. 현재 사용자가 이 방에 참여한 정보를 찾습니다.
     const userRoom = await this.userRoomRepo.findOneBy({ roomId, id });
 
@@ -91,7 +106,9 @@ export class ChatService {
 
     // 3. 남은 인원이 0명이라면 방과 관련된 모든 데이터를 삭제합니다.
     if (remainingCount === 0) {
-      this.logger.log(`Room ${roomId} is empty. Deleting room and all related data...`);
+      this.logger.log(
+        `Room ${roomId} is empty. Deleting room and all related data...`,
+      );
       // Room을 삭제하면 CASCADE 옵션에 의해 Message, UserRoom 데이터도 함께 삭제됩니다.
       await this.roomRepo.delete(roomId);
       this.logger.log(`Room ${roomId} has been successfully deleted.`);
@@ -100,10 +117,9 @@ export class ChatService {
 
   async getAllRooms(): Promise<Room[]> {
     return this.roomRepo.find({
-      order: { lastMessageAt: 'DESC' },  // 최신 순으로 정렬
+      order: { lastMessageAt: 'DESC' }, // 최신 순으로 정렬
     });
   }
-
 
   async getRoomsForUser(id: string): Promise<Room[]> {
     // 1. user_room 테이블에서 해당 유저가 속한 모든 방의 정보를 찾습니다.
@@ -114,10 +130,13 @@ export class ChatService {
     });
 
     // 3. UserRoom 엔티티 배열에서 Room 엔티티만 추출하여 반환합니다.
-    return userRooms.map(userRoom => userRoom.room);
+    return userRooms.map((userRoom) => userRoom.room);
   }
 
-  async getOrCreatePrivateRoom(user1Id: string, user2Id: string): Promise<Room> {
+  async getOrCreatePrivateRoom(
+    user1Id: string,
+    user2Id: string,
+  ): Promise<Room> {
     const sortedids = [user1Id, user2Id].sort();
     const privateRoomId = `private-${sortedids[0]}-${sortedids[1]}`;
 
@@ -136,15 +155,21 @@ export class ChatService {
       await this.joinRoom(user2Id, privateRoomId);
     } else {
       // [수정] 방이 이미 존재할 경우, 각 사용자가 방에 참여해있는지 확인하고, 없다면 다시 참여시킵니다.
-      
+
       // user1이 방에 참여해있는지 확인
-      const user1InRoom = await this.userRoomRepo.findOneBy({ id: user1Id, roomId: room.id });
+      const user1InRoom = await this.userRoomRepo.findOneBy({
+        id: user1Id,
+        roomId: room.id,
+      });
       if (!user1InRoom) {
         await this.joinRoom(user1Id, room.id);
       }
 
       // user2가 방에 참여해있는지 확인
-      const user2InRoom = await this.userRoomRepo.findOneBy({ id: user2Id, roomId: room.id });
+      const user2InRoom = await this.userRoomRepo.findOneBy({
+        id: user2Id,
+        roomId: room.id,
+      });
       if (!user2InRoom) {
         await this.joinRoom(user2Id, room.id);
       }
@@ -166,9 +191,13 @@ export class ChatService {
     }
 
     // 2. 방에 참여한 사용자 목록에 요청한 사용자가 없는 경우
-    const isUserInRoom = room.userRooms.some(userRoom => userRoom.user.id === userId);
+    const isUserInRoom = room.userRooms.some(
+      (userRoom) => userRoom.user.id === userId,
+    );
     if (!isUserInRoom) {
-      throw new ForbiddenException('You do not have permission to access this room.');
+      throw new ForbiddenException(
+        'You do not have permission to access this room.',
+      );
     }
 
     return room;

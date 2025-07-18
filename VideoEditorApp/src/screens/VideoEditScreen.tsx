@@ -206,6 +206,29 @@ const VideoEditScreen: React.FC<{
     parentEndTime, // 부모의 종료 시간 (기본값 undefined)
   } = route.params ?? {};
 
+  // [추가] parentStartTime이 변경될 때마다 플레이 헤드와 전역 시작 시간을 업데이트
+  useEffect(() => {
+    console.log('[VideoEditScreen] parentStartTime:', parentStartTime);
+    console.log('[VideoEditScreen] serverVideos:', serverVideos);
+
+    if (parentStartTime > 0) {
+      console.log(
+        '[VideoEditScreen] Setting globalStartTime and timelinePosition to:',
+        parentStartTime,
+      );
+      setGlobalStartTime(parentStartTime);
+      setTimelinePosition(parentStartTime);
+    }
+  }, [parentStartTime, serverVideos]);
+
+  // [추가] timelinePosition 상태 변화 추적
+  useEffect(() => {
+    console.log(
+      '[VideoEditScreen] timelinePosition changed to:',
+      timelinePosition,
+    );
+  }, [timelinePosition]);
+
   // 비디오 처리 로직을 커스텀 훅으로 분리
   const { isProcessing, uploading, startVideoProcessing } = useVideoProcessor();
 
@@ -340,9 +363,9 @@ const VideoEditScreen: React.FC<{
   >({}); // 각 비디오의 재생 상태 (현재 시간, 정지 여부)
   const [previewScale, setPreviewScale] = useState(1); // 가상 캔버스의 스케일 값
   const [isGloballyPlaying, setIsGloballyPlaying] = useState(false); // 전체 동시 재생 여부
-  const [globalStartTime, setGlobalStartTime] = useState(0); // 모든 비디오가 동시에 재생될 수 있는 시작 시간
+  const [globalStartTime, setGlobalStartTime] = useState(parentStartTime); // 모든 비디오가 동시에 재생될 수 있는 시작 시간
   const [globalEndTime, setGlobalEndTime] = useState(0);
-  const [timelinePosition, setTimelinePosition] = useState(0);
+  const [timelinePosition, setTimelinePosition] = useState(parentStartTime);
   const [timelineHeight, setTimelineHeight] = useState(100); // 타임라인의 동적 높이
   const [isSheetVisible, setSheetVisible] = useState(false);
   const [selectedTrack, setSelectedTrack] = useState<TrimmerState | null>(null);
@@ -483,6 +506,10 @@ const VideoEditScreen: React.FC<{
 
   // [추가 -> 수정] 타임라인 위치 변경 핸들러 (useCallback으로 최적화)
   const handleTimelinePositionChange = useCallback((time: number) => {
+    console.log(
+      '[VideoEditScreen] handleTimelinePositionChange called with:',
+      time,
+    );
     setTimelinePosition(time);
   }, []);
 

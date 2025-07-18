@@ -49,10 +49,24 @@ const ProcessingScreen: React.FC = () => {
 
         const downloadedMediaItems = await Promise.all(downloadPromises);
 
+        // [추가] 부모 비디오의 startTime과 endTime을 추출
+        const parentVideo = sourceVideos.find(
+          video => video.id === parentVideoId,
+        );
+        const parentStartTime = parentVideo?.startTime ?? 0;
+        const parentEndTime = parentVideo?.endTime;
+
+        console.log('[ProcessingScreen] parentVideoId:', parentVideoId);
+        console.log('[ProcessingScreen] parentVideo:', parentVideo);
+        console.log('[ProcessingScreen] parentStartTime:', parentStartTime);
+        console.log('[ProcessingScreen] parentEndTime:', parentEndTime);
+
         navigation.replace('VideoEdit', {
           videos: [...localVideos, ...downloadedMediaItems],
           sourceVideos,
           parentVideoId,
+          parentStartTime,
+          parentEndTime,
         });
       } catch (error) {
         console.error('[ProcessingScreen] Failed to download videos:', error);

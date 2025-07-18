@@ -2,25 +2,23 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import IconButton from "../atoms/button/IconButton";
+import NotificationIcon from './NotificationIcon';
 
 // Header가 받을 props 타입을 정의
 interface HeaderProps {
-  currentPath: string;
-  onCategoryClick?: () => void;
-  onSearchClick?: () => void;
-  onNotificationClick?: () => void;
-}
-
-const MainHeader: React.FC<HeaderProps> = ({
-  currentPath,
-  onCategoryClick,
-  onSearchClick,
-  onNotificationClick,
-}) => {
-  const navigate = useNavigate();
-
-  const purePath = currentPath.split("?")[0];
-  const isCategoryPage = purePath === "/category";
+    currentPath: string;
+    onCategoryClick?: () => void;
+    onSearchClick?: () => void;
+  }
+  
+  const MainHeader: React.FC<HeaderProps> = ({
+    currentPath,
+    onSearchClick,
+  }) => {
+    const navigate = useNavigate();
+    
+    const purePath = currentPath.split('?')[0];
+    const isCategoryPage = purePath === '/category';
 
   const getTitle = () => {
     if (isCategoryPage) {
@@ -65,14 +63,11 @@ const MainHeader: React.FC<HeaderProps> = ({
         style={{ width: "56px" }}
       >
         <IconButton iconName="search" iconSize={24} onClick={onSearchClick} />
-        <IconButton
-          iconName="notification"
-          iconSize={24}
-          onClick={onNotificationClick}
-        />
+        <NotificationIcon />
       </div>
     </header>
   );
 };
 
 export default MainHeader;
+

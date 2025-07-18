@@ -9,6 +9,8 @@ import { Video } from 'src/videos/entities';
 import { AuthModule } from 'src/auth/auth.module'; // Assuming you have an AuthModule
 import { NumberIdComment } from './entities/number-id-comment.entity';
 import { StringIdComment } from './entities/string-id-comment.entity';
+import { NotificationsModule } from 'src/notifications/notifications.module';
+import { User } from 'src/auth/user/user.entity';
 
 @Module({
   imports: [
@@ -17,8 +19,10 @@ import { StringIdComment } from './entities/string-id-comment.entity';
       StringIdComment,
       Post, // For updating commentCount
       Video, // For updating commentCount
+      User,
     ]),
     AuthModule, // To get user info from JWT
+    NotificationsModule,
   ],
   providers: [CommentsService],
   controllers: [CommentsController],

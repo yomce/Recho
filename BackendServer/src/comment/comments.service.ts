@@ -14,6 +14,9 @@ import { NumberIdComment } from './entities/number-id-comment.entity';
 import { StringIdComment } from './entities/string-id-comment.entity';
 import { CreateCommentDto } from './dto/create-comments.dto';
 import { CONTENT_TYPE } from 'src/likes/dto/toggle-like.dto';
+import { NotificationsService } from 'src/notifications/notifications.service';
+import { NotificationType } from 'src/notifications/entities/notification.entity';
+import { User } from 'src/auth/user/user.entity';
 
 @Injectable()
 export class CommentsService {
@@ -26,6 +29,9 @@ export class CommentsService {
     private readonly postsRepository: Repository<Post>,
     @InjectRepository(Video)
     private readonly videoRepository: Repository<Video>,
+    private readonly notificationsService: NotificationsService,
+    @InjectRepository(User)
+    private readonly usersRepository: Repository<User>,
   ) {}
 
   async createComment(userId: string, createCommentDto: CreateCommentDto) {
@@ -56,7 +62,25 @@ export class CommentsService {
     const newComment = this.numberCommentsRepository.create({ ...dto, userId });
     await this.numberCommentsRepository.save(newComment);
     await this.updateContentCommentsCount(dto.contentType, dto.postId, 1);
-    return newComment;
+
+    if (dto.contentType === CONTENT_TYPE.COMMUNITY) {
+      const post = await this.postsRepository.findOne({
+        where: { postId: dto.postId },
+        relations: ['user'],
+      });
+      const sender = await this.usersRepository.findOneBy({ id: userId });
+
+      if (post?.user && sender && post.user.id !== userId) {
+        await this.notificationsService.createAndSendNotification(
+          post.user,
+          sender,
+          NotificationType.COMMENT,
+          `${sender.username}님이 회원님의 게시물에 댓글을 남겼습니다.`,
+          `/community/${post.postId}`,
+        );
+      }
+      return newComment;
+    }
   }
 
   private async createStringIdComment(
@@ -66,6 +90,24 @@ export class CommentsService {
     const newComment = this.stringCommentsRepository.create({ ...dto, userId });
     await this.stringCommentsRepository.save(newComment);
     await this.updateContentCommentsCount(dto.contentType, dto.postId, 1);
+
+    if (dto.contentType === CONTENT_TYPE.VINYL) {
+      const video = await this.videoRepository.findOne({
+        where: { id: dto.postId },
+        relations: ['user'],
+      });
+      const sender = await this.usersRepository.findOneBy({ id: userId });
+
+      if (video?.user && sender && video.user.id !== userId) {
+        await this.notificationsService.createAndSendNotification(
+          video.user,
+          sender,
+          NotificationType.COMMENT,
+          `${sender.username}님이 회원님의 영상에 댓글을 남겼습니다.`,
+          `/vinyl/${video.id}`,
+        );
+      }
+    }
     return newComment;
   }
 

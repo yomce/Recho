@@ -7,10 +7,13 @@ import { NumberIdLike } from './entities/number-id-like.entity';
 import { Post } from 'src/community/posts/entities/post.entity';
 import { StringIdLike } from './entities/string-id-like.entity';
 import { Video } from 'src/videos/entities';
+import { NotificationsModule } from 'src/notifications/notifications.module';
+import { User } from 'src/auth/user/user.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([NumberIdLike, StringIdLike, Post, Video]), // Like 엔티티를 이 모듈에서 사용할 수 있도록 등록,
+    TypeOrmModule.forFeature([NumberIdLike, StringIdLike, Post, Video, User]),
+    NotificationsModule,
   ],
   providers: [LikesService],
   controllers: [LikesController],

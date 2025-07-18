@@ -229,6 +229,7 @@ const UsedProductDetailPage: React.FC = () => {
           // 여기서 서버로 전송하거나 상태 업데이트 가능
         }}
         onDmClick={handleSendDm}
+        msgPlaceholder={"안녕하세요! 구매 원합니다."}
       />
     </PostLayout>
   );

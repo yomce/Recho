@@ -193,16 +193,13 @@ const MainPage: React.FC = () => {
           onClick={handleGoToPromotions}
         />
       </div>
-      <div className="relative">
-        <button
-          onClick={handleOpenActionModal} // ✅ 플로팅 버튼은 이제 '선택' 모달을 엽니다.
-          // className="fixed bottom-5 right-5 z-50 h-12 w-12 rounded-full bg-brand-primary p-2 text-white shadow-lg transition-all hover:scale-110"
-          className="fixed bottom-25 right-4 z-20 sm:right-[calc(50vw-215px+16px)] rounded-full bg-brand-primary p-2 text-white shadow-lg transition-all hover:scale-110"
-          aria-label="새 작업"
-        >
-          <Icon name="plus" size={28} />
-        </button>
-      </div>
+      <button
+        onClick={handleOpenActionModal} // ✅ 플로팅 버튼은 이제 '선택' 모달을 엽니다. (To Be deleted)
+        className="fixed bottom-5 right-5 z-50 h-12 w-12 rounded-full bg-brand-primary p-2 text-white shadow-lg transition-all hover:scale-110"
+        aria-label="새 작업"
+      >
+        <Icon name="plus" size={28} />
+      </button>
 
       <Modal
         isOpen={isVinylCreateModalOpen}

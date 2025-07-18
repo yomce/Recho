@@ -6,9 +6,11 @@ import { useAuthStore } from "@/stores/authStore";
 import VinylRightLayout from "@/components/layout/pages/vinyl/VinylRightLayout";
 import ProfileWithName from "@/components/atoms/button/ProfileWithName";
 import IconButton from "@/components/atoms/button/IconButton";
-import { toggleStringPostLike } from '@/api';
+import { createCommentForVideo, getCommentsForVideo, toggleStringPostLike } from '@/api';
 import { CONTENT_TYPE } from '@/types/likes';
 import type { Video } from '@/types/video';
+import CommentsModal from './CommentModal';
+import type { Comment } from '@/types/comment';
 
 interface VinylContentsProps {
   currentVideo: Video;
@@ -30,8 +32,58 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
     props.rotationAngle
   );
   const [isPlaying, setIsPlaying] = useState(false); // 비디오 재생 상태 관리
-
   const [divHeight, setDivHeight] = useState(0);
+  const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [, setIsLoadingComments] = useState(false);
+
+  const fetchComments = async () => {
+    if (!props.currentVideo.id) return;
+    setIsLoadingComments(true);
+    try {
+      const fetchedComments = await getCommentsForVideo(props.currentVideo.id);
+      setComments(fetchedComments);
+    } catch (error) {
+      console.error("Failed to fetch comments:", error);
+      alert('댓글을 불러오는데 실패했습니다.');
+    } finally {
+      setIsLoadingComments(false);
+    }
+  };
+  
+  const handleOpenComments = () => {
+    fetchComments(); // Fetch fresh comments every time the modal is opened
+    setIsCommentsOpen(true);
+  };
+
+  const handleCloseComments = () => {
+    setIsCommentsOpen(false);
+  };
+  
+  const handleAddComment = async (content: string) => {
+    if (!currentUser) {
+      alert('댓글을 작성하려면 로그인이 필요합니다.');
+      return;
+    }
+    try {
+      await createCommentForVideo(props.currentVideo.id, content);
+      
+      // Update comment count in the main video list state
+      props.setVideos(currentVideos =>
+        currentVideos.map(v => 
+          v.id === props.currentVideo.id
+            ? { ...v, commentCount: (v.commentCount || 0) + 1 }
+            : v
+        )
+      );
+
+      // Refresh the comments list in the modal
+      await fetchComments(); 
+    } catch (error) {
+      console.error("Failed to add comment:", error);
+      throw error; // Re-throw to be caught by the modal's handler
+    }
+  };
 
   useEffect(() => {
     const updateHeight = () => {
@@ -186,95 +238,106 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
   }, [props.rotationAngle, prevRotationAngle, controls]);
 
   return (
-    <motion.div
-      style={{
-        position: "relative",
-        transformOrigin: "50% 300%", // 회전 축을 하단으로 설정
-        width: "100%",
-        height: `${divHeight}px`,
-      }}
-      animate={controls}
-    >
-      {/* --- 뒤로가기 버튼 추가 --- */}
-      <IconButton
-        iconName="back"
-        iconSize={24}
-        onClick={() => navigate(-1)}
+    <>
+      <motion.div
         style={{
-          position: "absolute",
-          top: "16px",
-          left: "16px",
-          zIndex: 10,
-          background: "rgba(0, 0, 0, 0.4)",
-          border: "none",
-          borderRadius: "50%",
-          width: "40px",
-          height: "40px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "white",
-          fontSize: "24px",
-          cursor: "pointer",
-          paddingBottom: "4px", // 아이콘 수직 정렬을 위한 미세 조정
+          position: "relative",
+          transformOrigin: "50% 300%", // 회전 축을 하단으로 설정
+          width: "100%",
+          height: `${divHeight}px`,
         }}
-        aria-label="Go back"
-      />
-
-      <video
-        ref={videoRef}
-        src={props.currentVideo.videoUrl}
-        width="100%"
-        controls={false}
-        playsInline
-        crossOrigin="anonymous"
-        style={{
-          display: "block",
-        }}
-        onCanPlay={handleVideoCanPlay}
-        onClick={handleVideoClick}
-      />
-
-      {/* --- 왼쪽 위 프로필 및 구독 버튼 추가 --- */}
-      <div
-        style={{
-          position: "absolute",
-          top: `${divHeight * 0.84}px`,
-          left: "24px",
-          display: "flex",
-          alignItems: "center",
-          gap: "8px", // 아이콘과 버튼 사이 간격
-          zIndex: 10,
-        }}
+        animate={controls}
       >
-        <ProfileWithName user={props.currentVideo.user} />
-      </div>
-
-      <VinylRightLayout
-        video={props.currentVideo}
-        divHeight={divHeight}
-        onClickLike={() => handleToggleLike(props.currentVideo.id)}
-        onClickShare={() => handleShare(props.currentVideo.id)}
-      />
-
-      {/* 버튼은 비디오 위에, 중앙에 위치 */}
-      {!isPlaying && props.depth < 6 && (
-        <PrimaryButton
-          onClick={() => props.onStartEnsemble(props.currentVideo.id)}
+        {/* --- 뒤로가기 버튼 추가 --- */}
+        <IconButton
+          iconName="back"
+          iconSize={24}
+          onClick={() => navigate(-1)}
           style={{
-            width: "50%",
             position: "absolute",
-            bottom: "8px",
-            boxShadow: "0 0 5px 0 rgba(0, 0, 0, 0.3)",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            zIndex: 10, // 다른 요소 위에 오도록 z-index 설정
+            top: "16px",
+            left: "16px",
+            zIndex: 10,
+            background: "rgba(0, 0, 0, 0.4)",
+            border: "none",
+            borderRadius: "50%",
+            width: "40px",
+            height: "40px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "white",
+            fontSize: "24px",
+            cursor: "pointer",
+            paddingBottom: "4px", // 아이콘 수직 정렬을 위한 미세 조정
+          }}
+          aria-label="Go back"
+        />
+
+        <video
+          ref={videoRef}
+          src={props.currentVideo.videoUrl}
+          width="100%"
+          controls={false}
+          playsInline
+          crossOrigin="anonymous"
+          style={{
+            display: "block",
+          }}
+          onCanPlay={handleVideoCanPlay}
+          onClick={handleVideoClick}
+        />
+
+        {/* --- 왼쪽 위 프로필 및 구독 버튼 추가 --- */}
+        <div
+          style={{
+            position: "absolute",
+            top: `${divHeight * 0.84}px`,
+            left: "24px",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px", // 아이콘과 버튼 사이 간격
+            zIndex: 10,
           }}
         >
-          합주하기
-        </PrimaryButton>
-      )}
-    </motion.div>
+          <ProfileWithName user={props.currentVideo.user} />
+        </div>
+
+        <VinylRightLayout
+          video={props.currentVideo}
+          divHeight={divHeight}
+          onClickLike={() => handleToggleLike(props.currentVideo.id)}
+          onClickShare={() => handleShare(props.currentVideo.id)}
+          onClickComments={handleOpenComments}
+        />
+
+        {/* 버튼은 비디오 위에, 중앙에 위치 */}
+        {!isPlaying && props.depth < 6 && (
+          <PrimaryButton
+            onClick={() => props.onStartEnsemble(props.currentVideo.id)}
+            style={{
+              width: "50%",
+              position: "absolute",
+              bottom: "8px",
+              boxShadow: "0 0 5px 0 rgba(0, 0, 0, 0.3)",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              zIndex: 10, // 다른 요소 위에 오도록 z-index 설정
+            }}
+          >
+            합주하기
+          </PrimaryButton>
+        )}
+      </motion.div>
+
+      {/* --- Render the Comment Modal --- */}
+      <CommentsModal
+        isOpen={isCommentsOpen}
+        onClose={handleCloseComments}
+        comments={comments}
+        onAddComment={handleAddComment}
+      />
+    </>
   );
 };
 

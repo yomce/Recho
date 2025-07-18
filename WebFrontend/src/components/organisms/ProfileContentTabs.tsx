@@ -1,12 +1,12 @@
 // src/components/organisms/ProfileContentTabs.tsx
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import type { Swiper as SwiperCore } from 'swiper';
-import { motion } from 'framer-motion';
-import 'swiper/css';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Swiper, SwiperSlide } from "swiper/react";
+import type { Swiper as SwiperCore } from "swiper";
+import { motion } from "framer-motion";
+import "swiper/css";
 
-import IconButton from '../atoms/button/IconButton';
+import Icon from "../atoms/icon/Icon";
 
 interface ProfileContentTabsProps {
   shorts: { id: string; thumbnailUrl: string }[];
@@ -15,16 +15,25 @@ interface ProfileContentTabsProps {
   onVinylCreateClick?: () => void;
 }
 
-const TABS = ['바이닐', '중고거래', '작성글'];
+const TABS = ["바이닐", "중고거래", "작성글"];
 
-const ProfileContentTabs: React.FC<ProfileContentTabsProps> = ({ shorts, usedProducts, posts, onVinylCreateClick }) => {    
+const ProfileContentTabs: React.FC<ProfileContentTabsProps> = ({
+  shorts,
+  usedProducts,
+  posts,
+  onVinylCreateClick,
+}) => {
   const navigate = useNavigate();
   const [swiper, setSwiper] = useState<SwiperCore | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
   // 각 탭에 맞는 컨텐츠 데이터와 생성 페이지 링크
   const contentData = [shorts, usedProducts, posts];
-  const createLinks = ['/vinyl/create', '/used-products/create', '/posts/create'];
+  const createLinks = [
+    "/vinyl/create",
+    "/used-products/create",
+    "/posts/create",
+  ];
 
   const handleTabClick = (index: number) => {
     setActiveIndex(index);
@@ -50,12 +59,15 @@ const ProfileContentTabs: React.FC<ProfileContentTabsProps> = ({ shorts, usedPro
             key={tab}
             onClick={() => handleTabClick(index)}
             className={`flex-1 py-3 text-center text-sm font-semibold transition-colors 
-                        ${activeIndex === index ? 'text-brand-text-primary' : 'text-brand-disabled hover:text-brand-text-secondary'}`}
+                        ${activeIndex === index ? "text-brand-text-primary" : "text-brand-disabled hover:text-brand-text-secondary"}`}
           >
             {tab}
             {/* 활성 탭 밑줄 애니메이션 */}
             {activeIndex === index && (
-              <motion.div className="absolute bottom-0 h-0.5 w-1/3 bg-brand-text-primary" layoutId="active-tab-underline" />
+              <motion.div
+                className="absolute bottom-0 h-0.5 w-1/3 bg-brand-text-primary"
+                layoutId="active-tab-underline"
+              />
             )}
           </button>
         ))}
@@ -69,18 +81,25 @@ const ProfileContentTabs: React.FC<ProfileContentTabsProps> = ({ shorts, usedPro
       >
         {contentData.map((items, index) => (
           <SwiperSlide key={index}>
-            <div className="grid grid-cols-3">
-              {items.map(item => (
-                <div key={item.id} className="aspect-square cursor-pointer bg-gray-100">
-                  <img src={item.thumbnailUrl} alt="thumbnail" className="h-full w-full object-cover" />
+            <div className="grid grid-cols-3 gap-0.5 mt-0.5">
+              {items.map((item) => (
+                <div
+                  key={item.id}
+                  className="aspect-square cursor-pointer bg-gray-100 "
+                >
+                  <img
+                    src={item.thumbnailUrl}
+                    alt="thumbnail"
+                    className="h-full w-full object-cover"
+                  />
                 </div>
               ))}
             </div>
             {/* 컨텐츠가 없을 경우 메시지 표시 */}
             {items.length === 0 && (
-                <div className='text-center py-10 text-brand-gray'>
-                    게시물이 없습니다.
-                </div>
+              <div className="text-center py-10 text-brand-gray">
+                게시물이 없습니다.
+              </div>
             )}
           </SwiperSlide>
         ))}
@@ -92,7 +111,7 @@ const ProfileContentTabs: React.FC<ProfileContentTabsProps> = ({ shorts, usedPro
           onClick={handleFabClick}
           className="w-14 h-14 bg-brand-primary text-brand-inverse rounded-full flex items-center justify-center hover:scale-105 transition-all"
         >
-          <IconButton as="span" iconName="plus" iconSize={32} className="!p-0 !text-white" />
+          <Icon as="span" name="plus" size={32} className="!p-0 !text-white" />
         </button>
       </div>
     </div>

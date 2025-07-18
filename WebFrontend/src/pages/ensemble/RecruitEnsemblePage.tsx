@@ -96,6 +96,13 @@ const RecruitEnsembleListPage: React.FC = () => {
     })
   }
 
+  // toast unmount 시 close. DOM 에서 토스트가 내려가면 호출됩니다
+  useEffect(() => {
+    return () => {
+      toast.dismiss("filter-toast");
+    };
+  }, []);
+
   return (
     <PostLayout>
       <div className="grid grid-cols-1 py-4">

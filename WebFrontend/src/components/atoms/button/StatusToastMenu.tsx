@@ -64,5 +64,6 @@ export const StatusToastMenu = ({
   ), {
     duration: Infinity,     // 토스트 팝업 지속 시간
     position: 'bottom-center',
+    id: 'status-toast',
   });
 };

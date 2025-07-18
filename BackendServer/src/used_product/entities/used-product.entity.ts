@@ -32,7 +32,7 @@ export class UsedProduct {
   @ManyToOne(() => User, (user: User) => user.userRooms, {
     onDelete: 'CASCADE',
   })
-  @JoinColumn({ name: 'user_id' })
+  @JoinColumn({ name: 'user' })
   user: User;
 
   @Column()

@@ -9,6 +9,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Location } from 'src/map/entities/location.entity';
+import { User } from 'src/auth/user/user.entity';
 
 // 👇 STATUS Enum에 문자열 값을 할당합니다.
 export enum STATUS {
@@ -28,8 +29,11 @@ export class UsedProduct {
   @PrimaryGeneratedColumn()
   productId: number;
 
-  @Column()
-  id: string;
+  @ManyToOne(() => User, (user: User) => user.userRooms, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 
   @Column()
   title: string;

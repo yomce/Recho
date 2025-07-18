@@ -11,8 +11,6 @@ const PreviewWrapper = styled.View`
   background-color: #1c2833;
   justify-content: center;
   align-items: center;
-  overflow: hidden;
-  border-radius: 8px;
 `;
 
 const EmptySlotContainer = styled.View`
@@ -21,8 +19,6 @@ const EmptySlotContainer = styled.View`
   justify-content: center;
   align-items: center;
   background-color: #2c3e50;
-  border-radius: 8px;
-  overflow: hidden;
 `;
 
 const EmptySlotText = styled.Text`

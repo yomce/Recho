@@ -10,12 +10,11 @@ import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Video } from './entities';
 import { UserService } from 'src/auth/user/user.service';
-import { UserResponseDto } from 'src/auth/user/dto/user.response.dto';
-import { VideoResponseDto } from './dto/video.response.dto';
 import { CONTENT_TYPE } from 'src/likes/dto/toggle-like.dto';
 import { LikesService } from 'src/likes/likes.service';
 import { User } from 'src/auth/user/user.entity';
 import { CommentsService } from 'src/comment/comments.service';
+import { VideoResponseDto } from './dto/video.response.dto';
 
 @Injectable()
 export class VideosService {
@@ -137,8 +136,7 @@ export class VideosService {
 
     const responseVideo = signedVideos.map((video) => {
       const commentsForVideo = commentsMap.get(video.id) || [];
-      const tmpResponseUser = UserResponseDto.from(video.user);
-      const tmpVideo = VideoResponseDto.from(video, tmpResponseUser);
+      const tmpVideo = VideoResponseDto.from(video);
       return {
         ...tmpVideo,
         userLiked: likedVideoIds.has(video.id),
@@ -184,9 +182,7 @@ export class VideosService {
 
     video.video_url = videoUrl;
     video.thumbnail_url = thumbnailUrl;
-
-    const responseUser = UserResponseDto.from(video.user);
-    const responseVideo = VideoResponseDto.from(video, responseUser);
+    const responseVideo = VideoResponseDto.from(video);
 
     return {
       ...responseVideo,

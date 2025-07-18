@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Icon from "@/components/atoms/icon/Icon";
 import IconButton from "@/components/atoms/button/IconButton";
 import type { Post } from "@/types/post";
+import DEFAULT_IMAGES from "@/constants/images";
 
 interface CommunityFeedProps {
   posts: Post[];
@@ -45,10 +46,7 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({
           {/* 게시글 상단 정보 */}
           <div className="flex items-center gap-2 mb-2">
             <img
-              src={
-                post.authorProfileUrl ||
-                `https://i.pravatar.cc/50?u=${post.author}`
-              }
+              src={post.authorProfileUrl || DEFAULT_IMAGES.PROFILE}
               alt={post.author}
               className="w-10 h-10 rounded-full object-cover"
             />
@@ -94,7 +92,10 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({
           {post.comments && post.comments.length > 0 && (
             <div className="mt-3 pt-3 border-t border-brand-frame space-y-2">
               {post.comments.map((comment) => (
-                <div key={comment.commentId} className="flex items-center gap-2 text-footnote">
+                <div
+                  key={comment.commentId}
+                  className="flex items-center gap-2 text-footnote"
+                >
                   <p className="text-brand-text-primary font-semibold">
                     {comment.user.username}
                   </p>

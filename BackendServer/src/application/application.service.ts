@@ -13,7 +13,6 @@ import { DataSource, Repository } from 'typeorm';
 import { EnsembleService } from 'src/ensemble/ensemble.service';
 import { UserService } from 'src/auth/user/user.service';
 import { ApplierEnsembleResponseDto } from './dto/applier-ensemble.response.dto';
-import { UserResponseDto } from 'src/auth/user/dto/user.response.dto';
 import {
   RECRUIT_STATUS,
   RecruitEnsemble,
@@ -45,10 +44,8 @@ export class ApplicationService {
       .getMany();
 
     const appliersDto = savedAppliers.map((applier) => {
-      const userDto = UserResponseDto.from(applier.user);
       const tmpApplier = ApplierEnsembleResponseDto.from(
         applier,
-        userDto,
         applier.sessionEnsemble,
       );
       return tmpApplier;
@@ -163,12 +160,8 @@ export class ApplicationService {
           1, // 증가량
         );
 
-        // 9. DTO 변환 및 반환
-        const userDto = UserResponseDto.from(savedApplier.user);
-
         const applierDto = ApplierEnsembleResponseDto.from(
           savedApplier,
-          userDto,
           savedApplier.sessionEnsemble,
         );
         return applierDto;

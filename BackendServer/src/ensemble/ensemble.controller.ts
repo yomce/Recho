@@ -22,6 +22,7 @@ import { CreateRecruitEnsembleDto } from './dto/create-recruit-ensemble.dto';
 import { Request } from 'express';
 import { UpdateRecruitEnsembleDto } from './dto/update-recruit-ensemble.dto';
 import { RecruitEnsembleResponseDto } from './dto/recruit-ensemble.response.dto';
+import { RecruitEnsemble } from './entities/recruit-ensemble.entity';
 
 @Controller('ensembles')
 export class EnsembleController {
@@ -44,7 +45,7 @@ export class EnsembleController {
   async enrollEnsemble(
     @Body() createRecruitEnsembleDto: CreateRecruitEnsembleDto,
     @Req() req: Request,
-  ): Promise<RecruitEnsembleResponseDto> {
+  ): Promise<RecruitEnsemble> {
     if (!req.user || !req.user.id) {
       this.logger.error(
         'Authentication information missing from request user object.',
@@ -65,7 +66,7 @@ export class EnsembleController {
   async closeRecruitment(
     @Param('postId', ParseIntPipe) postId: number,
     @Req() req: Request,
-  ): Promise<RecruitEnsembleResponseDto> {
+  ): Promise<RecruitEnsemble> {
     if (!req.user || !req.user.id) {
       this.logger.error(
         'Authentication information missing from request user object.',
@@ -83,7 +84,7 @@ export class EnsembleController {
   @Get(':postId')
   async detailEnsemble(
     @Param('postId', ParseIntPipe) postId: number,
-  ): Promise<RecruitEnsembleResponseDto> {
+  ): Promise<RecruitEnsemble> {
     this.logger.log(`Fetching detail for post ID: ${postId}`);
     return await this.ensembleService.detailEnsemble(postId);
   }

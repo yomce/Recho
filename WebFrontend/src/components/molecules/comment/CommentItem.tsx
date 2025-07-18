@@ -3,6 +3,7 @@
 import React from "react";
 import Icon from "@/components/atoms/icon/Icon";
 import Avatar from "@/components/atoms/avatar/Avatar";
+import { DEFAULT_IMAGES } from "@/constants/images";
 
 // --- 타입 정의 ---
 interface User {
@@ -32,9 +33,9 @@ const CommentItem: React.FC<CommentItemProps> = ({
 }) => {
   return (
     <div className="flex items-start py-2 gap-2 bg-brand-default  border-brand-frame border-top-1">
-      {/* 프로필 이미지 (임시) */}
+      {/* 프로필 이미지 */}
       <Avatar
-        src={`https://i.pravatar.cc/40?u=${comment.author.id}`}
+        src={DEFAULT_IMAGES.PROFILE}
         alt={comment.author.username}
         size={40}
       />

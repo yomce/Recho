@@ -10,6 +10,7 @@ import IconButton from "../../components/atoms/button/IconButton";
 import { type Post } from "./CommunityFeedPage"; // 타입 재사용
 import { toggleNumberPostLike } from "@/api";
 import { CONTENT_TYPE } from "@/types/likes";
+import { DEFAULT_IMAGES } from "@/constants/images";
 
 // --- 유틸리티 및 API 함수 ---
 const fetchPostsByCategory = async (category: string): Promise<Post[]> => {
@@ -118,10 +119,7 @@ const CategoryPostListPage: React.FC = () => {
               {/* (이하 게시글 UI는 아래 CommunityFeedPage.tsx의 것과 동일하게 적용) */}
               <div className="flex items-center gap-3 mb-3">
                 <img
-                  src={
-                    post.authorProfileUrl ||
-                    `https://i.pravatar.cc/50?u=${post.author}`
-                  }
+                  src={post.authorProfileUrl || DEFAULT_IMAGES.PROFILE}
                   alt={post.author}
                   className="w-10 h-10 rounded-full object-cover"
                 />

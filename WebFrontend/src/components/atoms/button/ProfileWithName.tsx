@@ -1,6 +1,7 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import Avatar from '../avatar/Avatar';
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import Avatar from "../avatar/Avatar";
+import { DEFAULT_IMAGES } from "@/constants/images";
 // Avatar 컴포넌트의 실제 경로로 수정해주세요.
 
 // user 객체의 타입을 정의합니다.
@@ -29,22 +30,18 @@ const ProfileWithName: React.FC<ProfileWithNameProps> = ({ user }) => {
   }
 
   return (
-    <div 
-      style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '8px', // 아바타와 이름 사이의 간격
-        cursor: 'pointer' 
-      }} 
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "8px", // 아바타와 이름 사이의 간격
+        cursor: "pointer",
+      }}
       onClick={handleProfileClick}
     >
-      <Avatar
-        src={`https://i.pravatar.cc/50?u=${user.id}`}
-        size={40}
-        alt={user.username}
-      />
+      <Avatar src={DEFAULT_IMAGES.PROFILE} size={40} alt={user.username} />
       {/* 버튼 대신 텍스트로 표시하여 스타일링 유연성 확보 */}
-      <span style={{ color: "white", fontSize: "0.9rem", fontWeight: 'bold' }}>
+      <span style={{ color: "white", fontSize: "0.9rem", fontWeight: "bold" }}>
         {user.username}
       </span>
     </div>

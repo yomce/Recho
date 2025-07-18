@@ -48,8 +48,8 @@ const MainFooter: React.FC<MainFooterProps> = ({
 }) => {
   return (
     <footer
-      className="fixed bottom-0 left-1/2 z-10 h-18 w-full max-w-[430px] -translate-x-1/2 
-                     flex items-center justify-around bg-brand-default"
+      className="fixed bottom-0 left-1/2 z-10 h-20 w-full max-w-[430px] -translate-x-1/2 
+                     flex items-center justify-around bg-brand-default border-t border-gray-200"
     >
       {/* 👇 모든 active 조건을 올바르게 수정합니다. */}
       <NavItem

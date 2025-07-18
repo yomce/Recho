@@ -747,9 +747,19 @@ const VideoEditScreen: React.FC<{
     }
 
     const trackStartTimes = trimmers.map(t => t.timelinePosition);
-    const trackEndTimes = trimmers.map(
-      t => t.timelinePosition + (t.endTime - t.startTime),
-    );
+    // [수정] trackEndTime 계산 시 timelinePosition이 음수인 경우를 고려
+    const trackEndTimes = trimmers.map(t => {
+      const clipDuration = t.endTime - t.startTime;
+      const trackEndTime = t.timelinePosition + clipDuration;
+      
+      // timelinePosition이 음수인 경우, 실제 비디오의 끝점을 올바르게 계산
+      if (t.timelinePosition < 0) {
+        // 음수 timelinePosition을 보정하여 실제 끝점 계산
+        return Math.max(trackEndTime, t.endTime);
+      }
+      
+      return trackEndTime;
+    });
 
     let maxStart = Math.max(...trackStartTimes);
     let minEnd = Math.min(...trackEndTimes);

@@ -10,8 +10,8 @@
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
-		98CFCA4894E49EA9DEB84ABA /* libPods-VideoEditorApp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 80944A026E639973A3426DCB /* libPods-VideoEditorApp.a */; };
 		D1706CA40550CE5AD2DC73AF /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
+		FD0D26DE67940755B3E0AAFD /* libPods-VideoEditorApp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A508C84EC49388AC30BBEBFF /* libPods-VideoEditorApp.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -19,11 +19,11 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = VideoEditorApp/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = VideoEditorApp/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = VideoEditorApp/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		320086E189BF56A425ED7E0F /* Pods-VideoEditorApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-VideoEditorApp.debug.xcconfig"; path = "Target Support Files/Pods-VideoEditorApp/Pods-VideoEditorApp.debug.xcconfig"; sourceTree = "<group>"; };
+		65383BD90301312A459458F9 /* Pods-VideoEditorApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-VideoEditorApp.release.xcconfig"; path = "Target Support Files/Pods-VideoEditorApp/Pods-VideoEditorApp.release.xcconfig"; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = VideoEditorApp/AppDelegate.swift; sourceTree = "<group>"; };
-		80944A026E639973A3426DCB /* libPods-VideoEditorApp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-VideoEditorApp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = VideoEditorApp/LaunchScreen.storyboard; sourceTree = "<group>"; };
-		C12789D0FBFCD9023D13FA06 /* Pods-VideoEditorApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-VideoEditorApp.debug.xcconfig"; path = "Target Support Files/Pods-VideoEditorApp/Pods-VideoEditorApp.debug.xcconfig"; sourceTree = "<group>"; };
-		D29DA541C8678FAE1DC8C16F /* Pods-VideoEditorApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-VideoEditorApp.release.xcconfig"; path = "Target Support Files/Pods-VideoEditorApp/Pods-VideoEditorApp.release.xcconfig"; sourceTree = "<group>"; };
+		A508C84EC49388AC30BBEBFF /* libPods-VideoEditorApp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-VideoEditorApp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -32,7 +32,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				98CFCA4894E49EA9DEB84ABA /* libPods-VideoEditorApp.a in Frameworks */,
+				FD0D26DE67940755B3E0AAFD /* libPods-VideoEditorApp.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -55,7 +55,7 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				80944A026E639973A3426DCB /* libPods-VideoEditorApp.a */,
+				A508C84EC49388AC30BBEBFF /* libPods-VideoEditorApp.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -92,8 +92,8 @@
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				C12789D0FBFCD9023D13FA06 /* Pods-VideoEditorApp.debug.xcconfig */,
-				D29DA541C8678FAE1DC8C16F /* Pods-VideoEditorApp.release.xcconfig */,
+				320086E189BF56A425ED7E0F /* Pods-VideoEditorApp.debug.xcconfig */,
+				65383BD90301312A459458F9 /* Pods-VideoEditorApp.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -105,13 +105,13 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "VideoEditorApp" */;
 			buildPhases = (
-				A5187538FE0DF73EC58CD45A /* [CP] Check Pods Manifest.lock */,
+				E58AA1A0BE77AF0223766419 /* [CP] Check Pods Manifest.lock */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
-				0A757C2675177012CC861453 /* [CP] Embed Pods Frameworks */,
-				61ADEDC372273569A3490683 /* [CP] Copy Pods Resources */,
+				0387D195634072827C567148 /* [CP] Embed Pods Frameworks */,
+				AD36D5D97BAF49A4B17D7889 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -183,7 +183,7 @@
 			shellPath = /bin/sh;
 			shellScript = "set -e\n\nWITH_ENVIRONMENT=\"$REACT_NATIVE_PATH/scripts/xcode/with-environment.sh\"\nREACT_NATIVE_XCODE=\"$REACT_NATIVE_PATH/scripts/react-native-xcode.sh\"\n\n/bin/sh -c \"$WITH_ENVIRONMENT $REACT_NATIVE_XCODE\"\n";
 		};
-		0A757C2675177012CC861453 /* [CP] Embed Pods Frameworks */ = {
+		0387D195634072827C567148 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -191,20 +191,16 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-VideoEditorApp/Pods-VideoEditorApp-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-VideoEditorApp/Pods-VideoEditorApp-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-VideoEditorApp/Pods-VideoEditorApp-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		61ADEDC372273569A3490683 /* [CP] Copy Pods Resources */ = {
+		AD36D5D97BAF49A4B17D7889 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -212,20 +208,16 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-VideoEditorApp/Pods-VideoEditorApp-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-VideoEditorApp/Pods-VideoEditorApp-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-VideoEditorApp/Pods-VideoEditorApp-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		A5187538FE0DF73EC58CD45A /* [CP] Check Pods Manifest.lock */ = {
+		E58AA1A0BE77AF0223766419 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -263,7 +255,7 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = C12789D0FBFCD9023D13FA06 /* Pods-VideoEditorApp.debug.xcconfig */;
+			baseConfigurationReference = 320086E189BF56A425ED7E0F /* Pods-VideoEditorApp.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -293,7 +285,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = D29DA541C8678FAE1DC8C16F /* Pods-VideoEditorApp.release.xcconfig */;
+			baseConfigurationReference = 65383BD90301312A459458F9 /* Pods-VideoEditorApp.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -388,7 +380,10 @@
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
 				);
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
@@ -457,7 +452,10 @@
 					"-DFOLLY_CFG_NO_COROUTINES=1",
 					"-DFOLLY_HAVE_CLOCK_GETTIME=1",
 				);
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				USE_HERMES = true;

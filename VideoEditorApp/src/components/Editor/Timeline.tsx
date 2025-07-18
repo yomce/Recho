@@ -641,6 +641,18 @@ const TimelineComponent = forwardRef<TimelineHandles, TimelineProps>(
       isGloballyPlaying,
     ]);
 
+    // [추가] currentTime이 변경될 때마다 타임라인 스크롤 위치를 즉시 업데이트
+    useEffect(() => {
+      console.log('[Timeline] currentTime changed to:', currentTime);
+      if (!isPanning && containerWidth > 0) {
+        const newPanValue =
+          containerWidth / 2 - currentTime * PIXELS_PER_SECOND;
+        const clampedPosition = Math.max(minPan, Math.min(newPanValue, maxPan));
+        console.log('[Timeline] Setting panPosition to:', clampedPosition);
+        panPosition.setValue(clampedPosition);
+      }
+    }, [currentTime, containerWidth, panPosition, minPan, maxPan, isPanning]);
+
     useImperativeHandle(ref, () => ({
       scrollToTime: (time: number) => {
         if (containerWidth > 0) {

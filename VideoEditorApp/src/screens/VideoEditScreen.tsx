@@ -838,7 +838,45 @@ const VideoEditScreen: React.FC<{
       });
       return newStates;
     });
-  }, []);
+
+    // 개별재생 중이면 뮤트 상태를 원래대로 복원
+    if (soloTrackId) {
+      setSoloTrackId(null);
+      setTrimmers(prev =>
+        prev.map(t => ({ ...t, isMuted: preSoloMuteStates[t.id] ?? false })),
+      );
+    }
+  }, [soloTrackId, preSoloMuteStates]);
+
+  // 모든 비디오를 동시 재생 시작점으로 이동
+  const handleGlobalSeekToStart = useCallback(() => {
+    handleGlobalPause();
+    trimmers.forEach(t => {
+      if (previewSlotRefs.current[t.id]) {
+        const clipDuration = t.endTime - t.startTime;
+        const trackStartTime = t.timelinePosition;
+        const trackEndTime = trackStartTime + clipDuration;
+
+        let seekTime;
+        if (globalStartTime < trackStartTime) {
+          seekTime = t.startTime;
+        } else if (globalStartTime > trackEndTime) {
+          seekTime = t.endTime;
+        } else {
+          const timeIntoClip = globalStartTime - trackStartTime;
+          seekTime = t.startTime + timeIntoClip;
+        }
+
+        previewSlotRefs.current[t.id]?.seek(seekTime);
+        handlePlaybackUpdate(t.id, {
+          currentTime: seekTime,
+          isPaused: true,
+        });
+      }
+    });
+    setTimelinePosition(globalStartTime);
+    timelineRef.current?.scrollToTime(globalStartTime);
+  }, [trimmers, globalStartTime, handleGlobalPause, handlePlaybackUpdate]);
 
   // 전역 재생/일시정지 버튼 토글
   const handleToggleGlobalPlay = useCallback(() => {
@@ -846,13 +884,6 @@ const VideoEditScreen: React.FC<{
       handleGlobalPause();
       setSeekAndPlayRequest(null);
       setPlayRequest(false);
-
-      if (soloTrackId) {
-        setSoloTrackId(null);
-        setTrimmers(prev =>
-          prev.map(t => ({ ...t, isMuted: preSoloMuteStates[t.id] ?? false })),
-        );
-      }
     } else {
       const isOutside =
         timelinePosition < globalStartTime || timelinePosition >= globalEndTime;
@@ -869,11 +900,9 @@ const VideoEditScreen: React.FC<{
   }, [
     isGloballyPlaying,
     handleGlobalPause,
-    soloTrackId,
     timelinePosition,
     globalStartTime,
     globalEndTime,
-    preSoloMuteStates,
     handleGlobalSeekToStart,
   ]);
 
@@ -896,68 +925,36 @@ const VideoEditScreen: React.FC<{
       const currentTimelinePosition =
         trimmer.timelinePosition + timeSinceClipStart;
 
-      // [수정] 엔드포인트 임계값 계산
-      const stopThreshold = Math.min(
-        globalEndTimeRef.current,
-        endPointThresholdRef.current,
-      );
-      const epsilon = 0.05;
-
       // 음수 값 처리
       if (currentTimelinePosition < 0) {
         return;
       }
 
-      // [수정] 엔드포인트에 도달했는지 확인
+      // 엔드포인트 임계값 계산
+      const stopThreshold = Math.min(
+        globalEndTimeRef.current,
+        endPointThresholdRef.current,
+      );
+
+      // 더 정확한 엔드포인트 감지 (epsilon을 0.01로 줄임)
+      const epsilon = 0.01;
+
+      // 엔드포인트에 도달했는지 확인
       if (
         stopThreshold > 0 &&
         currentTimelinePosition >= stopThreshold - epsilon
       ) {
         console.log('[handleProgress] 엔드포인트 도달 - 정지 실행');
+
         // 정확히 엔드포인트 위치로 멈춤
-        handleGlobalPause();
         setTimelinePosition(stopThreshold);
-
-        // 모든 비디오를 정확한 위치로 이동
-        currentTrimmers.forEach(t => {
-          const ref = previewSlotRefs.current[t.id];
-          if (ref) {
-            const clipDuration = t.endTime - t.startTime;
-            const trackStartTime = t.timelinePosition;
-            const trackEndTime = trackStartTime + clipDuration;
-
-            let seekTime;
-            if (stopThreshold < trackStartTime) {
-              seekTime = t.startTime;
-            } else if (stopThreshold > trackEndTime) {
-              seekTime = t.endTime;
-            } else {
-              const timeIntoClip = stopThreshold - trackStartTime;
-              seekTime = t.startTime + timeIntoClip;
-            }
-
-            console.log(
-              '[handleProgress] 비디오 정확한 위치로 이동:',
-              t.id,
-              'seekTime:',
-              seekTime,
-            );
-
-            if (isFinite(seekTime)) {
-              ref.seek(seekTime);
-              handlePlaybackUpdate(t.id, {
-                currentTime: seekTime,
-                isPaused: true,
-              });
-            }
-          }
-        });
+        handleGlobalPause();
       } else {
         setTimelinePosition(currentTimelinePosition);
       }
     },
     // 의존성 배열에서 trimmers, globalEndTime, endPointThreshold 제거하여 함수를 안정화
-    [isGloballyPlaying, handleGlobalPause, handlePlaybackUpdate],
+    [isGloballyPlaying, handleGlobalPause],
   );
 
   // 비디오 로딩 완료 시 (onLoad), 비디오 길이(duration) 상태 업데이트
@@ -1021,35 +1018,6 @@ const VideoEditScreen: React.FC<{
   }, []);
 
   // 모든 비디오를 동시 재생 시작점으로 이동
-  const handleGlobalSeekToStart = useCallback(() => {
-    handleGlobalPause();
-    trimmers.forEach(t => {
-      if (previewSlotRefs.current[t.id]) {
-        const clipDuration = t.endTime - t.startTime;
-        const trackStartTime = t.timelinePosition;
-        const trackEndTime = trackStartTime + clipDuration;
-
-        let seekTime;
-        if (globalStartTime < trackStartTime) {
-          seekTime = t.startTime;
-        } else if (globalStartTime > trackEndTime) {
-          seekTime = t.endTime;
-        } else {
-          const timeIntoClip = globalStartTime - trackStartTime;
-          seekTime = t.startTime + timeIntoClip;
-        }
-
-        previewSlotRefs.current[t.id]?.seek(seekTime);
-        handlePlaybackUpdate(t.id, {
-          currentTime: seekTime,
-          isPaused: true,
-        });
-      }
-    });
-    setTimelinePosition(globalStartTime);
-    timelineRef.current?.scrollToTime(globalStartTime);
-  }, [trimmers, globalStartTime, handleGlobalPause, handlePlaybackUpdate]);
-
   const handleGlobalSeekToEnd = useCallback(() => {
     handleGlobalPause();
     trimmers.forEach(t => {
@@ -1134,6 +1102,7 @@ const VideoEditScreen: React.FC<{
     } else if (soloTrackId === null && isGloballyPlaying) {
       handleGlobalPause();
     } else {
+      // 1단계: 음소거 상태 저장 및 적용
       const currentMuteStates: Record<string, boolean> = {};
       trimmers.forEach(t => {
         currentMuteStates[t.id] = t.isMuted;
@@ -1143,9 +1112,13 @@ const VideoEditScreen: React.FC<{
       setTrimmers(prev =>
         prev.map(t => ({ ...t, isMuted: t.id !== selectedTrack.id })),
       );
-      if (!isGloballyPlaying) {
-        handleToggleGlobalPlay();
-      }
+
+      // 2단계: 음소거 적용 후 재생 시작 (setTimeout으로 지연)
+      setTimeout(() => {
+        if (!isGloballyPlaying) {
+          handleToggleGlobalPlay();
+        }
+      }, 100);
     }
   }, [
     selectedTrack,

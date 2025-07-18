@@ -90,7 +90,6 @@ const CreateUsedProductPage: React.FC = () => {
         imageIds: imageIds.map((img) => img.id),
         videoId: form.videoId,
       };
-      console.log(payload);
       const response = await axiosInstance.post('used-products', payload);
       const productId = response.data.productId;
 

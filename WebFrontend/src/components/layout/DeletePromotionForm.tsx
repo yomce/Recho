@@ -32,8 +32,6 @@ export const DeletePromotionForm = ({ onSuccess }: DeletePromotionFormProps) => 
 
     setIsSubmitting(true);
     try {
-      console.log('delete ids');
-      console.log(ids);
       await deletePromotionsByIds(ids);
       toast.success(`${ids.length}개의 프로모션이 성공적으로 삭제되었습니다!`);
       if (onSuccess) onSuccess();

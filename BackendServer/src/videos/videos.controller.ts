@@ -11,7 +11,6 @@ import {
   UseGuards,
   Req,
   Logger,
-  ForbiddenException,
 } from '@nestjs/common';
 import { VideosService } from './videos.service';
 import { AuthGuard } from '@nestjs/passport';
@@ -28,6 +27,14 @@ export class VideosController {
       throw new NotFoundException('User not found');
     }
     return this.videosService.getThumbnailsByUser(id);
+  }
+
+  @Get('user/:id')
+  async getVideoByUser(@Param('id') id: string) {
+    if (!id) {
+      throw new NotFoundException('User not found');
+    }
+    return this.videosService.getVideosByUser(id);
   }
 
   @Get()
@@ -50,8 +57,9 @@ export class VideosController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.videosService.getVideoDetails(id);
+  @UseGuards(AuthGuard('jwt'))
+  findOne(@Param('id') id: string, @Req() req: Request) {
+    return this.videosService.getVideoDetails(id, req.user);
   }
 
   @Get(':id/lineage')

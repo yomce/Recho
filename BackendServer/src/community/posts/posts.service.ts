@@ -120,7 +120,7 @@ export class PostsService {
             postIds,
           )
         : new Set<number>(),
-      this.commentsService.findRecentCommentsForPosts(
+      this.commentsService.findRecentCommentsForContents(
         CONTENT_TYPE.COMMUNITY,
         postIds,
       ),

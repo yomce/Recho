@@ -45,6 +45,12 @@ import {
   IoChevronDownOutline,
   IoPlayCircle,
 } from "react-icons/io5";
+import { DEFAULT_IMAGES } from "@/constants/images";
+
+// 기본 프로필 이미지 컴포넌트
+const ProfileIcon: React.FC<React.ImgHTMLAttributes<HTMLImageElement>> = (
+  props
+) => <img src={DEFAULT_IMAGES.PROFILE} alt="기본 프로필" {...props} />;
 
 // 아이콘 이름을 키로, 실제 컴포넌트를 값으로 매핑합니다.
 const iconMap = {
@@ -73,6 +79,7 @@ const iconMap = {
   home: IoHomeOutline, // 홈
   chat: IoChatbubbleOutline, // 채팅
   user: IoPersonOutline, // 사용자
+  profile: ProfileIcon, // 기본 프로필 이미지
   settings: IoSettingsOutline, // 설정
   menu: IoMenuOutline, // 메뉴
   fullVinyl: IoDisc, // 바이닐
@@ -93,7 +100,7 @@ const iconMap = {
 };
 
 // Icon 컴포넌트가 받을 props 타입을 정의합니다.
-interface IconProps extends React.SVGProps<SVGSVGElement> {
+interface IconProps {
   name: keyof typeof iconMap; // 'send', 'back' 등 iconMap의 키만 허용
   size?: number;
   className?: string;

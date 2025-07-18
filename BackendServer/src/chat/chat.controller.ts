@@ -10,7 +10,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { ChatService } from './chat.service';
-import { CreateRoomDto, RoomType } from './dto/create-room.dto';
+import { CreateRoomDto } from './dto/create-room.dto';
 import { HistoryQueryDto } from './dto/history-query.dto';
 import { Room } from './entities/room.entity';
 import { Message } from './entities/message.entity';

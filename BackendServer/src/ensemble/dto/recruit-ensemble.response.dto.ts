@@ -1,4 +1,3 @@
-import { UserResponseDto } from 'src/auth/user/dto/user.response.dto';
 import { SessionEnsemble } from '../session/entities/session-ensemble.entity';
 import { ApplierEnsemble } from 'src/application/entities/applier-ensemble.entity';
 import {
@@ -10,7 +9,6 @@ import { Location } from 'src/map/entities/location.entity';
 
 export class RecruitEnsembleResponseDto {
   postId: number;
-  user: UserResponseDto;
   title: string;
   content: string;
   eventDate: Date;
@@ -23,14 +21,10 @@ export class RecruitEnsembleResponseDto {
   sessionEnsemble: SessionEnsemble[];
   applierEnsemble: ApplierEnsemble[];
 
-  static from(
-    recruitEnsemble: RecruitEnsemble,
-    userResponseDto: UserResponseDto,
-  ): RecruitEnsembleResponseDto {
+  static from(recruitEnsemble: RecruitEnsemble): RecruitEnsembleResponseDto {
     const dto = new RecruitEnsembleResponseDto();
 
     dto.postId = recruitEnsemble.postId;
-    dto.user = userResponseDto;
     dto.title = recruitEnsemble.title;
     dto.content = recruitEnsemble.content;
     dto.eventDate = recruitEnsemble.eventDate;

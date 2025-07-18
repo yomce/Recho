@@ -51,12 +51,12 @@ const PostHeader: React.FC<HeaderProps> = ({
             onClick={() => navigate(-1)}
           />
         ) : (
-          <IconButton
-            iconName="category"
-            iconSize={24}
-            onClick={onCategoryClick}
-            className={isCategoryActive ? "!text-brand-primary" : ""}
-          />
+          <div className="flex items-center justify-center ml-4">
+            <img className="h-7" src="/vite.svg" alt="logo" />
+            <span className="text-base font-semibold text-brand-text-primary ml-1">
+              RECHO
+            </span>
+          </div>
         )}
       </div>
 

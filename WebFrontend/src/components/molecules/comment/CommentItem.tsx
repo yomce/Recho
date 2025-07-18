@@ -3,8 +3,11 @@
 import React from "react";
 import Icon from "@/components/atoms/icon/Icon";
 import Avatar from "@/components/atoms/avatar/Avatar";
+
+import { DEFAULT_IMAGES } from "@/constants/images";
 import type { Comment } from "@/types/comment"; // 👈 전역 Comment 타입 임포트
 import type { User } from '@/stores/authStore';
+
 
 // --- 타입 정의 ---
 // 💡 전역 타입을 사용하므로 로컬 타입 정의는 삭제합니다.
@@ -26,10 +29,13 @@ const CommentItem: React.FC<CommentItemProps> = ({
   console.log(comment);
 
   return (
-    <div className="flex items-start py-2 gap-2 bg-brand-default border-brand-frame border-top-1">
+
+    <div className="flex items-start py-2 gap-2 bg-brand-default  border-brand-frame border-top-1">
+      {/* 프로필 이미지 */}
       <Avatar
-        src={`https://i.pravatar.cc/40?u=${comment.userId}`}
-        alt={comment.userId}
+        src={DEFAULT_IMAGES.PROFILE}
+        alt={comment.author.username}
+
         size={40}
       />
       <div className="flex-1">

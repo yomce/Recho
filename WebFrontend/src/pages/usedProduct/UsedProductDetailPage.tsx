@@ -51,6 +51,7 @@ const UsedProductDetailPage: React.FC = () => {
       setError(null);
       try {
         const response = await axiosInstance.get<UsedProduct>(`used-products/${id}`);
+        console.log(response.data);
         setProduct(response.data);
       } catch (err) {
         if (axios.isAxiosError(err) && err.response?.status === 404) {
@@ -184,7 +185,7 @@ const UsedProductDetailPage: React.FC = () => {
           </div>
           <UserProfileCard
           imageUrl={product.imageUrl ?? ""}
-          name={product.id}
+          name={product.user.username}
           location={product.location.address}
           status={STATUS_TEXT[product.status] as "판매중" | "예약중" | "판매완료"}
           onClick={() => {

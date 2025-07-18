@@ -1,3 +1,5 @@
+import type { User } from '@/stores/authStore';
+
 // 👇 백엔드 ENUM 과 일치화
 export enum STATUS {
   FOR_SALE = 'FOR_SALE',
@@ -55,6 +57,7 @@ export interface UsedProduct {
   readonly productId: number;
   readonly id: string;
   title: string;
+  user: User;
   description: string;
   price: number;
   categoryId: number;

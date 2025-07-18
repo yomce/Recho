@@ -79,23 +79,22 @@ graph TD
 
         subgraph "Backend"
             D[Application Load Balancer]
-            E[EC2 Auto Scaling Group]
-            F[NestJS App]
-            G[RDS - PostgreSQL]
+            E[NestJS App]
+            F[RDS - PostgreSQL]
         end
 
         subgraph "Storage"
-            H[S3 Bucket - Media Uploads]
+            G[S3 Bucket - Media Uploads]
         end
     end
 
     A -- Request --> B
     B -- Static Content (e.g., index.html, JS, CSS) --> C
     B -- API Request (/api/*) --> D
-    D -- Distributes Traffic --> E
-    E -- hosts --> F
-    F <--> G
-    F <--> H
+    D -- Host --> E
+    E <--> F
+    E <--> G
+    G <--Presigned URL--> A
 ```
 
 ## 🤝 팀원 (Contributors)

@@ -1,4 +1,4 @@
-import { IsString, IsIn, IsArray, ValidateNested } from 'class-validator';
+import { IsString, IsIn, IsArray, ValidateNested, IsOptional, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ReferenceIn } from '../types/image.types';
 
@@ -9,6 +9,14 @@ export class ImageGetPresignedUrlDto {
 
   @IsString()
   fileType: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isThumbnail?: boolean;
+
+  @IsString()
+  @IsOptional()
+  originalKey?: string;
 }
 
 // --- 벌크 요청

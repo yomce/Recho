@@ -21,7 +21,6 @@ import {
 } from './session/dto/create-session-ensemble.dto';
 import { UserService } from 'src/auth/user/user.service';
 import { RecruitEnsembleResponseDto } from './dto/recruit-ensemble.response.dto';
-import { UserResponseDto } from 'src/auth/user/dto/user.response.dto';
 import { Location } from 'src/map/entities/location.entity';
 import { ChatService } from 'src/chat/chat.service';
 import { ApplierEnsemble } from 'src/application/entities/applier-ensemble.entity';
@@ -48,7 +47,7 @@ export class EnsembleService {
   ) {}
 
   async findEnsembleWithPagination(
-    filter: FilterRecruitEnsembleDto
+    filter: FilterRecruitEnsembleDto,
   ): Promise<PaginatedRecruitEnsembleResponse> {
     const {
       limit = 20,
@@ -65,12 +64,8 @@ export class EnsembleService {
       .createQueryBuilder('recruitEnsemble')
       .leftJoin('recruitEnsemble.location', 'location')
       .leftJoin('recruitEnsemble.sessionEnsemble', 'sessionEnsemble')
-      .select([
-        'recruitEnsemble.postId',
-        'recruitEnsemble.createdAt',
-      ]);
-
-    
+      .leftJoin('recruitEnsemble.user', 'user')
+      .select(['recruitEnsemble.postId', 'recruitEnsemble.createdAt']);
 
     // 필터 조건 추가
     if (eventDate) {
@@ -79,31 +74,31 @@ export class EnsembleService {
       });
     }
 
-    if(skillLevel) {
+    if (skillLevel) {
       postIdqueryBuilder.andWhere('recruitEnsemble.skillLevel = :skillLevel', {
         skillLevel,
       });
     }
 
-    if(instrument) {
+    if (instrument) {
       postIdqueryBuilder.andWhere('sessionEnsemble.instrument = :instrument', {
         instrument,
       });
     }
 
-    if(location) {
+    if (location) {
       // 지역 필터는 location.region_level1과 부분 일치
       if (location === '전라') {
         postIdqueryBuilder.andWhere(
           '(location.region_level1 LIKE :jeollaNorth OR location.region_level1 LIKE :jeollaSouth)',
           {
-            jeollaNorth: `%전북%`,   // 전라도만 전라남도, 전북으로 region_level1을 합쳐서 반환
+            jeollaNorth: `%전북%`, // 전라도만 전라남도, 전북으로 region_level1을 합쳐서 반환
             jeollaSouth: `%전라%`,
           },
         );
       } else {
         postIdqueryBuilder.andWhere('location.region_level1 LIKE :location', {
-          location: `%${location}%`,  // ex) "경기" -> "경기도"
+          location: `%${location}%`, // ex) "경기" -> "경기도"
         });
       }
     }
@@ -121,7 +116,7 @@ export class EnsembleService {
       .addOrderBy('recruitEnsemble.postId', 'DESC')
       .take(realLimit)
       .getMany();
-    
+
     const postIds = postIdResults.map((row) => row.postId);
 
     if (postIds.length === 0) {
@@ -137,6 +132,7 @@ export class EnsembleService {
       .createQueryBuilder('recruitEnsemble')
       .leftJoinAndSelect('recruitEnsemble.location', 'location')
       .leftJoinAndSelect('recruitEnsemble.sessionEnsemble', 'sessionEnsemble')
+      .leftJoinAndSelect('recruitEnsemble.user', 'user')
       .whereInIds(postIds)
       .orderBy('recruitEnsemble.createdAt', 'DESC')
       .addOrderBy('recruitEnsemble.postId', 'DESC')
@@ -154,7 +150,7 @@ export class EnsembleService {
           }
         : undefined;
     return {
-      data,
+      data : results.map(RecruitEnsembleResponseDto.from),
       nextCursor,
       hasNextPage,
     };
@@ -163,7 +159,7 @@ export class EnsembleService {
   async enrollEnsemble(
     createDto: CreateRecruitEnsembleDto,
     id: string,
-  ): Promise<RecruitEnsembleResponseDto> {
+  ): Promise<RecruitEnsemble> {
     return this.dataSource.transaction(async (transactionalEntityManager) => {
       const { locationId, ...recruitEnsembleDto } = createDto;
       const user = await this.userService.findById(id);
@@ -197,12 +193,7 @@ export class EnsembleService {
         await this.enrollSession(itemDto, postId, transactionalEntityManager);
       }
 
-      const userResponse = UserResponseDto.from(user);
-      const savedEnsembleResponse = RecruitEnsembleResponseDto.from(
-        savedEnsemble,
-        userResponse,
-      );
-      return savedEnsembleResponse;
+      return savedEnsemble;
     });
   }
 
@@ -224,7 +215,7 @@ export class EnsembleService {
   async closeRecruitment(
     postId: number,
     userId: string,
-  ): Promise<RecruitEnsembleResponseDto> {
+  ): Promise<RecruitEnsemble> {
     // 1. 게시물을 DB에서 찾습니다. 이때 작성자 정보(user)도 함께 가져옵니다.
     const recruitEnsemble = await this.recruitEnsembleRepo.findOne({
       where: { postId },
@@ -279,13 +270,10 @@ export class EnsembleService {
       }),
     );
 
-    // 5. 업데이트된 게시물 정보를 DTO로 변환하여 반환합니다.
-    const userResponse = UserResponseDto.from(updatedEnsemble.user);
-
-    return RecruitEnsembleResponseDto.from(updatedEnsemble, userResponse);
+    return updatedEnsemble;
   }
 
-  async detailEnsemble(id: number): Promise<RecruitEnsembleResponseDto> {
+  async detailEnsemble(id: number): Promise<RecruitEnsemble> {
     const ensemble = await this.recruitEnsembleRepo.findOne({
       where: { postId: id },
       relations: ['sessionEnsemble', 'applierEnsemble', 'user', 'location'],
@@ -293,13 +281,7 @@ export class EnsembleService {
     if (!ensemble) {
       throw new NotFoundException(`Ensemble with ID #${id} not found.`);
     }
-    const responseUser = UserResponseDto.from(ensemble.user);
-    const responseEnsemble = RecruitEnsembleResponseDto.from(
-      ensemble,
-      responseUser,
-    );
-
-    return responseEnsemble;
+    return ensemble;
   }
 
   async detailSession(id: number): Promise<SessionEnsemble> {

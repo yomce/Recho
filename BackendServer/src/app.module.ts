@@ -30,6 +30,7 @@ import { PostsModule } from './community/posts/posts.module';
 import { SearchModule } from './search/search.module';
 import { PromotionModule } from './scraping/promotion.module';
 import { CommentsModule } from './comment/comments.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -104,6 +105,7 @@ import { CommentsModule } from './comment/comments.module';
     SearchModule,
     searchVideoModule,
     PromotionModule,
+    NotificationsModule,
   ],
   controllers: [AppController, ConfigController],
   providers: [AppService],

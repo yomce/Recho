@@ -42,12 +42,6 @@ export class PostsService {
     return this.postsRepository.save(newPost);
   }
 
-  /**
-   * [수정됨] ID로 단일 게시물을 조회하며, 좋아요 상태와 전체 댓글 목록을 포함합니다.
-   * @param id 게시물 ID
-   * @param user 현재 로그인한 사용자 (선택 사항)
-   * @returns 게시물 상세 정보 (좋아요 상태, 댓글 목록 포함)
-   */
   async findOne(id: number, user: User | undefined): Promise<any> {
     // 1. 게시물과 작성자 정보를 함께 조회
     const post = await this.postsRepository
@@ -61,6 +55,7 @@ export class PostsService {
     }
 
     // 2. 좋아요 상태와 댓글 목록을 병렬로 조회
+    // commentsService.getComments는 user 관계가 포함된 댓글 목록을 반환합니다.
     const [userLiked, comments] = await Promise.all([
       user
         ? this.likesService.hasUserLiked(user.id, CONTENT_TYPE.COMMUNITY, id)
@@ -68,14 +63,14 @@ export class PostsService {
       this.commentsService.getComments(CONTENT_TYPE.COMMUNITY, id),
     ]);
 
-    // 3. 모든 정보를 합쳐 최종 응답 객체 생성
+    // 3. [핵심 수정] 댓글 데이터를 가공하지 않고 그대로 반환합니다.
     return {
       ...post,
       author: post.user ? post.user.username : '탈퇴한 사용자',
       authorProfileUrl: post.user ? post.user.profileUrl : null,
       user: undefined, // 민감 정보인 전체 user 객체는 제거
-      userLiked, // 좋아요 여부
-      comments, // 전체 댓글 목록
+      userLiked,
+      comments, // user 객체가 포함된 댓글 목록 원본
     };
   }
 

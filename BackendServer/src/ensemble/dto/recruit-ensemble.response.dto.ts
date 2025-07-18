@@ -1,4 +1,3 @@
-import { UserResponseDto } from 'src/auth/user/dto/user.response.dto';
 import { SessionEnsemble } from '../session/entities/session-ensemble.entity';
 import { ApplierEnsemble } from 'src/application/entities/applier-ensemble.entity';
 import {
@@ -7,10 +6,10 @@ import {
   SKILL_LEVEL,
 } from '../entities/recruit-ensemble.entity';
 import { Location } from 'src/map/entities/location.entity';
+import { User } from 'src/auth/user/user.entity';
 
 export class RecruitEnsembleResponseDto {
   postId: number;
-  user: UserResponseDto;
   title: string;
   content: string;
   eventDate: Date;
@@ -23,14 +22,15 @@ export class RecruitEnsembleResponseDto {
   sessionEnsemble: SessionEnsemble[];
   applierEnsemble: ApplierEnsemble[];
 
-  static from(
-    recruitEnsemble: RecruitEnsemble,
-    userResponseDto: UserResponseDto,
-  ): RecruitEnsembleResponseDto {
+  user: {
+    username: string;
+    profileUrl: string | null;
+  };
+
+  static from(recruitEnsemble: RecruitEnsemble): RecruitEnsembleResponseDto {
     const dto = new RecruitEnsembleResponseDto();
 
     dto.postId = recruitEnsemble.postId;
-    dto.user = userResponseDto;
     dto.title = recruitEnsemble.title;
     dto.content = recruitEnsemble.content;
     dto.eventDate = recruitEnsemble.eventDate;
@@ -43,6 +43,10 @@ export class RecruitEnsembleResponseDto {
     dto.sessionEnsemble = recruitEnsemble.sessionEnsemble;
     dto.applierEnsemble = recruitEnsemble.applierEnsemble;
 
+    dto.user = {
+      username: recruitEnsemble.user.username,
+      profileUrl: recruitEnsemble.user.profileUrl,
+    };
     return dto;
   }
 }

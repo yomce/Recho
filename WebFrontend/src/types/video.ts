@@ -12,6 +12,8 @@ export interface Video {
   commentCount: number;
   createdAt: string;
   videoUrl: string;
+  video_url: string;
   thumbnailUrl: string;
+  thumbnail_url: string;
   userLiked: boolean;
 }

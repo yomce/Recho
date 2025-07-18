@@ -7,8 +7,10 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
-import { User } from '../../../auth/user/user.entity'; // ✅ User 엔티티 임포트
+import { User } from '../../../auth/user/user.entity';
+import { NumberIdComment } from '../../../comment/entities/number-id-comment.entity';
 
 @Entity('posts')
 export class Post {
@@ -53,4 +55,7 @@ export class Post {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @OneToMany(() => NumberIdComment, (comment) => comment.post)
+  comments: NumberIdComment[];
 }

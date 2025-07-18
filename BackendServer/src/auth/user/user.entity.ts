@@ -14,6 +14,7 @@ import { NumberIdLike } from '../../likes/entities/number-id-like.entity';
 import { Post } from '../../community/posts/entities/post.entity';
 import { ApplierEnsemble } from 'src/application/entities/applier-ensemble.entity';
 import { Video } from 'src/videos/entities';
+import { UsedProduct } from 'src/used_product/entities/used-product.entity';
 
 @Entity('Users')
 export class User {
@@ -46,8 +47,8 @@ export class User {
    * 비밀번호 (해시됨)
    * @description VARCHAR(255), NOT NULL
    */
-  @Column({ name: 'user_pw', type: 'varchar', length: 255, nullable: true })
   @Exclude()
+  @Column({ name: 'user_pw', type: 'varchar', length: 255, nullable: true })
   password: string;
 
   /**
@@ -66,6 +67,7 @@ export class User {
    * 생성일시
    * @description DATETIME, NOT NULL
    */
+  @Exclude()
   @CreateDateColumn({ name: 'user_create_at', type: 'timestamp' })
   createdAt: Date;
 
@@ -77,9 +79,11 @@ export class User {
   intro: string | null;
 
   // 소셜로그인 용
+  @Exclude()
   @Column({ name: 'provider', type: 'varchar', length: 50, nullable: true })
   provider?: string; // 예: 'kakao', 'google', 'admin'
 
+  @Exclude()
   @Column({ name: 'provider_id', type: 'varchar', length: 255, nullable: true })
   providerId?: string; // 소셜 로그인 플랫폼에서 제공하는 고유 ID
 
@@ -87,6 +91,7 @@ export class User {
    * 리프레시 토큰 (해시됨)
    * @description 리프레시 토큰을 해시하여 저장합니다. 로그아웃 시 NULL로 만들어 토큰을 무효화합니다.
    */
+  @Exclude()
   @Column({
     name: 'hashed_refresh_token',
     type: 'varchar',
@@ -103,6 +108,10 @@ export class User {
   /** 이 사용자가 참여한 방 목록 (관계 정의) */
   @OneToMany(() => UserRoom, (userRoom) => userRoom.user)
   userRooms: UserRoom[];
+
+  /** 이 사용자가 참여한 방 목록 (관계 정의) */
+  @OneToMany(() => UsedProduct, (usedProduct) => usedProduct.user)
+  usedProduct: UsedProduct[];
 
   /** 이 사용자의 합주 포스터 */
   @OneToMany(() => RecruitEnsemble, (recruitEnsemble) => recruitEnsemble.user)

@@ -31,8 +31,6 @@ export const getVideos = async (page = 1, limit = 10): Promise<Video[]> => {
  */
 export const getVideoById = async (videoId: string): Promise<Video> => {
   const response = await axiosInstance.get<Video>(`videos/${videoId}`);
-  console.log('get video by id');
-  console.log(response.data);
   return response.data;
 };
 
@@ -82,7 +80,6 @@ export const createCommentForVideo = async (videoId: string, content: string): P
 export const fetchPromotions = async (): Promise<Promotion[]> => {
   try {
     const response = await axiosInstance.get<Promotion[]>(`promotions`);
-    // axios는 응답 데이터를 data 속성에 담아 반환합니다.
     return response.data;
   } catch (error) {
     // 에러를 콘솔에 출력하고, 호출한 쪽에서 처리할 수 있도록 다시 던집니다.

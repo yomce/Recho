@@ -58,8 +58,11 @@ export class ImageService{
     // --- 단일 요청이면 배열로 감싸고, 벌크 요청이면 items 배열을 사용한다 ---
     const items = 'items' in dto ? dto.items : [dto];
 
+    console.log('[debug] incoming dto:', dto);
+    console.log('[debug] items:', 'items' in dto ? dto.items : dto);
+
     const urlPromises = items.map(async (fileInfo) => {
-      const { refIn, fileType } = fileInfo;
+      const { refIn, fileType, isThumbnail = false } = fileInfo;
 
       let keyPrefix: string;
       switch (refIn) {
@@ -79,7 +82,9 @@ export class ImageService{
           throw new Error(`Invalid refIn: ${refIn}`)
       }
 
-      const key = `${keyPrefix}/${uuidv4()}`;
+      const fullPrefix = isThumbnail ? `${keyPrefix}/thumbnail` : keyPrefix;
+
+      const key = `${fullPrefix}/${uuidv4()}`;
       const command = new PutObjectCommand({
         Bucket: bucket,
         Key: key,
@@ -88,8 +93,16 @@ export class ImageService{
 
       const url = await getSignedUrl(this.s3, command, { expiresIn: 300 });
 
-      response[refIn] = { url, key };
+      const responseKey = fileInfo.originalKey ?? `${refIn}-${isThumbnail ? 'thumbnail' : 'original'}`;
+      response[responseKey] = { url, key };
 
+      console.log('[debug] presigned:', {
+        refIn,
+        originalKey: responseKey,
+        isThumbnail,
+        key,
+        url,
+      });
     });
     await Promise.all(urlPromises);
 
@@ -98,16 +111,19 @@ export class ImageService{
 
   async saveImages(images: SaveImageDto[]) : Promise<Image[]> {
     const imgEntities = images.map((img) => {
-      const { key, refIn } = img;
+      const { key, refIn, isThumbnail = false } = img;
 
-      const expectedPrefix = `${refIn.toLowerCase()}/`;
+      const expectedPrefix = isThumbnail
+        ? `${refIn.toLowerCase()}/thumbnail`
+        : `${refIn.toLowerCase()}`;
       
       if(!key.startsWith(expectedPrefix)) {
         throw new Error(`Key "${key}" does not match expected prefix "${expectedPrefix}"`);
       }
-      return this.imageRepository.create(img);
+      return this.imageRepository.create({...img, isThumbnail});
     });
     const savedImages = await this.imageRepository.save(imgEntities);
+    console.log('✅ 저장된 이미지:', savedImages);
     return savedImages;
   }
 

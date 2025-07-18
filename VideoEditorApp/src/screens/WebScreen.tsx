@@ -23,6 +23,13 @@ const WebScreen: React.FC = () => {
 
   const webFrontendUrl = route.params?.url ?? WEB_FRONTEND_URL;
 
+  const meta = `
+    const meta = document.createElement('meta'); 
+    meta.setAttribute('name', 'viewport'); 
+    meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'); 
+    document.head.appendChild(meta);
+  `;
+
   const injectedJavaScriptForLogs = `
     const originalConsoleLog = console.log;
     const originalConsoleWarn = console.warn;
@@ -259,9 +266,9 @@ const WebScreen: React.FC = () => {
         javaScriptEnabled={true}
         domStorageEnabled={true}
         startInLoadingState={true}
-        scalesPageToFit={true}
+        scalesPageToFit={false}
         allowsInlineMediaPlayback={true}
-        injectedJavaScript={injectedJavaScriptForLogs}
+        injectedJavaScript={`${meta}; ${injectedJavaScriptForLogs}`}
         // onMessage 핸들러를 연결하여 웹과 앱의 통신 활성화
         onMessage={handleWebViewMessage}
         onLoadEnd={sendTokenToWebView}

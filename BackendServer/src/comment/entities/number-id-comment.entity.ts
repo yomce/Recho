@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { User } from '../../auth/user/user.entity';
 import { CONTENT_TYPE } from 'src/likes/dto/toggle-like.dto';
+import { Post } from '../../community/posts/entities/post.entity';
 
 @Entity('number_id_comment')
 export class NumberIdComment {
@@ -38,4 +39,10 @@ export class NumberIdComment {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
+
+  @ManyToOne(() => Post, (post) => post.comments, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'post_id', referencedColumnName: 'postId' })
+  post: Post;
 }

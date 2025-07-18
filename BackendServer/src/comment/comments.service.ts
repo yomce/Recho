@@ -59,8 +59,12 @@ export class CommentsService {
     userId: string,
     dto: { contentType: CONTENT_TYPE; postId: number; content: string },
   ) {
-    const newComment = this.numberCommentsRepository.create({ ...dto, userId });
-    await this.numberCommentsRepository.save(newComment);
+    // 1. 댓글 엔티티를 생성하고 DB에 저장합니다.
+    // .save() 메소드는 저장된 엔티티(DB에 의해 생성된 ID 포함)를 반환합니다.
+    const newCommentEntity = this.numberCommentsRepository.create({ ...dto, userId });
+    const savedComment = await this.numberCommentsRepository.save(newCommentEntity);
+
+    // 2. 기존 기능(댓글 수 업데이트, 알림 전송)을 그대로 수행합니다.
     await this.updateContentCommentsCount(dto.contentType, dto.postId, 1);
 
     if (dto.contentType === CONTENT_TYPE.COMMUNITY) {
@@ -79,16 +83,30 @@ export class CommentsService {
           `/community/${post.postId}`,
         );
       }
-      return newComment;
     }
+    
+    // 3. user 관계가 포함된 완전한 댓글 객체를 조회하여 반환합니다.
+    const fullComment = await this.numberCommentsRepository.findOne({
+        where: { commentId: savedComment.commentId },
+        relations: ['user'],
+    });
+
+    if (!fullComment) {
+        throw new NotFoundException('생성된 댓글을 가져오는 데 실패했습니다.');
+    }
+
+    return fullComment;
   }
 
   private async createStringIdComment(
     userId: string,
     dto: { contentType: CONTENT_TYPE; postId: string; content: string },
   ) {
-    const newComment = this.stringCommentsRepository.create({ ...dto, userId });
-    await this.stringCommentsRepository.save(newComment);
+    // 1. 댓글 엔티티를 생성하고 DB에 저장합니다.
+    const newCommentEntity = this.stringCommentsRepository.create({ ...dto, userId });
+    const savedComment = await this.stringCommentsRepository.save(newCommentEntity);
+
+    // 2. 기존 기능(댓글 수 업데이트, 알림 전송)을 그대로 수행합니다.
     await this.updateContentCommentsCount(dto.contentType, dto.postId, 1);
 
     if (dto.contentType === CONTENT_TYPE.VINYL) {
@@ -108,12 +126,20 @@ export class CommentsService {
         );
       }
     }
-    return newComment;
+    
+    // 3. user 관계가 포함된 완전한 댓글 객체를 조회하여 반환합니다.
+    const fullComment = await this.stringCommentsRepository.findOne({
+        where: { commentId: savedComment.commentId },
+        relations: ['user'],
+    });
+
+    if (!fullComment) {
+        throw new NotFoundException('생성된 댓글을 가져오는 데 실패했습니다.');
+    }
+
+    return fullComment;
   }
 
-  /**
-   * [수정됨] Get all comments for a specific piece of content.
-   */
   async getComments(contentType: CONTENT_TYPE, postId: number | string) {
     const commonOptions = {
       relations: ['user'],
@@ -123,21 +149,18 @@ export class CommentsService {
     if (typeof postId === 'number') {
       return this.numberCommentsRepository.find({
         ...commonOptions,
-        where: { contentType, postId }, // postId는 number 타입
+        where: { contentType, postId },
       });
     }
     if (typeof postId === 'string') {
       return this.stringCommentsRepository.find({
         ...commonOptions,
-        where: { contentType, postId }, // postId는 string 타입
+        where: { contentType, postId },
       });
     }
     throw new BadRequestException('postId must be a number or a string.');
   }
 
-  /**
-   * [수정됨] Delete a user's own comment.
-   */
   async deleteComment(userId: string, commentId: number | string) {
     if (typeof commentId === 'number') {
       const comment = await this.numberCommentsRepository.findOne({
@@ -178,9 +201,6 @@ export class CommentsService {
     return { message: 'Comment deleted successfully.' };
   }
 
-  /**
-   * [Private] Updates the 'commentCount' on the parent content entity.
-   */
   private async updateContentCommentsCount(
     contentType: CONTENT_TYPE,
     postId: number | string,
@@ -219,14 +239,6 @@ export class CommentsService {
     }
   }
 
-  /**
-   * [개선됨] 여러 콘텐츠(게시물, 비디오 등)에 대한 최신 댓글들을 일괄 조회합니다.
-   * RANK() 윈도우 함수를 사용하여 DB 레벨에서 효율적으로 그룹별 N개를 가져옵니다.
-   * @param contentType 댓글을 달 대상의 타입
-   * @param ids 콘텐츠 ID 배열 (숫자 또는 문자)
-   * @param limit 각 콘텐츠당 가져올 최신 댓글의 수 (기본값: 2)
-   * @returns 콘텐츠 ID를 키로, 댓글 객체 배열을 값으로 가지는 Map
-   */
   async findRecentCommentsForContents(
     contentType: CONTENT_TYPE,
     ids: (number | string)[],
@@ -259,9 +271,6 @@ export class CommentsService {
     return commentsMap;
   }
 
-  /**
-   * [새로운 헬퍼] 숫자 ID를 사용하는 콘텐츠의 최신 댓글 조회
-   */
   private async findRecentNumberComments(
     postIds: number[],
     contentType: CONTENT_TYPE,
@@ -294,9 +303,6 @@ export class CommentsService {
     });
   }
 
-  /**
-   * [새로운 헬퍼] 문자열 ID를 사용하는 콘텐츠의 최신 댓글 조회
-   */
   private async findRecentStringComments(
     postIds: string[],
     contentType: CONTENT_TYPE,
@@ -306,14 +312,13 @@ export class CommentsService {
 
     const subQuery = this.stringCommentsRepository
       .createQueryBuilder('comment')
-      .select('comment.commentId') // ✅ 엔티티 프로퍼티명 'commentId' 사용
+      .select('comment.commentId')
       .addSelect(
         `RANK() OVER (PARTITION BY comment.postId ORDER BY comment.createdAt DESC) as "rank"`,
       )
       .where('comment.postId IN (:...postIds)', { postIds })
       .andWhere('comment.contentType = :contentType', { contentType });
 
-    // ✅ raw 결과의 컬럼명은 'comment_commentId'가 됩니다.
     const rawResults: { comment_commentId: string; rank: string }[] =
       await subQuery.getRawMany();
 
@@ -324,7 +329,7 @@ export class CommentsService {
     if (commentIds.length === 0) return [];
 
     return this.stringCommentsRepository.find({
-      where: { commentId: In(commentIds) }, // ✅ 엔티티 프로퍼티명 'commentId' 사용
+      where: { commentId: In(commentIds) },
       relations: ['user'],
       order: { createdAt: 'ASC' },
     });

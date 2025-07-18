@@ -102,12 +102,12 @@ const PostDetailPage: React.FC = () => {
     }
 
     try {
-      // API 요청 시 contentType을 포함시킵니다.
       const createdComment = await createComment({
         contentType: CONTENT_TYPE.COMMUNITY,
         postId: parseInt(id, 10),
         content: commentText,
       });
+      // API가 반환한 완전한 객체를 상태에 추가
       setComments((prevComments) => [...prevComments, createdComment]);
 
       setTimeout(() => {

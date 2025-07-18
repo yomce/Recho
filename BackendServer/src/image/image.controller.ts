@@ -16,6 +16,7 @@ export class ImageController {
   @Post()
   async saveImages(@Body() bulkImageSave: BulkSaveImageDto) : Promise<{ imageIds: number[] }> {
     const savedImages = await this.imageService.saveImages(bulkImageSave.images);
+    console.log('👉 컨트롤러 응답 직전:', savedImages);
     return { imageIds: savedImages.map((img) => img.imageId) };
   }
 }

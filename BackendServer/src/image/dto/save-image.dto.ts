@@ -2,7 +2,7 @@
  * presigned URL로 업로드 후 서버에 이미지 메타 정보를 저장합니다
  */
 
-import { IsString, IsOptional, IsNumber, IsIn, IsArray, ValidateNested } from "class-validator";
+import { IsString, IsOptional, IsNumber, IsIn, IsArray, ValidateNested, IsBoolean } from "class-validator";
 import { Type } from "class-transformer";
 import { ReferenceIn } from "../types/image.types";
 
@@ -26,6 +26,10 @@ export class SaveImageDto {
   @IsOptional()
   @IsNumber()
   uploadOrder?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isThumbnail?: boolean;
 }
 
 export class BulkSaveImageDto {

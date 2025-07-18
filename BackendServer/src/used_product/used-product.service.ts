@@ -76,7 +76,7 @@ export class UsedProductService {
     const thumbnails = await this.imageRepo
       .createQueryBuilder('image')
       .where('image.refPostId IN (:...productIds)', { productIds })
-      .andWhere('image.uploadOrder = 0')
+      .andWhere('image.isThumbnail = true')
       .getMany();
 
     const imageMap = new Map<number, string>();

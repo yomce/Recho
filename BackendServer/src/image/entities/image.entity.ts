@@ -33,4 +33,7 @@ export class Image {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @Column({ type: 'boolean', default: false })
+  isThumbnail: boolean;
 }

@@ -1,14 +1,20 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, Index, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+  Index,
+  JoinColumn,
+} from 'typeorm';
 import { Room } from './room.entity';
 import { User } from '../../auth/user/user.entity';
-
 
 export enum MessageType {
   TEXT = 'TEXT',
   IMAGE = 'IMAGE',
   FILE = 'FILE',
 }
-
 
 @Entity('message')
 @Index(['roomId', 'createdAt'])
@@ -19,14 +25,14 @@ export class Message {
   @Column({ name: 'room_id', type: 'uuid' })
   roomId: string;
 
-  @ManyToOne(() => Room, room => room.messages, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Room, (room) => room.messages, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'room_id' })
   room: Room;
 
   @Column({ name: 'sender', type: 'uuid' })
   senderId: string;
 
-  @ManyToOne(() => User, user => user.messages, { onDelete: 'SET NULL' })
+  @ManyToOne(() => User, (user) => user.messages, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'sender' })
   sender: User;
 

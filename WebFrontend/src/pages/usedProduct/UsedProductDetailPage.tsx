@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useChatStore } from '../../stores/chatStore';
 import axios from 'axios';
 import { type UsedProduct, TRADE_TYPE, STATUS, STATUS_TEXT } from '../../types/product';
 import { useAuthStore } from '@/stores/authStore';
@@ -25,6 +26,7 @@ const TRADE_TYPE_TEXT = {
 };
 
 const UsedProductDetailPage: React.FC = () => {
+  const { totalUnreadCount } = useChatStore();
   const { user } = useAuthStore();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -150,7 +152,7 @@ const UsedProductDetailPage: React.FC = () => {
   if (!product) return renderStatusMessage('상품 정보가 없습니다.', true);
 
   return (
-    <PostLayout bgClassName="bg-white">
+    <PostLayout totalUnreadCount={totalUnreadCount} bgClassName="bg-white">
       <div className="mx-auto max-w-6xl px-4 mb-8">
         <div className="flex flex-col">
           {/* 이미지 섹션 */}

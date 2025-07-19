@@ -3,11 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axiosInstance from '@/services/axiosInstance';
 import { type PracticeRoom } from '@/types/practiceRoom';
 import { useAuthStore } from '@/stores/authStore';
+import { useChatStore } from '../../stores/chatStore';
 import { PracticeRoomDetail } from '@/components/layout/pages/practiceRoom/PracticeRoomDetailForm';
 import useViewCounter from '@/hooks/useViewCounter';
 
-const PracticeRoomDetailPage: React.FC = () => 
-{
+const PracticeRoomDetailPage: React.FC = () => {
+  const { totalUnreadCount } = useChatStore();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -76,6 +77,7 @@ const PracticeRoomDetailPage: React.FC = () =>
 
     return (
       <PracticeRoomDetail
+        totalUnreadCount={totalUnreadCount}
         post={post}
         isOwner={isOwner}
         onEdit={handleEdit}

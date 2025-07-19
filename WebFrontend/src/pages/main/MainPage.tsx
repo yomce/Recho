@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { useUiStore } from "@/stores/uiStore";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useChatStore } from '../../stores/chatStore';
 
 // Dev 모드 상태 관리를 위한 store
 // const useDevModeStore = () => {
@@ -66,6 +67,7 @@ const CategoryCard: React.FC<{
 );
 
 const MainPage: React.FC = () => {
+  const { totalUnreadCount } = useChatStore();
   const navigate = useNavigate();
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
@@ -130,6 +132,7 @@ const MainPage: React.FC = () => {
 
   return (
     <Layout
+      totalUnreadCount={totalUnreadCount}
       currentPath={location.pathname}
       onSearchClick={handleSearchClick}
       onCategoryClick={handleCategoryClick}

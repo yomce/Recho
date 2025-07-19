@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useAuthStore } from "../../stores/authStore";
+import { useChatStore } from '../../stores/chatStore';
 import axiosInstance from "../../services/axiosInstance";
 
 // Layout 및 컴포넌트 import
@@ -60,6 +61,7 @@ const formatDate = (dateString: string) =>
 
 // --- 상세 페이지 컴포넌트 ---
 const PostDetailPage: React.FC = () => {
+  const { totalUnreadCount } = useChatStore();
   const { id } = useParams<{ id: string }>();
   const currentUser = useAuthStore((state) => state.user);
 
@@ -141,7 +143,10 @@ const PostDetailPage: React.FC = () => {
     return <div className="p-4 text-center">게시물을 찾을 수 없습니다.</div>;
 
   return (
-    <PostLayout bgClassName="text-left bg-brand-frame bg-brand-inverse">
+    <PostLayout 
+      totalUnreadCount={totalUnreadCount} 
+      bgClassName="text-left bg-brand-frame bg-brand-inverse">
+        
       <div className="p-4">
         {/* 게시글 헤더 */}
         <header className="mb-4 pb-4 border-b border-brand-frame">

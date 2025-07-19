@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
+import { useNavigate } from "react-router-dom";
 import type { Comment } from '@/types/comment';
-import PrimaryButton from '@/components/atoms/button/PrimaryButton';
-import ProfileWithName from '@/components/atoms/button/ProfileWithName';
+import Avatar from '@/components/atoms/avatar/Avatar';
+import { DEFAULT_IMAGES } from '@/constants/images';
+import MessageInput from '@/components/molecules/message/MessageInput';
+import Icon from '@/components/atoms/icon/Icon';
 
 interface CommentsModalProps {
   isOpen: boolean;
@@ -10,69 +14,166 @@ interface CommentsModalProps {
   onAddComment: (content: string) => Promise<void>;
 }
 
+const timeSince = (date: Date): string => {
+  const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
+  let interval = seconds / 31536000;
+  if (interval > 1) return `${Math.floor(interval)}년 전`;
+  interval = seconds / 2592000;
+  if (interval > 1) return `${Math.floor(interval)}달 전`;
+  interval = seconds / 86400;
+  if (interval > 1) return `${Math.floor(interval)}일 전`;
+  interval = seconds / 3600;
+  if (interval > 1) return `${Math.floor(interval)}시간 전`;
+  interval = seconds / 60;
+  if (interval > 1) return `${Math.floor(interval)}분 전`;
+  return "방금 전";
+};
+
 const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, comments, onAddComment }) => {
+  const navigate = useNavigate(); // 프로필 클릭 시 이동을 위한 navigate 함수
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const commentsEndRef = useRef<HTMLDivElement>(null);
+  const [isActive, setIsActive] = useState(false);
 
   useEffect(() => {
-    // Scroll to the bottom of the comments list when new comments are added
+    if (isOpen) {
+      const timer = setTimeout(() => {
+        setIsActive(true);
+      }, 10);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
+  const handleClose = () => {
+    setIsActive(false);
+    setTimeout(() => {
+      onClose();
+    }, 300);
+  };
+
+  const modalRoot = document.getElementById('modal-root');
+
+  useEffect(() => {
     if (isOpen) {
       commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [comments, isOpen]);
-
 
   const handleSubmit = async () => {
     if (!newComment.trim() || isSubmitting) return;
     setIsSubmitting(true);
     try {
       await onAddComment(newComment);
-      setNewComment(''); // Clear input on success
+      setNewComment('');
     } catch (error) {
-      console.error("Failed to post comment:", error);
+      console.error("댓글 작성 실패:", error);
       alert('댓글 작성에 실패했습니다.');
     } finally {
       setIsSubmitting(false);
     }
   };
+  
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
 
-  if (!isOpen) return null;
+  if (!isOpen || !modalRoot) return null;
 
-  return (
-    // Basic modal structure
-    <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, height: '60%', background: 'white', zIndex: 100, borderTopLeftRadius: '16px', borderTopRightRadius: '16px', boxShadow: '0 -2px 10px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
-      <div style={{ padding: '16px', borderBottom: '1px solid #eee', textAlign: 'center', position: 'relative' }}>
-        <h3 style={{ margin: 0 }}>댓글 ({comments.length})</h3>
-        <button onClick={onClose} style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer' }}>&times;</button>
-      </div>
+  const handleProfileClick = (userId: string) => {
+    if (userId) {
+      navigate(`/users/${userId}`);
+    }
+  };
 
-      {/* Comments List */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
-        {comments.map((comment) => (
-          <div key={comment.commentId} style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
-            <ProfileWithName user={comment.user} />
-            <p style={{ margin: 0, alignSelf: 'center' }}>{comment.content}</p>
+  return ReactDOM.createPortal(
+    <div
+      className={`fixed inset-0 z-40 flex items-end justify-center transition-opacity duration-300 ease-in-out ${isActive ? 'bg-opacity-40' : 'bg-opacity-0'}`}
+      onClick={handleClose}
+    >
+      <div
+        className={`relative z-50 flex h-4/6 w-11/12 max-w-[430px] flex-col rounded-card bg-brand-default shadow-lg transition-all duration-300 ease-in-out ${isActive ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* 헤더 */}
+        <div className="relative flex-shrink-0 border-b border-brand-frame p-4 text-center">
+          <h3 className="text-subheadline font-bold text-brand-text-primary">
+            댓글 <span className="ml-1 text-brand-gray">{comments.length}</span>
+          </h3>
+          <button
+            onClick={handleClose}
+            className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full p-1 hover:bg-brand-frame"
+            aria-label="닫기"
+          >
+            <Icon name="close" size={24} className="text-brand-gray" />
+          </button>
+        </div>
+
+        {/* 👇 댓글 목록: 요청하신 최종 레이아웃으로 수정한 부분입니다. */}
+        <div className="flex-1 overflow-y-auto p-4">
+          {comments.map((comment) => (
+            <div key={comment.commentId} className="mb-5 flex items-start gap-3">
+              {/* 왼쪽: 아바타 */}
+              <div 
+                className="cursor-pointer"
+                onClick={() => handleProfileClick(comment.user.id)}
+              >
+                <Avatar
+                  src={comment.user.profileUrl || DEFAULT_IMAGES.PROFILE}
+                  size={40}
+                  alt={comment.user.username}
+                />
+              </div>
+
+              {/* 오른쪽: 닉네임/시간 및 댓글 내용 */}
+              <div className="flex-1 text-left">
+                {/* 윗 줄: 닉네임과 시간 */}
+                <div className="flex items-baseline gap-2">
+                  <p 
+                    className="text-caption-bold text-brand-text-primary cursor-pointer"
+                    onClick={() => handleProfileClick(comment.user.id)}
+                  >
+                    {comment.user.username}
+                  </p>
+                  <p className="text-footnote text-brand-gray">
+                    {timeSince(new Date(comment.createdAt))}
+                  </p>
+                </div>
+
+                {/* 아랫 줄: 댓글 내용 */}
+                <p className="mt-1 text-body text-brand-text-secondary break-all whitespace-pre-wrap">
+                  {comment.content}
+                </p>
+              </div>
+            </div>
+          ))}
+          <div ref={commentsEndRef} />
+        </div>
+
+        {/* 푸터 (메시지 입력창) */}
+        <footer className="flex-shrink-0 border-t border-brand-frame bg-brand-default p-4">
+          <div className="flex items-end gap-3">
+            <MessageInput
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              onKeyDown={handleKeyDown}
+            />
+            <button
+              onClick={handleSubmit}
+              className="flex-shrink-0 rounded-full bg-brand-primary p-3 text-white disabled:bg-brand-disabled"
+              disabled={isSubmitting || !newComment.trim()}
+              aria-label="댓글 보내기"
+            >
+              <Icon name="send" size={20} />
+            </button>
           </div>
-        ))}
-        <div ref={commentsEndRef} />
+        </footer>
       </div>
-
-      {/* Input Form */}
-      <div style={{ padding: '8px 16px', borderTop: '1px solid #eee', display: 'flex', gap: '8px' }}>
-        <input
-          type="text"
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          placeholder="댓글 추가..."
-          style={{ flex: 1, padding: '12px', border: '1px solid #ddd', borderRadius: '20px' }}
-        />
-        <PrimaryButton onClick={handleSubmit} disabled={isSubmitting || !newComment.trim()}>
-          {isSubmitting ? '게시 중...' : '게시'}
-        </PrimaryButton>
-      </div>
-    </div>
+    </div>,
+    modalRoot
   );
 };
 

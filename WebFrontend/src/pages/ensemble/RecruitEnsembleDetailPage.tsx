@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
+import { useChatStore } from '../../stores/chatStore';
 import axiosInstance from '@/services/axiosInstance';
 import axios from 'axios';
 import type { RecruitEnsemble, ApplicationEnsemble } from './types';
@@ -14,6 +15,7 @@ import RecruitEnsembleDetail from '@/components/layout/pages/ensemble/EnsembleDe
 
 
 const RecruitEnsembleDetailPage: React.FC = () => {
+  const { totalUnreadCount } = useChatStore();
   const { user } = useAuthStore();
   // URL 파라미터에서 게시글 ID를 가져옵니다.
   const { id } = useParams<{ id: string }>();
@@ -133,6 +135,7 @@ const RecruitEnsembleDetailPage: React.FC = () => {
 
   return (
     <RecruitEnsembleDetail
+      totalUnreadCount={totalUnreadCount}
       post={ensemble}
       isOwner={isOwner}
       onEdit={handleEdit}

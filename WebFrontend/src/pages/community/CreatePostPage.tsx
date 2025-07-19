@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { useAuthStore } from '../../stores/authStore';
 import axiosInstance from '../../services/axiosInstance';
+import { useChatStore } from '../../stores/chatStore';
 
 // Layout & Button Components
 import PostLayout from '@/components/layout/PostLayout';
@@ -31,6 +32,7 @@ const createPost = async (newPostData: CreatePostData) => {
 const CATEGORY_OPTIONS = ['자유게시판', '질문/답변', '피드백', '공연홍보'];
 
 const CreatePostPage: React.FC = () => {
+    const { totalUnreadCount } = useChatStore();
     const navigate = useNavigate();
     const currentUser = useAuthStore((state) => state.user);
 
@@ -66,7 +68,7 @@ const CreatePostPage: React.FC = () => {
     };
 
     return (
-        <PostLayout>
+        <PostLayout totalUnreadCount={totalUnreadCount}>
             <div className="p-4 bg-brand-frame min-h-screen">
                 <header className="mb-6">
                     <h1 className="text-subheadline text-brand-text-primary">새 글 작성</h1>

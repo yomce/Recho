@@ -15,6 +15,7 @@ interface PracticeRoomDetailProps {
   onEdit?: () => void;
   onComplete?: () => void;
   onDelete?: () => void;
+  totalUnreadCount?: number;
 }
 
 const styles = statusStyleMap["예약하기"];
@@ -24,9 +25,10 @@ export const PracticeRoomDetail: React.FC<PracticeRoomDetailProps> = ({
   isOwner = false,
   onEdit,
   onDelete,
+  totalUnreadCount,
 }) => {
   return (
-    <PostLayout bgClassName="bg-brand-inverse">
+    <PostLayout totalUnreadCount={totalUnreadCount} bgClassName="bg-brand-inverse">
       <div className="mx-auto p-4 w-full">
         <div className="relative">
         {/* 이미지 섹션 */}

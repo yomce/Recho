@@ -12,9 +12,10 @@ interface LayoutProps {
   onCategoryClick?: () => void;
   onSearchClick?: () => void;
   onNotificationClick?: () => void;
+  totalUnreadCount?: number;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+const Layout: React.FC<LayoutProps> = ({ children, totalUnreadCount }) => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user); // user 정보 가져오기
   const location = useLocation();
@@ -52,6 +53,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         onVinylClick={handleGoToVinyl}
         onChatClick={handleGoToChat}
         onMyPageClick={handleGoToMyPage}
+        totalUnreadCount={totalUnreadCount}
       />
     </div>
   );

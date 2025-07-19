@@ -1,6 +1,7 @@
 // src/pages/user/UserPage.tsx
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useChatStore } from '../../stores/chatStore';
 import axiosInstance from "../../services/axiosInstance";
 import ProfileContentTabs from "@/components/organisms/ProfileContentTabs";
 import SearchOverlay from "@/components/organisms/SearchOverlay";
@@ -28,6 +29,7 @@ interface UserProfile {
 }
 
 const UserPage: React.FC = () => {
+  const { totalUnreadCount } = useChatStore();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
@@ -240,6 +242,7 @@ const UserPage: React.FC = () => {
 
   return (
     <MyPageLayout
+      totalUnreadCount={totalUnreadCount}
       onSettingsClick={() => setIsSettingsModalOpen(true)}
       onSearchClick={() => setIsSearchOverlayOpen(true)}
     >

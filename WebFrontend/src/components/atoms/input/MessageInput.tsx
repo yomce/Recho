@@ -7,11 +7,13 @@ import TextareaAutosize from "react-textarea-autosize";
 interface MessageInputFormProps {
   onSubmit: (message: string) => void;
   onDmClick?: () => void;
+  msgPlaceholder?: string;
 }
 
 const MessageInputForm: React.FC<MessageInputFormProps> = ({
   onSubmit,
   onDmClick,
+  msgPlaceholder,
 }) => {
   const [message, setMessage] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
@@ -51,7 +53,7 @@ const MessageInputForm: React.FC<MessageInputFormProps> = ({
 
       {/* 입력창 */}
       <TextareaAutosize
-        placeholder="댓글을 입력하세요."
+        placeholder={msgPlaceholder || "댓글을 입력하세요."}
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         onKeyDown={handleKeyDown}

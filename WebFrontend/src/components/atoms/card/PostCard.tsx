@@ -56,7 +56,7 @@ const PostCard: React.FC<PostCardProps> = ({
 
   containerClassName = "",
   linkClassName = "block",
-  cardClassName = "flex items-start justify-between border border-gray-200 rounded-[var(--radius-card)] h-[120px]",
+  cardClassName = "flex items-start justify-between border border-gray-200 rounded-[var(--radius-card)] h-[120px] bg-white",
   imageWrapperClassName = "bg-gray-200 rounded-[16px]",
   imageClassName = "w-full h-full object-cover",
   textWrapperClassName = "flex flex-col min-w-0 p-4 mt-1 items-start",

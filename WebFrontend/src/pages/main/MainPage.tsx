@@ -193,9 +193,8 @@ const MainPage: React.FC = () => {
           onClick={handleGoToPromotions}
         />
       </div>
-
       <button
-        onClick={handleOpenActionModal} // ✅ 플로팅 버튼은 이제 '선택' 모달을 엽니다.
+        onClick={handleOpenActionModal} // ✅ 플로팅 버튼은 이제 '선택' 모달을 엽니다. (To Be deleted)
         className="fixed bottom-5 right-5 z-50 h-12 w-12 rounded-full bg-brand-primary p-2 text-white shadow-lg transition-all hover:scale-110"
         aria-label="새 작업"
       >

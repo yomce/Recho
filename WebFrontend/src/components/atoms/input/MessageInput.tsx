@@ -1,7 +1,6 @@
 // src/components/atoms/input/MessageInput.tsx
 
 import React, { useState, useRef } from "react";
-import Icon from "@/components/atoms/icon/Icon";
 import IconButton from "@/components/atoms/button/IconButton";
 import TextareaAutosize from "react-textarea-autosize";
 

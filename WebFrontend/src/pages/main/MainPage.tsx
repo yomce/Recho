@@ -4,23 +4,23 @@ import { useUiStore } from "@/stores/uiStore";
 import { useLocation, useNavigate } from "react-router-dom";
 
 // Dev 모드 상태 관리를 위한 store
-const useDevModeStore = () => {
-  const [isDevMode, setIsDevMode] = useState(false);
-  const [promotionTapCount, setPromotionTapCount] = useState(0);
+// const useDevModeStore = () => {
+//   const [isDevMode, setIsDevMode] = useState(false);
+//   const [promotionTapCount, setPromotionTapCount] = useState(0);
 
-  const handlePromotionTap = () => {
-    const newCount = promotionTapCount + 1;
-    setPromotionTapCount(newCount);
+//   const handlePromotionTap = () => {
+//     const newCount = promotionTapCount + 1;
+//     setPromotionTapCount(newCount);
 
-    if (newCount === 7) {
-      setIsDevMode(true);
-      toast.success("Dev 모드가 활성화되었습니다! 🚀");
-      setPromotionTapCount(0); // 카운트 리셋
-    }
-  };
+//     if (newCount === 7) {
+//       setIsDevMode(true);
+//       toast.success("Dev 모드가 활성화되었습니다! 🚀");
+//       setPromotionTapCount(0); // 카운트 리셋
+//     }
+//   };
 
-  return { isDevMode, handlePromotionTap };
-};
+//   return { isDevMode, handlePromotionTap };
+// };
 
 // Zustand 스토어 및 아토믹 컴포넌트 import
 import { useAuthStore } from "@/stores/authStore";

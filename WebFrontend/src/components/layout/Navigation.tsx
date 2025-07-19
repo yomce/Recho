@@ -30,7 +30,7 @@ const Navigation: React.FC = () => {
   };
 
   const handleCreateVideo = () => {
-    const accessToken = localStorage.getItem("accessToken");
+    // const accessToken = localStorage.getItem("accessToken");
     if (window.ReactNativeWebView) {
       // CREATE_VIDEO 메시지 전송 비활성화
       console.log("CREATE_VIDEO 메시지 전송 비활성화됨");

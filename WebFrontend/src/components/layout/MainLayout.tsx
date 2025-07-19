@@ -43,7 +43,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         currentPath={location.pathname}
         onCategoryClick={handleGoToCategory}
         onSearchClick={handleGoToSearch}
-        onNotificationClick={() => toast("준비 중입니다.")}
       />
       <main className="py-14 pb-64">{children}</main>
       <MainFooter

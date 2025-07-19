@@ -1,20 +1,28 @@
-import { PutObjectCommand, S3Client, S3ClientConfig } from "@aws-sdk/client-s3";
-import { Injectable, InternalServerErrorException } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, In } from "typeorm";
-import { Image } from "./entities/image.entity";
+import {
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+  S3ClientConfig,
+} from '@aws-sdk/client-s3';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, In } from 'typeorm';
+import { Image } from './entities/image.entity';
 import { ConfigService } from '@nestjs/config';
 import * as dotenv from 'dotenv';
-import { ImageGetPresignedUrlDto, BulkImageGetPresignedUrlDto } from "./dto/image-get-presigned-url.dto";
-import { ReferenceIn, UploadInfo } from "./types/image.types";
+import {
+  ImageGetPresignedUrlDto,
+  BulkImageGetPresignedUrlDto,
+} from './dto/image-get-presigned-url.dto';
+import { ReferenceIn, UploadInfo } from './types/image.types';
 import { v4 as uuidv4 } from 'uuid';
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { SaveImageDto } from "./dto/save-image.dto";
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { SaveImageDto } from './dto/save-image.dto';
 
 dotenv.config();
 
 @Injectable()
-export class ImageService{
+export class ImageService {
   private readonly s3: S3Client;
 
   constructor(
@@ -51,7 +59,9 @@ export class ImageService{
     this.s3 = new S3Client(clientConfig);
   }
 
-  async getPresignedUrl(dto: ImageGetPresignedUrlDto | BulkImageGetPresignedUrlDto) : Promise<Record<ReferenceIn, UploadInfo>> {
+  async getPresignedUrl(
+    dto: ImageGetPresignedUrlDto | BulkImageGetPresignedUrlDto,
+  ): Promise<Record<ReferenceIn, UploadInfo>> {
     const bucket = this.configService.get<string>('AWS_S3_BUCKET_RECHO_IMG');
     const response: Partial<Record<ReferenceIn, UploadInfo>> = {};
 
@@ -67,19 +77,21 @@ export class ImageService{
       let keyPrefix: string;
       switch (refIn) {
         case 'USED-PRODUCTS':
-          keyPrefix = this.configService.get('USED-PRODUCTS-PATH') || 'used-products';
+          keyPrefix =
+            this.configService.get('USED-PRODUCTS-PATH') || 'used-products';
           break;
-        case 'PRACTICE-ROOM' :
-          keyPrefix = this.configService.get('PRACTICE-ROOM') || 'practice-room';
+        case 'PRACTICE-ROOM':
+          keyPrefix =
+            this.configService.get('PRACTICE-ROOM') || 'practice-room';
           break;
-        case 'ENSEMBLES' :
+        case 'ENSEMBLES':
           keyPrefix = this.configService.get('ENSEMBLES') || 'ensembles';
           break;
-        case 'USERS' :
+        case 'USERS':
           keyPrefix = this.configService.get('USERS') || 'users';
           break;
-        default :
-          throw new Error(`Invalid refIn: ${refIn}`)
+        default:
+          throw new Error(`Invalid refIn: ${refIn}`);
       }
 
       const fullPrefix = isThumbnail ? `${keyPrefix}/thumbnail` : keyPrefix;
@@ -93,7 +105,9 @@ export class ImageService{
 
       const url = await getSignedUrl(this.s3, command, { expiresIn: 300 });
 
-      const responseKey = fileInfo.originalKey ?? `${refIn}-${isThumbnail ? 'thumbnail' : 'original'}`;
+      const responseKey =
+        fileInfo.originalKey ??
+        `${refIn}-${isThumbnail ? 'thumbnail' : 'original'}`;
       response[responseKey] = { url, key };
 
       console.log('[debug] presigned:', {
@@ -109,31 +123,70 @@ export class ImageService{
     return response as Record<ReferenceIn, UploadInfo>;
   }
 
-  async saveImages(images: SaveImageDto[]) : Promise<Image[]> {
-    const imgEntities = images.map((img) => {
+  async saveImages(images: SaveImageDto[]): Promise<Image[]> {
+    const imgEntitiesPromise = images.map(async (img) => {
       const { key, refIn, isThumbnail = false } = img;
 
       const expectedPrefix = isThumbnail
         ? `${refIn.toLowerCase()}/thumbnail`
         : `${refIn.toLowerCase()}`;
-      
-      if(!key.startsWith(expectedPrefix)) {
-        throw new Error(`Key "${key}" does not match expected prefix "${expectedPrefix}"`);
+
+      if (!key.startsWith(expectedPrefix)) {
+        throw new Error(
+          `Key "${key}" does not match expected prefix "${expectedPrefix}"`,
+        );
       }
-      return this.imageRepository.create({...img, isThumbnail});
+
+      return this.imageRepository.create({
+        imageKey: key,
+        ...img,
+        isThumbnail,
+      });
     });
+
+    const imgEntities = await Promise.all(imgEntitiesPromise);
     const savedImages = await this.imageRepository.save(imgEntities);
     console.log('✅ 저장된 이미지:', savedImages);
     return savedImages;
   }
 
-  async connectImagesToPost ({
+  async saveProfileImage(key: string): Promise<Image> {
+    const imagesToSave: SaveImageDto[] = [
+      {
+        key,
+        refIn: 'USERS', // 'USERS'로 고정
+        isThumbnail: false, // 프로필 사진이므로 true로 고정
+      },
+    ];
+
+    // 핵심 로직은 기존 함수에 위임
+    const savedImages = await this.saveImages(imagesToSave);
+
+    // 배열이 아닌 단일 객체를 반환하도록 처리
+    return savedImages[0];
+  }
+
+  async getDownloadUrl(key: string): Promise<string> {
+    const bucket = this.configService.get<string>('AWS_S3_BUCKET_RECHO_IMG');
+    // GetObjectCommand를 사용하여 객체를 가져오는(Get) 명령을 생성
+    const command = new GetObjectCommand({
+      Bucket: bucket,
+      Key: key,
+    });
+
+    // 해당 명령에 대한 Presigned URL 생성 (만료 시간 설정)
+    const url = await getSignedUrl(this.s3, command, { expiresIn: 3600 }); // 1시간 (3600초)
+
+    return url;
+  }
+
+  async connectImagesToPost({
     imageIds,
     refPostId,
-  } : {
+  }: {
     imageIds: number[];
     refPostId: number;
-  }) : Promise<void> {
+  }): Promise<void> {
     const result = await this.imageRepository.update(
       { imageId: In(imageIds) },
       { refPostId },
@@ -141,14 +194,14 @@ export class ImageService{
     console.log('이미지 업데이트 결과:', result);
   }
 
-  async findImageByRefPostId(refPostId: number) : Promise<Image[]> {
+  async findImageByRefPostId(refPostId: number): Promise<Image[]> {
     return this.imageRepository.find({
-      where: {refPostId},
-      order: { uploadOrder: 'ASC'},
+      where: { refPostId },
+      order: { uploadOrder: 'ASC' },
     });
   }
 
-  async disconnectImages(imageIds: number[]) : Promise<void> {
+  async disconnectImages(imageIds: number[]): Promise<void> {
     await this.imageRepository.update(
       { imageId: In(imageIds) },
       { refPostId: null },
@@ -157,4 +210,3 @@ export class ImageService{
 
   // -- 메인 중괄호 --
 }
-

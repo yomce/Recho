@@ -5,12 +5,15 @@ import { User } from './user.entity'; // 경로 수정
 import { CreateUserDto } from './dto/create-user.dto'; // 경로 수정
 import * as bcrypt from 'bcrypt';
 import { UpdateUserDto } from './dto/update-user.dto'; // [1] UpdateUserDto import
+import { ImageService } from 'src/image/image.service';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+
+    private readonly imageService: ImageService,
   ) {}
 
   async findById(id: string): Promise<User | null> {
@@ -64,10 +67,7 @@ export class UserService {
     return this.userRepository.save(newUser);
   }
 
-  async updatePassword(
-    id: string,
-    newHashedPassword: string,
-  ): Promise<void> {
+  async updatePassword(id: string, newHashedPassword: string): Promise<void> {
     const user = await this.userRepository.findOneBy({ id: id });
     if (!user) {
       throw new NotFoundException('사용자를 찾을 수 없습니다.');
@@ -85,17 +85,13 @@ export class UserService {
     });
   }
 
-
-   /**
+  /**
    * [2] 사용자 정보 업데이트 메서드 추가
    * @param id 사용자 ID
    * @param updateUserDto 업데이트할 정보
    * @returns 업데이트된 사용자 정보 (비밀번호 제외)
    */
-  async updateUser(
-    id: string,
-    updateUserDto: UpdateUserDto,
-  ): Promise<Omit<User, 'password' | 'hashedRefreshToken'>> {
+  async updateUser(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.userRepository.findOneBy({ id });
     if (!user) {
       throw new NotFoundException(`ID가 '${id}'인 사용자를 찾을 수 없습니다.`);
@@ -103,11 +99,24 @@ export class UserService {
 
     // DTO에 담긴 정보로 사용자 닉네임 업데이트
     user.username = updateUserDto.username;
+    if (updateUserDto.intro) {
+      user.intro = updateUserDto.intro;
+    }
+    if (updateUserDto.profileUrl) {
+      // 1. ImageService를 사용하여 이미지 정보를 저장합니다.
+      //    이때 DTO의 profileUrl은 S3에 저장된 파일의 'key'라고 가정합니다.
+      const savedImage = await this.imageService.saveProfileImage(
+        updateUserDto.profileUrl,
+      );
+
+      // 2. 저장된 이미지의 imageUrl을 사용자 정보에 연결합니다.
+      //    imageUrl은 S3 버킷의 절대 경로가 포함된 URL입니다.
+      user.profileUrl = savedImage.imageKey;
+    }
 
     const updatedUser = await this.userRepository.save(user);
 
     // 보안을 위해 민감 정보 제외 후 반환
-    const { password, hashedRefreshToken, ...result } = updatedUser;
-    return result;
+    return updatedUser;
   }
 }

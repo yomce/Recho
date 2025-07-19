@@ -85,7 +85,7 @@ export class UsedProductService {
     const imageMap = new Map<number, string>();
     thumbnails.forEach((img) => {
       if (img.refPostId !== null && !imageMap.has(img.refPostId)) {
-        imageMap.set(Number(img.refPostId), img.imageUrl);
+        imageMap.set(Number(img.refPostId), img.imageKey);
       }
     });
 
@@ -158,7 +158,7 @@ export class UsedProductService {
     }
     const images = await this.imageService.findImageByRefPostId(productId);
     const imageIds = images.map((img) => img.imageId);
-    const imageUrl = images.map((img) => img.imageUrl);
+    const imageUrl = images.map((img) => img.imageKey);
     return {
       ...product,
       imageIds,

@@ -105,7 +105,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandles, Props>(
     const handleEnd = () => {
       // Android에서는 isPaused=true만으로 onEnd가 호출될 수 있음.
       // 재생 시간이 종료 시간에 근접했을 때만 onStop을 호출하여 방지.
-      if (Math.abs(playbackTimeRef.current - endTime) < 0.5) {
+      if (Math.abs(playbackTimeRef.current - endTime) < 0.01) {
         onStop(); // [수정] props로 받은 onStop을 여기서 호출
       }
     };

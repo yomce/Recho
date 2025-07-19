@@ -288,10 +288,10 @@ export const downscaleVideoIfRequired = async (
         `[VideoUtils] Content URI successfully copied to: ${accessibleUri}`,
       );
     } else {
-      // [추가] content://가 아닌 다른 URI도 cleanUri로 경로 정제
-      accessibleUri = cleanUri(originalUri);
+        // [추가] content://가 아닌 다른 URI도 cleanUri로 경로 정제
+        accessibleUri = cleanUri(originalUri);
     }
-
+    
     // [수정] 정제된 경로(accessibleUri)를 FFprobe에 전달
     const ffprobeCommand = `-v quiet -hide_banner -print_format json -show_streams "${accessibleUri}"`;
     const session = await FFprobeKit.execute(ffprobeCommand);
@@ -345,14 +345,14 @@ export const downscaleVideoIfRequired = async (
       );
       return wasFileCopied ? `file://${accessibleUri}` : originalUri;
     }
-
+    
     if (!width || !height) {
       console.warn(
         `[VideoUtils] FFprobe: Could not parse resolution. Skipping optimization.`,
       );
       return wasFileCopied ? `file://${accessibleUri}` : originalUri;
     }
-
+    
     console.log(
       `[VideoUtils] Detected: ${width}x${height}, Video: ${
         videoCodec || 'N/A'
@@ -366,7 +366,7 @@ export const downscaleVideoIfRequired = async (
       Platform.OS === 'ios' && (videoCodec === 'hevc' || videoCodec === 'hvc1');
 
     if (needsDownscaling || needsAudioReencode || needsVideoCodecConversion) {
-      // ... (사용자 확인 Alert 로직은 이전과 동일)
+        // ... (사용자 확인 Alert 로직은 이전과 동일)
       const userConfirmed = await new Promise<boolean>(resolve => {
         Alert.alert(
           '영상 최적화 필요',
@@ -376,49 +376,49 @@ export const downscaleVideoIfRequired = async (
             { text: '네', onPress: () => resolve(true) },
           ],
         );
-      });
+        });
 
-      if (!userConfirmed) {
+        if (!userConfirmed) {
         if (wasFileCopied && tempFilePath)
           await RNFS.unlink(tempFilePath).catch(console.error);
-        return null;
-      }
+            return null;
+        }
 
-      // [수정] 최종 반환 경로도 file:// 접두사를 붙여 일관성 유지
+        // [수정] 최종 반환 경로도 file:// 접두사를 붙여 일관성 유지
       const outputPath = `${
         RNFS.DocumentDirectoryPath
       }/optimized_video_${new Date().getTime()}.mp4`;
       const videoEncoder =
         Platform.OS === 'ios' ? 'h264_videotoolbox' : 'h264_mediacodec';
-      const audioEncoder = 'aac';
-      const videoFilters = `scale=-2:1080`;
-      const preset = Platform.OS === 'ios' ? '' : '-preset fast';
-      // [수정] 입력 경로(accessibleUri)가 이미 정제되었으므로 그대로 사용
-      const command = `-i "${accessibleUri}" -vf "${videoFilters}" -c:v ${videoEncoder} -c:a ${audioEncoder} -b:a 192k ${preset} -movflags +faststart "${outputPath}"`;
-
+        const audioEncoder = 'aac';
+        const videoFilters = `scale=-2:1080`;
+        const preset = Platform.OS === 'ios' ? '' : '-preset fast';
+        // [수정] 입력 경로(accessibleUri)가 이미 정제되었으므로 그대로 사용
+        const command = `-i "${accessibleUri}" -vf "${videoFilters}" -c:v ${videoEncoder} -c:a ${audioEncoder} -b:a 192k ${preset} -movflags +faststart "${outputPath}"`;
+      
       console.log(
         `[VideoUtils] FFmpeg encoding started with command: ${command}`,
       );
-      const encodeSession = await FFmpegKit.execute(command);
-      const encodeReturnCode = await encodeSession.getReturnCode();
+        const encodeSession = await FFmpegKit.execute(command);
+        const encodeReturnCode = await encodeSession.getReturnCode();
 
-      if (ReturnCode.isSuccess(encodeReturnCode)) {
+        if (ReturnCode.isSuccess(encodeReturnCode)) {
         Alert.alert('최적화 완료', '영상이 성공적으로 최적화되었습니다.');
         if (wasFileCopied && tempFilePath)
           await RNFS.unlink(tempFilePath).catch(console.error);
-        return `file://${outputPath}`; // 최종 경로 반환
-      } else {
-        const errorLogs = await encodeSession.getLogsAsString();
-        Alert.alert('오류', '영상 최적화 중 오류가 발생했습니다.');
-        console.error('[VideoUtils] FFmpeg encoding failed. Logs:', errorLogs);
+            return `file://${outputPath}`; // 최종 경로 반환
+        } else {
+            const errorLogs = await encodeSession.getLogsAsString();
+            Alert.alert('오류', '영상 최적화 중 오류가 발생했습니다.');
+            console.error('[VideoUtils] FFmpeg encoding failed. Logs:', errorLogs);
         if (wasFileCopied && tempFilePath)
           await RNFS.unlink(tempFilePath).catch(console.error);
-        return null;
-      }
+            return null;
+        }
     } else {
-      console.log('[VideoUtils] No optimization required.');
-      // [수정] 최적화가 필요 없더라도 일관된 형식으로 반환
-      return wasFileCopied ? `file://${accessibleUri}` : originalUri;
+        console.log('[VideoUtils] No optimization required.');
+        // [수정] 최적화가 필요 없더라도 일관된 형식으로 반환
+        return wasFileCopied ? `file://${accessibleUri}` : originalUri;
     }
   } catch (error) {
     console.error(

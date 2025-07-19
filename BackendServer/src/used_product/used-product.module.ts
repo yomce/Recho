@@ -7,6 +7,7 @@ import { LocationModule } from 'src/map/location.module';
 import { Location } from '../map/entities/location.entity';
 import { ImageModule } from 'src/image/image.module';
 import { Image } from 'src/image/entities/image.entity';
+import { UserModule } from 'src/auth/user/user.module';
 
 // -- location import 추가합니다 --
 @Module({
@@ -14,6 +15,7 @@ import { Image } from 'src/image/entities/image.entity';
     TypeOrmModule.forFeature([UsedProduct, Location, Image]),
     forwardRef(() => LocationModule),
     ImageModule,
+    UserModule,
   ],
   controllers: [UsedProductController],
   providers: [UsedProductService],

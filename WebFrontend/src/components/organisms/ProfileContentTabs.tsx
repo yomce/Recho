@@ -122,7 +122,7 @@ const ProfileContentTabs: React.FC<ProfileContentTabsProps> = ({
           onClick={handleFabClick}
           className="bg-brand-primary text-brand-inverse rounded-full flex items-center justify-center hover:scale-105 transition-all"
         >
-          <Icon as="span" name="plus" size={28} className="!p-0 !text-white" />
+          <Icon name="plus" size={32} className="!p-0 !text-white" />
         </button>
       </div>
     </div>

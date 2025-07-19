@@ -1,6 +1,5 @@
 // src/components/atoms/button/FloatingWriteButton.tsx
 import { Link, useLocation } from "react-router-dom";
-import IconButton from "./IconButton";
 import Icon from "../icon/Icon";
 
 const FloatingWriteButton = () => {

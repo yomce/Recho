@@ -41,7 +41,6 @@ const PostLayout: React.FC<LayoutProps> = ({ children, bgClassName = "bg-brand-f
         currentPath={location.pathname}
         onCategoryClick={handleGoToCategory}
         onSearchClick={onSearchClick || handleGoToSearchPage} 
-        onNotificationClick={() => toast('준비 중입니다.')}
       />
       <main className="py-14 pb-20">
         {children}

@@ -488,7 +488,6 @@ const TimelineComponent = forwardRef<TimelineHandles, TimelineProps>(
         Math.max(newStartTime, startPointThreshold, latestTrackStartTime),
       );
       clampedTime = parseFloat(clampedTime.toFixed(2));
-      console.log('[Timeline] onStartHandleDrag new time:', clampedTime);
       onGlobalStartTimeChange(clampedTime);
     };
 
@@ -525,7 +524,6 @@ const TimelineComponent = forwardRef<TimelineHandles, TimelineProps>(
         Math.min(newEndTime, endPointThreshold, earliestTrackEndTime),
       );
       clampedTime = parseFloat(clampedTime.toFixed(2));
-      console.log('[Timeline] onEndHandleDrag new time:', clampedTime);
       onGlobalEndTimeChange(clampedTime);
     };
 
@@ -640,6 +638,16 @@ const TimelineComponent = forwardRef<TimelineHandles, TimelineProps>(
       isPanning,
       isGloballyPlaying,
     ]);
+
+    // [추가] currentTime이 변경될 때마다 타임라인 스크롤 위치를 즉시 업데이트
+    useEffect(() => {
+      if (!isPanning && containerWidth > 0) {
+        const newPanValue =
+          containerWidth / 2 - currentTime * PIXELS_PER_SECOND;
+        const clampedPosition = Math.max(minPan, Math.min(newPanValue, maxPan));
+        panPosition.setValue(clampedPosition);
+      }
+    }, [currentTime, containerWidth, panPosition, minPan, maxPan, isPanning]);
 
     useImperativeHandle(ref, () => ({
       scrollToTime: (time: number) => {

@@ -37,14 +37,14 @@ const AppNavigator = () => {
           },
         }}
       >
-        <Stack.Screen
+        {/* <Stack.Screen
           name="Home"
           component={HomeScreen}
           options={{
             title: '비디오 편집 앱',
             headerShown: false, // 홈 화면에서는 헤더 숨김
           }}
-        />
+        /> */}
         <Stack.Screen
           name="Camera"
           component={CameraScreen}

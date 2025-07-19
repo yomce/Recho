@@ -33,6 +33,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
+import Slider from '@react-native-community/slider';
 import { CameraRoll } from '@react-native-camera-roll/camera-roll';
 import RNFS from 'react-native-fs';
 import { FFmpegKit, ReturnCode } from 'ffmpeg-kit-react-native';
@@ -206,6 +207,14 @@ const VideoEditScreen: React.FC<{
     parentEndTime, // 부모의 종료 시간 (기본값 undefined)
   } = route.params ?? {};
 
+  // [추가] parentStartTime이 변경될 때마다 플레이 헤드와 전역 시작 시간을 업데이트
+  useEffect(() => {
+    if (parentStartTime > 0) {
+      setGlobalStartTime(parentStartTime);
+      setTimelinePosition(parentStartTime);
+    }
+  }, [parentStartTime, serverVideos]);
+
   // 비디오 처리 로직을 커스텀 훅으로 분리
   const { isProcessing, uploading, startVideoProcessing } = useVideoProcessor();
 
@@ -340,15 +349,16 @@ const VideoEditScreen: React.FC<{
   >({}); // 각 비디오의 재생 상태 (현재 시간, 정지 여부)
   const [previewScale, setPreviewScale] = useState(1); // 가상 캔버스의 스케일 값
   const [isGloballyPlaying, setIsGloballyPlaying] = useState(false); // 전체 동시 재생 여부
-  const [globalStartTime, setGlobalStartTime] = useState(0); // 모든 비디오가 동시에 재생될 수 있는 시작 시간
+  const [globalStartTime, setGlobalStartTime] = useState(parentStartTime); // 모든 비디오가 동시에 재생될 수 있는 시작 시간
   const [globalEndTime, setGlobalEndTime] = useState(0);
-  const [timelinePosition, setTimelinePosition] = useState(0);
+  const [timelinePosition, setTimelinePosition] = useState(parentStartTime);
   const [timelineHeight, setTimelineHeight] = useState(100); // 타임라인의 동적 높이
+  const [isActionMenuVisible, setIsActionMenuVisible] = useState(false);
+  const [isVolumeMenuVisible, setIsVolumeMenuVisible] = useState(false);
   const [isSheetVisible, setSheetVisible] = useState(false);
   const [selectedTrack, setSelectedTrack] = useState<TrimmerState | null>(null);
   const [isSettingsButtonVisible, setSettingsButtonVisible] = useState(false);
   const [isTimelineReady, setIsTimelineReady] = useState(false);
-  const [isActionMenuVisible, setIsActionMenuVisible] = useState(false);
   const [soloTrackId, setSoloTrackId] = useState<string | null>(null);
   const [preSoloMuteStates, setPreSoloMuteStates] = useState<
     Record<string, boolean>
@@ -540,7 +550,7 @@ const VideoEditScreen: React.FC<{
       duration: video.endTime - video.startTime, // 부모 트랙의 실제 길이는 구간 길이
       startTime: video.startTime,
       endTime: video.endTime,
-      timelinePosition: video.timelinePosition,
+      timelinePosition: video.timelinePosition, // [수정] 원래 값 그대로 사용
       isPlaying: false,
       isMuted: false,
       volume: 1,
@@ -598,7 +608,7 @@ const VideoEditScreen: React.FC<{
       initialPlaybackStates[t.id] = { currentTime: 0, isPaused: true };
     });
     setPlaybackStates(initialPlaybackStates);
-  }, [serverVideos, localVideos, route.params]);
+  }, [serverVideos, localVideos, route.params, parentStartTime]);
 
   useEffect(() => {
     // 모든 비디오의 duration이 로드되었는지 확인
@@ -739,16 +749,35 @@ const VideoEditScreen: React.FC<{
     }
 
     const trackStartTimes = trimmers.map(t => t.timelinePosition);
-    const trackEndTimes = trimmers.map(
-      t => t.timelinePosition + (t.endTime - t.startTime),
-    );
+    // [수정] trackEndTime 계산 시 timelinePosition이 음수인 경우를 고려
+    const trackEndTimes = trimmers.map(t => {
+      const clipDuration = t.endTime - t.startTime;
+      const trackEndTime = t.timelinePosition + clipDuration;
+
+      // timelinePosition이 음수인 경우, 실제 비디오의 끝점을 올바르게 계산
+      if (t.timelinePosition < 0) {
+        // 음수 timelinePosition을 보정하여 실제 끝점 계산
+        return Math.max(trackEndTime, t.endTime);
+      }
+
+      return trackEndTime;
+    });
 
     let maxStart = Math.max(...trackStartTimes);
     let minEnd = Math.min(...trackEndTimes);
 
-    // [추가] 계산된 값에 임계값 적용
-    maxStart = Math.max(startPointThreshold, maxStart); // 시작점은 임계값보다 작을 수 없음
-    minEnd = Math.min(endPointThreshold, minEnd); // 끝점은 임계값을 넘을 수 없음
+    // [수정] 시작점 임계값 적용
+    maxStart = Math.max(startPointThreshold, maxStart);
+
+    // [수정] 엔드포인트 임계점을 스타트 포인트 임계점부터 가장 긴 트랙의 길이까지의 거리로 계산
+    const longestTrackDuration = Math.max(
+      ...trimmers.map(t => t.endTime - t.startTime),
+    );
+    const calculatedEndPointThreshold =
+      startPointThreshold + longestTrackDuration;
+
+    // 계산된 엔드포인트 임계점과 실제 트랙들의 끝점 중 더 작은 값 사용
+    minEnd = Math.min(calculatedEndPointThreshold, minEnd);
 
     // 계산된 시작점이 현재 시작점보다 앞서는 경우, 수동 설정을 존중하여 덮어쓰지 않음
     if (maxStart > globalStartTime) {
@@ -760,13 +789,7 @@ const VideoEditScreen: React.FC<{
     if (newEndTime < globalEndTime) {
       setGlobalEndTime(newEndTime);
     }
-  }, [
-    trimmers,
-    globalStartTime,
-    globalEndTime,
-    startPointThreshold,
-    endPointThreshold,
-  ]);
+  }, [trimmers, globalStartTime, globalEndTime, startPointThreshold]);
 
   // =================================================================================
   // 5. 핸들러 함수 (이벤트 처리)
@@ -830,7 +853,45 @@ const VideoEditScreen: React.FC<{
       });
       return newStates;
     });
-  }, []);
+
+    // 개별재생 중이면 뮤트 상태를 원래대로 복원
+    if (soloTrackId) {
+      setSoloTrackId(null);
+      setTrimmers(prev =>
+        prev.map(t => ({ ...t, isMuted: preSoloMuteStates[t.id] ?? false })),
+      );
+    }
+  }, [soloTrackId, preSoloMuteStates]);
+
+  // 모든 비디오를 동시 재생 시작점으로 이동
+  const handleGlobalSeekToStart = useCallback(() => {
+    handleGlobalPause();
+    trimmers.forEach(t => {
+      if (previewSlotRefs.current[t.id]) {
+        const clipDuration = t.endTime - t.startTime;
+        const trackStartTime = t.timelinePosition;
+        const trackEndTime = trackStartTime + clipDuration;
+
+        let seekTime;
+        if (globalStartTime < trackStartTime) {
+          seekTime = t.startTime;
+        } else if (globalStartTime > trackEndTime) {
+          seekTime = t.endTime;
+        } else {
+          const timeIntoClip = globalStartTime - trackStartTime;
+          seekTime = t.startTime + timeIntoClip;
+        }
+
+        previewSlotRefs.current[t.id]?.seek(seekTime);
+        handlePlaybackUpdate(t.id, {
+          currentTime: seekTime,
+          isPaused: true,
+        });
+      }
+    });
+    setTimelinePosition(globalStartTime);
+    timelineRef.current?.scrollToTime(globalStartTime);
+  }, [trimmers, globalStartTime, handleGlobalPause, handlePlaybackUpdate]);
 
   // 전역 재생/일시정지 버튼 토글
   const handleToggleGlobalPlay = useCallback(() => {
@@ -838,30 +899,26 @@ const VideoEditScreen: React.FC<{
       handleGlobalPause();
       setSeekAndPlayRequest(null);
       setPlayRequest(false);
-
-      if (soloTrackId) {
-        setSoloTrackId(null);
-        setTrimmers(prev =>
-          prev.map(t => ({ ...t, isMuted: preSoloMuteStates[t.id] ?? false })),
-        );
-      }
     } else {
       const isOutside =
         timelinePosition < globalStartTime || timelinePosition >= globalEndTime;
+
       if (isOutside) {
-        setSeekAndPlayRequest(globalStartTime);
+        // 엔드포인트에 있으면 시작점으로 이동 후 재생
+        handleGlobalSeekToStart();
+        setPlayRequest(true);
       } else {
+        // 현재 위치에서 재생
         setPlayRequest(true);
       }
     }
   }, [
     isGloballyPlaying,
     handleGlobalPause,
-    soloTrackId,
     timelinePosition,
     globalStartTime,
     globalEndTime,
-    preSoloMuteStates,
+    handleGlobalSeekToStart,
   ]);
 
   // 비디오 재생 중 주기적으로 호출 (onProgress)
@@ -883,21 +940,32 @@ const VideoEditScreen: React.FC<{
       const currentTimelinePosition =
         trimmer.timelinePosition + timeSinceClipStart;
 
-      const finalPosition = Math.min(
-        currentTimelinePosition,
-        endPointThresholdRef.current,
-      );
+      // 음수 값 처리
+      if (currentTimelinePosition < 0) {
+        return;
+      }
+
+      // 엔드포인트 임계값 계산
       const stopThreshold = Math.min(
         globalEndTimeRef.current,
         endPointThresholdRef.current,
       );
-      const epsilon = 0.05;
 
-      if (stopThreshold > 0 && finalPosition >= stopThreshold - epsilon) {
-        handleGlobalPause();
+      // 더 정확한 엔드포인트 감지 (epsilon을 0.01로 줄임)
+      const epsilon = 0.01;
+
+      // 엔드포인트에 도달했는지 확인
+      if (
+        stopThreshold > 0 &&
+        currentTimelinePosition >= stopThreshold - epsilon
+      ) {
+        console.log('[handleProgress] 엔드포인트 도달 - 정지 실행');
+
+        // 정확히 엔드포인트 위치로 멈춤
         setTimelinePosition(stopThreshold);
+        handleGlobalPause();
       } else {
-        setTimelinePosition(finalPosition);
+        setTimelinePosition(currentTimelinePosition);
       }
     },
     // 의존성 배열에서 trimmers, globalEndTime, endPointThreshold 제거하여 함수를 안정화
@@ -965,21 +1033,6 @@ const VideoEditScreen: React.FC<{
   }, []);
 
   // 모든 비디오를 동시 재생 시작점으로 이동
-  const handleGlobalSeekToStart = useCallback(() => {
-    handleGlobalPause();
-    trimmers.forEach(t => {
-      if (previewSlotRefs.current[t.id]) {
-        previewSlotRefs.current[t.id]?.seek(globalStartTime);
-        handlePlaybackUpdate(t.id, {
-          currentTime: globalStartTime,
-          isPaused: true,
-        });
-      }
-    });
-    setTimelinePosition(globalStartTime);
-    timelineRef.current?.scrollToTime(globalStartTime);
-  }, [trimmers, globalStartTime, handleGlobalPause, handlePlaybackUpdate]);
-
   const handleGlobalSeekToEnd = useCallback(() => {
     handleGlobalPause();
     trimmers.forEach(t => {
@@ -1064,6 +1117,7 @@ const VideoEditScreen: React.FC<{
     } else if (soloTrackId === null && isGloballyPlaying) {
       handleGlobalPause();
     } else {
+      // 1단계: 음소거 상태 저장 및 적용
       const currentMuteStates: Record<string, boolean> = {};
       trimmers.forEach(t => {
         currentMuteStates[t.id] = t.isMuted;
@@ -1073,9 +1127,13 @@ const VideoEditScreen: React.FC<{
       setTrimmers(prev =>
         prev.map(t => ({ ...t, isMuted: t.id !== selectedTrack.id })),
       );
-      if (!isGloballyPlaying) {
-        handleToggleGlobalPlay();
-      }
+
+      // 2단계: 음소거 적용 후 재생 시작 (setTimeout으로 지연)
+      setTimeout(() => {
+        if (!isGloballyPlaying) {
+          handleToggleGlobalPlay();
+        }
+      }, 100);
     }
   }, [
     selectedTrack,
@@ -1125,6 +1183,7 @@ const VideoEditScreen: React.FC<{
   }, []);
 
   const handlePositionChange = useCallback((time: number) => {
+    console.log('[handlePositionChange] timelinePosition 변경:', time);
     setTimelinePosition(time);
   }, []);
 
@@ -1142,29 +1201,68 @@ const VideoEditScreen: React.FC<{
 
   // [수정] 재생 요청이 들어오면 비디오를 재생하는 useEffect
   useEffect(() => {
+    console.log('[useEffect] seekAndPlayRequest 변경:', seekAndPlayRequest);
+
     if (seekAndPlayRequest !== null) {
       const videoId = trimmers[0]?.id;
+      console.log('[useEffect] seekAndPlayRequest 처리 - videoId:', videoId);
+
       if (videoId && previewSlotRefs.current[videoId]) {
         // seek가 완료된 후 실행할 콜백 설정
         seekCompleteCallback.current = () => {
           setTimelinePosition(seekAndPlayRequest);
-          setPlayRequest(true); // 2단계(재생) 트리거
+
+          // 모든 비디오를 새로운 위치로 이동
+          trimmersRef.current.forEach((t: any) => {
+            const ref = previewSlotRefs.current[t.id];
+            if (ref) {
+              const trackStartTime = t.timelinePosition;
+              const trackEndTime = trackStartTime + (t.endTime - t.startTime);
+
+              let seekTime;
+              if (seekAndPlayRequest < trackStartTime) {
+                seekTime = t.startTime;
+              } else if (seekAndPlayRequest > trackEndTime) {
+                seekTime = t.endTime;
+              } else {
+                const timeIntoClip = seekAndPlayRequest - trackStartTime;
+                seekTime = t.startTime + timeIntoClip;
+              }
+
+              if (isFinite(seekTime)) {
+                ref.seek(seekTime);
+                handlePlaybackUpdate(t.id, {
+                  currentTime: seekTime,
+                  isPaused: true,
+                });
+              }
+            }
+          });
+
+          setPlayRequest(true);
           seekCompleteCallback.current = null;
         };
         // seek 실행
+        console.log('[useEffect] seek 실행:', seekAndPlayRequest);
         previewSlotRefs.current[videoId]?.seek(seekAndPlayRequest);
       }
     } else {
       // 재생 요청이 취소되면 콜백도 취소
+      console.log('[useEffect] seekAndPlayRequest null - 콜백 취소');
       seekCompleteCallback.current = null;
     }
-  }, [seekAndPlayRequest, trimmers]);
+  }, [seekAndPlayRequest, trimmers, playbackStates, handlePlaybackUpdate]);
 
   // [수정] 2단계: 재생 요청 처리
   useEffect(() => {
+    console.log('[useEffect] playRequest 변경:', playRequest);
+
     if (!playRequest) return;
+
+    console.log('[useEffect] 재생 시작 - isGloballyPlaying: true');
     setIsGloballyPlaying(true);
     trimmers.forEach(trimmer => {
+      console.log('[useEffect] 비디오 재생:', trimmer.id);
       handlePlaybackUpdate(trimmer.id, { isPaused: false });
     });
     setPlayRequest(false);
@@ -1174,6 +1272,16 @@ const VideoEditScreen: React.FC<{
   const handleTrackDragEnd = useCallback(() => {
     // 현재는 아무 작업도 하지 않지만, 나중에 필요할 경우를 위해 안정적인 함수로 정의
   }, []);
+
+  // 볼륨 변경 핸들러
+  const handleVolumeChange = useCallback(
+    (value: number) => {
+      if (selectedTrack) {
+        handleTrimmerUpdate(selectedTrack.id, { volume: value });
+      }
+    },
+    [selectedTrack, handleTrimmerUpdate],
+  );
 
   const memoizedPreviewPanel = useMemo(() => {
     return (
@@ -1340,6 +1448,33 @@ const VideoEditScreen: React.FC<{
               </View>
             </View>
           )}
+
+          {/* 볼륨 컨트롤 메뉴 */}
+          {isVolumeMenuVisible && selectedTrack && (
+            <View style={styles.centeredActionMenuContainer}>
+              <View style={[styles.actionMenu, styles.volumeMenu]}>
+                <View style={styles.volumeContainer}>
+                  <Text style={styles.volumeLabel}>볼륨</Text>
+                  <View style={styles.volumeSliderContainer}>
+                    <Slider
+                      style={styles.volumeSlider}
+                      minimumValue={0}
+                      maximumValue={2}
+                      value={selectedTrack.volume}
+                      onValueChange={handleVolumeChange}
+                      minimumTrackTintColor="#ffffff"
+                      maximumTrackTintColor="#666666"
+                      thumbTintColor="transparent"
+                    />
+                  </View>
+                  <Text style={styles.volumeValue}>
+                    {Math.round(selectedTrack.volume * 100)}%
+                  </Text>
+                </View>
+              </View>
+            </View>
+          )}
+
           <View
             style={{
               justifyContent: 'center',
@@ -1371,7 +1506,7 @@ const VideoEditScreen: React.FC<{
             />
             {isSettingsButtonVisible && (
               <TouchableOpacity
-                onPress={() => setSheetVisible(true)}
+                onPress={() => setIsVolumeMenuVisible(v => !v)}
                 style={{
                   backgroundColor: '#000',
                   borderRadius: 50,
@@ -1418,27 +1553,6 @@ const VideoEditScreen: React.FC<{
           />
         )}
       </ControlsWrapper>
-      <BottomSheet
-        visible={isSheetVisible}
-        onClose={() => setSheetVisible(false)}
-      >
-        {selectedTrack && (
-          <VideoControlSet
-            key={selectedTrack.id}
-            title={'비디오 컨트롤'}
-            videoDuration={selectedTrack.duration}
-            initialStartTime={selectedTrack.startTime}
-            initialEndTime={selectedTrack.endTime}
-            initialVolume={selectedTrack.volume}
-            initialEqualizer={selectedTrack.equalizer}
-            currentTime={playbackStates[selectedTrack.id]?.currentTime ?? 0}
-            onUpdate={newState =>
-              handleTrimmerUpdate(selectedTrack.id, newState)
-            }
-            onSeek={time => handleSeek(selectedTrack.id, time)}
-          />
-        )}
-      </BottomSheet>
     </ScreenContainer>
   );
 };
@@ -1486,6 +1600,44 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 3.84,
     elevation: 5,
+  },
+  volumeMenu: {
+    height: 100,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  volumeContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  volumeLabel: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+    letterSpacing: 0.5,
+  },
+  volumeSliderContainer: {
+    width: '100%',
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+  },
+  volumeSlider: {
+    width: '100%',
+    height: 30,
+  },
+  volumeValue: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 8,
+    letterSpacing: 0.5,
   },
   actionMenuItem: {
     // padding: 16,

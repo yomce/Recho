@@ -4,6 +4,7 @@ import { useUiStore } from "@/stores/uiStore";
 import { toast } from "react-hot-toast";
 
 const Navigation: React.FC = () => {
+  return null;
   const navigate = useNavigate();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
@@ -31,9 +32,11 @@ const Navigation: React.FC = () => {
   const handleCreateVideo = () => {
     const accessToken = localStorage.getItem("accessToken");
     if (window.ReactNativeWebView) {
-      window.ReactNativeWebView.postMessage(
-        JSON.stringify({ type: "CREATE_VIDEO", token: accessToken })
-      );
+      // CREATE_VIDEO 메시지 전송 비활성화
+      console.log("CREATE_VIDEO 메시지 전송 비활성화됨");
+      // window.ReactNativeWebView.postMessage(
+      //   JSON.stringify({ type: "CREATE_VIDEO", token: accessToken }),
+      // );
     } else {
       toast.error("비디오 생성은 앱에서만 가능합니다.");
     }
@@ -110,7 +113,16 @@ const Navigation: React.FC = () => {
           <button
             key="create-video-rn"
             onClick={handleCreateVideo}
-            style={{ width: "50px", height: "50px", borderRadius: "50%", border: "none", backgroundColor: "#ff9800", color: "white", cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,0.1)" }}
+            style={{
+              width: "50px",
+              height: "50px",
+              borderRadius: "50%",
+              border: "none",
+              backgroundColor: "#ff9800",
+              color: "white",
+              cursor: "pointer",
+              boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+            }}
             title="RN 컴포넌트 테스트"
           >
             RN
@@ -121,7 +133,16 @@ const Navigation: React.FC = () => {
               openVinylCreateModal();
               setIsOpen(false);
             }}
-            style={{ width: "50px", height: "50px", borderRadius: "50%", border: "none", backgroundColor: "#9c27b0", color: "white", cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,0.1)" }}
+            style={{
+              width: "50px",
+              height: "50px",
+              borderRadius: "50%",
+              border: "none",
+              backgroundColor: "#9c27b0",
+              color: "white",
+              cursor: "pointer",
+              boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+            }}
             title="진짜 비디오 생성 테스트"
           >
             📹

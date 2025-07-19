@@ -14,7 +14,7 @@ export class ImageController {
   @Get('download/:key') // GET /images/download/:key
   async getDownloadUrl(@Param('key') key: string) {
     const url = await this.imageService.getDownloadUrl(key);
-    return { url };
+    return url;
   }
 
   @Post('upload-urls')

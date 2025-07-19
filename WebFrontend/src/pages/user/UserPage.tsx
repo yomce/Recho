@@ -95,7 +95,8 @@ const UserPage: React.FC = () => {
 
         let profileImgUrlResponse;
         if (userResponse.data.profileUrl) {
-          profileImgUrlResponse = await axiosInstance.get<string>(`images/download/${userResponse.data.profileUrl}`)
+          const encodedImgUrlResponse = encodeURIComponent(userResponse.data.profileUrl)
+          profileImgUrlResponse = await axiosInstance.get<string>(`images/download/${encodedImgUrlResponse}`)
           setUserImage(profileImgUrlResponse.data);
         }
 
@@ -251,7 +252,8 @@ const UserPage: React.FC = () => {
                 {isMyProfile && isEditing ? (
                   <label htmlFor="profile-upload-input">
                     <Avatar
-                      src={newProfileImageFile ? URL.createObjectURL(newProfileImageFile) : userImage || DEFAULT_IMAGES.PROFILE}                      alt={`${user.username}의 프로필 사진`}
+                      src={newProfileImageFile ? URL.createObjectURL(newProfileImageFile) : userImage || DEFAULT_IMAGES.PROFILE}
+                      alt={`${user.username}의 프로필 사진`}
                       size={64}
                     />
                     <input
@@ -264,7 +266,7 @@ const UserPage: React.FC = () => {
                   </label>
                 ) : (
                   <Avatar
-                    src={user.profileUrl || DEFAULT_IMAGES.PROFILE}
+                    src={userImage|| DEFAULT_IMAGES.PROFILE}
                     alt={`${user.username}의 프로필 사진`}
                     size={64}
                   />

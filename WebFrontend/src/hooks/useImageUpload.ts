@@ -77,7 +77,6 @@ export const useImageUpload = () => {
   const saveImgMetaData = async (uploadData: Record<string, { url: string; key: string }>, refIn: string, refPostId?: number) => {
     const payload = {
       images: Object.values(uploadData).map((data, idx) => ({
-        imageUrl: `https://recho-img.s3.ap-northeast-2.amazonaws.com/${data.key}`,
         key: data.key,
         refIn,
         uploadOrder: idx,

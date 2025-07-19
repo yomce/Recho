@@ -17,6 +17,7 @@ export const getVideos = async (page = 1, limit = 10): Promise<Video[]> => {
         limit,
       },
     });
+    console.log(response.data);
     return response.data;
   } catch (error) {
     console.error("Error fetching videos:", error);

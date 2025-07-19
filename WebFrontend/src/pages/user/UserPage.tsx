@@ -14,7 +14,7 @@ import SecondaryButton from "@/components/atoms/button/SecondaryButton";
 import Modal from "@/components/molecules/modal/Modal";
 import { useAuthStore } from "@/stores/authStore";
 import { toast } from "react-hot-toast";
-import { AxiosError } from "axios"; // AxiosError 타입 import
+import axios, { AxiosError } from "axios"; // AxiosError 타입 import
 import type { Video } from '@/types/video';
 
 // 타입 정의
@@ -49,6 +49,9 @@ const UserPage: React.FC = () => {
 
   const [isEditing, setIsEditing] = useState(false);
   const [newUsername, setNewUsername] = useState("");
+  const [newUserInfo, setNewUserInfo] = useState("");
+  const [userImage, setUserImage] = useState("");
+  const [newProfileImageFile, setNewProfileImageFile] = useState<File | null>(null);
 
   const openVinylModal = () => setIsVinylModalOpen(true);
   const closeVinylModal = () => setIsVinylModalOpen(false);
@@ -83,13 +86,19 @@ const UserPage: React.FC = () => {
           axiosInstance.get<Video[]>(`videos/user/${id}`),
         ]);
         setUser(userResponse.data);
-        console.log(videosResponse.data);
         const formattedThumbnails = videosResponse.data.map((video, index) => ({
             id: `thumb-${index}`,
             linkId: video.id,
             thumbnailUrl: video.thumbnail_url
           })
         );
+
+        let profileImgUrlResponse;
+        if (userResponse.data.profileUrl) {
+          const encodedImgUrlResponse = encodeURIComponent(userResponse.data.profileUrl)
+          profileImgUrlResponse = await axiosInstance.get<string>(`images/download/${encodedImgUrlResponse}`)
+          setUserImage(profileImgUrlResponse.data);
+        }
 
         setThumbnails(formattedThumbnails);
         setError(null); // 다른 유저 페이지 로딩 성공 시 에러 상태 초기화
@@ -137,6 +146,8 @@ const UserPage: React.FC = () => {
     if (user) {
       setIsEditing(true);
       setNewUsername(user.username);
+      setNewUserInfo(user.intro || ""); // null일 경우 빈 문자열로 초기화
+      setNewProfileImageFile(null); // 새 파일 상태를 초기화
       setIsSettingsModalOpen(false);
     }
   };
@@ -145,29 +156,55 @@ const UserPage: React.FC = () => {
     setIsEditing(false);
   };
 
-  // [수정됨] 프로필 저장 핸들러
+  const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      setNewProfileImageFile(file);
+    }
+  };
+
   const handleSaveProfile = async () => {
     if (!newUsername.trim()) {
       toast.error("닉네임을 입력해주세요.");
-      return;
-    }
-    // 현재 닉네임과 동일하면 변경 로직을 실행하지 않음
-    if (user && newUsername === user.username) {
-      setIsEditing(false);
       return;
     }
 
     try {
       // 1. 닉네임 중복 검사 API를 먼저 호출합니다.
       //    (성공적으로 응답하면 사용 가능하다는 의미)
-      await axiosInstance.post("/users/check-username", {
+      await axiosInstance.post("/users/check-my-username", {
         username: newUsername,
       });
 
+      let profileUrlKey = user?.profileUrl; // 기존 URL 키를 기본값으로 설정
+
+      // 2. 새로운 프로필 파일이 선택된 경우, S3 업로드 로직 실행
+      if (newProfileImageFile) {
+        // a. presigned URL 요청
+        const presignedResponse = await axiosInstance.post('/images/upload-urls', {
+          refIn: 'USERS',
+          fileType: newProfileImageFile.type,
+        });
+
+        const { url, key } = presignedResponse.data['USERS-original'];
+        
+        await axios.put(url, newProfileImageFile, {
+          headers: {
+            'Content-Type': newProfileImageFile.type,
+          },
+        });
+        
+        profileUrlKey = key; // 성공적으로 업로드된 S3 key로 URL 업데이트
+      }
+
       // 2. 중복 검사를 통과하면 실제 프로필 업데이트 API를 호출합니다.
-      const response = await axiosInstance.patch<UserProfile>("/users/me", {
+      await axiosInstance.patch<UserProfile>("/users/me", {
         username: newUsername,
+        intro: newUserInfo,
+        profileUrl: profileUrlKey
       });
+
+      const response = await axiosInstance.get<UserProfile>(`users/${id}`)
 
       setUser(response.data);
       setIsEditing(false);
@@ -212,11 +249,28 @@ const UserPage: React.FC = () => {
             {/* 프로필 카드 */}
             <div className="relative w-full rounded-card bg-brand-default p-6 pt-12 text-center">
               <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2">
-                <Avatar
-                  src={user.profileUrl || DEFAULT_IMAGES.PROFILE}
-                  alt={`${user.username}의 프로필 사진`}
-                  size={64}
-                />
+                {isMyProfile && isEditing ? (
+                  <label htmlFor="profile-upload-input">
+                    <Avatar
+                      src={newProfileImageFile ? URL.createObjectURL(newProfileImageFile) : userImage || DEFAULT_IMAGES.PROFILE}
+                      alt={`${user.username}의 프로필 사진`}
+                      size={64}
+                    />
+                    <input
+                      id="profile-upload-input"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleProfileImageChange}
+                      className="hidden"
+                    />
+                  </label>
+                ) : (
+                  <Avatar
+                    src={userImage|| DEFAULT_IMAGES.PROFILE}
+                    alt={`${user.username}의 프로필 사진`}
+                    size={64}
+                  />
+                )}
               </div>
 
               {isMyProfile && isEditing ? (
@@ -232,9 +286,18 @@ const UserPage: React.FC = () => {
               )}
 
               <p className="text-body text-brand-gray">@{user.id}</p>
-              <p className="mt-4 min-h-[4.5rem] text-body text-brand-text-secondary">
-                {user.intro || "자기소개가 없습니다."}
-              </p>
+
+              {isMyProfile && isEditing ? (
+                <input
+                  type="text"
+                  value={newUserInfo}
+                  onChange={(e) => setNewUserInfo(e.target.value)}
+                  className="w-full rounded-md border border-brand-primary bg-white p-2 text-center font-bold text-gray-800"
+                  autoFocus
+                />
+              ) : (
+                <p className="mt-4 min-h-[4.5rem] text-body text-brand-text-secondary">{user.intro || "자기소개가 없습니다."}</p>
+              )}
               <p className="text-footnote text-brand-disabled">
                 가입일: {new Date(user.createdAt).toLocaleDateString()}
               </p>

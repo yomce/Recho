@@ -1,15 +1,11 @@
 /**
  * presigned URL로 업로드 후 서버에 이미지 메타 정보를 저장합니다
  */
-
 import { IsString, IsOptional, IsNumber, IsIn, IsArray, ValidateNested, IsBoolean } from "class-validator";
 import { Type } from "class-transformer";
 import { ReferenceIn } from "../types/image.types";
 
 export class SaveImageDto {
-  @IsString()
-  imageUrl: string;
-
   /**
    * 	S3에서 업로드·삭제·추적에 사용할 내부 경로
    */

@@ -150,7 +150,7 @@ const VinylPage: React.FC = () => {
           type: "startEnsemble",
           payload: {
             token,
-            childVideoId: selectedVideoId,
+            selectedVideoId: selectedVideoId,
           },
         })
       );

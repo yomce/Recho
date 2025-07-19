@@ -83,6 +83,7 @@ const ImageUploadPreview: React.FC<ImageUploadProps> = ({
 
       {/* 플러스 박스 */}
       <button
+        type="button"
         onClick={() => setShowModal(true)}
         className="w-[64px] h-[64px] border border-gray-300 bg-white rounded-lg flex items-center justify-center"
       >

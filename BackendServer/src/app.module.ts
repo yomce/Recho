@@ -31,6 +31,7 @@ import { SearchModule } from './search/search.module';
 import { PromotionModule } from './scraping/promotion.module';
 import { CommentsModule } from './comment/comments.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { ImageModule } from './image/image.module';
 
 @Module({
   imports: [
@@ -89,23 +90,24 @@ import { NotificationsModule } from './notifications/notifications.module';
       },
     }),
 
+    ApplicationModule,
     AuthModule,
+    ChatModule,
+    CommentsModule,
+    EnsembleModule,
+    ImageModule,
+    LocationModule,
+    NotificationsModule,
+    PostsModule,
+    PracticeRoomModule,
+    PromotionModule,
+    SearchModule,
+    searchVideoModule,
+    UsedProductModule,
     UserModule,
     VideosModule,
     VideoInsertModule,
-    ChatModule,
-    UsedProductModule,
-    PracticeRoomModule,
-    EnsembleModule,
-    LocationModule,
-    ApplicationModule,
     ViewCountModule,
-    PostsModule,
-    CommentsModule,
-    SearchModule,
-    searchVideoModule,
-    PromotionModule,
-    NotificationsModule,
   ],
   controllers: [AppController, ConfigController],
   providers: [AppService],

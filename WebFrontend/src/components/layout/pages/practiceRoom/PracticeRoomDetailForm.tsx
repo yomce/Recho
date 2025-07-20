@@ -59,7 +59,7 @@ export const PracticeRoomDetail: React.FC<PracticeRoomDetailProps> = ({
           <UserProfileCard
             user={post.user}
             imageUrl={post.imageUrl || 'https://placehold.co/40x40'}
-            name={post.id}
+            name={post.user.username}
             location={post.location.address}
             statusSlot={<button className={`${baseStatusStyle} ${styles.bg} ${styles.text} ${styles.hover}`}>예약하기</button>}
           />

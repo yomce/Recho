@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PracticeRoom } from './entities/practice-room.entity';
@@ -109,7 +109,6 @@ export class PracticeRoomService {
     }
 
     const user = await this.userService.internalFindById(id);
-
     if (!user) {
       throw new NotFoundException('사용자를 찾을 수 없습니다.');
     }
@@ -168,18 +167,27 @@ export class PracticeRoomService {
     return practiceRoomResponse;
   }
 
-  async deletePracticeRoom(id: number): Promise<void> {
-    const post = await this.practiceRoomRepo.delete({ postId: id });
-    if (post.affected === 0) {
+  async deletePracticeRoom(postId: number, id: string): Promise<void> {
+    const post = await this.internalDetailPracticeRoom(postId);
+    if(id !== post?.user.id){
+      throw new ForbiddenException(`Unauthorized`);
+    }
+    const result = await this.practiceRoomRepo.delete({ postId: postId });
+    if (result.affected === 0) {
       throw new NotFoundException(`Post withID #${id} not found`);
     }
   }
 
   async pathPracticeRoom(
-    id: number,
+    postId: number,
     updateDto: UpdatePracticeRoomDto,
+    id: string,
   ): Promise<PracticeRoomResponseDto> {
-    const post = await this.internalDetailPracticeRoom(id);
+    const post = await this.internalDetailPracticeRoom(postId);
+    if (id !== post.user.id) {
+      throw new ForbiddenException(`Unauthorized`);
+    }
+
     const updatedPost = this.practiceRoomRepo.merge(post, updateDto);
     const savedPost = await this.practiceRoomRepo.save(updatedPost);
 
@@ -192,7 +200,7 @@ export class PracticeRoomService {
     return practiceRoomResponse;
   }
 
-  async incrementViewCount(id: number): Promise<void> {
-    await this.practiceRoomRepo.increment({ postId: id }, 'viewCount', 1);
+  async incrementViewCount(postId: number): Promise<void> {
+    await this.practiceRoomRepo.increment({ postId: postId }, 'viewCount', 1);
   }
 }

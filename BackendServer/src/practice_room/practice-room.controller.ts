@@ -62,29 +62,52 @@ export class PracticeRoomController {
     );
   }
 
-  @Get(':id')
+  @Get(':postId')
   async detailPracticeRoom(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('postId', ParseIntPipe) postId: number,
   ): Promise<PracticeRoomResponseDto> {
-    this.logger.log(`Fetching detail for post ID: ${id}`);
-    return await this.practiceRoomService.publicDetailPracticeRoom(id);
+    this.logger.log(`Fetching detail for post ID: ${postId}`);
+    return await this.practiceRoomService.publicDetailPracticeRoom(postId);
   }
 
-  @Delete(':id')
+  @Delete(':postId')
+  @UseGuards(AuthGuard('jwt'))
   @HttpCode(204)
   async deletePracticeRoom(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('postId', ParseIntPipe) postId: number,
+    @Req() req: Request,
   ): Promise<void> {
-    this.logger.log(`Delete Post ID: ${id}`);
-    await this.practiceRoomService.deletePracticeRoom(id);
+    if (!req.user || !req.user.id) {
+      this.logger.error(
+        'Authentication information missing from request user object.',
+      );
+      throw new ForbiddenException('사용자 인증 정보가 없습니다.');
+    }
+    const id = req.user.id;
+    this.logger.log(
+      `Received delete request for product ID: ${postId} from user ID: ${id}`,
+    );
+    await this.practiceRoomService.deletePracticeRoom(postId);
   }
 
-  @Patch(':id')
+  @Patch(':postId')
+  @UseGuards(AuthGuard('jwt'))
   async pathPracticeRoom(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('postId', ParseIntPipe) postId: number,
     @Body() UpdatePracticeRoomDto: UpdatePracticeRoomDto,
+    @Req() req: Request,
   ): Promise<PracticeRoomResponseDto> {
-    this.logger.log(`Patching Post Id: ${id}`);
-    return this.practiceRoomService.pathPracticeRoom(id, UpdatePracticeRoomDto);
+    if (!req.user || !req.user.id) {
+      this.logger.error(
+        'Authentication information missing from request user object.',
+      );
+      throw new ForbiddenException('사용자 인증 정보가 없습니다.');
+    }
+    const id = req.user.id; // JwtStrategy에서 반환된 user.id 사용 가능
+    this.logger.log(
+      `Received patch request for product ID: ${postId} from user ID: ${id}`,
+    );
+
+    return this.practiceRoomService.pathPracticeRoom(postId, UpdatePracticeRoomDto, id);
   }
 }

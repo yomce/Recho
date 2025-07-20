@@ -119,7 +119,7 @@ const UsedProductDetailPage: React.FC = () => {
     try {
       // 백엔드의 POST /chat/dm API를 호출합니다.
       const response = await axiosInstance.post("/chat/dm", {
-        partnerId: product.id, // 판매자의 ID를 전송
+        partnerId: product.user.id, // 판매자의 ID를 전송
       });
 
       const room = response.data;

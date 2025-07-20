@@ -79,7 +79,6 @@ const VinylPage: React.FC = () => {
 
       try {
         const videoData = await getVideoById(videoId);
-        console.log(videoData);
 
         if (!videoData) {
           // 비디오가 없으면 바로 로딩 종료 및 타임아웃 해제

@@ -10,8 +10,6 @@ import {
   ApplierEnsemble,
 } from './entities/applier-ensemble.entity';
 import { DataSource, Repository } from 'typeorm';
-import { EnsembleService } from 'src/ensemble/ensemble.service';
-import { UserService } from 'src/auth/user/user.service';
 import { ApplierEnsembleResponseDto } from './dto/applier-ensemble.response.dto';
 import {
   RECRUIT_STATUS,
@@ -19,6 +17,8 @@ import {
 } from 'src/ensemble/entities/recruit-ensemble.entity';
 import { User } from 'src/auth/user/user.entity';
 import { SessionEnsemble } from 'src/ensemble/session/entities/session-ensemble.entity';
+import { UserResponseDto } from 'src/auth/user/dto/user.response.dto';
+import { ImageService } from 'src/image/image.service';
 
 @Injectable()
 export class ApplicationService {
@@ -26,9 +26,8 @@ export class ApplicationService {
     @InjectRepository(ApplierEnsemble)
     private readonly applierEnsembleRepo: Repository<ApplierEnsemble>,
 
-    private readonly ensembleService: EnsembleService,
+    private readonly imageService: ImageService,
     private readonly dataSource: DataSource,
-    private readonly userService: UserService,
   ) {}
   private readonly logger = new Logger(ApplicationService.name);
 
@@ -43,15 +42,27 @@ export class ApplicationService {
       .where('recruitEnsemble.postId = :postId', { postId })
       .getMany();
 
-    const appliersDto = savedAppliers.map((applier) => {
-      const tmpApplier = ApplierEnsembleResponseDto.from(
-        applier,
-        applier.sessionEnsemble,
-      );
-      return tmpApplier;
-    });
+    const appliersDtos = await Promise.all(
+      savedAppliers.map(async (applier) => {
+        const userResponse = UserResponseDto.from(applier.user);
+        const newApplierResponse = ApplierEnsembleResponseDto.from(
+          applier,
+          applier.sessionEnsemble,
+          userResponse,
+        );
 
-    return appliersDto;
+        if (applier.user && applier.user.profileUrl) {
+          const signedUrl = await this.imageService.getDownloadUrl(
+            applier.user.profileUrl,
+          );
+          newApplierResponse.user.profileImageUrl = signedUrl;
+        }
+
+        return newApplierResponse;
+      }),
+    );
+
+    return appliersDtos;
   }
 
   async detailApplication(applicationId: number): Promise<ApplierEnsemble> {
@@ -65,6 +76,36 @@ export class ApplicationService {
       );
     }
     return newApplierEnsemble;
+  }
+
+  async publicDetailApplication(
+    applicationId: number,
+  ): Promise<ApplierEnsembleResponseDto> {
+    const newApplierEnsemble = await this.applierEnsembleRepo.findOne({
+      where: { applicationId },
+      relations: ['user', 'sessionEnsemble'],
+    });
+    if (!newApplierEnsemble) {
+      throw new NotFoundException(
+        `application with ID #${applicationId} not found.`,
+      );
+    }
+
+    const userResponse = UserResponseDto.from(newApplierEnsemble.user);
+    const newApplierResponse = ApplierEnsembleResponseDto.from(
+      newApplierEnsemble,
+      newApplierEnsemble.sessionEnsemble,
+      userResponse,
+    );
+
+    if (newApplierEnsemble.user && newApplierEnsemble.user.profileUrl) {
+      const signedUrl = await this.imageService.getDownloadUrl(
+        newApplierEnsemble.user.profileUrl,
+      );
+      newApplierResponse.user.profileImageUrl = signedUrl;
+    }
+
+    return newApplierResponse;
   }
 
   async enrollApplication(
@@ -160,10 +201,21 @@ export class ApplicationService {
           1, // 증가량
         );
 
+        const responseApplierDto = UserResponseDto.from(savedApplier.user);
+
         const applierDto = ApplierEnsembleResponseDto.from(
           savedApplier,
           savedApplier.sessionEnsemble,
+          responseApplierDto,
         );
+
+        if (savedApplier.user && savedApplier.user.profileUrl) {
+          const signedUrl = await this.imageService.getDownloadUrl(
+            savedApplier.user.profileUrl,
+          );
+          applierDto.user.profileImageUrl = signedUrl;
+        }
+
         return applierDto;
       },
     ); // 트랜잭션 끝

@@ -11,7 +11,7 @@ import axios from "axios";
 export interface User {
   id: string;
   username: string;
-  profileUrl: string | null;
+  profileImageUrl: string | null;
 }
 
 /**

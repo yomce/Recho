@@ -13,6 +13,7 @@ import { User } from 'src/auth/user/user.entity';
 import { CONTENT_TYPE } from 'src/likes/dto/toggle-like.dto';
 import { LikesService } from 'src/likes/likes.service';
 import { CommentsService } from 'src/comment/comments.service';
+import { ImageService } from 'src/image/image.service';
 
 @Injectable()
 export class PostsService {
@@ -20,6 +21,7 @@ export class PostsService {
     @InjectRepository(Post)
     private readonly postsRepository: Repository<Post>,
 
+    private readonly imageService: ImageService,
     private readonly likesService: LikesService,
     private readonly commentsService: CommentsService,
   ) {}
@@ -60,14 +62,22 @@ export class PostsService {
       user
         ? this.likesService.hasUserLiked(user.id, CONTENT_TYPE.COMMUNITY, id)
         : false,
-      this.commentsService.getComments(CONTENT_TYPE.COMMUNITY, id),
+      this.commentsService.findCommentsByPostId(CONTENT_TYPE.COMMUNITY, id),
     ]);
+
+    let userProfileSignedUrl: string | null = null;
+    if (post.user && post.user.profileUrl) {
+      userProfileSignedUrl = await this.imageService.getDownloadUrl(
+        post.user.profileUrl,
+      );
+    }
 
     // 3. [핵심 수정] 댓글 데이터를 가공하지 않고 그대로 반환합니다.
     return {
       ...post,
       author: post.user ? post.user.username : '탈퇴한 사용자',
-      authorProfileUrl: post.user ? post.user.profileUrl : null,
+      authorProfileUrl:
+        post.user && post.user.profileUrl ? userProfileSignedUrl : null,
       user: undefined, // 민감 정보인 전체 user 객체는 제거
       userLiked,
       comments, // user 객체가 포함된 댓글 목록 원본
@@ -121,18 +131,28 @@ export class PostsService {
       ),
     ]);
 
-    const responsePosts = posts.map((post) => {
+    const responsePromisePosts = posts.map(async (post) => {
       const commentsForPost = commentsMap.get(post.postId) || []; // 👈 Map에서 댓글 조회
+
+      let userProfileSignedUrl: string | null = null;
+      if (post.user && post.user.profileUrl) {
+        userProfileSignedUrl = await this.imageService.getDownloadUrl(
+          post.user.profileUrl,
+        );
+      }
 
       return {
         ...post,
         author: post.user ? post.user.username : '탈퇴한 사용자',
-        authorProfileUrl: post.user ? post.user.profileUrl : null,
+        authorProfileUrl:
+          post.user && post.user.profileUrl ? userProfileSignedUrl : null,
         user: undefined, // 민감 정보 제외
         userLiked: userLikedPostIds.has(post.postId),
         comments: commentsForPost,
       };
     });
+
+    const responsePosts = await Promise.all(responsePromisePosts);
 
     return responsePosts;
   }

@@ -117,7 +117,7 @@ export class ChatGateway {
     @ConnectedSocket() client: Socket,
   ) {
     // 1. DB에서 사용자 정보를 조회하여 이름을 가져옵니다.
-    const user = await this.userService.findById(payload.id);
+    const user = await this.userService.internalFindById(payload.id);
 
     // 2. ChatService를 통해 사용자를 방에서 내보냅니다.
     await this.chatService.leaveRoom(payload.id, payload.roomId);

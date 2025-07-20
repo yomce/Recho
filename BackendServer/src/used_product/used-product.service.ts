@@ -13,6 +13,8 @@ import { Location } from 'src/map/entities/location.entity';
 import { ImageService } from 'src/image/image.service';
 import { Image } from 'src/image/entities/image.entity';
 import { UserService } from 'src/auth/user/user.service';
+import { UsedProductResponseDto } from './dto/used-product.response.dto';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class UsedProductService {
@@ -118,7 +120,7 @@ export class UsedProductService {
       throw new NotFoundException(`Location with ID #${locationId} not found.`);
     }
 
-    const user = await this.userService.findById(id);
+    const user = await this.userService.internalFindById(id);
 
     if (!user) {
       throw new NotFoundException(`User with ID "${id}" not found`);
@@ -146,7 +148,7 @@ export class UsedProductService {
     return savedProduct;
   }
 
-  async detailProduct(
+  async internalDetailProduct(
     productId: number,
   ): Promise<UsedProduct & { imageIds: number[] } & { imageUrl: string[] }> {
     const product = await this.usedProductRepo.findOne({
@@ -166,8 +168,48 @@ export class UsedProductService {
     };
   }
 
+  async publicDetailProduct(
+    productId: number,
+  ): Promise<
+    UsedProductResponseDto & { imageIds: number[] } & { imageUrl: string[] }
+  > {
+    const product = await this.usedProductRepo.findOne({
+      where: { productId: productId },
+      relations: ['user', 'location'],
+    });
+    if (!product) {
+      throw new NotFoundException(`Product with ID #${productId} not found.`);
+    }
+    const images = await this.imageService.findImageByRefPostId(productId);
+    const imageIds = images.map((img) => img.imageId);
+    const imageUrl = images.map((img) => img.imageKey);
+
+    let userProfileSignedUrl: string | null = null;
+    if (product.user && product.user.profileUrl) {
+      userProfileSignedUrl = await this.imageService.getDownloadUrl(
+        product.user.profileUrl,
+      );
+    }
+
+    const productDto = plainToInstance(UsedProductResponseDto, product, {
+      excludeExtraneousValues: true,
+    });
+
+    console.log(productDto);
+
+    if (productDto.user) {
+      productDto.user.profileImageUrl = userProfileSignedUrl;
+    }
+
+    return {
+      ...productDto,
+      imageIds,
+      imageUrl,
+    };
+  }
+
   async deleteProduct(productId: number, id: string): Promise<void> {
-    const product = await this.detailProduct(productId);
+    const product = await this.internalDetailProduct(productId);
     if (id !== product?.user.id) {
       throw new ForbiddenException(`Unauthorized`);
     }
@@ -183,7 +225,7 @@ export class UsedProductService {
     updateDto: UpdateUsedProductDto,
     id: string,
   ): Promise<UsedProduct> {
-    const product = await this.detailProduct(productId);
+    const product = await this.internalDetailProduct(productId);
     if (id !== product.user.id) {
       throw new ForbiddenException(`Unauthorized`);
     }

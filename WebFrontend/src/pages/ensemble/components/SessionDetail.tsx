@@ -10,6 +10,7 @@ import axios from "axios";
 import { useAuthStore } from "@/stores/authStore";
 import PrimaryButton from "@/components/atoms/button/PrimaryButton";
 import { useNavigate } from 'react-router-dom';
+import DEFAULT_IMAGES from '@/constants/images';
 
 interface SessionDetailProps {
   item: SessionEnsemble;
@@ -34,14 +35,14 @@ export const SessionDetail: React.FC<SessionDetailProps> = ({
 
   // 1. 현재 세션에 지원한 유저들의 이름 목록을 계산합니다.
   // applicationEnsembleList나 item.sessionId가 변경될 때만 다시 계산됩니다.
-  const applierUserIds = useMemo(() => {
+  const applierUser = useMemo(() => {
     return (applicationEnsembleList || []).filter(
       (app) => app.sessionEnsemble.sessionId === item.sessionId
-    ).map((app) => app.user.id); // user 객체 안의 username을 추출
+    ).map((app) => app.user); // user 객체 안의 username을 추출
   }, [applicationEnsembleList, item.sessionId]);
 
   // 2. 위에서 계산한 목록의 길이를 통해 현재 지원자 수를 구합니다.
-  const nowRecruitCount = applierUserIds.length;
+  const nowRecruitCount = applierUser.length;
 
   const handleApply = async () => {
     if (!user) {
@@ -103,7 +104,7 @@ export const SessionDetail: React.FC<SessionDetailProps> = ({
 
   useEffect(() => {
     // 현재 사용자 ID가 applierUserIds 목록에 있는지 확인합니다.
-    const isCurrentUserApplier = user?.id && applierUserIds.includes(user.id);
+    const isCurrentUserApplier = user?.id && applierUser.some(u => u.id === user.id);
 
     // 현재 사용자가 지원자라면 해당 지원 정보를 찾습니다.
     const selfApplication = isCurrentUserApplier
@@ -112,7 +113,7 @@ export const SessionDetail: React.FC<SessionDetailProps> = ({
 
     setIsIn(isCurrentUserApplier || false);
     setApplication(selfApplication || null);
-  }, [applierUserIds, applicationEnsembleList, user]);
+  }, [applierUser, applicationEnsembleList, user]);
 
   return (
     <div className="w-full mt-[16px]">
@@ -136,15 +137,15 @@ export const SessionDetail: React.FC<SessionDetailProps> = ({
         {/* 유저 목록 */}
         <div className="flex items-center justify-between gap-4 mt-2">
           <div className="flex items-center gap-2">
-            {applierUserIds.map((userId) => (
-              <button key={userId} onClick={() => {moveToUserInfo(userId)}}>
+            {applierUser.map((user) => (
+              <button key={user.id} onClick={() => {moveToUserInfo(user.id)}}>
                 <div className="flex flex-col items-center">
                   <img
-                    src="https://placehold.co/32x32"
-                    alt={`user-${userId}`}
+                    src={ user.profileImageUrl || DEFAULT_IMAGES.PROFILE }
+                    alt={`user-${user.id}`}
                     className="w-12 h-12 rounded-full border border-white"
                   />
-                  <p className="text-footnote text-gray-500 mt-1">{userId}</p>
+                  <p className="text-footnote text-gray-500 mt-1">{user.username}</p>
                 </div>
               </button>
             ))}

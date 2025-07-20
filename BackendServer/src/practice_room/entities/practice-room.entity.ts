@@ -15,7 +15,7 @@ export class PracticeRoom {
   @PrimaryGeneratedColumn()
   postId: number;
 
-  @ManyToOne(() => User, (user: User) => user.userRooms, {
+  @ManyToOne(() => User, (user: User) => user.practiceRoom, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'user' })

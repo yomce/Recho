@@ -26,6 +26,7 @@ import { ChatService } from 'src/chat/chat.service';
 import { ApplierEnsemble } from 'src/application/entities/applier-ensemble.entity';
 import { RoomType } from 'src/chat/dto/create-room.dto';
 import { ImageService } from 'src/image/image.service';
+import { UserResponseDto } from 'src/auth/user/dto/user.response.dto';
 
 @Injectable()
 export class EnsembleService {
@@ -154,15 +155,15 @@ export class EnsembleService {
     return {
       data: await Promise.all(
         results.map(async (result) => {
+          const tmpUsrResDto = UserResponseDto.from(result.user);
           let signedUrl: string;
           if (result.user && result.user.profileUrl) {
             signedUrl = await this.imageService.getDownloadUrl(
               result.user.profileUrl,
             );
-            console.log('work this');
-            return RecruitEnsembleResponseDto.from(result, signedUrl);
+            tmpUsrResDto.profileImageUrl = signedUrl;
           }
-          return RecruitEnsembleResponseDto.from(result);
+          return RecruitEnsembleResponseDto.from(result, tmpUsrResDto);
         }),
       ),
       nextCursor,
@@ -296,7 +297,12 @@ export class EnsembleService {
       throw new NotFoundException(`Ensemble with ID #${id} not found.`);
     }
 
-    const newResponseEnsemble = RecruitEnsembleResponseDto.from(ensemble);
+    const userResponseDto = UserResponseDto.from(ensemble.user);
+
+    const newResponseEnsemble = RecruitEnsembleResponseDto.from(
+      ensemble,
+      userResponseDto,
+    );
     if (ensemble.user && ensemble.user.profileUrl) {
       const signedUrl = await this.imageService.getDownloadUrl(
         ensemble.user.profileUrl,
@@ -304,6 +310,7 @@ export class EnsembleService {
       newResponseEnsemble.user.profileImageUrl = signedUrl;
     }
 
+    console.log('---------------------', newResponseEnsemble);
     return newResponseEnsemble;
   }
 

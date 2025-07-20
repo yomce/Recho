@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PracticeRoom } from './entities/practice-room.entity';
@@ -169,7 +173,7 @@ export class PracticeRoomService {
 
   async deletePracticeRoom(postId: number, id: string): Promise<void> {
     const post = await this.internalDetailPracticeRoom(postId);
-    if(id !== post?.user.id){
+    if (id !== post?.user.id) {
       throw new ForbiddenException(`Unauthorized`);
     }
     const result = await this.practiceRoomRepo.delete({ postId: postId });

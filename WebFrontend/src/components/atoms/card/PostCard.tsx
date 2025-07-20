@@ -2,6 +2,7 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import Icon from "../icon/Icon";
 import { RECRUIT_STATUS, RECRUIT_STATUS_LABEL, SKILL_LEVEL, SKILL_LEVEL_DIC } from '@/pages/ensemble/types';
+import { DEFAULT_IMAGES } from "@/constants/images";
 
 interface PostCardProps {
   id: number | string;
@@ -83,8 +84,8 @@ const PostCard: React.FC<PostCardProps> = ({
       <img
         src={
           Array.isArray(imageUrl)
-          ? imageUrl[0] || "https://placehold.co/120x120"
-          : imageUrl || "https://placehold.co/120x120"
+          ? imageUrl[0] || DEFAULT_IMAGES.PLACEHOLDER
+          : imageUrl || DEFAULT_IMAGES.PLACEHOLDER
         }
         alt="썸네일"
         className={imageClassName}

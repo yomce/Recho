@@ -62,7 +62,7 @@ export class PostsService {
       user
         ? this.likesService.hasUserLiked(user.id, CONTENT_TYPE.COMMUNITY, id)
         : false,
-      this.commentsService.getComments(CONTENT_TYPE.COMMUNITY, id),
+      this.commentsService.findCommentsByPostId(CONTENT_TYPE.COMMUNITY, id),
     ]);
 
     let userProfileSignedUrl: string | null = null;

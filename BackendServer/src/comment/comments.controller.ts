@@ -56,7 +56,7 @@ export class CommentsController {
   ) {
     // Attempt to parse postId to a number, if it fails, use it as a string.
     const parsedPostId = /^\d+$/.test(postId) ? parseInt(postId, 10) : postId;
-    return this.commentsService.getComments(contentType, parsedPostId);
+    return this.commentsService.findCommentsByPostId(contentType, parsedPostId);
   }
 
   /**

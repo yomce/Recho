@@ -36,6 +36,7 @@ interface MainFooterProps {
   onVinylClick?: () => void;
   onChatClick?: () => void;
   onMyPageClick?: () => void;
+  totalUnreadCount?: number;
 }
 
 const MainFooter: React.FC<MainFooterProps> = ({
@@ -45,6 +46,7 @@ const MainFooter: React.FC<MainFooterProps> = ({
   onVinylClick,
   onChatClick,
   onMyPageClick,
+  totalUnreadCount = 0,
 }) => {
   return (
     <footer
@@ -70,12 +72,22 @@ const MainFooter: React.FC<MainFooterProps> = ({
         active={currentPath.startsWith("/vinyl")}
         onClick={onVinylClick}
       />
-      <NavItem
-        iconName="chat"
-        label="채팅"
-        active={currentPath.startsWith("/chat")}
-        onClick={onChatClick}
-      />
+      <div className="relative flex-1">
+        <NavItem
+          iconName="chat"
+          label="채팅"
+          active={currentPath.startsWith("/chat")}
+          onClick={onChatClick}
+        />
+        {/* ✨ 여기에 배지 코드를 넣습니다. */}
+        {totalUnreadCount > 0 && (
+          <div 
+            className="absolute top-1 right-[28%] flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white pointer-events-none"
+          >
+            {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
+          </div>
+        )}
+      </div>
       <NavItem
         iconName="user"
         label="마이"

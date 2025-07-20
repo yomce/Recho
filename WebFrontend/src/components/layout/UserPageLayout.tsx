@@ -9,9 +9,10 @@ interface MyPageLayoutProps {
   children: React.ReactNode;
   onSettingsClick?: () => void;
   onSearchClick?: () => void;
+  totalUnreadCount?: number;
 }
 
-const MyPageLayout: React.FC<MyPageLayoutProps> = ({ children, onSettingsClick, onSearchClick }) => {
+const MyPageLayout: React.FC<MyPageLayoutProps> = ({ children, onSettingsClick, onSearchClick, totalUnreadCount }) => {
   const navigate = useNavigate();
   const { pathname } = useLocation(); 
   const user = useAuthStore((state) => state.user);
@@ -33,6 +34,7 @@ const MyPageLayout: React.FC<MyPageLayoutProps> = ({ children, onSettingsClick, 
         onVinylClick={() => navigate('/vinyl')}
         onChatClick={() => navigate('/chat')}
         onMyPageClick={handleGoToMyPage}
+        totalUnreadCount={totalUnreadCount}
       />
     </div>
   );

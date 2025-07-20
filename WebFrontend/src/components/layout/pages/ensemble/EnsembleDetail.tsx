@@ -19,6 +19,7 @@ interface RecruitEnsembleProps {
   onDelete?: () => void;
   applicationEnsembleList: ApplicationEnsemble[];
   isApplied: boolean;
+  totalUnreadCount?: number;
 }
 
 const skillLevelColorMap: Record<number, string> = {
@@ -36,9 +37,10 @@ export const RecruitEnsembleDetail: React.FC<RecruitEnsembleProps> = ({
   onDelete,
   applicationEnsembleList,
   isApplied,
+  totalUnreadCount,
 }) => {
   return (
-    <PostLayout bgClassName="bg-brand-inverse">
+    <PostLayout totalUnreadCount={totalUnreadCount} bgClassName="bg-brand-inverse">
       <div className="relative mx-auto px-4 w-full">
         {isOwner && (
           <div className="absolute top-1 right-4 z-10">

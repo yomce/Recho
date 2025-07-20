@@ -10,9 +10,10 @@ interface LayoutProps {
   children: React.ReactNode;
   bgClassName?: string;
   onSearchClick?: () => void;
+  totalUnreadCount?: number;
 }
 
-const PostLayout: React.FC<LayoutProps> = ({ children, bgClassName = "bg-brand-frame", onSearchClick }) => {
+const PostLayout: React.FC<LayoutProps> = ({ children, bgClassName = "bg-brand-frame", onSearchClick, totalUnreadCount }) => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const location = useLocation();
@@ -52,6 +53,7 @@ const PostLayout: React.FC<LayoutProps> = ({ children, bgClassName = "bg-brand-f
         onVinylClick={handleGoToVinyl}
         onChatClick={handleGoToChat}
         onMyPageClick={handleGoToMyPage}
+        totalUnreadCount={totalUnreadCount}
       />
     </div>
   );

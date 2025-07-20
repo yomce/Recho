@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useChatStore } from '../../stores/chatStore';
 import {
   type PracticeRoom,
   type PaginatedPracticeRoomResponse,
@@ -18,6 +19,7 @@ interface Cursor {
 }
 
 const PracticeRoomPage: React.FC = () => {
+  const { totalUnreadCount } = useChatStore();
   const [post, setItems] = useState<PracticeRoom[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -91,7 +93,7 @@ const PracticeRoomPage: React.FC = () => {
   };
 
   return (
-    <PostLayout>
+    <PostLayout totalUnreadCount={totalUnreadCount}>
       <div className="relative">
         <ImageCard 
           src="https://placehold.co/390x314/F4EDFE/ffffff?text=.."
@@ -131,7 +133,7 @@ const PracticeRoomPage: React.FC = () => {
             address={item.location?.place_name || "주소 미제공"}
             textWrapperClassName="flex flex-col items-start justify-center w-full h-full gap-2 pl-16"
             imagePosition="left"
-            imageWrapperClassName="min-w-[170px] rounded-l-[10px]"
+            imageWrapperClassName="min-w-[120px] rounded-l-[10px]"
             containerClassName="py-1 mt-2"
           />
         )}

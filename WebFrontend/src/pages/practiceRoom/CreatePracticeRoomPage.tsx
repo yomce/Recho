@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useChatStore } from '../../stores/chatStore';
 import axiosInstance from "@/services/axiosInstance";
 import {
   type CreatePracticeRoomPayload,
@@ -12,6 +13,7 @@ import { PracticeRoomForm } from "@/components/layout/pages/practiceRoom/Practic
 import PostLayout from "@/components/layout/PostLayout";
 
 const CreatePracticeRoom: React.FC = () => {
+  const { totalUnreadCount } = useChatStore();
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const [form, setForm] = useState<PracticeRoomType>({
@@ -99,7 +101,7 @@ const CreatePracticeRoom: React.FC = () => {
   };
 
   return (
-    <PostLayout>
+    <PostLayout totalUnreadCount={totalUnreadCount}>
       <div className="bg-brand-frame p-4">
         <PracticeRoomForm
           formState={form}

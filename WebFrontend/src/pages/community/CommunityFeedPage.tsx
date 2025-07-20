@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useChatStore } from '../../stores/chatStore';
 // import axios from 'axios';
 
 import axiosInstance from "../../services/axiosInstance";
@@ -54,6 +55,7 @@ const deletePost = async (id: number): Promise<void> => {
 const CATEGORIES = ["전체", "자유게시판", "질문/답변", "피드백", "공연홍보"];
 
 const CommunityFeedPage: React.FC = () => {
+  const { totalUnreadCount } = useChatStore();
   const currentUser = useAuthStore((state) => state.user);
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -160,7 +162,8 @@ const CommunityFeedPage: React.FC = () => {
   };
 
   return (
-    <PostLayout>
+    <PostLayout 
+      totalUnreadCount={totalUnreadCount}>
       <div className="p-4">
         {keyword ? (
           <h2 className="text-xl font-bold mb-4">

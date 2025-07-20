@@ -1,3 +1,4 @@
+// src/chat/chat.service.ts
 import {
   Injectable,
   Logger,
@@ -11,8 +12,8 @@ import { Room } from './entities/room.entity';
 import { UserRoom } from './entities/user-room.entity';
 import { Message } from './entities/message.entity';
 import { RoomType } from './dto/create-room.dto';
+import { UserMessageRead } from './entities/user-message-read.entity'; // 추가
 
-// src/chat/chat.service.ts
 @Injectable()
 export class ChatService {
   private readonly logger = new Logger(ChatService.name);
@@ -22,8 +23,11 @@ export class ChatService {
     @InjectRepository(Message) private msgRepo: Repository<Message>,
     @InjectRepository(UserRoom) private urRepo: Repository<UserRoom>,
     @InjectRepository(UserRoom) private userRoomRepo: Repository<UserRoom>,
+    @InjectRepository(UserMessageRead)
+    private readRepo: Repository<UserMessageRead>, // 추가
   ) {}
 
+  // ... createRoom ...
   async createRoom(
     name: string,
     type: RoomType,
@@ -35,22 +39,20 @@ export class ChatService {
       type,
     });
     const savedRoom = await this.roomRepo.save(room);
-
-    // 만약 creatorId가 인자로 전달되었다면, 해당 유저를 방에 참여시킵니다.
     if (creatorId) {
       await this.joinRoom(creatorId, savedRoom.id);
     }
-
     return savedRoom;
   }
 
   // 2) 방 참여 (UserRoom 레코드 생성)
   async joinRoom(id: string, roomId: string): Promise<UserRoom> {
-    const ur = this.urRepo.create({ id, roomId });
-    return this.urRepo.save(ur);
+    const ur = this.userRoomRepo.create({ id, roomId });
+    return this.userRoomRepo.save(ur);
   }
 
   // 3) 메시지 저장
+  // ... saveMessage ...
   async saveMessage(dto: {
     roomId: string;
     senderId: string;
@@ -67,37 +69,34 @@ export class ChatService {
   }
 
   // 4) 방 내 대화 이력 조회 (페이징) - 수정된 함수
+  // ... getHistory ...
   async getHistory(
     roomId: string,
-    id: string,
+    userId: string,
     page = 1,
     limit = 20,
   ): Promise<Message[]> {
-    // 1. 현재 사용자가 이 방에 참여한 정보를 찾습니다.
-    const userRoom = await this.userRoomRepo.findOneBy({ roomId, id });
-
-    // 2. 만약 어떤 이유로든 참여 정보가 없다면, 빈 배열을 반환합니다.
+    const userRoom = await this.userRoomRepo.findOneBy({ roomId, id: userId });
     if (!userRoom) {
-      return [];
+      throw new ForbiddenException('You are not a member of this room.');
     }
-
-    // 3. 사용자의 참여 시간(joinedAt) 이후에 생성된 메시지만 조회합니다.
+    await this.markAsRead(roomId, userId);
     return this.msgRepo.find({
       where: {
         roomId,
-        createdAt: MoreThan(userRoom.joinedAt), // [수정] 사용자의 참여 시간보다 최신인 메시지만 필터링
+        createdAt: MoreThan(userRoom.joinedAt),
       },
       order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
-      relations: ['sender'], // [추가] 메시지 보낸 사람의 정보를 함께 가져오도록 설정
+      relations: ['sender'],
     });
   }
 
   // 5) 방 나가기
   async leaveRoom(id: string, roomId: string): Promise<void> {
     // 1. 사용자를 방에서 내보냅니다 (UserRoom 레코드 삭제).
-    await this.urRepo.delete({ id, roomId });
+    await this.userRoomRepo.delete({ id, roomId });
     this.logger.log(`User ${id} left room ${roomId}`);
 
     // 2. 방에 남은 인원 수를 확인합니다.
@@ -121,16 +120,106 @@ export class ChatService {
     });
   }
 
-  async getRoomsForUser(id: string): Promise<Room[]> {
-    // 1. user_room 테이블에서 해당 유저가 속한 모든 방의 정보를 찾습니다.
-    // 2. 'room' 관계를 함께 로드하여 각 방의 상세 정보(이름 등)를 가져옵니다.
+  async getRoomsForUser(userId: string): Promise<any[]> {
+    // 반환 타입 수정
     const userRooms = await this.userRoomRepo.find({
-      where: { id },
+      where: { id: userId },
       relations: ['room', 'room.userRooms', 'room.userRooms.user'],
+      order: { room: { lastMessageAt: 'DESC' } },
     });
 
-    // 3. UserRoom 엔티티 배열에서 Room 엔티티만 추출하여 반환합니다.
-    return userRooms.map((userRoom) => userRoom.room);
+    if (userRooms.length === 0) return [];
+
+    const roomIds = userRooms.map((ur) => ur.roomId);
+
+    // ✨ (오류 수정) getRawMany()의 결과 타입을 명시해줍니다.
+    interface UnreadCountResult {
+      roomId: string;
+      unreadCount: string; // COUNT 결과는 문자열로 반환됩니다.
+    }
+
+    // 각 방의 안 읽은 메시지 수를 한 번의 쿼리로 가져옵니다.
+    const unreadCounts = await this.msgRepo
+      .createQueryBuilder('message')
+      .leftJoin(
+        UserMessageRead,
+        'read',
+        'read.messageId = message.id AND read.userId = :userId',
+        { userId },
+      )
+      .where('message.roomId IN (:...roomIds)', { roomIds })
+      .andWhere('message.senderId != :userId', { userId }) // 내가 보낸 메시지는 제외
+      .andWhere('read.userId IS NULL')
+      .select('message.roomId', 'roomId')
+      .addSelect('COUNT(message.id)', 'unreadCount')
+      .groupBy('message.roomId')
+      .getRawMany<UnreadCountResult>();
+
+    // lint 경고 해결 및 가독성 향상
+    const unreadCountMap = new Map(
+      unreadCounts.map((item) => [item.roomId, parseInt(item.unreadCount, 10)]),
+    );
+
+    return userRooms.map((userRoom) => ({
+      ...userRoom.room,
+      unreadCount: unreadCountMap.get(userRoom.roomId) || 0,
+    }));
+  }
+
+  // (신규) 특정 방의 메시지 읽음 처리 메서드
+  async markAsRead(roomId: string, userId: string): Promise<void> {
+    interface UnreadMessageId {
+      id: string;
+    }
+    // 1. 해당 방에서 내가 보내지 않고 아직 읽지 않은 모든 메시지 ID를 찾습니다.
+    const unreadMessages = await this.msgRepo
+      .createQueryBuilder('message')
+      .leftJoin(
+        UserMessageRead,
+        'read',
+        'read.messageId = message.id AND read.userId = :userId',
+        { userId },
+      )
+      .where('message.roomId = :roomId', { roomId })
+      .andWhere('message.senderId != :userId', { userId })
+      .andWhere('read.userId IS NULL')
+      .select('message.id', 'id')
+      .getRawMany<UnreadMessageId>();
+
+    const messageIdsToRead = unreadMessages.map((m) => m.id);
+
+    if (messageIdsToRead.length === 0) return;
+
+    // 2. 찾아낸 메시지 ID들을 UserMessageRead 테이블에 한 번에 삽입합니다.
+    const readRecords = messageIdsToRead.map((messageId) => ({
+      userId,
+      messageId,
+      readAt: new Date(),
+    }));
+
+    await this.readRepo.upsert(readRecords, ['userId', 'messageId']);
+  }
+
+  // (신규) 전체 안 읽은 메시지 수 조회
+  async getTotalUnreadCount(userId: string): Promise<number> {
+    return this.msgRepo
+      .createQueryBuilder('message')
+      .leftJoin(
+        UserMessageRead,
+        'read',
+        'read.messageId = message.id AND read.userId = :userId',
+        { userId },
+      )
+      .leftJoin(
+        UserRoom,
+        'ur',
+        'ur.roomId = message.roomId AND ur.id = :userId',
+        { userId },
+      )
+      .where('ur.id IS NOT NULL') // 내가 참여한 방의 메시지만 카운트
+      .andWhere('message.senderId != :userId', { userId }) // 내가 보낸 메시지는 제외
+      .andWhere('read.userId IS NULL')
+      .getCount();
   }
 
   async getOrCreatePrivateRoom(

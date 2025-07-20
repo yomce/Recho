@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { useUiStore } from "@/stores/uiStore";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useChatStore } from '../../stores/chatStore';
 
 // Dev 모드 상태 관리를 위한 store
 // const useDevModeStore = () => {
@@ -66,6 +67,7 @@ const CategoryCard: React.FC<{
 );
 
 const MainPage: React.FC = () => {
+  const { totalUnreadCount } = useChatStore();
   const navigate = useNavigate();
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
@@ -130,6 +132,7 @@ const MainPage: React.FC = () => {
 
   return (
     <Layout
+      totalUnreadCount={totalUnreadCount}
       currentPath={location.pathname}
       onSearchClick={handleSearchClick}
       onCategoryClick={handleCategoryClick}
@@ -193,9 +196,8 @@ const MainPage: React.FC = () => {
           onClick={handleGoToPromotions}
         />
       </div>
-
       <button
-        onClick={handleOpenActionModal} // ✅ 플로팅 버튼은 이제 '선택' 모달을 엽니다.
+        onClick={handleOpenActionModal} // ✅ 플로팅 버튼은 이제 '선택' 모달을 엽니다. (To Be deleted)
         className="fixed bottom-5 right-5 z-50 h-12 w-12 rounded-full bg-brand-primary p-2 text-white shadow-lg transition-all hover:scale-110"
         aria-label="새 작업"
       >

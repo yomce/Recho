@@ -3,6 +3,7 @@
 import React, {useEffect} from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useChatStore } from '../../stores/chatStore';
 import PostLayout from '@/components/layout/PostLayout'; // 재사용 가능한 레이아웃
 import Icon from '@/components/atoms/icon/Icon';
 
@@ -22,6 +23,7 @@ const timeSince = (date: Date): string => {
   };
 
   const NotificationsPage: React.FC = () => {
+    const { totalUnreadCount } = useChatStore();
     const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
     const navigate = useNavigate();
 
@@ -50,7 +52,7 @@ const timeSince = (date: Date): string => {
 
 
     return (
-        <PostLayout>
+        <PostLayout totalUnreadCount={totalUnreadCount}>
             <div className="p-4">
                 <div className="flex justify-between items-center mb-4">
                     <h1 className="text-headline font-bold">알림</h1>

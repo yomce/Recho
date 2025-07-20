@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useChatStore } from '../../stores/chatStore';
 import { type UsedProduct, type PaginatedUsedProductResponse, CATEGORY_LABEL_TO_ID } from '../../types/product';
 import axiosInstance from '@/services/axiosInstance';
 import CategoryList from '@/components/layout/CategoryList';
@@ -13,6 +14,7 @@ interface Cursor {
 }
 
 const UsedProductPage: React.FC = () => {
+  const { totalUnreadCount } = useChatStore();
   const [items, setItems] = useState<UsedProduct[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,7 +82,7 @@ const UsedProductPage: React.FC = () => {
   };
 
   return (
-    <PostLayout>
+    <PostLayout totalUnreadCount={totalUnreadCount}>
       <div>
         <div className="relative w-full max-w-[410px] mx-auto min-h-screen bg-brand-frame">
           <div className="py-4 px-4">

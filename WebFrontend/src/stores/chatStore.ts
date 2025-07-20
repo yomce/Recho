@@ -14,7 +14,7 @@ export interface Message {
   sender?: {
     id:string;
     username: string;
-    profileUrl: string | null;
+    profileImageUrl: string | null;
   };
   isSystem?: boolean;
 }
@@ -24,7 +24,7 @@ interface MyRoom { id: string; }
 interface ChatPartner {
   id: string | null;
   username: string;
-  profileUrl: string | null;
+  profileImageUrl: string | null;
 }
 
 interface ChatState {
@@ -59,7 +59,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   isConnected: false,
   roomId: null,
   messages: [],
-  chatPartner: { id: null, username: '대화 상대 로딩...', profileUrl: null },
+  chatPartner: { id: null, username: '대화 상대 로딩...', profileImageUrl: null },
   isModalOpen: false,
   modalType: null,
   page: 1,
@@ -152,13 +152,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({
       roomId,
       messages: [],
-      chatPartner: { id: null, username: '로딩 중...', profileUrl: null },
+      chatPartner: { id: null, username: '로딩 중...', profileImageUrl: null },
       page: 1,
       hasMore: true,
       isLoadingMore: false,
     });
     try {
       const response = await axiosInstance.get(`chat/rooms/${roomId}/history?page=1&limit=20`);
+      console.log('history data', response.data);
+
       const messageHistory: Message[] = response.data.reverse();
       set({ 
         messages: messageHistory,
@@ -170,20 +172,20 @@ export const useChatStore = create<ChatState>((set, get) => ({
       )?.sender;
       if (partner) {
         set({
-          chatPartner: { id: partner.id, username: partner.username, profileUrl: partner.profileUrl },
+          chatPartner: { id: partner.id, username: partner.username, profileImageUrl: partner.profileImageUrl },
         });
       } else {
         const roomDetailsResponse = await axiosInstance.get(`chat/rooms/${roomId}`);
         const otherUser = roomDetailsResponse.data.userRooms.find(ur => ur.user.id !== currentUser.id)?.user;
         set({
           chatPartner: otherUser 
-            ? { id: otherUser.id, username: otherUser.username, profileUrl: otherUser.profileUrl }
-            : { id: null, username: '새로운 대화', profileUrl: null },
+            ? { id: otherUser.id, username: otherUser.username, profileImageUrl: otherUser.profileImageUrl }
+            : { id: null, username: '새로운 대화', profileImageUrl: null },
         });
       }
     } catch (error) {
       console.error('메시지 기록 로딩 실패:', error);
-      set({ chatPartner: { id: null, username: '정보 없음', profileUrl: null }});
+      set({ chatPartner: { id: null, username: '정보 없음', profileImageUrl: null }});
     }
     get().socket.emit('joinRoom', { id: currentUser.id, roomId });
   },
@@ -240,7 +242,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({
       roomId: null,
       messages: [],
-      chatPartner: { id: null, username: '', profileUrl: null },
+      chatPartner: { id: null, username: '', profileImageUrl: null },
     });
   },
 }));

@@ -15,7 +15,7 @@ import { DEFAULT_IMAGES } from "@/constants/images";
 interface ChatUser {
   id: string;
   username: string;
-  profileUrl?: string | null;
+  profileImageUrl?: string | null;
 }
 interface UserRoom {
   user: ChatUser;
@@ -141,12 +141,12 @@ const ChatListPage: React.FC = () => {
                   <div className="flex items-center gap-3 overflow-hidden">
                     {/* 아바타 표시 */}
                     {isPrivate ? (
-                      <Avatar src={chatPartner?.profileUrl || DEFAULT_IMAGES.PROFILE} alt={avatarAlt} size={48} />
+                      <Avatar src={chatPartner?.profileImageUrl || DEFAULT_IMAGES.PROFILE} alt={avatarAlt} size={48} />
                     ) : (
                       <div className="relative flex-shrink-0 flex w-12 h-12">
                         {participants.slice(0, 2).map((p, index) => (
                           <div key={p.id} className={`absolute ${index === 0 ? "top-0 left-0 z-10" : "bottom-0 right-0"}`}>
-                            <Avatar src={p.profileUrl || DEFAULT_IMAGES.PROFILE} alt={p.username} size={32} />
+                            <Avatar src={p.profileImageUrl || DEFAULT_IMAGES.PROFILE} alt={p.username} size={32} />
                           </div>
                         ))}
                       </div>

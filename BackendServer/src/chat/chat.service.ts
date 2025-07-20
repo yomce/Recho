@@ -13,6 +13,11 @@ import { UserRoom } from './entities/user-room.entity';
 import { Message } from './entities/message.entity';
 import { RoomType } from './dto/create-room.dto';
 import { UserMessageRead } from './entities/user-message-read.entity'; // 추가
+import { UserResponseDto } from 'src/auth/user/dto/user.response.dto';
+import { UserRoomResponseDto } from './dto/userRoom.response.dto';
+import { ImageService } from 'src/image/image.service';
+import { RoomResponseDto } from './dto/room.response.dto';
+import { MessageResponseDto } from './dto/message.response.dto';
 
 @Injectable()
 export class ChatService {
@@ -25,6 +30,8 @@ export class ChatService {
     @InjectRepository(UserRoom) private userRoomRepo: Repository<UserRoom>,
     @InjectRepository(UserMessageRead)
     private readRepo: Repository<UserMessageRead>, // 추가
+
+    private imageService: ImageService,
   ) {}
 
   // ... createRoom ...
@@ -75,13 +82,13 @@ export class ChatService {
     userId: string,
     page = 1,
     limit = 20,
-  ): Promise<Message[]> {
+  ): Promise<MessageResponseDto[]> {
     const userRoom = await this.userRoomRepo.findOneBy({ roomId, id: userId });
     if (!userRoom) {
       throw new ForbiddenException('You are not a member of this room.');
     }
     await this.markAsRead(roomId, userId);
-    return this.msgRepo.find({
+    const messages = await this.msgRepo.find({
       where: {
         roomId,
         createdAt: MoreThan(userRoom.joinedAt),
@@ -91,6 +98,26 @@ export class ChatService {
       take: limit,
       relations: ['sender'],
     });
+
+    return await Promise.all(
+      messages.map(async (msg) => {
+        const tmpUserResDto = UserResponseDto.from(msg.sender);
+        if (msg.sender?.profileUrl) {
+          tmpUserResDto.profileImageUrl =
+            await this.imageService.getDownloadUrl(msg.sender.profileUrl);
+        }
+        const tmpMsgDto = new MessageResponseDto();
+        tmpMsgDto.id = msg.id;
+        tmpMsgDto.roomId = msg.roomId;
+        tmpMsgDto.senderId = msg.senderId;
+        tmpMsgDto.type = msg.type;
+        tmpMsgDto.content = msg.content;
+        tmpMsgDto.createdAt = msg.createdAt;
+        tmpMsgDto.readAt = msg.readAt;
+        tmpMsgDto.sender = tmpUserResDto;
+        return tmpMsgDto;
+      }),
+    );
   }
 
   // 5) 방 나가기
@@ -130,6 +157,56 @@ export class ChatService {
 
     if (userRooms.length === 0) return [];
 
+    // 2. 가져온 userRooms 배열을 순회하며 최종적인 RoomResponseDto 배열을 만듭니다.
+    const finalUserRoomDtos = await Promise.all(
+      userRooms.map(async (userRoom) => {
+        const roomEntity = userRoom.room;
+
+        // 3. 최상위 RoomResponseDto를 수동으로 생성합니다.
+        const roomDto = new RoomResponseDto();
+        roomDto.id = roomEntity.id;
+        roomDto.name = roomEntity.name;
+        roomDto.type = roomEntity.type;
+        roomDto.createdAt = roomEntity.createdAt;
+        roomDto.lastMessageAt = roomEntity.lastMessageAt;
+
+        // 4. 해당 채팅방에 참여한 유저들의 DTO를 만듭니다.
+        roomDto.userRooms = await Promise.all(
+          roomEntity.userRooms.map(async (participant) => {
+            // 중첩된 UserRoomResponseDto를 수동으로 생성합니다.
+            const participantDto = new UserRoomResponseDto();
+            participantDto.id = participant.id;
+            participantDto.roomId = participant.roomId;
+            participantDto.joinedAt = participant.joinedAt;
+
+            // User DTO는 순환 참조 문제가 없으므로 기존 from 메소드를 사용해도 괜찮습니다.
+            const userDto = UserResponseDto.from(participant.user);
+            // 유저 프로필 이미지의 Signed URL을 추가합니다.
+            if (participant.user?.profileUrl) {
+              userDto.profileImageUrl = await this.imageService.getDownloadUrl(
+                participant.user.profileUrl,
+              );
+            } else {
+              userDto.profileImageUrl = null;
+            }
+            participantDto.user = userDto;
+
+            // 중요: 최종 DTO(JSON) 응답에서 순환 참조가 발생하지 않도록
+            // `participantDto.room`은 설정하지 않습니다. (기본값: undefined)
+            return participantDto;
+          }),
+        );
+
+        const finalUserRoomDto = new UserRoomResponseDto();
+        finalUserRoomDto.id = userRoom.id;
+        finalUserRoomDto.roomId = userRoom.roomId;
+        finalUserRoomDto.joinedAt = userRoom.joinedAt;
+        finalUserRoomDto.room = roomDto;
+
+        return finalUserRoomDto;
+      }),
+    );
+
     const roomIds = userRooms.map((ur) => ur.roomId);
 
     // ✨ (오류 수정) getRawMany()의 결과 타입을 명시해줍니다.
@@ -160,7 +237,7 @@ export class ChatService {
       unreadCounts.map((item) => [item.roomId, parseInt(item.unreadCount, 10)]),
     );
 
-    return userRooms.map((userRoom) => ({
+    return finalUserRoomDtos.map((userRoom) => ({
       ...userRoom.room,
       unreadCount: unreadCountMap.get(userRoom.roomId) || 0,
     }));

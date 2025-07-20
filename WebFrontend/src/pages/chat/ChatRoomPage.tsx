@@ -169,7 +169,7 @@ const ChatRoomPage: React.FC = () => {
           <Icon name="back" />
         </button>
         <button onClick={goToUserProfile} className="flex items-center gap-3 p-2 -ml-2 rounded-lg hover:bg-gray-100" disabled={!chatPartner.id}>
-          <Avatar src={chatPartner.profileUrl || DEFAULT_IMAGES.PROFILE} alt={chatPartner.username} size={32} />
+          <Avatar src={chatPartner.profileImageUrl || DEFAULT_IMAGES.PROFILE} alt={chatPartner.username} size={32} />
           <h2 className="text-subheadline text-brand-text-primary">{chatPartner.username}</h2>
         </button>
         <div className="flex items-center gap-2">
@@ -207,7 +207,7 @@ const ChatRoomPage: React.FC = () => {
                   </div>
                 ) : (
                   <div className="flex items-end gap-2">
-                    <Avatar src={msg.sender?.profileUrl || DEFAULT_IMAGES.PROFILE} alt={msg.sender?.username} />
+                    <Avatar src={msg.sender?.profileImageUrl || DEFAULT_IMAGES.PROFILE} alt={msg.sender?.username} />
                     <div className="flex flex-col">
                       <span className="text-sm text-brand-gray mb-1 text-left block">{msg.sender?.username}</span>
                       <MessageBubble msg={{ ...msg, time: formatTime(msg.createdAt) }} currentUserId={id} dragX={dragX} />

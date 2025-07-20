@@ -112,7 +112,7 @@ export class User {
 
   @OneToMany(() => UsedProduct, (usedProduct) => usedProduct.user)
   usedProduct: UsedProduct[];
-  
+
   @OneToMany(() => PracticeRoom, (practiceRoom) => practiceRoom.user)
   practiceRoom: PracticeRoom[];
 

@@ -14,10 +14,10 @@ import { ChatService } from './chat.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { HistoryQueryDto } from './dto/history-query.dto';
 import { Room } from './entities/room.entity';
-import { Message } from './entities/message.entity';
 import { User } from '../auth/user/user.entity'; // User import
 import { Request } from 'express'; // Request import
 import { AuthGuard } from '@nestjs/passport'; // AuthGuard import
+import { MessageResponseDto } from './dto/message.response.dto';
 
 interface RequestWithUser extends Request {
   user: User;
@@ -65,7 +65,7 @@ export class ChatController {
     @Param('id') roomId: string,
     @Query() query: HistoryQueryDto,
     @Req() req: RequestWithUser,
-  ): Promise<Message[]> {
+  ): Promise<MessageResponseDto[]> {
     const userId = req.user.id;
     return this.chatService.getHistory(roomId, userId, query.page, query.limit);
   }

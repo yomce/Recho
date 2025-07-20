@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PracticeRoom } from './entities/practice-room.entity';
@@ -6,12 +6,15 @@ import { CreatePracticeRoomDto } from './dto/create-practice-room.dto';
 import { UpdatePracticeRoomDto } from './dto/update-practice-room.dto';
 import { PaginatedPracticeRoomResponse } from './dto/paginated-practice-room.response.dto';
 import { Location } from 'src/map/entities/location.entity';
+import { UserService } from 'src/auth/user/user.service';
+
 
 @Injectable()
 export class PracticeRoomService {
   constructor(
     @InjectRepository(PracticeRoom)
     private readonly practiceRoomRepo: Repository<PracticeRoom>,
+    private readonly userService: UserService,
 
     @InjectRepository(Location)
     private readonly locationRepo: Repository<Location>,
@@ -75,10 +78,16 @@ export class PracticeRoomService {
       throw new NotFoundException(`Location with ID #${locationId} not found.`);
     }
 
+    const user = await this.userService.findById(id);
+    if (!user) {
+      throw new NotFoundException(`User with ID "${id}" not found`);
+    }
+    
+
     const newPracticeRoom = this.practiceRoomRepo.create({
       ...restofDto,
       locationId: locationEntity.locationId,
-      id: id, // 실제 유저 ID를 사용해야 합니다
+      user: user, // 실제 유저 ID를 사용해야 합니다
       viewCount: 0,
     });
     return await this.practiceRoomRepo.save(newPracticeRoom);
@@ -87,7 +96,7 @@ export class PracticeRoomService {
   async detailPracticeRoom(id: number): Promise<PracticeRoom> {
     const post = await this.practiceRoomRepo.findOne({
       where: { postId: id },
-      relations: ['location'], // ← location 조인!
+      relations: ['location', 'user'], // ← location 조인!
     });
     if (!post) {
       throw new NotFoundException(`Post withID #${id} not found`);
@@ -95,23 +104,32 @@ export class PracticeRoomService {
     return post;
   }
 
-  async deletePracticeRoom(id: number): Promise<void> {
-    const post = await this.practiceRoomRepo.delete({ postId: id });
-    if (post.affected === 0) {
+  async deletePracticeRoom(postId: number, id: string): Promise<void> {
+    const post = await this.detailPracticeRoom(postId);
+    if(id !== post?.user.id){
+      throw new ForbiddenException(`Unauthorized`);
+    }
+    const result = await this.practiceRoomRepo.delete({ postId: postId });
+    if (result.affected === 0) {
       throw new NotFoundException(`Post withID #${id} not found`);
     }
   }
 
   async pathPracticeRoom(
-    id: number,
+    postId: number,
     updateDto: UpdatePracticeRoomDto,
+    id: string,
   ): Promise<PracticeRoom> {
-    const post = await this.detailPracticeRoom(id);
+    const post = await this.detailPracticeRoom(postId);
+    if (id !== post.user.id) {
+      throw new ForbiddenException(`Unauthorized`);
+    }
+
     const updatedPost = this.practiceRoomRepo.merge(post, updateDto);
     return this.practiceRoomRepo.save(updatedPost);
   }
 
-  async incrementViewCount(id: number): Promise<void> {
-    await this.practiceRoomRepo.increment({ postId: id }, 'viewCount', 1);
+  async incrementViewCount(postId: number): Promise<void> {
+    await this.practiceRoomRepo.increment({ postId: postId }, 'viewCount', 1);
   }
 }

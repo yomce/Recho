@@ -82,4 +82,12 @@ export class PostsController {
     // ⭐️ req.user 객체 전체를 서비스로 전달합니다.
     return this.postsService.remove(id, req.user);
   }
+
+  @Get('user/:id')
+  @UseGuards(AuthGuard('jwt'))
+  async getMyPosts(@Req() req: Request): Promise<any[]> {
+    const userId = (req.user as any).id;
+    return this.postsService.findPostsByUser(userId);
+  }
+
 }

@@ -261,4 +261,75 @@ export class UsedProductService {
     product.status = status;
     return this.usedProductRepo.save(product);
   }
+
+  async findUsedProductsByUserWithPagination(
+    userId: string,
+    limit: number,
+    lastProductId?: number,
+    lastCreatedAt?: Date,
+    categoryId?: number,
+  ): Promise<PaginatedUsedProductResponse> {
+    const realLimit = limit + 1;
+    const queryBuilder = this.usedProductRepo
+      .createQueryBuilder('usedProduct')
+      .leftJoinAndSelect('usedProduct.user', 'user')
+      .leftJoinAndSelect('usedProduct.location', 'location')
+      .where('user.id = :userId', { userId });
+
+    if (lastProductId && lastCreatedAt) {
+      queryBuilder.andWhere(
+        '(usedProduct.createdAt < :lastCreatedAt) OR (usedProduct.createdAt = :lastCreatedAt AND usedProduct.productId < :lastProductId)',
+        { lastCreatedAt, lastProductId },
+      );
+    }
+
+    if (categoryId) {
+      queryBuilder.andWhere('usedProduct.categoryId = :categoryId', { categoryId });
+    }
+
+    const results = await queryBuilder
+      .orderBy('usedProduct.createdAt', 'DESC')
+      .addOrderBy('usedProduct.productId', 'DESC')
+      .take(realLimit)
+      .getMany();
+
+    const hasNextPage = results.length > limit;
+    const data = hasNextPage ? results.slice(0, limit) : results;
+    const lastItem = data[data.length - 1];
+    const nextCursor =
+      hasNextPage && lastItem
+        ? {
+            lastProductId: lastItem.productId,
+            lastCreatedAt: lastItem.createdAt.toISOString(),
+          }
+        : undefined;
+
+    const productIds = data.map((p) => p.productId);
+    if (productIds.length === 0) return { data: [], nextCursor, hasNextPage };
+
+    const thumbnails = await this.imageRepo
+      .createQueryBuilder('image')
+      .where('image.refPostId IN (:...productIds)', { productIds })
+      .andWhere('image.isThumbnail = true')
+      .getMany();
+
+    const imageMap = new Map<number, string>();
+    thumbnails.forEach((img) => {
+      if (img.refPostId !== null && !imageMap.has(img.refPostId)) {
+        imageMap.set(Number(img.refPostId), img.imageKey);
+      }
+    });
+
+    const dataWithThumbnails = data.map((product) => ({
+      ...product,
+      imageUrl: imageMap.get(product.productId) || null,
+    }));
+
+    return {
+      data: dataWithThumbnails,
+      nextCursor,
+      hasNextPage,
+    };
+  }
+
 }

@@ -25,6 +25,8 @@ import { Location } from 'src/map/entities/location.entity';
 import { ChatService } from 'src/chat/chat.service';
 import { ApplierEnsemble } from 'src/application/entities/applier-ensemble.entity';
 import { RoomType } from 'src/chat/dto/create-room.dto';
+import { ImageService } from 'src/image/image.service';
+import { UserResponseDto } from 'src/auth/user/dto/user.response.dto';
 
 @Injectable()
 export class EnsembleService {
@@ -41,6 +43,7 @@ export class EnsembleService {
     @InjectRepository(Location)
     private readonly locationRepo: Repository<Location>,
 
+    private readonly imageService: ImageService,
     private readonly userService: UserService,
     private readonly dataSource: DataSource,
     private readonly chatService: ChatService,
@@ -150,7 +153,19 @@ export class EnsembleService {
           }
         : undefined;
     return {
-      data : results.map(RecruitEnsembleResponseDto.from),
+      data: await Promise.all(
+        results.map(async (result) => {
+          const tmpUsrResDto = UserResponseDto.from(result.user);
+          let signedUrl: string;
+          if (result.user && result.user.profileUrl) {
+            signedUrl = await this.imageService.getDownloadUrl(
+              result.user.profileUrl,
+            );
+            tmpUsrResDto.profileImageUrl = signedUrl;
+          }
+          return RecruitEnsembleResponseDto.from(result, tmpUsrResDto);
+        }),
+      ),
       nextCursor,
       hasNextPage,
     };
@@ -162,7 +177,7 @@ export class EnsembleService {
   ): Promise<RecruitEnsemble> {
     return this.dataSource.transaction(async (transactionalEntityManager) => {
       const { locationId, ...recruitEnsembleDto } = createDto;
-      const user = await this.userService.findById(id);
+      const user = await this.userService.internalFindById(id);
 
       if (!user) {
         throw new NotFoundException(`User with ID "${id}" not found`);
@@ -273,7 +288,33 @@ export class EnsembleService {
     return updatedEnsemble;
   }
 
-  async detailEnsemble(id: number): Promise<RecruitEnsemble> {
+  async publicDetailEnsemble(id: number): Promise<RecruitEnsembleResponseDto> {
+    const ensemble = await this.recruitEnsembleRepo.findOne({
+      where: { postId: id },
+      relations: ['sessionEnsemble', 'applierEnsemble', 'user', 'location'],
+    });
+    if (!ensemble) {
+      throw new NotFoundException(`Ensemble with ID #${id} not found.`);
+    }
+
+    const userResponseDto = UserResponseDto.from(ensemble.user);
+
+    const newResponseEnsemble = RecruitEnsembleResponseDto.from(
+      ensemble,
+      userResponseDto,
+    );
+    if (ensemble.user && ensemble.user.profileUrl) {
+      const signedUrl = await this.imageService.getDownloadUrl(
+        ensemble.user.profileUrl,
+      );
+      newResponseEnsemble.user.profileImageUrl = signedUrl;
+    }
+
+    console.log('---------------------', newResponseEnsemble);
+    return newResponseEnsemble;
+  }
+
+  async internalDetailEnsemble(id: number): Promise<RecruitEnsemble> {
     const ensemble = await this.recruitEnsembleRepo.findOne({
       where: { postId: id },
       relations: ['sessionEnsemble', 'applierEnsemble', 'user', 'location'],
@@ -305,7 +346,7 @@ export class EnsembleService {
   }
 
   async deleteEnsemble(postId: number, id: string): Promise<void> {
-    const ensemble = await this.detailEnsemble(postId);
+    const ensemble = await this.internalDetailEnsemble(postId);
     if (id !== ensemble?.user.id) {
       throw new ForbiddenException(`Unauthorized`);
     }
@@ -435,7 +476,7 @@ export class EnsembleService {
       await queryRunner.commitTransaction();
 
       // 6. 최신 상태의 데이터를 다시 조회하여 반환합니다.
-      return this.detailEnsemble(postId);
+      return this.publicDetailEnsemble(postId);
     } catch (err) {
       // 에러 발생 시 모든 변경사항을 롤백합니다.
       await queryRunner.rollbackTransaction();

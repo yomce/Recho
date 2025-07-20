@@ -10,7 +10,7 @@ import { DEFAULT_IMAGES } from "@/constants/images";
 // ChatLayout이 받을 props 타입 정의
 interface ChatLayoutProps {
   children: React.ReactNode;
-  chatPartner: { id?: string; username?: string; profileUrl?: string };
+  chatPartner: { id?: string; username?: string; profileImageUrl?: string };
   newMessage: string;
   onNewMessageChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onSendMessage: () => void;
@@ -46,7 +46,7 @@ const ChatLayout: React.FC<ChatLayoutProps> = ({
           disabled={!chatPartner.id}
         >
           <Avatar
-            src={chatPartner.profileUrl || DEFAULT_IMAGES.PROFILE}
+            src={chatPartner.profileImageUrl || DEFAULT_IMAGES.PROFILE}
             alt={chatPartner.username}
             size={32}
           />

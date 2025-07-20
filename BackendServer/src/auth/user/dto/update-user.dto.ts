@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, MaxLength } from 'class-validator';
+import { IsString, IsNotEmpty, MaxLength, IsOptional } from 'class-validator';
 
 export class UpdateUserDto {
   /**
@@ -14,6 +14,7 @@ export class UpdateUserDto {
   @IsString()
   intro?: string;
 
+  @IsOptional()
   @IsString()
   profileUrl?: string;
 }

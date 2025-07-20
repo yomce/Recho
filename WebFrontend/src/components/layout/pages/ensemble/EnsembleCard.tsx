@@ -47,7 +47,7 @@ const EnsembleCard: React.FC<EnsembleCardProps> = ({ posts }) => {
           {/* 유저 정보 */}
           <div className="flex items-center gap-2 mb-2">
             <img
-              src={DEFAULT_IMAGES.PROFILE}
+              src={post.user.profileImageUrl || DEFAULT_IMAGES.PROFILE}
               className="w-10 h-10 rounded-full object-cover"
             />
             <div className="flex-1">

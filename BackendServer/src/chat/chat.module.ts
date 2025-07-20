@@ -9,11 +9,13 @@ import { Room } from './entities/room.entity';
 import { UserRoom } from './entities/user-room.entity';
 import { UserModule } from '../auth/user/user.module';
 import { UserMessageRead } from './entities/user-message-read.entity'; // 추가
+import { ImageModule } from 'src/image/image.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Message, Room, UserRoom, UserMessageRead]), // ← 이 줄이 반드시 필요
     UserModule,
+    ImageModule,
   ],
   providers: [ChatService, ChatGateway],
   controllers: [ChatController],

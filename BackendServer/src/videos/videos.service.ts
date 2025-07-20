@@ -15,6 +15,8 @@ import { LikesService } from 'src/likes/likes.service';
 import { User } from 'src/auth/user/user.entity';
 import { CommentsService } from 'src/comment/comments.service';
 import { VideoResponseDto } from './dto/video.response.dto';
+import { UserResponseDto } from 'src/auth/user/dto/user.response.dto';
+import { ImageService } from 'src/image/image.service';
 
 @Injectable()
 export class VideosService {
@@ -27,6 +29,7 @@ export class VideosService {
     private readonly userService: UserService,
     private readonly likesService: LikesService,
     private readonly commentsService: CommentsService,
+    private readonly imageService: ImageService,
   ) {
     const region = this.configService.get<string>('AWS_REGION');
     const accessKeyId = this.configService.get<string>(
@@ -52,7 +55,7 @@ export class VideosService {
   }
 
   async getThumbnailsByUser(id: string): Promise<string[]> {
-    const user = await this.userService.findById(id);
+    const user = await this.userService.internalFindById(id);
 
     if (!user) {
       throw new NotFoundException(`User with ID "${id}" not found`);
@@ -78,7 +81,7 @@ export class VideosService {
   }
 
   async getVideosByUser(id: string): Promise<Video[]> {
-    const user = await this.userService.findById(id);
+    const user = await this.userService.internalFindById(id);
 
     if (!user) {
       throw new NotFoundException(`User with ID "${id}" not found`);
@@ -177,15 +180,27 @@ export class VideosService {
       }),
     );
 
-    const responseVideo = signedVideos.map((video) => {
-      const commentsForVideo = commentsMap.get(video.id) || [];
-      const tmpVideo = VideoResponseDto.from(video);
-      return {
-        ...tmpVideo,
-        userLiked: likedVideoIds.has(video.id),
-        comments: commentsForVideo,
-      };
-    });
+    const responseVideo = await Promise.all(
+      signedVideos.map(async (video) => {
+        const commentsForVideo = commentsMap.get(video.id) || [];
+
+        const tmpUser = UserResponseDto.from(video.user);
+        const tmpVideo = VideoResponseDto.from(video, tmpUser);
+
+        if (video.user && video.user.profileUrl) {
+          const signedUrl = await this.imageService.getDownloadUrl(
+            video.user.profileUrl,
+          );
+          tmpVideo.user.profileImageUrl = signedUrl;
+        }
+
+        return {
+          ...tmpVideo,
+          userLiked: likedVideoIds.has(video.id),
+          comments: commentsForVideo,
+        };
+      }),
+    );
 
     return responseVideo;
   }
@@ -225,7 +240,15 @@ export class VideosService {
 
     video.video_url = videoUrl;
     video.thumbnail_url = thumbnailUrl;
-    const responseVideo = VideoResponseDto.from(video);
+    const responseUser = UserResponseDto.from(video.user);
+    const responseVideo = VideoResponseDto.from(video, responseUser);
+
+    if (video.user && video.user.profileUrl) {
+      const signedUrl = await this.imageService.getDownloadUrl(
+        video.user.profileUrl,
+      );
+      responseVideo.user.profileImageUrl = signedUrl;
+    }
 
     return {
       ...responseVideo,

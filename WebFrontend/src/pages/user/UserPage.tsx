@@ -27,7 +27,7 @@ interface UserProfile {
   id: string;
   username: string;
   email: string;
-  profileUrl: string | null;
+  profileImageUrl: string | null;
   intro: string | null;
   createdAt: string;
 }
@@ -54,7 +54,7 @@ const UserPage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [newUsername, setNewUsername] = useState("");
   const [newUserInfo, setNewUserInfo] = useState("");
-  const [userImage, setUserImage] = useState("");
+  const [newUserImage, setNewUserImage] = useState("");
   const [newProfileImageFile, setNewProfileImageFile] = useState<File | null>(null);
 
   const [usedProducts, setUsedProducts] = useState<ContentDataType[]>([]);
@@ -94,6 +94,7 @@ const UserPage: React.FC = () => {
           axiosInstance.get<PaginatedUsedProductResponse>(`used-products/user/${id}`),
           axiosInstance.get<Post[]>(`posts/user/${id}`)
         ]);
+
         setUser(userResponse.data);
         const formattedThumbnails = videosResponse.data.map((video, index) => ({
             id: `thumb-${index}`,
@@ -121,14 +122,7 @@ const UserPage: React.FC = () => {
             title: post.title,
           }))
         );
-
-        let profileImgUrlResponse;
-        if (userResponse.data.profileUrl) {
-          const encodedImgUrlResponse = encodeURIComponent(userResponse.data.profileUrl)
-          profileImgUrlResponse = await axiosInstance.get<string>(`images/download/${encodedImgUrlResponse}`)
-          setUserImage(profileImgUrlResponse.data);
-        }
-
+        
         setThumbnails(formattedThumbnails);
         setError(null); // 다른 유저 페이지 로딩 성공 시 에러 상태 초기화
       } catch (err) {
@@ -175,6 +169,9 @@ const UserPage: React.FC = () => {
     if (user) {
       setIsEditing(true);
       setNewUsername(user.username);
+      if (user.profileImageUrl) {
+        setNewUserImage(user.profileImageUrl)
+      }
       setNewUserInfo(user.intro || ""); // null일 경우 빈 문자열로 초기화
       setNewProfileImageFile(null); // 새 파일 상태를 초기화
       setIsSettingsModalOpen(false);
@@ -205,7 +202,7 @@ const UserPage: React.FC = () => {
         username: newUsername,
       });
 
-      let profileUrlKey = user?.profileUrl; // 기존 URL 키를 기본값으로 설정
+      let profileUrlKey; // 기존 URL 키를 기본값으로 설정
 
       // 2. 새로운 프로필 파일이 선택된 경우, S3 업로드 로직 실행
       if (newProfileImageFile) {
@@ -282,7 +279,7 @@ const UserPage: React.FC = () => {
                 {isMyProfile && isEditing ? (
                   <label htmlFor="profile-upload-input">
                     <Avatar
-                      src={newProfileImageFile ? URL.createObjectURL(newProfileImageFile) : userImage || DEFAULT_IMAGES.PROFILE}
+                      src={newProfileImageFile ? URL.createObjectURL(newProfileImageFile) : user.profileImageUrl || DEFAULT_IMAGES.PROFILE}
                       alt={`${user.username}의 프로필 사진`}
                       size={64}
                     />
@@ -296,7 +293,7 @@ const UserPage: React.FC = () => {
                   </label>
                 ) : (
                   <Avatar
-                    src={userImage|| DEFAULT_IMAGES.PROFILE}
+                    src={user.profileImageUrl || DEFAULT_IMAGES.PROFILE}
                     alt={`${user.username}의 프로필 사진`}
                     size={64}
                   />

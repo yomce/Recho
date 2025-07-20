@@ -11,6 +11,7 @@ import { NumberIdComment } from './entities/number-id-comment.entity';
 import { StringIdComment } from './entities/string-id-comment.entity';
 import { NotificationsModule } from 'src/notifications/notifications.module';
 import { User } from 'src/auth/user/user.entity';
+import { ImageModule } from 'src/image/image.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { User } from 'src/auth/user/user.entity';
     ]),
     AuthModule, // To get user info from JWT
     NotificationsModule,
+    ImageModule,
   ],
   providers: [CommentsService],
   controllers: [CommentsController],

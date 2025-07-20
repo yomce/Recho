@@ -101,7 +101,7 @@ export class VideoInsertService {
   async saveFinalVideoMeta(dto: SaveVideoMetaDto) {
     const video = this.videoRepository.create(dto);
 
-    const user = await this.userService.findById(dto.user_id);
+    const user = await this.userService.internalFindById(dto.user_id);
 
     if (!user) {
       throw new NotFoundException(`User with ID "${dto.user_id}" not found`);

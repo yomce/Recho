@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { FindManyOptions, In, Repository } from 'typeorm';
 import { Post } from 'src/community/posts/entities/post.entity';
 import { Video } from 'src/videos/entities';
 import { NumberIdComment } from './entities/number-id-comment.entity';
@@ -17,6 +17,9 @@ import { CONTENT_TYPE } from 'src/likes/dto/toggle-like.dto';
 import { NotificationsService } from 'src/notifications/notifications.service';
 import { NotificationType } from 'src/notifications/entities/notification.entity';
 import { User } from 'src/auth/user/user.entity';
+import { CommentResponseDto } from './dto/comment_response.dto';
+import { ImageService } from 'src/image/image.service';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class CommentsService {
@@ -32,7 +35,75 @@ export class CommentsService {
     private readonly notificationsService: NotificationsService,
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+    private readonly imageService: ImageService,
   ) {}
+
+  // DTO 변환을 위한 private 헬퍼 메서드
+  private async transformCommentsToDto(
+    comments: (NumberIdComment | StringIdComment)[],
+  ): Promise<CommentResponseDto[]> {
+    // Promise.all을 사용해 여러 개의 URL 생성 요청을 병렬로 처리합니다.
+    const commentDtos = await Promise.all(
+      comments.map(async (comment) => {
+        // 1. 엔티티를 DTO로 먼저 변환합니다.
+        //    이때 user 속성도 UserResponseDto로 변환되지만, profileImageUrl은 아직 null 입니다.
+        const commentDto = plainToInstance(CommentResponseDto, comment, {
+          excludeExtraneousValues: true,
+        });
+
+        // 2. 사용자가 있고 프로필 URL 키가 존재하면, Signed URL을 생성합니다.
+        if (comment.user && comment.user.profileUrl) {
+          const signedUrl = await this.imageService.getDownloadUrl(
+            comment.user.profileUrl,
+          );
+
+          // 3. 생성된 URL을 DTO의 user 객체에 직접 할당합니다.
+          if (commentDto.user) {
+            commentDto.user.profileImageUrl = signedUrl;
+          }
+        }
+
+        return commentDto;
+      }),
+    );
+
+    return commentDtos;
+  }
+
+  async findCommentsByPostId(
+    contentType: CONTENT_TYPE,
+    postId: number | string,
+  ): Promise<CommentResponseDto[]> {
+    const commonOptions: Pick<
+      FindManyOptions<NumberIdComment>,
+      'order' | 'relations'
+    > = {
+      order: { createdAt: 'ASC' },
+      relations: ['user'],
+    };
+
+    console.log('this method is working');
+
+    if (typeof postId === 'number') {
+      const numberComments = await this.numberCommentsRepository.find({
+        ...commonOptions,
+        where: { contentType, postId },
+      });
+      // 헬퍼 메서드를 호출하여 DTO로 변환
+      return this.transformCommentsToDto(numberComments);
+    }
+
+    if (typeof postId === 'string') {
+      const stringComments = await this.stringCommentsRepository.find({
+        ...commonOptions,
+        where: { contentType, postId },
+      });
+      // 헬퍼 메서드를 호출하여 DTO로 변환
+      return this.transformCommentsToDto(stringComments);
+    }
+
+    throw new BadRequestException('postId must be a number or a string.');
+  }
 
   async createComment(userId: string, createCommentDto: CreateCommentDto) {
     const { contentType, postId, content } = createCommentDto;
@@ -61,8 +132,12 @@ export class CommentsService {
   ) {
     // 1. 댓글 엔티티를 생성하고 DB에 저장합니다.
     // .save() 메소드는 저장된 엔티티(DB에 의해 생성된 ID 포함)를 반환합니다.
-    const newCommentEntity = this.numberCommentsRepository.create({ ...dto, userId });
-    const savedComment = await this.numberCommentsRepository.save(newCommentEntity);
+    const newCommentEntity = this.numberCommentsRepository.create({
+      ...dto,
+      userId,
+    });
+    const savedComment =
+      await this.numberCommentsRepository.save(newCommentEntity);
 
     // 2. 기존 기능(댓글 수 업데이트, 알림 전송)을 그대로 수행합니다.
     await this.updateContentCommentsCount(dto.contentType, dto.postId, 1);
@@ -84,15 +159,15 @@ export class CommentsService {
         );
       }
     }
-    
+
     // 3. user 관계가 포함된 완전한 댓글 객체를 조회하여 반환합니다.
     const fullComment = await this.numberCommentsRepository.findOne({
-        where: { commentId: savedComment.commentId },
-        relations: ['user'],
+      where: { commentId: savedComment.commentId },
+      relations: ['user'],
     });
 
     if (!fullComment) {
-        throw new NotFoundException('생성된 댓글을 가져오는 데 실패했습니다.');
+      throw new NotFoundException('생성된 댓글을 가져오는 데 실패했습니다.');
     }
 
     return fullComment;
@@ -103,8 +178,12 @@ export class CommentsService {
     dto: { contentType: CONTENT_TYPE; postId: string; content: string },
   ) {
     // 1. 댓글 엔티티를 생성하고 DB에 저장합니다.
-    const newCommentEntity = this.stringCommentsRepository.create({ ...dto, userId });
-    const savedComment = await this.stringCommentsRepository.save(newCommentEntity);
+    const newCommentEntity = this.stringCommentsRepository.create({
+      ...dto,
+      userId,
+    });
+    const savedComment =
+      await this.stringCommentsRepository.save(newCommentEntity);
 
     // 2. 기존 기능(댓글 수 업데이트, 알림 전송)을 그대로 수행합니다.
     await this.updateContentCommentsCount(dto.contentType, dto.postId, 1);
@@ -126,15 +205,15 @@ export class CommentsService {
         );
       }
     }
-    
+
     // 3. user 관계가 포함된 완전한 댓글 객체를 조회하여 반환합니다.
     const fullComment = await this.stringCommentsRepository.findOne({
-        where: { commentId: savedComment.commentId },
-        relations: ['user'],
+      where: { commentId: savedComment.commentId },
+      relations: ['user'],
     });
 
     if (!fullComment) {
-        throw new NotFoundException('생성된 댓글을 가져오는 데 실패했습니다.');
+      throw new NotFoundException('생성된 댓글을 가져오는 데 실패했습니다.');
     }
 
     return fullComment;
@@ -147,16 +226,20 @@ export class CommentsService {
     };
 
     if (typeof postId === 'number') {
-      return this.numberCommentsRepository.find({
+      const numberResult = await this.numberCommentsRepository.find({
         ...commonOptions,
         where: { contentType, postId },
       });
+
+      return numberResult;
     }
     if (typeof postId === 'string') {
-      return this.stringCommentsRepository.find({
+      const stringResult = await this.stringCommentsRepository.find({
         ...commonOptions,
         where: { contentType, postId },
       });
+
+      return stringResult;
     }
     throw new BadRequestException('postId must be a number or a string.');
   }

@@ -22,6 +22,7 @@ import { UsedProduct, STATUS as Status } from './entities/used-product.entity';
 import { PaginatedUsedProductResponse } from './dto/paginated-used-product.response.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
+import { UsedProductResponseDto } from './dto/used-product.response.dto';
 
 @Controller('used-products')
 export class UsedProductController {
@@ -69,9 +70,9 @@ export class UsedProductController {
   @Get(':productId')
   async detailProduct(
     @Param('productId', ParseIntPipe) productId: number,
-  ): Promise<UsedProduct> {
+  ): Promise<UsedProductResponseDto> {
     this.logger.log(`Fetching detail for product ID: ${productId}`);
-    return await this.usedProductService.detailProduct(productId);
+    return await this.usedProductService.publicDetailProduct(productId);
   }
 
   @Delete(':productId')

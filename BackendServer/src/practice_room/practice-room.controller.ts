@@ -17,12 +17,12 @@ import {
 
 import { CreatePracticeRoomDto } from './dto/create-practice-room.dto';
 import { UpdatePracticeRoomDto } from './dto/update-practice-room.dto';
-import { PracticeRoom } from './entities/practice-room.entity';
 import { PracticeRoomService } from './practice-room.service';
 import { PaginationQueryPracticeRoomDto } from './dto/pagination-query-practice-room.dto';
 import { PaginatedPracticeRoomResponse } from './dto/paginated-practice-room.response.dto';
 import { Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
+import { PracticeRoomResponseDto } from './dto/parctice-room.response.dto';
 
 @Controller('practice-room')
 export class PracticeRoomController {
@@ -48,7 +48,7 @@ export class PracticeRoomController {
   async enrollPracticeRoom(
     @Body() CreatePracticeRoomDto: CreatePracticeRoomDto,
     @Req() req: Request,
-  ): Promise<PracticeRoom> {
+  ): Promise<PracticeRoomResponseDto> {
     if (!req.user || !req.user.id) {
       this.logger.log(
         `Enrolling a new practice room: ${CreatePracticeRoomDto.title}`,
@@ -65,9 +65,9 @@ export class PracticeRoomController {
   @Get(':postId')
   async detailPracticeRoom(
     @Param('postId', ParseIntPipe) postId: number,
-  ): Promise<PracticeRoom> {
+  ): Promise<PracticeRoomResponseDto> {
     this.logger.log(`Fetching detail for post ID: ${postId}`);
-    return await this.practiceRoomService.detailPracticeRoom(postId);
+    return await this.practiceRoomService.publicDetailPracticeRoom(postId);
   }
 
   @Delete(':postId')
@@ -96,7 +96,7 @@ export class PracticeRoomController {
     @Param('postId', ParseIntPipe) postId: number,
     @Body() UpdatePracticeRoomDto: UpdatePracticeRoomDto,
     @Req() req: Request,
-  ): Promise<PracticeRoom> {
+  ): Promise<PracticeRoomResponseDto> {
     if (!req.user || !req.user.id) {
       this.logger.error(
         'Authentication information missing from request user object.',

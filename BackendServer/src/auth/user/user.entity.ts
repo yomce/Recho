@@ -15,6 +15,7 @@ import { Post } from '../../community/posts/entities/post.entity';
 import { ApplierEnsemble } from 'src/application/entities/applier-ensemble.entity';
 import { Video } from 'src/videos/entities';
 import { UsedProduct } from 'src/used_product/entities/used-product.entity';
+import { PracticeRoom } from 'src/practice_room/entities/practice-room.entity';
 
 @Entity('Users')
 export class User {
@@ -109,9 +110,11 @@ export class User {
   @OneToMany(() => UserRoom, (userRoom) => userRoom.user)
   userRooms: UserRoom[];
 
-  /** 이 사용자가 참여한 방 목록 (관계 정의) */
   @OneToMany(() => UsedProduct, (usedProduct) => usedProduct.user)
   usedProduct: UsedProduct[];
+  
+  @OneToMany(() => PracticeRoom, (practiceRoom) => practiceRoom.user)
+  practiceRoom: PracticeRoom[];
 
   /** 이 사용자의 합주 포스터 */
   @OneToMany(() => RecruitEnsemble, (recruitEnsemble) => recruitEnsemble.user)

@@ -120,7 +120,7 @@ export class UsedProductService {
       throw new NotFoundException(`Location with ID #${locationId} not found.`);
     }
 
-    const user = await this.userService.findById(id);
+    const user = await this.userService.internalFindById(id);
 
     if (!user) {
       throw new NotFoundException(`User with ID "${id}" not found`);

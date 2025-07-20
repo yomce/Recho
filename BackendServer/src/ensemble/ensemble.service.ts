@@ -176,7 +176,7 @@ export class EnsembleService {
   ): Promise<RecruitEnsemble> {
     return this.dataSource.transaction(async (transactionalEntityManager) => {
       const { locationId, ...recruitEnsembleDto } = createDto;
-      const user = await this.userService.findById(id);
+      const user = await this.userService.internalFindById(id);
 
       if (!user) {
         throw new NotFoundException(`User with ID "${id}" not found`);

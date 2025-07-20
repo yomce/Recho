@@ -17,12 +17,12 @@ import {
 
 import { CreatePracticeRoomDto } from './dto/create-practice-room.dto';
 import { UpdatePracticeRoomDto } from './dto/update-practice-room.dto';
-import { PracticeRoom } from './entities/practice-room.entity';
 import { PracticeRoomService } from './practice-room.service';
 import { PaginationQueryPracticeRoomDto } from './dto/pagination-query-practice-room.dto';
 import { PaginatedPracticeRoomResponse } from './dto/paginated-practice-room.response.dto';
 import { Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
+import { PracticeRoomResponseDto } from './dto/parctice-room.response.dto';
 
 @Controller('practice-room')
 export class PracticeRoomController {
@@ -48,7 +48,7 @@ export class PracticeRoomController {
   async enrollPracticeRoom(
     @Body() CreatePracticeRoomDto: CreatePracticeRoomDto,
     @Req() req: Request,
-  ): Promise<PracticeRoom> {
+  ): Promise<PracticeRoomResponseDto> {
     if (!req.user || !req.user.id) {
       this.logger.log(
         `Enrolling a new practice room: ${CreatePracticeRoomDto.title}`,
@@ -65,9 +65,9 @@ export class PracticeRoomController {
   @Get(':id')
   async detailPracticeRoom(
     @Param('id', ParseIntPipe) id: number,
-  ): Promise<PracticeRoom> {
+  ): Promise<PracticeRoomResponseDto> {
     this.logger.log(`Fetching detail for post ID: ${id}`);
-    return await this.practiceRoomService.detailPracticeRoom(id);
+    return await this.practiceRoomService.publicDetailPracticeRoom(id);
   }
 
   @Delete(':id')
@@ -83,7 +83,7 @@ export class PracticeRoomController {
   async pathPracticeRoom(
     @Param('id', ParseIntPipe) id: number,
     @Body() UpdatePracticeRoomDto: UpdatePracticeRoomDto,
-  ): Promise<PracticeRoom> {
+  ): Promise<PracticeRoomResponseDto> {
     this.logger.log(`Patching Post Id: ${id}`);
     return this.practiceRoomService.pathPracticeRoom(id, UpdatePracticeRoomDto);
   }

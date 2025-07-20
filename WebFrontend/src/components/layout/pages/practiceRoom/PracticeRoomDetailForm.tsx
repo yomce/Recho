@@ -57,6 +57,7 @@ export const PracticeRoomDetail: React.FC<PracticeRoomDetailProps> = ({
         </div>
         <div className="flex flex-col w-full mx-auto px-4 gap-4">
           <UserProfileCard
+            user={post.user}
             imageUrl={post.imageUrl || 'https://placehold.co/40x40'}
             name={post.id}
             location={post.location.address}

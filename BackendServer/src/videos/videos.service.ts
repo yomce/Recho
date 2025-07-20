@@ -55,7 +55,7 @@ export class VideosService {
   }
 
   async getThumbnailsByUser(id: string): Promise<string[]> {
-    const user = await this.userService.findById(id);
+    const user = await this.userService.internalFindById(id);
 
     if (!user) {
       throw new NotFoundException(`User with ID "${id}" not found`);
@@ -81,7 +81,7 @@ export class VideosService {
   }
 
   async getVideosByUser(id: string): Promise<Video[]> {
-    const user = await this.userService.findById(id);
+    const user = await this.userService.internalFindById(id);
 
     if (!user) {
       throw new NotFoundException(`User with ID "${id}" not found`);

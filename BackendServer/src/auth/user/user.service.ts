@@ -6,6 +6,7 @@ import { CreateUserDto } from './dto/create-user.dto'; // 경로 수정
 import * as bcrypt from 'bcrypt';
 import { UpdateUserDto } from './dto/update-user.dto'; // [1] UpdateUserDto import
 import { ImageService } from 'src/image/image.service';
+import { UserResponseDto } from './dto/user.response.dto';
 
 @Injectable()
 export class UserService {
@@ -16,8 +17,27 @@ export class UserService {
     private readonly imageService: ImageService,
   ) {}
 
-  async findById(id: string): Promise<User | null> {
+  async internalFindById(id: string): Promise<User | null> {
     return this.userRepository.findOneBy({ id });
+  }
+
+  async publicFindById(id: string): Promise<UserResponseDto> {
+    const user = await this.userRepository.findOneBy({ id });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID "${id}" not found`);
+    }
+
+    let userProfileSignedUrl: string | null = null;
+    if (user && user.profileUrl) {
+      userProfileSignedUrl = await this.imageService.getDownloadUrl(
+        user.profileUrl,
+      );
+    }
+    const userResponse = UserResponseDto.from(user);
+    userResponse.profileImageUrl = userProfileSignedUrl;
+
+    return userResponse;
   }
 
   async findByUsername(username: string): Promise<User | null> {

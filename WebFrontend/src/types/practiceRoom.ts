@@ -1,3 +1,5 @@
+import type { User } from '@/stores/authStore';
+
 export interface Location {
   locationId: string;
   regionLevel1: string;
@@ -12,7 +14,7 @@ export interface Location {
 export interface PracticeRoom {
   readonly postId: number;
   readonly id: string;
-  user_name: string;
+  user: User;
   title: string;
   description: string;
   readonly createdAt: string;

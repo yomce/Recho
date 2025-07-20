@@ -4,11 +4,16 @@ import { PracticeRoomService } from './practice-room.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PracticeRoom } from './entities/practice-room.entity';
 import { LocationModule } from 'src/map/location.module';
+import { UserModule } from 'src/auth/user/user.module';
+import { User } from 'src/auth/user/user.entity';
+import { ImageModule } from 'src/image/image.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([PracticeRoom]),
+    TypeOrmModule.forFeature([PracticeRoom, User]),
     forwardRef(() => LocationModule),
+    UserModule,
+    ImageModule,
   ],
   controllers: [PracticeRoomController],
   providers: [PracticeRoomService],

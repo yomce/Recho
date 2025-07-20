@@ -17,10 +17,13 @@ import TextInputForm from '@/components/atoms/input/TextInputForm';
 import TextAreaInput from '@/components/atoms/input/TextAreaInput';
 import SelectInput from '@/components/atoms/input/SelectInput'; // 새로 만든 컴포넌트
 
+import MyVideoSelector from '@/components/atoms/input/MyVideoSelector';
+
 interface CreatePostData {
   title: string;
   content: string;
   category: string;
+  videoId?: string;
 }
 
 const createPost = async (newPostData: CreatePostData) => {
@@ -41,6 +44,8 @@ const CreatePostPage: React.FC = () => {
     const [content, setContent] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const [videoId, setVideoId] = useState<string | null>(null);
+
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
 
@@ -56,7 +61,20 @@ const CreatePostPage: React.FC = () => {
 
         setIsSubmitting(true);
         try {
-            await createPost({ title, category, content });
+            // 1. 게시글 생성
+            const postRes = await createPost({ title, category, content });
+            const postId = postRes?.id || postRes?.postId; // 백엔드 반환값 구조에 따라 조정
+
+            // 2. 영상 매핑 등록
+            if (videoId && postId) {
+            await axiosInstance.post('/search-video/preview', {
+                refIn: 'posts',
+                refPostId: postId,
+                videoId,
+            });
+            console.log('영상 preview 매핑 등록 완료');
+            }
+            
             toast.success('게시글이 성공적으로 등록되었습니다!');
             navigate('/community', { replace: true });
         } catch (error) {
@@ -104,6 +122,15 @@ const CreatePostPage: React.FC = () => {
                             onChange={(e) => setContent(e.target.value)}
                             rows={12}
                             placeholder="내용을 입력하세요."
+                        />
+                    </div>
+
+                    <div>
+                        <MyVideoSelector
+                            selectedId={videoId ?? undefined}
+                            onSelect={(video) =>
+                            setVideoId(video.id)
+                            }
                         />
                     </div>
 

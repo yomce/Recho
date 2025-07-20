@@ -8,6 +8,7 @@ import MapPreviewCard from '@/components/atoms/card/MapViewCard';
 import IconButton from '@/components/atoms/button/IconButton';
 import { baseStatusStyle, statusStyleMap } from '@/components/atoms/card/UserProfileCard';
 import { ToastMenu } from '@/components/atoms/button/ToastMenu';
+import { DEFAULT_IMAGES } from "@/constants/images";
 
 interface PracticeRoomDetailProps {
   post: PracticeRoom;
@@ -33,11 +34,7 @@ export const PracticeRoomDetail: React.FC<PracticeRoomDetailProps> = ({
         <div className="relative">
         {/* 이미지 섹션 */}
           <SwiperImageCard
-            images={[
-              "https://placehold.co/400x270/EEE/333?text=1",
-              "https://placehold.co/400x270/DDD/333?text=2",
-              "https://placehold.co/400x270/CCC/333?text=3"
-            ]}
+            images={[DEFAULT_IMAGES.PLACEHOLDER]}
             slideClassName="rounded-[var(--radius-card)]"
             showPagination={true}
           />
@@ -58,7 +55,7 @@ export const PracticeRoomDetail: React.FC<PracticeRoomDetailProps> = ({
         <div className="flex flex-col w-full mx-auto px-4 gap-4">
           <UserProfileCard
             user={post.user}
-            imageUrl={post.imageUrl || 'https://placehold.co/40x40'}
+            imageUrl={post.imageUrl || DEFAULT_IMAGES.PLACEHOLDER}
             name={post.user.username}
             location={post.location.address}
             statusSlot={<button className={`${baseStatusStyle} ${styles.bg} ${styles.text} ${styles.hover}`}>예약하기</button>}

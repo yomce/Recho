@@ -12,6 +12,7 @@ import SecondaryButton from "@/components/atoms/button/SecondaryButton";
 import PostCard from "@/components/atoms/card/PostCard";
 import SwiperTabs from "@/components/organisms/PostNavigationTabs";
 import axiosInstance from "@/services/axiosInstance";
+import { DEFAULT_IMAGES } from "@/constants/images";
 
 interface Cursor {
   lastProductId: number;
@@ -98,7 +99,7 @@ const PracticeRoomPage: React.FC = () => {
     <PostLayout totalUnreadCount={totalUnreadCount}>
       <div className="relative">
         <ImageCard 
-          src="https://placehold.co/390x314/F4EDFE/ffffff?text=.."
+          src={DEFAULT_IMAGES.PLACEHOLDER}
           width={430}
           className="rounded-b-[20px] border-1 border-white"
         />

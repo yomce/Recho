@@ -110,8 +110,8 @@ const UserPage: React.FC = () => {
             id: String(item.productId),
             linkId: String(item.productId),
             thumbnailUrl: Array.isArray(item.imageUrl)
-              ? item.imageUrl[0] ?? 'https://placehold.co/300x300?text=No+Image'
-              : item.imageUrl ?? 'https://placehold.co/300x300?text=No+Image',
+              ? item.imageUrl[0] ?? DEFAULT_IMAGES.PLACEHOLDER
+              : item.imageUrl ?? DEFAULT_IMAGES.PLACEHOLDER,
             title: String(item.title),
           }))
         );
@@ -120,17 +120,10 @@ const UserPage: React.FC = () => {
           postResponse.data.map((post) => ({
             id: String(post.postId),
             linkId: String(post.postId),
-            thumbnailUrl: post.thumbnailUrl ?? 'https://placehold.co/300x300?text=No+Image',
+            thumbnailUrl: post.thumbnailUrl ?? DEFAULT_IMAGES.PLACEHOLDER,
             title: post.title,
           }))
         );
-
-        let profileImgUrlResponse;
-        if (userResponse.data.profileUrl) {
-          const encodedImgUrlResponse = encodeURIComponent(userResponse.data.profileUrl)
-          profileImgUrlResponse = await axiosInstance.get<string>(`images/download/${encodedImgUrlResponse}`)
-          setUserImage(profileImgUrlResponse.data);
-        }
         
         setError(null); // 다른 유저 페이지 로딩 성공 시 에러 상태 초기화
       } catch (err) {

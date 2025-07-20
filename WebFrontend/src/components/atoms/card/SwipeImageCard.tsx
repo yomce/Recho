@@ -1,6 +1,7 @@
 import React from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
+import { DEFAULT_IMAGES } from "@/constants/images";
 
 interface SwiperImageCardProps {
   images: string[];
@@ -23,7 +24,7 @@ const SwiperImageCard: React.FC<SwiperImageCardProps> = ({
   showPagination = true,
   autoPlay = true,
 }) => {
-  const defaultImage = "https://placehold.co/400x270/EEE/333?text=1";
+  const defaultImage = DEFAULT_IMAGES.PLACEHOLDER;
   const displayImages = images && images.length > 0 ? images : [defaultImage];
 
   // 이미지가 하나뿐일 때는 Swiper의 추가 기능을 비활성화하여 사용자 경험을 개선합니다.

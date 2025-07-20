@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { DEFAULT_IMAGES } from "@/constants/images";
 
 interface UsedProductCardProps {
   productId: number;
@@ -38,7 +39,7 @@ const UsedProductCard: React.FC<UsedProductCardProps> = ({
           </div>
           <div className="max-w-[120px] max-h-[120px] flex-shrink-0 rounded-r-[20px] overflow-hidden bg-gray-200">
             <img 
-              src={imageUrl || 'https://placehold.co/120x120'} 
+              src={imageUrl || DEFAULT_IMAGES.PLACEHOLDER} 
               alt="상품 썸네일"
               className="w-full h-full object-cover"
             />

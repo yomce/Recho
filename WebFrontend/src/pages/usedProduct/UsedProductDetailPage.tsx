@@ -33,7 +33,8 @@ const UsedProductDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const isOwner = product && user && product.id === user.id;
+  const isOwner = product && user && product.user.id === user.id;
+  console.log(isOwner);
 
   if(id) {
     useViewCounter({ type: 'used-products', id });

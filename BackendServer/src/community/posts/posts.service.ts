@@ -174,4 +174,19 @@ export class PostsService {
 
     await this.postsRepository.delete(postId);
   }
+
+  async findPostsByUser(userId: string): Promise<any[]> {
+    const posts = await this.postsRepository.find({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+      relations: ['user'], // 작성자 정보 포함
+    });
+
+    return posts.map((post) => ({
+      ...post,
+      author: post.user ? post.user.username : '탈퇴한 사용자',
+      authorProfileUrl: post.user ? post.user.profileUrl : null,
+      user: undefined, // 민감 정보 제거
+    }));
+  }
 }

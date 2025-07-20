@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useChatStore } from '../../stores/chatStore';
 import axiosInstance from "../../services/axiosInstance";
 import ProfileContentTabs from "@/components/organisms/ProfileContentTabs";
+import type { ContentDataType } from "@/components/organisms/ProfileContentTabs";
 import SearchOverlay from "@/components/organisms/SearchOverlay";
 
 // 컴포넌트 import
@@ -17,6 +18,9 @@ import { useAuthStore } from "@/stores/authStore";
 import { toast } from "react-hot-toast";
 import axios, { AxiosError } from "axios"; // AxiosError 타입 import
 import type { Video } from '@/types/video';
+import type { PaginatedUsedProductResponse } from '@/types/product';
+import type { Post } from '@/types/post';
+
 
 // 타입 정의
 interface UserProfile {
@@ -40,9 +44,7 @@ const UserPage: React.FC = () => {
   } = useAuthStore();
 
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [thumbnails, setThumbnails] = useState<
-    { id: string; linkId: string; thumbnailUrl: string }[]
-  >([]);
+  const [thumbnails, setThumbnails] = useState<ContentDataType[]>([]);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isVinylModalOpen, setIsVinylModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -54,6 +56,9 @@ const UserPage: React.FC = () => {
   const [newUserInfo, setNewUserInfo] = useState("");
   const [newUserImage, setNewUserImage] = useState("");
   const [newProfileImageFile, setNewProfileImageFile] = useState<File | null>(null);
+
+  const [usedProducts, setUsedProducts] = useState<ContentDataType[]>([]);
+  const [posts, setPosts] = useState<ContentDataType[]>([]);
 
   const openVinylModal = () => setIsVinylModalOpen(true);
   const closeVinylModal = () => setIsVinylModalOpen(false);
@@ -83,9 +88,11 @@ const UserPage: React.FC = () => {
     const fetchUserData = async () => {
       setLoading(true);
       try {
-        const [userResponse, videosResponse] = await Promise.all([
+        const [userResponse, videosResponse, usedProductResponse, postResponse] = await Promise.all([
           axiosInstance.get<UserProfile>(`users/${id}`),
           axiosInstance.get<Video[]>(`videos/user/${id}`),
+          axiosInstance.get<PaginatedUsedProductResponse>(`used-products/user/${id}`),
+          axiosInstance.get<Post[]>(`posts/user/${id}`)
         ]);
 
         setUser(userResponse.data);
@@ -96,6 +103,26 @@ const UserPage: React.FC = () => {
           })
         );
 
+        setUsedProducts(
+          usedProductResponse.data.data.map((item) => ({
+            id: String(item.productId),
+            linkId: String(item.productId),
+            thumbnailUrl: Array.isArray(item.imageUrl)
+              ? item.imageUrl[0] ?? 'https://placehold.co/300x300?text=No+Image'
+              : item.imageUrl ?? 'https://placehold.co/300x300?text=No+Image',
+            title: String(item.title),
+          }))
+        );
+
+        setPosts(
+          postResponse.data.map((post) => ({
+            id: String(post.postId),
+            linkId: String(post.postId),
+            thumbnailUrl: post.thumbnailUrl ?? 'https://placehold.co/300x300?text=No+Image',
+            title: post.title,
+          }))
+        );
+        
         setThumbnails(formattedThumbnails);
         setError(null); // 다른 유저 페이지 로딩 성공 시 에러 상태 초기화
       } catch (err) {
@@ -334,17 +361,16 @@ const UserPage: React.FC = () => {
               )}
             </div>
 
-            {/* 썸네일 섹션 */}
-            {thumbnails.length > 0 && (
-              <div className="mt-8 w-full">
-                <ProfileContentTabs
-                  shorts={thumbnails}
-                  usedProducts={[]}
-                  posts={[]}
-                  onVinylCreateClick={openVinylModal}
-                />
-              </div>
-            )}
+            {/* 썸네일 섹션 ( 게시글 존재 유무와 관계 없이 렌더링 합니다. )*/}
+            <div className="mt-8 w-full">
+              <ProfileContentTabs
+                shorts={thumbnails}
+                usedProducts={usedProducts}
+                posts={posts}
+                onVinylCreateClick={openVinylModal}
+              />
+            </div>
+            
           </div>
         ) : (
           <p>사용자 정보를 찾을 수 없습니다.</p>

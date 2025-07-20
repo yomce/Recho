@@ -4,9 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from '@/services/axiosInstance';
 import { useAuthStore } from '@/stores/authStore';
+import { useChatStore } from '../../stores/chatStore';
 import { EnsembleForm, type RecruitEnsembleFormState } from '@/pages/ensemble/components/EnsembleForm';
 import type { SessionEnsembleFormState } from './components/SessionForm';
 import { SKILL_LEVEL, type RecruitEnsemble } from './types';
+import PostLayout from '@/components/layout/PostLayout';
 
 // API 응답 타입 (상세 페이지와 동일)
 interface UpdateSessionEnsemblePayload {
@@ -26,6 +28,7 @@ interface UpdateRecruitEnsemblePayload {
 }
 
 const UpdateRecruitEnsemblePage: React.FC = () => {
+  const { totalUnreadCount } = useChatStore();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { user } = useAuthStore();
@@ -168,22 +171,23 @@ const UpdateRecruitEnsemblePage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto my-8 p-10 bg-white rounded-lg shadow-xl">
-      <h2 className="text-center mt-0 mb-8 text-2xl font-bold text-gray-800">모집 공고 수정</h2>
-      <EnsembleForm
-        formState={form}
-        onFormChange={handleRecruitChange}
-        onFormSubmit={handleSubmit}
-        isLoading={loading}
-        errorMessage={error}
-        submitButtonText="수정 완료"
-        loadingButtonText="수정 중..."
-        sessionFormList={sessionFormList}
-        onSessionFormListChange={handleSessionChange}
-        onSessionFormAdd={handleSessionAdd}
-        onSessionFormRemove={handleSessionRemove}
-      />
-    </div>
+    <PostLayout totalUnreadCount={totalUnreadCount}>
+      <div className="bg-brand-frame p-4 rounded-card">
+        <EnsembleForm
+          formState={form}
+          onFormChange={handleRecruitChange}
+          onFormSubmit={handleSubmit}
+          isLoading={loading}
+          errorMessage={error}
+          submitButtonText="수정 완료"
+          loadingButtonText="수정 중..."
+          sessionFormList={sessionFormList}
+          onSessionFormListChange={handleSessionChange}
+          onSessionFormAdd={handleSessionAdd}
+          onSessionFormRemove={handleSessionRemove}
+        />
+      </div>
+    </PostLayout>
   );
 };
 

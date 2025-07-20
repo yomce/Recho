@@ -10,6 +10,7 @@ import { ToastMenu } from "@/components/atoms/button/ToastMenu";
 import ProfileBubble from "@/components/atoms/card/ProfileBubble";
 import { SessionDetail } from "@/pages/ensemble/components/SessionDetail";
 import { type ApplicationEnsemble } from "@/pages/ensemble/types";
+import DEFAULT_IMAGES from '@/constants/images';
 
 interface RecruitEnsembleProps {
   post: RecruitEnsemble;
@@ -69,7 +70,7 @@ export const RecruitEnsembleDetail: React.FC<RecruitEnsembleProps> = ({
           </div>
         )}
         <ProfileBubble
-          imageUrl="https://placehold.co/60x60"
+          imageUrl={post.user.profileImageUrl || DEFAULT_IMAGES.PROFILE}
           name={post.user.username}
           title={post.title}
         />

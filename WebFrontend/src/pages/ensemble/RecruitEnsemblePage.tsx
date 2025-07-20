@@ -64,7 +64,6 @@ const RecruitEnsembleListPage: React.FC = () => {
         `ensembles`,
         { params }
       );
-      console.log(response.data.data);
 
       const { data, nextCursor: newCursor, hasNextPage: newHasNextPage } = response.data;
 

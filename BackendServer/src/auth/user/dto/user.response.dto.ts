@@ -30,5 +30,7 @@ export class UserResponseDto {
     } else {
       newUser.profileImageUrl = null;
     }
+
+    return newUser;
   }
 }

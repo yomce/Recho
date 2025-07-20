@@ -84,9 +84,9 @@ export class EnsembleController {
   @Get(':postId')
   async detailEnsemble(
     @Param('postId', ParseIntPipe) postId: number,
-  ): Promise<RecruitEnsemble> {
+  ): Promise<RecruitEnsembleResponseDto> {
     this.logger.log(`Fetching detail for post ID: ${postId}`);
-    return await this.ensembleService.internalDetailEnsemble(postId);
+    return await this.ensembleService.publicDetailEnsemble(postId);
   }
 
   @Delete(':postId')
@@ -124,7 +124,6 @@ export class EnsembleController {
       throw new ForbiddenException('사용자 인증 정보가 없습니다.');
     }
     const id = req.user.id; // JwtStrategy에서 반환된 user.id 사용 가능
-    console.log('patch user', req.user);
     this.logger.log(
       `Received patch request for post ID: ${postId} from user ID: ${id}`,
     );

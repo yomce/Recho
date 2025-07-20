@@ -26,7 +26,6 @@ import { ChatService } from 'src/chat/chat.service';
 import { ApplierEnsemble } from 'src/application/entities/applier-ensemble.entity';
 import { RoomType } from 'src/chat/dto/create-room.dto';
 import { ImageService } from 'src/image/image.service';
-import { UserResponseDto } from 'src/auth/user/dto/user.response.dto';
 
 @Injectable()
 export class EnsembleService {

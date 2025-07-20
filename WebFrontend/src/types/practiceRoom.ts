@@ -1,3 +1,5 @@
+import type { User } from '@/stores/authStore';
+
 export interface Location {
   locationId: string;
   regionLevel1: string;
@@ -11,8 +13,7 @@ export interface Location {
 // -- DB에 저장된 상품 데이터의 완전한 형태 -- 
 export interface PracticeRoom {
   readonly postId: number;
-  readonly id: string;
-  user_name: string;
+  user: User;
   title: string;
   description: string;
   readonly createdAt: string;

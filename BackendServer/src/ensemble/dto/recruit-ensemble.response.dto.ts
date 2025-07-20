@@ -6,7 +6,6 @@ import {
   SKILL_LEVEL,
 } from '../entities/recruit-ensemble.entity';
 import { Location } from 'src/map/entities/location.entity';
-import { User } from 'src/auth/user/user.entity';
 
 export class RecruitEnsembleResponseDto {
   postId: number;
@@ -24,10 +23,13 @@ export class RecruitEnsembleResponseDto {
 
   user: {
     username: string;
-    profileUrl: string | null;
+    profileImageUrl: string | null;
   };
 
-  static from(recruitEnsemble: RecruitEnsemble): RecruitEnsembleResponseDto {
+  static from(
+    recruitEnsemble: RecruitEnsemble,
+    profileImageUrl?: string,
+  ): RecruitEnsembleResponseDto {
     const dto = new RecruitEnsembleResponseDto();
 
     dto.postId = recruitEnsemble.postId;
@@ -45,7 +47,7 @@ export class RecruitEnsembleResponseDto {
 
     dto.user = {
       username: recruitEnsemble.user.username,
-      profileUrl: recruitEnsemble.user.profileUrl,
+      profileImageUrl: profileImageUrl || null,
     };
     return dto;
   }

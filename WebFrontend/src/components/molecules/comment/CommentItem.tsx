@@ -25,8 +25,6 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const authorName = comment.user ? comment.user.username : '알 수 없는 사용자';
   const authorProfileUrl = comment.user ? comment.user.profileImageUrl : DEFAULT_IMAGES.PROFILE;
 
-  console.log(comment);
-
   return (
     <div className="flex items-start py-2 gap-2 bg-brand-default border-brand-frame border-top-1">
       {/* 프로필 이미지 */}

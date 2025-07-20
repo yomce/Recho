@@ -86,7 +86,7 @@ export class EnsembleController {
     @Param('postId', ParseIntPipe) postId: number,
   ): Promise<RecruitEnsemble> {
     this.logger.log(`Fetching detail for post ID: ${postId}`);
-    return await this.ensembleService.detailEnsemble(postId);
+    return await this.ensembleService.internalDetailEnsemble(postId);
   }
 
   @Delete(':postId')

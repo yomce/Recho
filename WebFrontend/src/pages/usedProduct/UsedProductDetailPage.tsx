@@ -187,6 +187,7 @@ const UsedProductDetailPage: React.FC = () => {
           </div>
           <UserProfileCard
           imageUrl={product.imageUrl ?? ""}
+          user={product.user}
           name={product.user.username}
           location={product.location.address}
           status={STATUS_TEXT[product.status] as "판매중" | "예약중" | "판매완료"}

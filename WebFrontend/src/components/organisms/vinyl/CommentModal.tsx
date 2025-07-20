@@ -122,7 +122,7 @@ const CommentsModal: React.FC<CommentsModalProps> = ({ isOpen, onClose, comments
                 onClick={() => handleProfileClick(comment.user.id)}
               >
                 <Avatar
-                  src={comment.user.profileUrl || DEFAULT_IMAGES.PROFILE}
+                  src={comment.user.profileImageUrl || DEFAULT_IMAGES.PROFILE}
                   size={40}
                   alt={comment.user.username}
                 />

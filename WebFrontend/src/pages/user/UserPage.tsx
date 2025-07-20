@@ -95,11 +95,13 @@ const UserPage: React.FC = () => {
           axiosInstance.get<Post[]>(`posts/user/${id}`)
         ]);
         setUser(userResponse.data);
-        const formattedThumbnails = videosResponse.data.map((video, index) => ({
-            id: `thumb-${index}`,
-            linkId: video.id,
-            thumbnailUrl: video.thumbnail_url
-          })
+        setThumbnails(
+          videosResponse.data
+            .map((video: any, index) => ({
+              id: `thumb-${index}`,
+              linkId: video.id,
+              thumbnailUrl: video.thumbnail_url,
+            }))
         );
 
         setUsedProducts(
@@ -129,7 +131,6 @@ const UserPage: React.FC = () => {
           setUserImage(profileImgUrlResponse.data);
         }
 
-        setThumbnails(formattedThumbnails);
         setError(null); // 다른 유저 페이지 로딩 성공 시 에러 상태 초기화
       } catch (err) {
         const axiosError = err as AxiosError;

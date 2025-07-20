@@ -89,6 +89,7 @@ export class VideosService {
 
     const videos = await this.videoRepository.find({
       where: { user: { id: id } },
+      order: { created_at: 'DESC' },
     });
 
     const signedVideos = await Promise.all(

@@ -87,7 +87,7 @@ export class PracticeRoomController {
     this.logger.log(
       `Received delete request for product ID: ${postId} from user ID: ${id}`,
     );
-    await this.practiceRoomService.deletePracticeRoom(postId);
+    await this.practiceRoomService.deletePracticeRoom(postId, id);
   }
 
   @Patch(':postId')

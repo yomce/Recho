@@ -136,4 +136,21 @@ export class UsedProductController {
     const id = req.user.id;
     return this.usedProductService.updateSalesStatus(productId, id, status);
   }
+
+  @Get('user/:id')
+  @UseGuards(AuthGuard('jwt'))
+  async getUsedProductsByUserPaginated(
+    @Param('id') userId: string,
+    @Query() paginationQuery: PaginationQueryUsedProductDto,
+  ): Promise<PaginatedUsedProductResponse> {
+    const { limit = 20, lastProductId, lastCreatedAt, categoryId } = paginationQuery;
+
+    return this.usedProductService.findUsedProductsByUserWithPagination(
+      userId,
+      limit,
+      lastProductId,
+      lastCreatedAt,
+      categoryId,
+    );
+  }
 }

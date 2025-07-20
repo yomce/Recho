@@ -14,6 +14,8 @@ import type { Post } from '@/types/post';
 import type { Comment } from '@/types/comment';
 import { CONTENT_TYPE } from '@/types/likes';
 
+import VideoPreviewSection from '@/components/atoms/card/VideoPreviewCard';
+
 // --- 타입 정의 ---
 
 // 댓글 생성 시 API로 보낼 데이터 타입 (contentType 추가)
@@ -170,6 +172,14 @@ const PostDetailPage: React.FC = () => {
             {post.content}
           </pre>
         </main>
+
+        {/* [추가] 비디오 프리뷰 */}
+        {post && (
+          <VideoPreviewSection
+            refIn="posts"
+            refPostId={post.postId}
+          />
+        )}
 
         {/* 댓글 섹션 */}
         <section className="mt-10 pt-6 border-t border-brand-frame border-top-1">

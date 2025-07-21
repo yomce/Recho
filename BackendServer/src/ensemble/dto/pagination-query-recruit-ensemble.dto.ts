@@ -36,6 +36,6 @@ export class FilterRecruitEnsembleDto extends PaginationQueryRecruitEnsembleDto 
   skillLevel?: SKILL_LEVEL;
 
   @IsOptional()
-  @IsDate()
-  eventDate?: Date; 
+  @IsString()
+  eventDate?: string; 
 }

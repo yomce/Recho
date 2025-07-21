@@ -34,9 +34,7 @@ export class EnsembleController {
     @Query() filter: FilterRecruitEnsembleDto,
   ): Promise<PaginatedRecruitEnsembleResponse> {
     this.logger.log('Fetching ensemble with pagination');
-
-    // const { limit = 20, lastPostId, lastCreatedAt } = paginationQuery;
-
+    
     return this.ensembleService.findEnsembleWithPagination(filter);
   }
 

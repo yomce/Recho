@@ -144,7 +144,7 @@ const RegisterPage: React.FC = () => {
     <div className="centered-card-container px-4">
       <div className="w-full max-w-md">
         <div className="sm:mx-auto sm:w-full">
-          <img className="mx-auto h-12 w-auto" src="/RechoLogo.png" alt="Recho Logo" />
+          <img className="mx-auto h-12 w-auto" src="/vite.svg" alt="Recho Logo" />
           <h2 className="mt-6 text-center text-subheadline text-[var(--color-brand-text-primary)]">
             회원가입
           </h2>

@@ -44,7 +44,7 @@ const LoginPage: React.FC = () => {
         <div className="sm:mx-auto sm:w-full">
           <img
             className="mx-auto h-12 w-[300px] h-[300px]"
-            src="/RechoLogo.png"
+            src="/vite.svg"
             alt="Recho"
           />
           <h2 className="mt-6 text-center text-body text-[var(--color-brand-text-primary)]">

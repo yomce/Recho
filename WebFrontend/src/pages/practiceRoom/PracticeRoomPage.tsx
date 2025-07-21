@@ -58,8 +58,6 @@ const PracticeRoomPage: React.FC = () => {
           { params }
         );
 
-        console.log(response.data.data);
-
         const {
           data,
           nextCursor: newCursor,

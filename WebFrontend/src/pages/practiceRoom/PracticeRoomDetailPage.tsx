@@ -34,7 +34,6 @@ const PracticeRoomDetailPage: React.FC = () => {
         const response = await axiosInstance.get<PracticeRoom>(
           `practice-room/${id}`
         );
-        console.log(response.data);
         setPost(response.data);
       } catch (err: any) {
         console.error('Failed to fetch post detail');

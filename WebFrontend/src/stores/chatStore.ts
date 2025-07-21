@@ -1,46 +1,44 @@
-// src/stores/chatStore.ts
 import { create } from 'zustand';
-import axiosInstance from '../services/axiosInstance'; // axios 인스턴스 경로
-import { socket } from '../services/socket';           // socket 인스턴스 경로
-import { useAuthStore } from './authStore';           // 인증 스토어 경로
+import axiosInstance from '../services/axiosInstance';
+import { socket } from '../services/socket';
+import { useAuthStore } from './authStore';
+import { type Socket } from 'socket.io-client';
 
 // --- 타입 정의 ---
 export interface Message {
   id: string;
   roomId: string;
-  senderId?: string; // 시스템 메시지는 senderId가 없을 수 있음
+  senderId?: string;
   content: string;
   createdAt: string;
   sender?: {
-    id: string;
+    id:string;
     username: string;
-    profileUrl: string | null;
+    profileImageUrl: string | null;
   };
-  isSystem?: boolean; // 시스템 메시지 여부를 나타내는 플래그
+  isSystem?: boolean;
 }
 
-// 채팅 상대방 정보 타입
+interface MyRoom { id: string; }
+
 interface ChatPartner {
   id: string | null;
   username: string;
-  profileUrl: string | null;
+  profileImageUrl: string | null;
 }
 
-// 스토어의 상태와 액션을 정의하는 타입
 interface ChatState {
-  // --- 상태 (State) ---
-  isConnected: boolean; // ⬅️ 소켓 연결 상태 추가
+  socket: Socket;
+  isConnected: boolean;
   roomId: string | null;
   messages: Message[];
   chatPartner: ChatPartner;
   isModalOpen: boolean;
   modalType: 'invite' | 'leave' | null;
-  
   page: number;
-  hasMore: boolean; // 더 불러올 메시지가 있는지 여부
-  isLoadingMore: boolean; // 추가 메시지 로딩 중 상태
-
-  // --- 액션 (Actions) ---
+  hasMore: boolean;
+  isLoadingMore: boolean;
+  totalUnreadCount: number;
   initializeRoom: (roomId: string) => Promise<void>;
   loadMoreMessages: () => Promise<void>;
   sendMessage: (content: string) => void;
@@ -50,52 +48,71 @@ interface ChatState {
   closeModal: () => void;
   cleanupRoom: () => void;
   initializeSocketListeners: () => void;
-  disconnectSocket: () => void; // ⬅️ 추가
-
+  disconnectSocket: () => void;
+  fetchTotalUnreadCount: () => Promise<void>;
 }
 
 let isSocketInitialized = false;
 
 export const useChatStore = create<ChatState>((set, get) => ({
-  // --- 초기 상태 값 (변경 없음) ---
+  socket: socket,
   isConnected: false,
   roomId: null,
   messages: [],
-  chatPartner: { id: null, username: '대화 상대 로딩...', profileUrl: null },
+  chatPartner: { id: null, username: '대화 상대 로딩...', profileImageUrl: null },
   isModalOpen: false,
   modalType: null,
-
   page: 1,
   hasMore: true,
   isLoadingMore: false,
-  /**
-   * 소켓 이벤트 리스너를 초기화하는 액션 (앱 실행 시 한 번만 호출)
-   */
-   initializeSocketListeners: () => {
-    // 이미 초기화되었다면 절대 다시 실행하지 않음
-    if (isSocketInitialized) {
-      return;
+  totalUnreadCount: 0,
+  
+  fetchTotalUnreadCount: async () => {
+    try {
+      const response = await axiosInstance.get<{ unreadCount: number }>('chat/unread-count');
+      set({ totalUnreadCount: response.data.unreadCount });
+    } catch (error) {
+      console.error("Failed to fetch total unread count", error);
+      set({ totalUnreadCount: 0 });
     }
+  },
 
-    // --- 모든 이벤트 리스너를 최상위 레벨에서 한 번만 등록 ---
-
-    socket.on('connect', () => {
+  initializeSocketListeners: () => {
+    if (isSocketInitialized) return;
+    const currentSocket = get().socket;
+    currentSocket.on('connect', async () => {
       console.log('✅ 소켓 연결 성공!');
       set({ isConnected: true });
+      const { user } = useAuthStore.getState();
+      if (user) {
+        try {
+          const response = await axiosInstance.get<MyRoom[]>('chat/my-rooms');
+          const myRooms = response.data;
+          if (myRooms && myRooms.length > 0) {
+            console.log('Joining all my rooms:', myRooms.map(r => r.id));
+            myRooms.forEach(room => {
+              currentSocket.emit('joinRoom', { id: user.id, roomId: room.id });
+            });
+          }
+        } catch (error) {
+          console.error("Failed to fetch and join my rooms on connect", error);
+        }
+      }
     });
-
-    socket.on('disconnect', () => {
+    currentSocket.on('disconnect', () => {
       console.log('❌ 소켓 연결이 끊어졌습니다.');
       set({ isConnected: false });
     });
-
-    socket.on('newMessage', (message: Message) => {
+    currentSocket.on('newMessage', (message: Message) => {
       if (get().roomId === message.roomId) {
         set((state) => ({ messages: [...state.messages, message] }));
       }
     });
-
-    socket.on('userLeft', (data: { username: string; roomId: string }) => {
+    currentSocket.on('unreadCountUpdated', () => {
+      console.log('🔄 안 읽은 메시지 수 업데이트 신호 수신!');
+      get().fetchTotalUnreadCount();
+    });
+    currentSocket.on('userLeft', (data: { username: string; roomId: string }) => {
       if (get().roomId === data.roomId) {
         const systemMessage: Message = {
           id: `system-${Date.now()}`,
@@ -107,8 +124,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         set((state) => ({ messages: [...state.messages, systemMessage] }));
       }
     });
-
-    socket.on('userInvited', (data: { username: string; roomId: string }) => {
+    currentSocket.on('userInvited', (data: { username: string; roomId: string }) => {
       if (get().roomId === data.roomId) {
         const systemMessage: Message = {
           id: `system-${Date.now()}`,
@@ -120,35 +136,31 @@ export const useChatStore = create<ChatState>((set, get) => ({
         set((state) => ({ messages: [...state.messages, systemMessage] }));
       }
     });
-
-    // --- 리스너 등록 후 연결 시도 ---
-    socket.connect();
-    
-    // 초기화 완료 플래그를 true로 설정하여 다시는 이 함수가 실행되지 않도록 함
+    currentSocket.connect();
     isSocketInitialized = true;
   },
   
   disconnectSocket: () => {
-    if (socket?.connected) {
-      socket.disconnect();
+    if (get().socket?.connected) {
+      get().socket.disconnect();
     }
-    // isSocketInitialized는 false로 바꾸지 않습니다. 리스너는 계속 유지되어야 합니다.
   },
 
-  // ... (initializeRoom, sendMessage 등 다른 액션들은 변경 없음) ...
   initializeRoom: async (roomId) => {
     const { user: currentUser } = useAuthStore.getState();
     if (!currentUser) return;
     set({
       roomId,
       messages: [],
-      chatPartner: { id: null, username: '로딩 중...', profileUrl: null },
+      chatPartner: { id: null, username: '로딩 중...', profileImageUrl: null },
       page: 1,
       hasMore: true,
       isLoadingMore: false,
     });
     try {
       const response = await axiosInstance.get(`chat/rooms/${roomId}/history?page=1&limit=20`);
+      console.log('history data', response.data);
+
       const messageHistory: Message[] = response.data.reverse();
       set({ 
         messages: messageHistory,
@@ -160,84 +172,77 @@ export const useChatStore = create<ChatState>((set, get) => ({
       )?.sender;
       if (partner) {
         set({
-          chatPartner: {
-            id: partner.id,
-            username: partner.username,
-            profileUrl: partner.profileUrl,
-          },
+          chatPartner: { id: partner.id, username: partner.username, profileImageUrl: partner.profileImageUrl },
         });
       } else {
+        const roomDetailsResponse = await axiosInstance.get(`chat/rooms/${roomId}`);
+        const otherUser = roomDetailsResponse.data.userRooms.find(ur => ur.user.id !== currentUser.id)?.user;
         set({
-          chatPartner: { id: null, username: '새로운 대화', profileUrl: null },
+          chatPartner: otherUser 
+            ? { id: otherUser.id, username: otherUser.username, profileImageUrl: otherUser.profileImageUrl }
+            : { id: null, username: '새로운 대화', profileImageUrl: null },
         });
       }
     } catch (error) {
       console.error('메시지 기록 로딩 실패:', error);
-      set({
-        chatPartner: { id: null, username: '정보 없음', profileUrl: null },
-      });
+      set({ chatPartner: { id: null, username: '정보 없음', profileImageUrl: null }});
     }
-    socket.emit('joinRoom', { id: currentUser.id, roomId });
+    get().socket.emit('joinRoom', { id: currentUser.id, roomId });
   },
+
   sendMessage: (content) => {
     const { roomId } = get();
     const { user } = useAuthStore.getState();
     if (!content.trim() || !roomId || !user) return;
-    socket.emit('sendMessage', {
+    get().socket.emit('sendMessage', {
       roomId,
       senderId: user.id,
-      senderName: user.username,
       content,
     });
   },
+  
   inviteUser: (inviteeId) => {
     const { roomId } = get();
     if (!inviteeId.trim() || !roomId) return;
-    socket.emit('inviteUser', { roomId, inviteeId });
+    get().socket.emit('inviteUser', { roomId, inviteeId });
     get().closeModal();
   },
+
   loadMoreMessages: async () => {
     const { roomId, page, hasMore, isLoadingMore, messages } = get();
-    const { user: currentUser } = useAuthStore.getState();
-
-    if (!roomId || !currentUser || !hasMore || isLoadingMore) {
-      return;
-    }
-
+    if (!roomId || !hasMore || isLoadingMore) return;
     set({ isLoadingMore: true });
-
     try {
       const response = await axiosInstance.get(`chat/rooms/${roomId}/history?page=${page}&limit=20`);
       const olderMessages: Message[] = response.data.reverse();
-
       set({
-        // 새로 불러온 메시지(과거)를 기존 메시지(현재) 앞에 추가
         messages: [...olderMessages, ...messages],
         page: page + 1,
         hasMore: olderMessages.length === 20,
       });
-
     } catch (error) {
       console.error('이전 메시지 로딩 실패:', error);
     } finally {
       set({ isLoadingMore: false });
     }
   },
+  
   leaveCurrentRoom: () => {
     const { roomId } = get();
     const { user } = useAuthStore.getState();
     if (!roomId || !user) return;
-    socket.emit('leaveRoom', { id: user.id, roomId });
+    get().socket.emit('leaveRoom', { id: user.id, roomId });
     get().cleanupRoom();
     get().closeModal();
   },
+
   openModal: (type) => set({ isModalOpen: true, modalType: type }),
   closeModal: () => set({ isModalOpen: false, modalType: null }),
   cleanupRoom: () => {
     set({
       roomId: null,
       messages: [],
-      chatPartner: { id: null, username: '', profileUrl: null },
+      chatPartner: { id: null, username: '', profileImageUrl: null },
     });
   },
 }));

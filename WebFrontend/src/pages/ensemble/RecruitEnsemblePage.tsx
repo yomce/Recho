@@ -1,6 +1,7 @@
 // src/pages/RecruitEnsembleListPage.tsx
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useChatStore } from '../../stores/chatStore';
 import axiosInstance from '@/services/axiosInstance';
 import PostLayout from '@/components/layout/PostLayout';
 import SwiperTabs from '@/components/organisms/PostNavigationTabs';
@@ -28,6 +29,7 @@ interface PaginatedEnsembleResponse {
 }
 
 const RecruitEnsembleListPage: React.FC = () => {
+  const { totalUnreadCount } = useChatStore();
   const [items, setItems] = useState<RecruitEnsemble[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -104,7 +106,7 @@ const RecruitEnsembleListPage: React.FC = () => {
   }, []);
 
   return (
-    <PostLayout>
+    <PostLayout totalUnreadCount={totalUnreadCount}>
       <div className="grid grid-cols-1 py-4">
         {/* --- 에러 메시지 --- */}
         {error && (

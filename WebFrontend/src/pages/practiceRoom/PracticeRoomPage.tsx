@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useChatStore } from '../../stores/chatStore';
 import {
   type PracticeRoom,
   type PaginatedPracticeRoomResponse,
@@ -11,6 +12,7 @@ import SecondaryButton from "@/components/atoms/button/SecondaryButton";
 import PostCard from "@/components/atoms/card/PostCard";
 import SwiperTabs from "@/components/organisms/PostNavigationTabs";
 import axiosInstance from "@/services/axiosInstance";
+import { DEFAULT_IMAGES } from "@/constants/images";
 
 interface Cursor {
   lastProductId: number;
@@ -18,6 +20,7 @@ interface Cursor {
 }
 
 const PracticeRoomPage: React.FC = () => {
+  const { totalUnreadCount } = useChatStore();
   const [post, setItems] = useState<PracticeRoom[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +58,8 @@ const PracticeRoomPage: React.FC = () => {
           { params }
         );
 
+        console.log(response.data.data);
+
         const {
           data,
           nextCursor: newCursor,
@@ -91,10 +96,10 @@ const PracticeRoomPage: React.FC = () => {
   };
 
   return (
-    <PostLayout>
+    <PostLayout totalUnreadCount={totalUnreadCount}>
       <div className="relative">
         <ImageCard 
-          src="https://placehold.co/390x314/F4EDFE/ffffff?text=.."
+          src={DEFAULT_IMAGES.PLACEHOLDER}
           width={430}
           className="rounded-b-[20px] border-1 border-white"
         />
@@ -131,7 +136,7 @@ const PracticeRoomPage: React.FC = () => {
             address={item.location?.place_name || "주소 미제공"}
             textWrapperClassName="flex flex-col items-start justify-center w-full h-full gap-2 pl-16"
             imagePosition="left"
-            imageWrapperClassName="min-w-[170px] rounded-l-[10px]"
+            imageWrapperClassName="min-w-[120px] rounded-l-[10px]"
             containerClassName="py-1 mt-2"
           />
         )}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useChatStore } from '../../stores/chatStore';
 import { type UsedProduct, type PaginatedUsedProductResponse, CATEGORY_LABEL_TO_ID } from '../../types/product';
 import axiosInstance from '@/services/axiosInstance';
 import CategoryList from '@/components/layout/CategoryList';
@@ -6,6 +7,7 @@ import ImageCard from '@/components/atoms/card/ImageCard';
 import FloatingWriteButton from '@/components/atoms/button/FloatingWriteButton';
 import PostLayout from '@/components/layout/PostLayout';
 import PostCard from '@/components/atoms/card/PostCard';
+import { DEFAULT_IMAGES } from "@/constants/images";
 
 interface Cursor {
   lastProductId: number;
@@ -13,6 +15,7 @@ interface Cursor {
 }
 
 const UsedProductPage: React.FC = () => {
+  const { totalUnreadCount } = useChatStore();
   const [items, setItems] = useState<UsedProduct[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,11 +83,11 @@ const UsedProductPage: React.FC = () => {
   };
 
   return (
-    <PostLayout>
+    <PostLayout totalUnreadCount={totalUnreadCount}>
       <div>
         <div className="relative w-full max-w-[410px] mx-auto min-h-screen bg-brand-frame">
           <div className="py-4 px-4">
-            <ImageCard src="https://placehold.co/398x270" />
+            <ImageCard src={DEFAULT_IMAGES.PLACEHOLDER} />
             {/* 카테고리 */}
             <CategoryList
               selectedCategory={selected}

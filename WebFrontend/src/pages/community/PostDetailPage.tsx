@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useAuthStore } from "../../stores/authStore";
+import { useChatStore } from '../../stores/chatStore';
 import axiosInstance from "../../services/axiosInstance";
 
 // Layout 및 컴포넌트 import
@@ -12,6 +13,8 @@ import MessageInputForm from "@/components/atoms/input/MessageInput";
 import type { Post } from '@/types/post';
 import type { Comment } from '@/types/comment';
 import { CONTENT_TYPE } from '@/types/likes';
+
+import VideoPreviewSection from '@/components/atoms/card/VideoPreviewCard';
 
 // --- 타입 정의 ---
 
@@ -60,6 +63,7 @@ const formatDate = (dateString: string) =>
 
 // --- 상세 페이지 컴포넌트 ---
 const PostDetailPage: React.FC = () => {
+  const { totalUnreadCount } = useChatStore();
   const { id } = useParams<{ id: string }>();
   const currentUser = useAuthStore((state) => state.user);
 
@@ -141,7 +145,10 @@ const PostDetailPage: React.FC = () => {
     return <div className="p-4 text-center">게시물을 찾을 수 없습니다.</div>;
 
   return (
-    <PostLayout bgClassName="text-left bg-brand-frame bg-brand-inverse">
+    <PostLayout 
+      totalUnreadCount={totalUnreadCount} 
+      bgClassName="text-left bg-brand-frame bg-brand-inverse">
+        
       <div className="p-4">
         {/* 게시글 헤더 */}
         <header className="mb-4 pb-4 border-b border-brand-frame">
@@ -165,6 +172,14 @@ const PostDetailPage: React.FC = () => {
             {post.content}
           </pre>
         </main>
+
+        {/* [추가] 비디오 프리뷰 */}
+        {post && (
+          <VideoPreviewSection
+            refIn="posts"
+            refPostId={post.postId}
+          />
+        )}
 
         {/* 댓글 섹션 */}
         <section className="mt-10 pt-6 border-t border-brand-frame border-top-1">

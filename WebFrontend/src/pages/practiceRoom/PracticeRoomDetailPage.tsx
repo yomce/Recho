@@ -3,11 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axiosInstance from '@/services/axiosInstance';
 import { type PracticeRoom } from '@/types/practiceRoom';
 import { useAuthStore } from '@/stores/authStore';
+import { useChatStore } from '../../stores/chatStore';
 import { PracticeRoomDetail } from '@/components/layout/pages/practiceRoom/PracticeRoomDetailForm';
 import useViewCounter from '@/hooks/useViewCounter';
 
-const PracticeRoomDetailPage: React.FC = () => 
-{
+const PracticeRoomDetailPage: React.FC = () => {
+  const { totalUnreadCount } = useChatStore();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -15,7 +16,7 @@ const PracticeRoomDetailPage: React.FC = () =>
   const [post, setPost] = useState<PracticeRoom | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const isOwner = Boolean(post && user && post.id === user.id);
+  const isOwner = Boolean(post && user && post.user.id === user.id);
 
   if(id){
     useViewCounter({ type: 'practice-room', id });
@@ -33,6 +34,7 @@ const PracticeRoomDetailPage: React.FC = () =>
         const response = await axiosInstance.get<PracticeRoom>(
           `practice-room/${id}`
         );
+        console.log(response.data);
         setPost(response.data);
       } catch (err: any) {
         console.error('Failed to fetch post detail');
@@ -76,6 +78,7 @@ const PracticeRoomDetailPage: React.FC = () =>
 
     return (
       <PracticeRoomDetail
+        totalUnreadCount={totalUnreadCount}
         post={post}
         isOwner={isOwner}
         onEdit={handleEdit}

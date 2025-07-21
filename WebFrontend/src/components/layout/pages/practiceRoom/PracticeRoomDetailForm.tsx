@@ -8,6 +8,7 @@ import MapPreviewCard from '@/components/atoms/card/MapViewCard';
 import IconButton from '@/components/atoms/button/IconButton';
 import { baseStatusStyle, statusStyleMap } from '@/components/atoms/card/UserProfileCard';
 import { ToastMenu } from '@/components/atoms/button/ToastMenu';
+import { DEFAULT_IMAGES } from "@/constants/images";
 
 interface PracticeRoomDetailProps {
   post: PracticeRoom;
@@ -15,6 +16,7 @@ interface PracticeRoomDetailProps {
   onEdit?: () => void;
   onComplete?: () => void;
   onDelete?: () => void;
+  totalUnreadCount?: number;
 }
 
 const styles = statusStyleMap["예약하기"];
@@ -24,18 +26,15 @@ export const PracticeRoomDetail: React.FC<PracticeRoomDetailProps> = ({
   isOwner = false,
   onEdit,
   onDelete,
+  totalUnreadCount,
 }) => {
   return (
-    <PostLayout bgClassName="bg-brand-inverse">
+    <PostLayout totalUnreadCount={totalUnreadCount} bgClassName="bg-brand-inverse">
       <div className="mx-auto p-4 w-full">
         <div className="relative">
         {/* 이미지 섹션 */}
           <SwiperImageCard
-            images={[
-              "https://placehold.co/400x270/EEE/333?text=1",
-              "https://placehold.co/400x270/DDD/333?text=2",
-              "https://placehold.co/400x270/CCC/333?text=3"
-            ]}
+            images={[DEFAULT_IMAGES.PLACEHOLDER]}
             slideClassName="rounded-[var(--radius-card)]"
             showPagination={true}
           />
@@ -55,8 +54,9 @@ export const PracticeRoomDetail: React.FC<PracticeRoomDetailProps> = ({
         </div>
         <div className="flex flex-col w-full mx-auto px-4 gap-4">
           <UserProfileCard
-            imageUrl={post.imageUrl || 'https://placehold.co/40x40'}
-            name={post.id}
+            user={post.user}
+            imageUrl={post.imageUrl || DEFAULT_IMAGES.PLACEHOLDER}
+            name={post.user.username}
             location={post.location.address}
             statusSlot={<button className={`${baseStatusStyle} ${styles.bg} ${styles.text} ${styles.hover}`}>예약하기</button>}
           />

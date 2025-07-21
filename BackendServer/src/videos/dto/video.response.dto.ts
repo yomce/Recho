@@ -1,9 +1,9 @@
-import { User } from 'src/auth/user/user.entity';
 import { Video } from '../entities';
+import { UserResponseDto } from 'src/auth/user/dto/user.response.dto';
 
 export class VideoResponseDto {
   id: string;
-  user: User;
+  user: UserResponseDto;
   parent: Video;
   parentVideoId: string;
   children: Video[];
@@ -19,11 +19,11 @@ export class VideoResponseDto {
   videoUrl?: string;
   thumbnailUrl?: string;
 
-  static from(video: Video) {
+  static from(video: Video, user: UserResponseDto) {
     const responseDto = new VideoResponseDto();
 
     responseDto.id = video.id;
-    responseDto.user = video.user;
+    responseDto.user = user;
     responseDto.parent = video.parent;
     responseDto.children = video.children;
     responseDto.depth = video.depth;

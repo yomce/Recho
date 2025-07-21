@@ -8,14 +8,18 @@ import {
 } from 'typeorm';
 
 import { Location } from 'src/map/entities/location.entity';
+import { User } from 'src/auth/user/user.entity';
 
 @Entity({ name: 'practice_rooms' })
 export class PracticeRoom {
   @PrimaryGeneratedColumn()
   postId: number;
 
-  @Column()
-  id: string;
+  @ManyToOne(() => User, (user: User) => user.practiceRoom, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'user' })
+  user: User;
 
   @Column()
   title: string;

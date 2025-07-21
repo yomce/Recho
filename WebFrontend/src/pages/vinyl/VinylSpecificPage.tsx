@@ -79,7 +79,6 @@ const VinylPage: React.FC = () => {
 
       try {
         const videoData = await getVideoById(videoId);
-        console.log(videoData);
 
         if (!videoData) {
           // 비디오가 없으면 바로 로딩 종료 및 타임아웃 해제
@@ -90,7 +89,9 @@ const VinylPage: React.FC = () => {
         setVideos([videoData]);
       } catch (error) {
         console.error("비디오 로딩 중 오류 발생:", error);
-        if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
+        if (loadingTimeoutRef.current) {
+          clearTimeout(loadingTimeoutRef.current);
+        }
         setIsLoading(false); // 에러 발생 시에도 로딩 종료 및 타임아웃 해제
       }
     };
@@ -148,9 +149,9 @@ const VinylPage: React.FC = () => {
       window.ReactNativeWebView.postMessage(
         JSON.stringify({
           type: "startEnsemble",
-          payload: {
+          data: {
             token,
-            childVideoId: selectedVideoId,
+            selectedVideoId: selectedVideoId,
           },
         })
       );

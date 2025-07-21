@@ -28,7 +28,7 @@ async function bootstrap() {
   app.enableCors({
     origin: allowedOrigins, // ⬅️ origin을 배열로 전달
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true, 
+    credentials: true,
     allowedHeaders: 'Content-Type, Accept, Authorization',
     exposedHeaders: 'Authorization',
   });

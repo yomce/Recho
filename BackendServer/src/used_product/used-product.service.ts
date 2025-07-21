@@ -13,6 +13,8 @@ import { Location } from 'src/map/entities/location.entity';
 import { ImageService } from 'src/image/image.service';
 import { Image } from 'src/image/entities/image.entity';
 import { UserService } from 'src/auth/user/user.service';
+import { UsedProductResponseDto } from './dto/used-product.response.dto';
+import { plainToInstance } from 'class-transformer';
 
 @Injectable()
 export class UsedProductService {
@@ -76,18 +78,22 @@ export class UsedProductService {
     // 참조하는 이미지가 없는 경우를 아래 쿼리를 실행하지 않음
     if (productIds.length === 0) return { data: [], nextCursor, hasNextPage };
 
+    // 각 상품에 연결된 썸네일 이미지만 조회 (썸네일 플래그 + 경로 기반으로 이중 필터링)
     const thumbnails = await this.imageRepo
       .createQueryBuilder('image')
       .where('image.refPostId IN (:...productIds)', { productIds })
       .andWhere('image.isThumbnail = true')
+      .andWhere("image.imageKey LIKE :pattern", { pattern: '%/thumbnail/%' })
       .getMany();
 
+    // 썸네일 이미지에 대해 presigned URL을 발급하고, productId 기준으로 매핑
     const imageMap = new Map<number, string>();
-    thumbnails.forEach((img) => {
-      if (img.refPostId !== null && !imageMap.has(img.refPostId)) {
-        imageMap.set(Number(img.refPostId), img.imageUrl);
+    for (const img of thumbnails) {
+      if (img.refPostId !== null && !imageMap.has(Number(img.refPostId))) {
+        const signedUrl = await this.imageService.getDownloadUrl(img.imageKey); // presigned URL 생성
+        imageMap.set(Number(img.refPostId), signedUrl); // 상품 ID → 썸네일 URL 매핑
       }
-    });
+    }
 
     const dataWithThumbnails = data.map((product) => ({
       ...product,
@@ -118,7 +124,7 @@ export class UsedProductService {
       throw new NotFoundException(`Location with ID #${locationId} not found.`);
     }
 
-    const user = await this.userService.findById(id);
+    const user = await this.userService.internalFindById(id);
 
     if (!user) {
       throw new NotFoundException(`User with ID "${id}" not found`);
@@ -146,7 +152,7 @@ export class UsedProductService {
     return savedProduct;
   }
 
-  async detailProduct(
+  async internalDetailProduct(
     productId: number,
   ): Promise<UsedProduct & { imageIds: number[] } & { imageUrl: string[] }> {
     const product = await this.usedProductRepo.findOne({
@@ -158,7 +164,7 @@ export class UsedProductService {
     }
     const images = await this.imageService.findImageByRefPostId(productId);
     const imageIds = images.map((img) => img.imageId);
-    const imageUrl = images.map((img) => img.imageUrl);
+    const imageUrl = images.map((img) => img.imageKey);
     return {
       ...product,
       imageIds,
@@ -166,8 +172,55 @@ export class UsedProductService {
     };
   }
 
+  async publicDetailProduct(
+    productId: number,
+  ): Promise<
+    UsedProductResponseDto & { imageIds: number[] } & { imageUrl: string[] }
+  > {
+    const product = await this.usedProductRepo.findOne({
+      where: { productId: productId },
+      relations: ['user', 'location'],
+    });
+    if (!product) {
+      throw new NotFoundException(`Product with ID #${productId} not found.`);
+    }
+    // 모든 이미지 조회 (원본 + 썸네일 포함)
+    const images = await this.imageService.findImageByRefPostId(productId);
+    // 상세 페이지에서는 썸네일이 아닌 '원본 이미지'만 사용하므로 필터링
+    const originalImages = images.filter((img) => !img.imageKey.includes('/thumbnail/'));
+    const imageIds = originalImages.map((img) => img.imageId);
+
+    // 원본 이미지에 대해 S3 presigned URL을 발급하여 클라이언트가 접근 가능하도록 처리
+    const imageSignedUrls = await Promise.all(
+      originalImages.map((img) => this.imageService.getDownloadUrl(img.imageKey))
+    );
+
+    let userProfileSignedUrl: string | null = null;
+    if (product.user && product.user.profileUrl) {
+      userProfileSignedUrl = await this.imageService.getDownloadUrl(
+        product.user.profileUrl,
+      );
+    }
+
+    const productDto = plainToInstance(UsedProductResponseDto, product, {
+      excludeExtraneousValues: true,
+    });
+
+    console.log(productDto);
+
+    if (productDto.user) {
+      productDto.user.profileImageUrl = userProfileSignedUrl;
+    }
+
+    return {
+      ...productDto,
+      imageIds,
+      imageUrl: imageSignedUrls,
+    };
+  }
+
   async deleteProduct(productId: number, id: string): Promise<void> {
-    const product = await this.detailProduct(productId);
+    const product = await this.internalDetailProduct(productId);
     if (id !== product?.user.id) {
       throw new ForbiddenException(`Unauthorized`);
     }
@@ -183,7 +236,7 @@ export class UsedProductService {
     updateDto: UpdateUsedProductDto,
     id: string,
   ): Promise<UsedProduct> {
-    const product = await this.detailProduct(productId);
+    const product = await this.internalDetailProduct(productId);
     if (id !== product.user.id) {
       throw new ForbiddenException(`Unauthorized`);
     }
@@ -261,4 +314,77 @@ export class UsedProductService {
     product.status = status;
     return this.usedProductRepo.save(product);
   }
+
+  async findUsedProductsByUserWithPagination(
+    userId: string,
+    limit: number,
+    lastProductId?: number,
+    lastCreatedAt?: Date,
+    categoryId?: number,
+  ): Promise<PaginatedUsedProductResponse> {
+    const realLimit = limit + 1;
+    const queryBuilder = this.usedProductRepo
+      .createQueryBuilder('usedProduct')
+      .leftJoinAndSelect('usedProduct.user', 'user')
+      .leftJoinAndSelect('usedProduct.location', 'location')
+      .where('user.id = :userId', { userId });
+
+    if (lastProductId && lastCreatedAt) {
+      queryBuilder.andWhere(
+        '(usedProduct.createdAt < :lastCreatedAt) OR (usedProduct.createdAt = :lastCreatedAt AND usedProduct.productId < :lastProductId)',
+        { lastCreatedAt, lastProductId },
+      );
+    }
+
+    if (categoryId) {
+      queryBuilder.andWhere('usedProduct.categoryId = :categoryId', { categoryId });
+    }
+
+    const results = await queryBuilder
+      .orderBy('usedProduct.createdAt', 'DESC')
+      .addOrderBy('usedProduct.productId', 'DESC')
+      .take(realLimit)
+      .getMany();
+
+    const hasNextPage = results.length > limit;
+    const data = hasNextPage ? results.slice(0, limit) : results;
+    const lastItem = data[data.length - 1];
+    const nextCursor =
+      hasNextPage && lastItem
+        ? {
+            lastProductId: lastItem.productId,
+            lastCreatedAt: lastItem.createdAt.toISOString(),
+          }
+        : undefined;
+
+    const productIds = data.map((p) => p.productId);
+    if (productIds.length === 0) return { data: [], nextCursor, hasNextPage };
+
+    const thumbnails = await this.imageRepo
+      .createQueryBuilder('image')
+      .where('image.refPostId IN (:...productIds)', { productIds })
+      .andWhere('image.isThumbnail = true')
+      .andWhere("image.imageKey LIKE :pattern", { pattern: '%/thumbnail/%' })
+      .getMany();
+
+    const imageMap = new Map<number, string>();
+    for (const img of thumbnails) {
+      if (img.refPostId !== null && !imageMap.has(Number(img.refPostId))) {
+        const signedUrl = await this.imageService.getDownloadUrl(img.imageKey); // presigned URL 생성
+        imageMap.set(Number(img.refPostId), signedUrl); // 상품 ID → 썸네일 URL 매핑
+      }
+    }
+
+    const dataWithThumbnails = data.map((product) => ({
+      ...product,
+      imageUrl: imageMap.get(product.productId) || null,
+    }));
+
+    return {
+      data: dataWithThumbnails,
+      nextCursor,
+      hasNextPage,
+    };
+  }
+
 }

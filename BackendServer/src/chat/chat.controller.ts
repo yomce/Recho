@@ -8,15 +8,16 @@ import {
   Query,
   UseGuards,
   Req,
+  HttpCode,
 } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { HistoryQueryDto } from './dto/history-query.dto';
 import { Room } from './entities/room.entity';
-import { Message } from './entities/message.entity';
 import { User } from '../auth/user/user.entity'; // User import
 import { Request } from 'express'; // Request import
 import { AuthGuard } from '@nestjs/passport'; // AuthGuard import
+import { MessageResponseDto } from './dto/message.response.dto';
 
 interface RequestWithUser extends Request {
   user: User;
@@ -59,22 +60,44 @@ export class ChatController {
 
   // 3) 메시지 이력 조회
   @Get('rooms/:id/history')
-  @UseGuards(AuthGuard('jwt')) // [수정] JWT 가드를 추가하여 인증된 사용자만 접근 가능하도록 변경
+  @UseGuards(AuthGuard('jwt'))
   async getHistory(
     @Param('id') roomId: string,
     @Query() query: HistoryQueryDto,
-    @Req() req: RequestWithUser, // [수정] 요청 객체에서 사용자 정보를 가져옴
-  ): Promise<Message[]> {
-    const id = req.user.id; // [수정] 현재 로그인한 사용자의 ID
-    // [수정] 서비스 호출 시 id를 함께 전달
-    return this.chatService.getHistory(roomId, id, query.page, query.limit);
+    @Req() req: RequestWithUser,
+  ): Promise<MessageResponseDto[]> {
+    const userId = req.user.id;
+    return this.chatService.getHistory(roomId, userId, query.page, query.limit);
   }
 
+  // (신규) 읽음 처리 엔드포인트
+  @Post('rooms/:id/read')
+  @UseGuards(AuthGuard('jwt'))
+  @HttpCode(204) // 성공 시 내용 없이 204 No Content 반환
+  async markAsRead(
+    @Param('id') roomId: string,
+    @Req() req: RequestWithUser,
+  ): Promise<void> {
+    const userId = req.user.id;
+    await this.chatService.markAsRead(roomId, userId);
+  }
+
+  // (신규) 전체 안 읽은 메시지 수 조회 엔드포인트
+  @Get('unread-count')
+  @UseGuards(AuthGuard('jwt'))
+  async getUnreadCount(@Req() req: RequestWithUser) {
+    const userId = req.user.id;
+    const count = await this.chatService.getTotalUnreadCount(userId);
+    return { unreadCount: count };
+  }
+
+  // getMyRooms 반환 타입 수정
   @Get('my-rooms')
-  @UseGuards(AuthGuard('jwt')) // JWT 인증 가드로 보호
-  async getMyRooms(@Req() req: RequestWithUser) {
-    const user = req.user; // 'as User' 타입 단언이 더 이상 필요 없습니다.
-    return this.chatService.getRoomsForUser(user.id);
+  @UseGuards(AuthGuard('jwt'))
+  async getMyRooms(@Req() req: RequestWithUser): Promise<any[]> {
+    // 반환 타입 수정
+    const userId = req.user.id;
+    return this.chatService.getRoomsForUser(userId);
   }
 
   @Get('rooms/:id')

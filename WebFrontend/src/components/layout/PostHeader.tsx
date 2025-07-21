@@ -12,11 +12,11 @@ interface HeaderProps {
 
 const PostHeader: React.FC<HeaderProps> = ({
   currentPath,
-  onCategoryClick,
+  // onCategoryClick,
   onSearchClick,
 }) => {
   const navigate = useNavigate();
-  const isCategoryActive = currentPath === "/category";
+  // const isCategoryActive = currentPath === "/category";
 
   const purePath = currentPath.split("?")[0];
   const isMapViewPage = purePath.startsWith("/map-view");

@@ -8,10 +8,11 @@ import "swiper/css";
 
 import Icon from "../atoms/icon/Icon";
 
-interface ContentDataType {
+export interface ContentDataType {
   id: string;
   linkId?: string;
   thumbnailUrl: string;
+  title?: string;
 }
 
 interface ProfileContentTabsProps {
@@ -38,7 +39,7 @@ const ProfileContentTabs: React.FC<ProfileContentTabsProps> = ({
   const createLinks = [
     "/vinyl/create",
     "/used-products/create",
-    "/posts/create",
+    "/community/create",
   ];
 
   const handleTabClick = (index: number) => {
@@ -55,6 +56,8 @@ const ProfileContentTabs: React.FC<ProfileContentTabsProps> = ({
       navigate(createLinks[activeIndex]);
     }
   };
+
+  const tabRoutes = ["/vinyl", "/used-products", "/community"];
 
   return (
     <div className="relative w-full">
@@ -91,10 +94,10 @@ const ProfileContentTabs: React.FC<ProfileContentTabsProps> = ({
               {items.map((item) => (
                 <div
                   key={item.id}
-                  className="aspect-square cursor-pointer bg-gray-100 "
+                  className="relative aspect-square cursor-pointer bg-gray-100 "
                   onClick={() => {
                     if (item.linkId) {
-                      navigate(`/vinyl/${item.linkId}`); // navigate는 react-router-dom의 useNavigate() 훅입니다.
+                      navigate(`${tabRoutes[activeIndex]}/${item.linkId}`); // navigate는 react-router-dom의 useNavigate() 훅입니다.
                     }
                   }}
                 >
@@ -103,6 +106,12 @@ const ProfileContentTabs: React.FC<ProfileContentTabsProps> = ({
                     alt="thumbnail"
                     className="h-full w-full object-cover"
                   />
+                  {/* 컨텐츠 타이틀 표시 */}
+                  {index >= 1 && item.title && (
+                    <div className="absolute bottom-0 w-full bg-black/30 text-white text-brand-caption px-1 py-0.5 truncate">
+                      {item.title}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -117,12 +126,12 @@ const ProfileContentTabs: React.FC<ProfileContentTabsProps> = ({
       </Swiper>
 
       {/* 플러스 버튼 (Floating Action Button) */}
-      <div className="fixed bottom-20 right-4 z-10 sm:right-[calc(50vw-215px+16px)]">
+      <div className="fixed bottom-25 right-4 z-20 sm:right-[calc(50vw-215px+16px)] rounded-full bg-brand-primary p-2 text-white shadow-lg transition-all hover:scale-110">
         <button
           onClick={handleFabClick}
-          className="w-14 h-14 bg-brand-primary text-brand-inverse rounded-full flex items-center justify-center hover:scale-105 transition-all"
+          className="bg-brand-primary text-brand-inverse rounded-full flex items-center justify-center hover:scale-105 transition-all"
         >
-          <Icon as="span" name="plus" size={32} className="!p-0 !text-white" />
+          <Icon name="plus" size={32} className="!p-0 !text-white" />
         </button>
       </div>
     </div>

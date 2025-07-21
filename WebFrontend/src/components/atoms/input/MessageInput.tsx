@@ -1,18 +1,20 @@
 // src/components/atoms/input/MessageInput.tsx
 
 import React, { useState, useRef } from "react";
-import Icon from "@/components/atoms/icon/Icon";
 import IconButton from "@/components/atoms/button/IconButton";
 import TextareaAutosize from "react-textarea-autosize";
+import Icon from "@/components/atoms/icon/Icon";
 
 interface MessageInputFormProps {
   onSubmit: (message: string) => void;
   onDmClick?: () => void;
+  msgPlaceholder?: string;
 }
 
 const MessageInputForm: React.FC<MessageInputFormProps> = ({
   onSubmit,
   onDmClick,
+  msgPlaceholder,
 }) => {
   const [message, setMessage] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
@@ -52,7 +54,7 @@ const MessageInputForm: React.FC<MessageInputFormProps> = ({
 
       {/* 입력창 */}
       <TextareaAutosize
-        placeholder="댓글을 입력하세요."
+        placeholder={msgPlaceholder || "댓글을 입력하세요."}
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         onKeyDown={handleKeyDown}
@@ -67,7 +69,7 @@ const MessageInputForm: React.FC<MessageInputFormProps> = ({
         onClick={onDmClick}
         className="flex-shrink-0 rounded-full bg-brand-primary px-4 py-2 text-white disabled:bg-brand-disabled "
       >
-        완료
+        <Icon name="send" size={20} />
       </button>
     </form>
   );

@@ -1,5 +1,6 @@
 import React from "react";
 import { PRODUCT_CATEGORY_LABELS } from "@/types/product";
+import { DEFAULT_IMAGES } from "@/constants/images";
 
 interface CategoryListProps {
   categories?: string[];
@@ -33,7 +34,7 @@ const CategoryList: React.FC<CategoryListProps> = ({
           >
             <div className="w-[64px] h-[64px]">
               <img
-                src={categoryImages[category] || 'https://placehold.co/64x64?text=기타'}
+                src={categoryImages[category] || DEFAULT_IMAGES.PLACEHOLDER}
                 alt={category}
                 className={`w-full h-full object-cover bg-white rounded-full transition-all duration-100 ease-in-out ${
                   selectedCategory === category

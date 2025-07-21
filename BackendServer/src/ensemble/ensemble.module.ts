@@ -8,6 +8,7 @@ import { UserModule } from 'src/auth/user/user.module';
 import { LocationModule } from 'src/map/location.module';
 import { ChatModule } from 'src/chat/chat.module';
 import { ApplierEnsemble } from 'src/application/entities/applier-ensemble.entity';
+import { ImageModule } from 'src/image/image.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { ApplierEnsemble } from 'src/application/entities/applier-ensemble.entit
     UserModule,
     forwardRef(() => LocationModule),
     ChatModule,
+    ImageModule,
   ],
   controllers: [EnsembleController],
   providers: [EnsembleService],

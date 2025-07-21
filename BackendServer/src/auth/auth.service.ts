@@ -20,7 +20,7 @@ export class AuthService {
     loginDto: LoginDto,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const { id, password } = loginDto;
-    const user = await this.userService.findById(id);
+    const user = await this.userService.internalFindById(id);
 
     if (
       !user ||

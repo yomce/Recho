@@ -6,6 +6,7 @@ import { Video } from './entities';
 import { UserModule } from 'src/auth/user/user.module';
 import { LikesModule } from 'src/likes/likes.module';
 import { CommentsModule } from 'src/comment/comments.module';
+import { ImageModule } from 'src/image/image.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { CommentsModule } from 'src/comment/comments.module';
     UserModule,
     LikesModule,
     CommentsModule,
+    ImageModule,
   ],
   controllers: [VideosController],
   providers: [VideosService],

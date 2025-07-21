@@ -24,20 +24,41 @@ export const useImageUpload = () => {
 
   const resizeImage = async (file: File): Promise<File> => {
     const imageBitmap = await createImageBitmap(file);
+
+    const MAX_SIZE_KB = 90;
+    const TARGET_WIDTH = 400;
+    // 원본이 이미 작을 경우: 리사이즈 하지 않고 그대로 반환
+    if (imageBitmap.width <= TARGET_WIDTH && imageBitmap.height <= TARGET_WIDTH) {
+      return file;
+    }
+    
+    // 비율 유지하며 TARGET_WIDTH 이하로 리사이징할 비율 계산 (화질 개선을 위해 정수값의 픽셀 전달)
+    const scale = Math.min(TARGET_WIDTH / imageBitmap.width, TARGET_WIDTH / imageBitmap.height);
+    const targetWidth = Math.round(imageBitmap.width * scale);
+    const targetHeight = Math.round(imageBitmap.height * scale);
+
+    // 캔버스를 통해 이미지 리사이징
     const canvas = document.createElement('canvas');
-    const scale = 0.2; // 20% 크기로 축소
-    canvas.width = imageBitmap.width * scale;
-    canvas.height = imageBitmap.height * scale;
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
 
     const ctx = canvas.getContext('2d')!;
+    ctx.imageSmoothingEnabled = true;       // 안티앨리어싱 활성화
+    ctx.imageSmoothingQuality = 'high';     // 고화질 리사이징 설정
+
     ctx.drawImage(imageBitmap, 0, 0, canvas.width, canvas.height);
 
     return new Promise((resolve) => {
       canvas.toBlob((blob) => {
         if (blob) {
+          const sizeKB = blob.size / 1024;
+          if (sizeKB > MAX_SIZE_KB) {
+            // 용량 제한을 초과한 경우 로그 출력 (필요시 여기서 재압축 로직 가능)
+            console.warn(`썸네일이 ${sizeKB.toFixed(1)}KB로 ${MAX_SIZE_KB}KB를 초과함`);
+          }
           resolve(new File([blob], `thumb-${file.name}`, { type: 'image/jpeg' }));
         }
-      }, 'image/jpeg', 0.8);
+      }, 'image/jpeg', 0.95);
     });
   }
 
@@ -77,7 +98,6 @@ export const useImageUpload = () => {
   const saveImgMetaData = async (uploadData: Record<string, { url: string; key: string }>, refIn: string, refPostId?: number) => {
     const payload = {
       images: Object.values(uploadData).map((data, idx) => ({
-        imageUrl: `https://recho-img.s3.ap-northeast-2.amazonaws.com/${data.key}`,
         key: data.key,
         refIn,
         uploadOrder: idx,

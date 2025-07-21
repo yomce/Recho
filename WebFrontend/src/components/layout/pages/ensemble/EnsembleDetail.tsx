@@ -10,6 +10,7 @@ import { ToastMenu } from "@/components/atoms/button/ToastMenu";
 import ProfileBubble from "@/components/atoms/card/ProfileBubble";
 import { SessionDetail } from "@/pages/ensemble/components/SessionDetail";
 import { type ApplicationEnsemble } from "@/pages/ensemble/types";
+import DEFAULT_IMAGES from '@/constants/images';
 
 interface RecruitEnsembleProps {
   post: RecruitEnsemble;
@@ -19,6 +20,7 @@ interface RecruitEnsembleProps {
   onDelete?: () => void;
   applicationEnsembleList: ApplicationEnsemble[];
   isApplied: boolean;
+  totalUnreadCount?: number;
 }
 
 const skillLevelColorMap: Record<number, string> = {
@@ -36,9 +38,10 @@ export const RecruitEnsembleDetail: React.FC<RecruitEnsembleProps> = ({
   onDelete,
   applicationEnsembleList,
   isApplied,
+  totalUnreadCount,
 }) => {
   return (
-    <PostLayout bgClassName="bg-brand-inverse">
+    <PostLayout totalUnreadCount={totalUnreadCount} bgClassName="bg-brand-inverse">
       <div className="relative mx-auto px-4 w-full">
         {isOwner && (
           <div className="absolute top-1 right-4 z-10">
@@ -67,7 +70,7 @@ export const RecruitEnsembleDetail: React.FC<RecruitEnsembleProps> = ({
           </div>
         )}
         <ProfileBubble
-          imageUrl="https://placehold.co/60x60"
+          imageUrl={post.user.profileImageUrl || DEFAULT_IMAGES.PROFILE}
           name={post.user.username}
           title={post.title}
         />

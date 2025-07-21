@@ -8,12 +8,14 @@ import { NumberIdLike } from 'src/likes/entities/number-id-like.entity';
 import { LikesModule } from 'src/likes/likes.module';
 import { CommentsModule } from 'src/comment/comments.module';
 import { NumberIdComment } from 'src/comment/entities/number-id-comment.entity';
+import { ImageModule } from 'src/image/image.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Post, NumberIdLike, NumberIdComment]),
     LikesModule,
     CommentsModule,
+    ImageModule,
   ], // Post Repository를 주입하기 위해 추가
   providers: [PostsService],
   controllers: [PostsController],

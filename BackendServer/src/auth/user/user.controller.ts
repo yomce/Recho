@@ -19,6 +19,7 @@ import { User } from './user.entity';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
 import { UpdateUserDto } from './dto/update-user.dto'; //
+import { UserResponseDto } from './dto/user.response.dto';
 
 interface RequestWithUser extends Request {
   user: User;
@@ -31,11 +32,10 @@ export class UserController {
   // 이로 인해 컨트롤러 내에서 UserService의 메서드를 사용할 수 있습니다.
   constructor(private readonly userService: UserService) {}
 
-
-   @Post('check-id')
+  @Post('check-id')
   @HttpCode(200) // 성공 시 200 OK 반환
   async checkUserId(@Body('id') id: string) {
-    const user = await this.userService.findById(id);
+    const user = await this.userService.internalFindById(id);
     if (user) {
       // 아이디가 이미 존재하면 409 Conflict 에러 발생
       throw new ConflictException('이미 사용 중인 아이디입니다.');
@@ -57,7 +57,24 @@ export class UserController {
     return { message: '사용 가능한 닉네임입니다.' };
   }
 
-   @Post('check-email')
+  @Post('check-my-username')
+  @UseGuards(AuthGuard('jwt'))
+  async checkMyUsername(
+    @Body('username') username: string,
+    @Req() req: Request,
+  ) {
+    if (req.user?.username != username) {
+      const user = await this.userService.findByUsername(username);
+      if (user) {
+        throw new ConflictException('이미 사용 중인 닉네임입니다.');
+      }
+      return { message: '사용 가능한 닉네임입니다.' };
+    } else {
+      return {};
+    }
+  }
+
+  @Post('check-email')
   @HttpCode(200)
   async checkEmail(@Body('email') email: string) {
     const user = await this.userService.findByEmail(email); //
@@ -97,9 +114,7 @@ export class UserController {
   }
 
   @Get(':id')
-  async findUserById(
-    @Param('id') id: string,
-  ): Promise<Omit<User, 'password' | 'hashedRefreshToken'>> {
+  async findUserById(@Param('id') id: string): Promise<UserResponseDto> {
     // 1. 디버깅을 위해 어떤 ID로 요청이 들어왔는지 서버 콘솔에 로그를 남깁니다.
     //    trim()을 사용하여 파라미터의 양쪽 공백을 제거합니다.
     const trimmedId = id.trim();
@@ -107,7 +122,7 @@ export class UserController {
       `[UserController] findUserById가 호출되었습니다. ID: ${trimmedId}`,
     );
 
-    const user = await this.userService.findById(trimmedId);
+    const user = await this.userService.publicFindById(trimmedId);
 
     // 2. 서비스에서 유저를 찾지 못하면(null 반환), 404 에러를 발생시킵니다.
     if (!user) {
@@ -117,26 +132,21 @@ export class UserController {
       throw new NotFoundException(`User with ID "${trimmedId}" not found`);
     }
 
-    // 3. 보안을 위해, 찾은 user 객체에서 password와 hashedRefreshToken을 제거합니다.
-    const { password, hashedRefreshToken, ...result } = user;
-
-    console.log(`[UserController] 유저를 찾았습니다:`, result);
-
     // 4. 안전한 정보만 담긴 result 객체를 반환합니다.
-    return result;
+    return user;
   }
 
-   @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt'))
   @Patch('me')
   @UsePipes(new ValidationPipe()) // DTO 유효성 검사를 자동으로 실행합니다.
   async updateMyInfo(
     @Req() req: RequestWithUser,
     @Body() updateUserDto: UpdateUserDto,
-  ): Promise<Omit<User, 'password' | 'hashedRefreshToken'>> {
+  ): Promise<User> {
     const userId = req.user.id;
-    console.log(`[UserController] updateMyInfo 호출. ID: ${userId}, 변경할 닉네임: ${updateUserDto.username}`);
+    console.log(
+      `[UserController] updateMyInfo 호출. ID: ${userId}, 변경할 닉네임: ${updateUserDto.username}`,
+    );
     return this.userService.updateUser(userId, updateUserDto);
   }
-
-
 }

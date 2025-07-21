@@ -15,6 +15,7 @@ interface PracticeRoomFormProps {
   errorMessage: string | null;
   submitButtonText: string;
   loadingButtonText: string;
+  totalUnreadCount?: number;
 }
 
 // 공통 입력 필드 스타일

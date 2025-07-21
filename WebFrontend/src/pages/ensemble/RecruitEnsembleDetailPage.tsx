@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
+import { useChatStore } from '../../stores/chatStore';
 import axiosInstance from '@/services/axiosInstance';
 import axios from 'axios';
 import type { RecruitEnsemble, ApplicationEnsemble } from './types';
@@ -14,6 +15,7 @@ import RecruitEnsembleDetail from '@/components/layout/pages/ensemble/EnsembleDe
 
 
 const RecruitEnsembleDetailPage: React.FC = () => {
+  const { totalUnreadCount } = useChatStore();
   const { user } = useAuthStore();
   // URL 파라미터에서 게시글 ID를 가져옵니다.
   const { id } = useParams<{ id: string }>();
@@ -27,6 +29,7 @@ const RecruitEnsembleDetailPage: React.FC = () => {
 
   // 현재 로그인한 사용자가 게시글 작성자인지 확인하는 변수
   const isOwner = Boolean(ensemble && user && ensemble.user.id === user.id);
+  console.log('ensemble check ',isOwner, ensemble, user);
 
   if(id){
     useViewCounter({ type: 'ensembles', id });
@@ -45,7 +48,6 @@ const RecruitEnsembleDetailPage: React.FC = () => {
       try {
         // API 엔드포인트를 합주단원 모집 공고 상세 조회로 변경
         const response = await axiosInstance.get<RecruitEnsemble>(`ensembles/${id}`);
-
         setEnsemble(response.data);
       } catch (err) {
         if (axios.isAxiosError(err) && err.response?.status === 404) {
@@ -133,6 +135,7 @@ const RecruitEnsembleDetailPage: React.FC = () => {
 
   return (
     <RecruitEnsembleDetail
+      totalUnreadCount={totalUnreadCount}
       post={ensemble}
       isOwner={isOwner}
       onEdit={handleEdit}

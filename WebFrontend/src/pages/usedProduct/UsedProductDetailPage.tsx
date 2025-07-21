@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useChatStore } from '../../stores/chatStore';
 import axios from 'axios';
 import { type UsedProduct, TRADE_TYPE, STATUS, STATUS_TEXT } from '../../types/product';
 import { useAuthStore } from '@/stores/authStore';
@@ -25,6 +26,7 @@ const TRADE_TYPE_TEXT = {
 };
 
 const UsedProductDetailPage: React.FC = () => {
+  const { totalUnreadCount } = useChatStore();
   const { user } = useAuthStore();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -33,7 +35,8 @@ const UsedProductDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const isOwner = product && user && product.id === user.id;
+  const isOwner = product && user && product.user.id === user.id;
+  console.log(isOwner);
 
   if(id) {
     useViewCounter({ type: 'used-products', id });
@@ -116,7 +119,7 @@ const UsedProductDetailPage: React.FC = () => {
     try {
       // 백엔드의 POST /chat/dm API를 호출합니다.
       const response = await axiosInstance.post("/chat/dm", {
-        partnerId: product.id, // 판매자의 ID를 전송
+        partnerId: product.user.id, // 판매자의 ID를 전송
       });
 
       const room = response.data;
@@ -150,7 +153,7 @@ const UsedProductDetailPage: React.FC = () => {
   if (!product) return renderStatusMessage('상품 정보가 없습니다.', true);
 
   return (
-    <PostLayout bgClassName="bg-white">
+    <PostLayout totalUnreadCount={totalUnreadCount} bgClassName="bg-white">
       <div className="mx-auto max-w-6xl px-4 mb-8">
         <div className="flex flex-col">
           {/* 이미지 섹션 */}
@@ -185,6 +188,7 @@ const UsedProductDetailPage: React.FC = () => {
           </div>
           <UserProfileCard
           imageUrl={product.imageUrl ?? ""}
+          user={product.user}
           name={product.user.username}
           location={product.location.address}
           status={STATUS_TEXT[product.status] as "판매중" | "예약중" | "판매완료"}
@@ -230,6 +234,7 @@ const UsedProductDetailPage: React.FC = () => {
           // 여기서 서버로 전송하거나 상태 업데이트 가능
         }}
         onDmClick={handleSendDm}
+        msgPlaceholder={"안녕하세요! 구매 원합니다."}
       />
     </PostLayout>
   );

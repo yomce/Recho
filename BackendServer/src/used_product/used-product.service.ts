@@ -78,18 +78,22 @@ export class UsedProductService {
     // 참조하는 이미지가 없는 경우를 아래 쿼리를 실행하지 않음
     if (productIds.length === 0) return { data: [], nextCursor, hasNextPage };
 
+    // 각 상품에 연결된 썸네일 이미지만 조회 (썸네일 플래그 + 경로 기반으로 이중 필터링)
     const thumbnails = await this.imageRepo
       .createQueryBuilder('image')
       .where('image.refPostId IN (:...productIds)', { productIds })
       .andWhere('image.isThumbnail = true')
+      .andWhere("image.imageKey LIKE :pattern", { pattern: '%/thumbnail/%' })
       .getMany();
 
+    // 썸네일 이미지에 대해 presigned URL을 발급하고, productId 기준으로 매핑
     const imageMap = new Map<number, string>();
-    thumbnails.forEach((img) => {
-      if (img.refPostId !== null && !imageMap.has(img.refPostId)) {
-        imageMap.set(Number(img.refPostId), img.imageKey);
+    for (const img of thumbnails) {
+      if (img.refPostId !== null && !imageMap.has(Number(img.refPostId))) {
+        const signedUrl = await this.imageService.getDownloadUrl(img.imageKey); // presigned URL 생성
+        imageMap.set(Number(img.refPostId), signedUrl); // 상품 ID → 썸네일 URL 매핑
       }
-    });
+    }
 
     const dataWithThumbnails = data.map((product) => ({
       ...product,
@@ -180,9 +184,16 @@ export class UsedProductService {
     if (!product) {
       throw new NotFoundException(`Product with ID #${productId} not found.`);
     }
+    // 모든 이미지 조회 (원본 + 썸네일 포함)
     const images = await this.imageService.findImageByRefPostId(productId);
-    const imageIds = images.map((img) => img.imageId);
-    const imageUrl = images.map((img) => img.imageKey);
+    // 상세 페이지에서는 썸네일이 아닌 '원본 이미지'만 사용하므로 필터링
+    const originalImages = images.filter((img) => !img.imageKey.includes('/thumbnail/'));
+    const imageIds = originalImages.map((img) => img.imageId);
+
+    // 원본 이미지에 대해 S3 presigned URL을 발급하여 클라이언트가 접근 가능하도록 처리
+    const imageSignedUrls = await Promise.all(
+      originalImages.map((img) => this.imageService.getDownloadUrl(img.imageKey))
+    );
 
     let userProfileSignedUrl: string | null = null;
     if (product.user && product.user.profileUrl) {
@@ -204,7 +215,7 @@ export class UsedProductService {
     return {
       ...productDto,
       imageIds,
-      imageUrl,
+      imageUrl: imageSignedUrls,
     };
   }
 

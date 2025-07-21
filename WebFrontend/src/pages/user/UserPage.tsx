@@ -20,7 +20,7 @@ import axios, { AxiosError } from "axios"; // AxiosError 타입 import
 import type { Video } from '@/types/video';
 import type { PaginatedUsedProductResponse } from '@/types/product';
 import type { Post } from '@/types/post';
-
+import Icon from "@/components/atoms/icon/Icon";
 
 // 타입 정의
 interface UserProfile {
@@ -278,12 +278,18 @@ const UserPage: React.FC = () => {
             <div className="relative w-full rounded-card bg-brand-default p-6 pt-12 text-center">
               <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2">
                 {isMyProfile && isEditing ? (
-                  <label htmlFor="profile-upload-input">
+                  <label htmlFor="profile-upload-input" className="relative block w-fit">
                     <Avatar
                       src={newProfileImageFile ? URL.createObjectURL(newProfileImageFile) : user.profileImageUrl || DEFAULT_IMAGES.PROFILE}
                       alt={`${user.username}의 프로필 사진`}
                       size={64}
                     />
+                    <div className="absolute bottom-0 right-0 bg-white rounded-full p-[2px]">
+                      <Icon 
+                        name="plus" 
+                        className="w-5 h-5 bg-brand-primary text-white font-bold rounded-full"
+                      />
+                    </div>
                     <input
                       id="profile-upload-input"
                       type="file"

@@ -78,6 +78,7 @@ export const useImageUpload = () => {
     const payload = {
       images: Object.values(uploadData).map((data, idx) => ({
         key: data.key,
+        // key: `https://recho-img.s3.ap-northeast-2.amazonaws.com/${data.key}`,
         refIn,
         uploadOrder: idx,
         refPostId,

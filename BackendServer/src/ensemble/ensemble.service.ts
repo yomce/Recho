@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
@@ -428,7 +429,29 @@ export class EnsembleService {
         }
 
         // 3-2. 수정: 각 항목을 순회하며 업데이트
+        // for (const item of toUpdate) {
+        //   await queryRunner.manager.update(SessionEnsemble, item.sessionId, {
+        //     instrument: item.instrument,
+        //     recruitCount: item.recruitCount,
+        //   });
+        // }
+
+        // 3-2. 수정: 세션별 지원자 수보다 작은 recruitCount로 줄이는 것을 방지
         for (const item of toUpdate) {
+          const existingSession = await queryRunner.manager.findOne(SessionEnsemble, {
+            where: { sessionId: item.sessionId },
+          });
+
+          if (!existingSession) {
+            throw new NotFoundException(`Session ${item.sessionId} not found`);
+          }
+
+          if (item.recruitCount < existingSession.nowRecruitCount) {
+            throw new BadRequestException(
+              `"${item.instrument}"의 모집 인원은 지원자 수(${existingSession.nowRecruitCount}명) 보다 작게 설정할 수 없습니다.`,
+            );
+          }
+
           await queryRunner.manager.update(SessionEnsemble, item.sessionId, {
             instrument: item.instrument,
             recruitCount: item.recruitCount,

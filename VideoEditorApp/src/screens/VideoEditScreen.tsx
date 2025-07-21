@@ -34,6 +34,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { CameraRoll } from '@react-native-camera-roll/camera-roll';
+import Slider from '@react-native-community/slider';
 import RNFS from 'react-native-fs';
 import { FFmpegKit, ReturnCode } from 'ffmpeg-kit-react-native';
 import { OnLoadData, OnProgressData } from 'react-native-video';
@@ -352,11 +353,12 @@ const VideoEditScreen: React.FC<{
   const [globalEndTime, setGlobalEndTime] = useState(0);
   const [timelinePosition, setTimelinePosition] = useState(parentStartTime);
   const [timelineHeight, setTimelineHeight] = useState(100); // 타임라인의 동적 높이
+  const [isActionMenuVisible, setIsActionMenuVisible] = useState(false);
+  const [isVolumeMenuVisible, setIsVolumeMenuVisible] = useState(false);
   const [isSheetVisible, setSheetVisible] = useState(false);
   const [selectedTrack, setSelectedTrack] = useState<TrimmerState | null>(null);
   const [isSettingsButtonVisible, setSettingsButtonVisible] = useState(false);
   const [isTimelineReady, setIsTimelineReady] = useState(false);
-  const [isActionMenuVisible, setIsActionMenuVisible] = useState(false);
   const [soloTrackId, setSoloTrackId] = useState<string | null>(null);
   const [preSoloMuteStates, setPreSoloMuteStates] = useState<
     Record<string, boolean>
@@ -787,12 +789,7 @@ const VideoEditScreen: React.FC<{
     if (newEndTime < globalEndTime) {
       setGlobalEndTime(newEndTime);
     }
-  }, [
-    trimmers,
-    globalStartTime,
-    globalEndTime,
-    startPointThreshold,
-  ]);
+  }, [trimmers, globalStartTime, globalEndTime, startPointThreshold]);
 
   // =================================================================================
   // 5. 핸들러 함수 (이벤트 처리)
@@ -1148,7 +1145,7 @@ const VideoEditScreen: React.FC<{
     handleToggleGlobalPlay,
   ]);
 
-  const handleMoveTrackRight = useCallback(() => {
+  const handleAlignTrackRight = useCallback(() => {
     if (!selectedTrack) return;
 
     if (
@@ -1171,7 +1168,7 @@ const VideoEditScreen: React.FC<{
     handleTrimmerUpdate,
   ]);
 
-  const handleAlignTrackRight = useCallback(() => {
+  const handleMoveTrackRight = useCallback(() => {
     if (!selectedTrack) return;
     const newPosition = selectedTrack.timelinePosition + 0.033;
     handleTrimmerUpdate(selectedTrack.id, { timelinePosition: newPosition });
@@ -1270,6 +1267,16 @@ const VideoEditScreen: React.FC<{
     });
     setPlayRequest(false);
   }, [playRequest, trimmers, handlePlaybackUpdate]);
+
+  // 오디오 볼륨 조절 버튼 클릭 핸들러
+  const handleVolumeChange = useCallback(
+    (value: number) => {
+      if (selectedTrack) {
+        handleTrimmerUpdate(selectedTrack.id, { volume: value });
+      }
+    },
+    [selectedTrack, handleTrimmerUpdate],
+  );
 
   // [추가] 트랙 드래그 종료 핸들러
   const handleTrackDragEnd = useCallback(() => {
@@ -1390,7 +1397,7 @@ const VideoEditScreen: React.FC<{
         {/* 이 아래에 스크롤이 필요한 다른 컨트롤들을 추가할 수 있습니다. */}
         {/* <ControlsScrollView></ControlsScrollView> */}
 
-        {/* 전역 컨트롤 버튼들 */}
+        {/* 지역 컨트롤 버튼들 */}
         <Animated.View
           style={{
             position: 'absolute',
@@ -1441,6 +1448,33 @@ const VideoEditScreen: React.FC<{
               </View>
             </View>
           )}
+
+          {/* 볼륨 컨트롤 메뉴 */}
+          {isVolumeMenuVisible && selectedTrack && (
+            <View style={styles.centeredActionMenuContainer}>
+              <View style={[styles.actionMenu, styles.volumeMenu]}>
+                <View style={styles.volumeContainer}>
+                  <Text style={styles.volumeLabel}>볼륨</Text>
+                  <View style={styles.volumeSliderContainer}>
+                    <Slider
+                      style={styles.volumeSlider}
+                      minimumValue={0}
+                      maximumValue={2}
+                      value={selectedTrack.volume}
+                      onValueChange={handleVolumeChange}
+                      minimumTrackTintColor="#ffffff"
+                      maximumTrackTintColor="#666666"
+                      thumbTintColor="transparent"
+                    />
+                  </View>
+                  <Text style={styles.volumeValue}>
+                    {Math.round(selectedTrack.volume * 100)}%
+                  </Text>
+                </View>
+              </View>
+            </View>
+          )}
+
           <View
             style={{
               justifyContent: 'center',
@@ -1472,7 +1506,8 @@ const VideoEditScreen: React.FC<{
             />
             {isSettingsButtonVisible && (
               <TouchableOpacity
-                onPress={() => setSheetVisible(true)}
+                // onPress={() => setSheetVisible(true)}
+                onPress={() => setIsVolumeMenuVisible(v => !v)}
                 style={{
                   backgroundColor: '#000',
                   borderRadius: 50,
@@ -1519,27 +1554,6 @@ const VideoEditScreen: React.FC<{
           />
         )}
       </ControlsWrapper>
-      <BottomSheet
-        visible={isSheetVisible}
-        onClose={() => setSheetVisible(false)}
-      >
-        {selectedTrack && (
-          <VideoControlSet
-            key={selectedTrack.id}
-            title={'비디오 컨트롤'}
-            videoDuration={selectedTrack.duration}
-            initialStartTime={selectedTrack.startTime}
-            initialEndTime={selectedTrack.endTime}
-            initialVolume={selectedTrack.volume}
-            initialEqualizer={selectedTrack.equalizer}
-            currentTime={playbackStates[selectedTrack.id]?.currentTime ?? 0}
-            onUpdate={newState =>
-              handleTrimmerUpdate(selectedTrack.id, newState)
-            }
-            onSeek={time => handleSeek(selectedTrack.id, time)}
-          />
-        )}
-      </BottomSheet>
     </ScreenContainer>
   );
 };
@@ -1587,6 +1601,44 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 3.84,
     elevation: 5,
+  },
+  volumeMenu: {
+    height: 100,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  volumeContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  volumeLabel: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+    letterSpacing: 0.5,
+  },
+  volumeSliderContainer: {
+    width: '100%',
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+  },
+  volumeSlider: {
+    width: '100%',
+    height: 30,
+  },
+  volumeValue: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 8,
+    letterSpacing: 0.5,
   },
   actionMenuItem: {
     // padding: 16,

@@ -4,6 +4,7 @@ import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { type StackNavigationProp } from '@react-navigation/stack';
 import RNFS from 'react-native-fs';
+import { useCameraPermission, useMicrophonePermission } from 'react-native-vision-camera';
 import {
   type RootStackParamList,
   type MediaItem,
@@ -22,6 +23,10 @@ const WebScreen: React.FC = () => {
   const route = useRoute<WebScreenRouteProp>();
   const webViewRef = useRef<WebView>(null);
   const [canGoBack, setCanGoBack] = useState<boolean>(false);
+  
+  // 권한 훅 사용
+  const { hasPermission: hasCameraPermission, requestPermission: requestCameraPermission } = useCameraPermission();
+  const { hasPermission: hasMicrophonePermission, requestPermission: requestMicrophonePermission } = useMicrophonePermission();
 
   const onNavigationStateChange = (event: WebViewNavigationEvent) => {
     setCanGoBack(event.canGoBack);
@@ -42,6 +47,35 @@ const WebScreen: React.FC = () => {
     // 컴포넌트가 언마운트될 때 리스너를 제거합니다.
     return () => backHandler.remove();
   }, [canGoBack]);
+
+  // Web 화면 진입 시 모든 권한 요청
+  useEffect(() => {
+    const requestAllPermissions = async () => {
+      console.log('[WebScreen] Web 화면 진입 - 모든 권한 요청 시작');
+      
+      // 카메라 권한 요청
+      if (!hasCameraPermission) {
+        console.log('[WebScreen] 카메라 권한 요청 중...');
+        const cameraResult = await requestCameraPermission();
+        console.log('[WebScreen] 카메라 권한 요청 결과:', cameraResult);
+      } else {
+        console.log('[WebScreen] 카메라 권한 이미 허용됨');
+      }
+      
+      // 마이크 권한 요청
+      if (!hasMicrophonePermission) {
+        console.log('[WebScreen] 마이크 권한 요청 중...');
+        const micResult = await requestMicrophonePermission();
+        console.log('[WebScreen] 마이크 권한 요청 결과:', micResult);
+      } else {
+        console.log('[WebScreen] 마이크 권한 이미 허용됨');
+      }
+      
+      console.log('[WebScreen] 모든 권한 요청 완료');
+    };
+    
+    requestAllPermissions();
+  }, [hasCameraPermission, hasMicrophonePermission, requestCameraPermission, requestMicrophonePermission]);
 
   const webFrontendUrl = route.params?.url ?? WEB_FRONTEND_URL;
 

@@ -67,8 +67,6 @@ const RecruitEnsembleListPage: React.FC = () => {
 
       const { data, nextCursor: newCursor, hasNextPage: newHasNextPage } = response.data;
 
-      console.log(data);
-
       setItems(prev => (isInitialFetch ? data : [...prev, ...data]));
       setNextCursor(newCursor ?? null);
       setHasNextPage(newHasNextPage);

@@ -54,7 +54,6 @@ const UsedProductDetailPage: React.FC = () => {
       setError(null);
       try {
         const response = await axiosInstance.get<UsedProduct>(`used-products/${id}`);
-        console.log(response.data);
         setProduct(response.data);
       } catch (err) {
         if (axios.isAxiosError(err) && err.response?.status === 404) {

@@ -17,6 +17,7 @@ interface SessionDetailProps {
   ensemble: RecruitEnsemble;
   applicationEnsembleList: ApplicationEnsemble[];
   isApplied: boolean;
+  fetchApplicationList: () => Promise<void>;
 }
 
 export const SessionDetail: React.FC<SessionDetailProps> = ({
@@ -24,6 +25,7 @@ export const SessionDetail: React.FC<SessionDetailProps> = ({
   ensemble,
   applicationEnsembleList,
   isApplied,
+  fetchApplicationList,
 }) => {
   const { user } = useAuthStore();
   const [, setError] = useState<string | null>(null);
@@ -55,9 +57,15 @@ export const SessionDetail: React.FC<SessionDetailProps> = ({
         `application/${ensemble.postId}/${item.sessionId}`
       );
       alert("모집 공고에 지원했습니다!");
+      await fetchApplicationList();
     } catch (err) {
       if (axios.isAxiosError(err)) {
+        const status = err.response?.status;
         const messages = err.response?.data?.message;
+        if (status === 403) {
+          alert("이미 모집이 마감되었거나 지원이 불가능한 세션입니다.");
+          return;
+        }
         setError(
           Array.isArray(messages)
             ? messages.join("\n")
@@ -82,6 +90,7 @@ export const SessionDetail: React.FC<SessionDetailProps> = ({
         `application/${ensemble.postId}/${item.sessionId}/${application?.applicationId}`
       );
       alert("모집 공고 지원을 취소했습니다!");
+      await fetchApplicationList();
     } catch (err) {
       if (axios.isAxiosError(err)) {
         const messages = err.response?.data?.message;

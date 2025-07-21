@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from '@/services/axiosInstance';
+import axios from 'axios';
 import { useAuthStore } from '@/stores/authStore';
 import { useChatStore } from '../../stores/chatStore';
 import { EnsembleForm, type RecruitEnsembleFormState } from '@/pages/ensemble/components/EnsembleForm';
@@ -45,7 +46,7 @@ const UpdateRecruitEnsemblePage: React.FC = () => {
     eventDate: '',
     skillLevel: SKILL_LEVEL.BEGINNER,
     locationId: '',
-    totalRecruitCnt: '1',
+    totalRecruitCnt: '',
     sessionEnsemble: sessionFormList,
   });
 
@@ -163,8 +164,19 @@ const UpdateRecruitEnsemblePage: React.FC = () => {
       navigate(`/ensembles/${id}`);
 
     } catch (err) {
-      setError('수정 중 오류가 발생했습니다.');
-      console.error(err);
+      if (axios.isAxiosError(err)){
+        const rawMessage = err.response?.data?.message;
+        console.log(err.response?.data);
+        const finalMessage = Array.isArray(rawMessage)
+          ? rawMessage.join('\n')
+          : typeof rawMessage === 'string'
+            ? rawMessage
+            : '알 수 없는 오류입니다.';
+
+        setError(finalMessage);
+      }else {
+        setError('예기치 못한 오류가 발생했습니다.');
+      }
     } finally {
       setLoading(false);
     }

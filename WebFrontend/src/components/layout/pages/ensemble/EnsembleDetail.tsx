@@ -21,6 +21,7 @@ interface RecruitEnsembleProps {
   applicationEnsembleList: ApplicationEnsemble[];
   isApplied: boolean;
   totalUnreadCount?: number;
+  fetchApplicationList: () => Promise<void>;
 }
 
 const skillLevelColorMap: Record<number, string> = {
@@ -39,6 +40,7 @@ export const RecruitEnsembleDetail: React.FC<RecruitEnsembleProps> = ({
   applicationEnsembleList,
   isApplied,
   totalUnreadCount,
+  fetchApplicationList,
 }) => {
   return (
     <PostLayout totalUnreadCount={totalUnreadCount} bgClassName="bg-brand-inverse">
@@ -107,6 +109,7 @@ export const RecruitEnsembleDetail: React.FC<RecruitEnsembleProps> = ({
                 ensemble={post}
                 applicationEnsembleList={applicationEnsembleList}
                 isApplied={isApplied}
+                fetchApplicationList={fetchApplicationList}
               />
             ))
         }

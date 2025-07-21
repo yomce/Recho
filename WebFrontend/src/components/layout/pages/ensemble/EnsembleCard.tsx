@@ -33,6 +33,7 @@ const skillLevelColorMap: Record<number, string> = {
   3: "bg-yellow-500",
 };
 
+
 const EnsembleCard: React.FC<EnsembleCardProps> = ({ posts }) => {
   const navigate = useNavigate();
 
@@ -82,12 +83,15 @@ const EnsembleCard: React.FC<EnsembleCardProps> = ({ posts }) => {
             >
               {SKILL_LEVEL_DIC[post.skillLevel]}
             </p>
-            {post.sessionEnsemble.map((session) => (
-              <span key={session.sessionId} className="flex items-center justify-center gap-1 text-brand-gray">
-                <Icon name="user" size={15}/>
-                {session.nowRecruitCount}/{session.recruitCount}
-              </span>
-            ))}
+            {post.sessionEnsemble && post.sessionEnsemble.length > 0 && (
+              <div className="flex items-center gap-2 text-brand-gray">
+                <Icon name="user" size={15} />
+                <span>
+                  {post.sessionEnsemble.reduce((sum, s) => sum + s.nowRecruitCount, 0)}/
+                  {post.sessionEnsemble.reduce((sum, s) => sum + s.recruitCount, 0)}
+                </span>
+              </div>
+            )}
           </div>
         </article>
       ))}

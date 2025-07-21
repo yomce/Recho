@@ -49,7 +49,7 @@ const CreateRecruitEnsemblePage: React.FC = () => {
     eventDate: new Date().toISOString().split('T')[0],
     skillLevel: SKILL_LEVEL.BEGINNER,
     locationId: '',
-    totalRecruitCnt: '1',
+    totalRecruitCnt: '',
     sessionEnsemble: sessionFormList,
   });
 

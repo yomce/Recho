@@ -27,6 +27,7 @@ const RecruitEnsembleDetailPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isApplied, setIsApplied] = useState(false);
 
+
   // 현재 로그인한 사용자가 게시글 작성자인지 확인하는 변수
   const isOwner = Boolean(ensemble && user && ensemble.user.id === user.id);
 
@@ -89,6 +90,17 @@ const RecruitEnsembleDetailPage: React.FC = () => {
     }
   }, [applicationList, user])
 
+  const fetchApplicationList = async () => {
+    if (!ensemble) return;
+    try {
+      const response = await axiosInstance.get<ApplicationEnsemble[]>(`application/${ensemble.postId}`);
+      setApplicationList(response.data);
+    } catch (err) {
+      setError('지원자 정보를 갱신하는 데 실패했습니다.');
+    }
+  };
+
+
   const handleEdit = () => {
     navigate(`/ensembles/edit/${id}`);
   };
@@ -142,6 +154,7 @@ const RecruitEnsembleDetailPage: React.FC = () => {
       onDelete={handleDelete}
       applicationEnsembleList={applicationList || []}
       isApplied={isApplied}
+      fetchApplicationList={fetchApplicationList}
     />
   );
 };

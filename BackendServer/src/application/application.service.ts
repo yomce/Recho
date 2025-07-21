@@ -201,6 +201,13 @@ export class ApplicationService {
           1, // 증가량
         );
 
+        await transactionalEntityManager.increment(
+          SessionEnsemble, // 업데이트할 엔티티 클래스
+          { sessionId: sessionEnsemble.sessionId }, // 업데이트할 레코드를 찾는 조건
+          'nowRecruitCount', // 증가시킬 컬럼 이름
+          1, // 증가량
+        );
+
         const responseApplierDto = UserResponseDto.from(savedApplier.user);
 
         const applierDto = ApplierEnsembleResponseDto.from(
@@ -246,7 +253,7 @@ export class ApplicationService {
           ApplierEnsemble,
           {
             where: { applicationId: applicationId },
-            relations: ['user'], // 사용자 정보가 필요하므로 relations 추가
+            relations: ['user', 'recruitEnsemble', 'sessionEnsemble'],
           },
         );
 
@@ -296,6 +303,18 @@ export class ApplicationService {
             RecruitEnsemble, // 업데이트할 엔티티 클래스
             { postId: recruitEnsemblePost.postId }, // 업데이트할 레코드를 찾는 조건
             'totalRecruitCnt', // 감소시킬 컬럼 이름
+            1, // 감소량
+          );
+        }
+
+        if (
+          application.sessionEnsemble.nowRecruitCount &&
+          application.sessionEnsemble.nowRecruitCount > 0
+        ) {
+          await transactionalEntityManager.decrement(
+            SessionEnsemble, // 업데이트할 엔티티 클래스
+            { sessionId: application.sessionEnsemble.sessionId }, // 업데이트할 레코드를 찾는 조건
+            'nowRecruitCount', // 감소시킬 컬럼 이름
             1, // 감소량
           );
         }

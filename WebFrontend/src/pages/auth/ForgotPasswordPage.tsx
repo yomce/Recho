@@ -97,7 +97,7 @@ const ForgotPasswordPage: React.FC = () => {
         {/* ... 로고, 헤더 부분 ... */}
         <div className="sm:mx-auto sm:w-full">
           <Link to="/login">
-            <img className="mx-auto h-12 w-auto" src="/RechoLogo.png" alt="Recho Logo" />
+            <img className="mx-auto h-12 w-auto" src="/vite.svg" alt="Recho Logo" />
           </Link>
           <h2 className="mt-6 text-center text-subheadline text-[var(--color-brand-text-primary)]">
             비밀번호 찾기

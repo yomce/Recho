@@ -1,19 +1,17 @@
 import { useRef, useEffect, useState } from "react";
-import { toast } from "react-hot-toast";
 import PrimaryButton from "./PrimaryButton";
 import CustomDatePicker from "../input/CustomDatePicker";
-import IconButton from "./IconButton";
 import { INSTRUMENT, SKILL_LEVEL_DIC } from '@/pages/ensemble/types';
 
 interface FilterToastProps {
   activeTab: string; // 예: "날짜", "지역"
-  toastId: string;
   onApplyFilter: (filters: {
     eventDate?: Date,
     location?: string,
     instrument?: string,
     skillLevel?: string,
   }) => void;
+  onClose: () => void;
 }
 
 const REGIONS = [
@@ -40,7 +38,7 @@ const radioCircleStyle = (selected: boolean) =>
 
 const radioDotStyle = `w-2 h-2 rounded-full bg-brand-primary`;
 
-const FilterToast: React.FC<FilterToastProps> = ({ activeTab, toastId, onApplyFilter }) => {
+const FilterToast: React.FC<FilterToastProps> = ({ activeTab, onApplyFilter, onClose }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -64,14 +62,7 @@ const FilterToast: React.FC<FilterToastProps> = ({ activeTab, toastId, onApplyFi
       ref={containerRef}
       className="w-full max-w-md h-[80vh] bg-white rounded-t-[30px] p-4 overflow-y-auto text-left"
     >
-    <div className="w-12 h-1 bg-brand-disabled rounded-full mx-auto mt-1 mb-4 opacity-70" />
     <div className="p-4">
-      <div className="flex flex-row justify-between items-center">
-        <div className="text-button text-brand-gray py-4 border-b border-brand-frame">
-          필터
-        </div>
-        <IconButton iconName="plus" className="text-brand-gray rotate-45" onClick={() => toast.dismiss(toastId)} />
-      </div>
       <div className="flex flex-col gap-4 mt-4">
         {/* 날짜 필터 */}
         <div id="filter-section-날짜" className="mb-8">
@@ -164,9 +155,8 @@ const FilterToast: React.FC<FilterToastProps> = ({ activeTab, toastId, onApplyFi
           instrument: selectedInstrument !== "전체" ? selectedInstrument : undefined,
           skillLevel: selectedSkill !== "무관" ? selectedSkill : undefined,
         }
-        onApplyFilter?.(filters);
-        toast.dismiss(toastId)}
-      }
+        onApplyFilter?.(filters); 
+      }}
       >
         적용하기
     </PrimaryButton>

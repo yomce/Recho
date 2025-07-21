@@ -7,11 +7,11 @@ import PostLayout from '@/components/layout/PostLayout';
 import SwiperTabs from '@/components/organisms/PostNavigationTabs';
 import EnsembleCard from '@/components/layout/pages/ensemble/EnsembleCard';
 import FilterButton from '@/components/atoms/button/FilterButton';
-import { toast } from 'react-hot-toast';
 import FilterToast from '@/components/atoms/button/FilterToast';
 import FloatingWriteButton from '@/components/atoms/button/FloatingWriteButton';
 import type { RecruitEnsemble } from './types';
 import { useEnsembleFilter, type EnsembleFilterParams } from '@/pages/ensemble/hooks/fetchFilteredEnsembleList';
+import Modal from '@/components/molecules/modal/Modal';
 
 // 모집 공고 데이터 타입은 '@/pages/ensemble/types'에서 import합니다.
 
@@ -38,9 +38,15 @@ const RecruitEnsembleListPage: React.FC = () => {
   const [isFiltered, setIsFiltered] = useState(false);
   const { filteredData, fetchFilteredEnsembleList } = useEnsembleFilter();
 
+  // --- 👇 1. Modal 상태 추가 ---
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [activeFilterTab, setActiveFilterTab] = useState('날짜'); // 어떤 필터를 눌렀는지 기억
+
+  // --- 👇 2. 필터 적용 함수 수정 ---
   const handleFilterApply = (filters: EnsembleFilterParams) => {
     fetchFilteredEnsembleList(filters);
     setIsFiltered(true);
+    setIsFilterModalOpen(false); // 필터 적용 후 Modal 닫기
   };
 
   const tabs = ['합주모집', '주변모임', '즐겨찾기'];
@@ -88,22 +94,11 @@ const RecruitEnsembleListPage: React.FC = () => {
     fetchItems(false);
   };
 
+  // --- 👇 3. 필터 버튼 클릭 핸들러 수정 ---
   const handleFilterClick = (tab: string) => {
-    toast.custom((t) => (
-      <FilterToast activeTab={tab} toastId={t.id} onApplyFilter={handleFilterApply} />
-    ), {
-      position: "bottom-center",
-      duration: Infinity,
-      id: "filter-toast",
-    })
+    setActiveFilterTab(tab); // 클릭한 탭 정보 저장
+    setIsFilterModalOpen(true); // Modal 열기
   }
-
-  // toast unmount 시 close. DOM 에서 토스트가 내려가면 호출됩니다
-  useEffect(() => {
-    return () => {
-      toast.dismiss("filter-toast");
-    };
-  }, []);
 
   return (
     <PostLayout totalUnreadCount={totalUnreadCount}>
@@ -151,6 +146,14 @@ const RecruitEnsembleListPage: React.FC = () => {
         )}
       </div>
       <FloatingWriteButton />
+
+      <Modal title='필터' isOpen={isFilterModalOpen} onClose={() => setIsFilterModalOpen(false)}>
+        <FilterToast
+          activeTab={activeFilterTab}
+          onApplyFilter={handleFilterApply}
+          onClose={() => setIsFilterModalOpen(false)} // 닫기 버튼을 위한 prop
+        />
+      </Modal>
     </PostLayout>
   );
 };

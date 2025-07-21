@@ -10,6 +10,7 @@ import {
 } from 'react-native-vision-camera';
 import { pick, types, isErrorWithCode } from '@react-native-documents/picker';
 import { CameraRoll } from '@react-native-camera-roll/camera-roll';
+import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 import { RouteProp, useRoute } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 
@@ -67,9 +68,14 @@ const VideoPlayerStyled = styled(Video)`
 const RecordScreen: React.FC<RecordScreenProps> = ({ navigation, route }) => {
   const { video: parentVideo } = route.params;
 
-  // 카메라 및 마이크 권한 상태 확인 훅
-  const { hasPermission: hasCameraPermission } = useCameraPermission();
-  const { hasPermission: hasMicrophonePermission } = useMicrophonePermission();
+  const {
+    hasPermission: hasCameraPermission,
+    requestPermission: requestCameraPermission,
+  } = useCameraPermission();
+  const {
+    hasPermission: hasMicrophonePermission,
+    requestPermission: requestMicrophonePermission,
+  } = useMicrophonePermission();
 
   const device = useCameraDevice('front');
   const camera = useRef<Camera>(null);
@@ -80,28 +86,27 @@ const RecordScreen: React.FC<RecordScreenProps> = ({ navigation, route }) => {
   const [selectedVideoUri, setSelectedVideoUri] = useState<string | null>(
     parentVideo?.video_url || null,
   );
+  const [isCheckingPermissions, setIsCheckingPermissions] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isEncoding, setIsEncoding] = useState(false);
 
   useEffect(() => {
+    const checkPermissions = async () => {
+      await requestCameraPermission();
+      await requestMicrophonePermission();
+      setIsCheckingPermissions(false);
+    };
+    checkPermissions();
+
     return () => {
       if (Platform.OS === 'ios' && AudioSessionModule?.deactivateAudioSession) {
         AudioSessionModule.deactivateAudioSession();
       }
     };
-  }, []);
+  }, [requestCameraPermission, requestMicrophonePermission]);
 
   const handleRecordButtonPress = async () => {
     if (!camera.current) return;
-
-    // 권한 확인
-    if (!hasCameraPermission || !hasMicrophonePermission) {
-      Alert.alert(
-        '권한 필요',
-        '카메라와 마이크 권한이 필요합니다. 앱 설정에서 권한을 허용해주세요.',
-      );
-      return;
-    }
 
     if (isRecording) {
       try {
@@ -202,74 +207,81 @@ const RecordScreen: React.FC<RecordScreenProps> = ({ navigation, route }) => {
         },
       });
 
+      setIsLoading(false);
       setIsRecording(true);
     } catch (error) {
-      console.error('녹화 시작 에러:', error);
+      console.error('오디오 세션 활성화 또는 녹화 시작 에러:', error);
       Alert.alert('오류', '녹화를 시작하는 중 문제가 발생했습니다.');
+      setIsRecording(false);
       setIsLoading(false);
     }
   };
 
-  // 권한이 없으면 안내 화면 표시
+  if (isCheckingPermissions) {
+    return (
+      <ScreenContainer>
+        <InfoDisplay showIndicator={true} message="권한을 확인 중입니다..." />
+      </ScreenContainer>
+    );
+  }
+
   if (!hasCameraPermission || !hasMicrophonePermission) {
     return (
       <ScreenContainer>
-        <InfoDisplay
-          title="권한 필요"
-          message="카메라와 마이크 권한이 필요합니다. 앱 설정에서 권한을 허용해주세요."
-          iconName="camera"
-        />
+        <InfoDisplay message="합주 녹화를 위해 카메라와 마이크 권한이 필요합니다." />
       </ScreenContainer>
     );
   }
 
-  // 카메라 장치가 없으면 안내 화면 표시
   if (!device) {
     return (
       <ScreenContainer>
-        <InfoDisplay
-          title="카메라 오류"
-          message="사용 가능한 카메라를 찾을 수 없습니다."
-          iconName="camera-off"
-        />
+        <InfoDisplay message="카메라를 찾을 수 없습니다." />
       </ScreenContainer>
     );
   }
 
+  const videoPlayerProps = Platform.select({
+    ios: { mixWithOthers: 'mix' as const, disableAudioSessionManagement: true },
+    android: {},
+  });
+
   return (
     <ScreenContainer>
+      {isLoading && (
+        <LoadingOverlay>
+          <InfoDisplay showIndicator={true} message={'준비 중입니다...'} />
+        </LoadingOverlay>
+      )}
+
       <TopContainer>
         {selectedVideoUri ? (
           <VideoPlayerStyled
             ref={videoPlayer}
             source={{ uri: selectedVideoUri }}
             paused={isVideoPaused}
+            resizeMode="contain"
             repeat={true}
-            resizeMode="cover"
-            muted={true}
+            muted={false}
+            {...videoPlayerProps}
           />
         ) : (
-          <VideoPlaceholder />
+          <InfoDisplay
+            message="합주할 비디오를 불러오는 중입니다..."
+            showIndicator={true}
+          />
         )}
+      </TopContainer>
 
-        <CameraView device={device} cameraRef={camera} />
+      <CameraView cameraRef={camera} device={device} isActive={true} />
 
-        {isLoading && (
-          <LoadingOverlay>
-            <InfoDisplay
-              title="처리 중"
-              message={isRecording ? '녹화 중...' : '녹화를 준비 중입니다...'}
-              showIndicator={true}
-            />
-          </LoadingOverlay>
-        )}
-
+      {selectedVideoUri && (
         <RecordButton
           isRecording={isRecording}
-          isLoading={isLoading}
           onPress={handleRecordButtonPress}
+          disabled={isLoading || isEncoding}
         />
-      </TopContainer>
+      )}
     </ScreenContainer>
   );
 };

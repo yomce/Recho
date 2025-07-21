@@ -75,7 +75,7 @@ const ProcessingScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <ActivityIndicator size="large" color="#ffffff" />
-      <Text style={styles.text}>VINYL 편집 준비 중</Text>
+      <Text style={styles.text}>합주 영상을 준비 중입니다...</Text>
     </View>
   );
 };
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#000000',
+    backgroundColor: '#2c3e50',
   },
   text: {
     marginTop: 20,

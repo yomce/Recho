@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import axiosInstance from '../services/axiosInstance';
 import { socket } from '../services/socket';
-import { useAuthStore } from './authStore';
+import { useAuthStore, type User } from './authStore';
 import { type Socket } from 'socket.io-client';
 
 // --- 타입 정의 ---
@@ -17,6 +17,24 @@ export interface Message {
     profileImageUrl: string | null;
   };
   isSystem?: boolean;
+}
+
+interface ChatRoom {
+  id: string;
+  name?: string;
+  type: 'PRIVATE' | 'GROUP';
+  createdAt: Date;
+  lastMessageAt: Date;
+  messages: Message[];
+  userRooms: UserRoom[];
+}
+
+interface UserRoom {
+  id: string;
+  roomId: string;
+  joinedAt: Date;
+  user: User;
+  room: ChatRoom;
 }
 
 interface MyRoom { id: string; }
@@ -196,7 +214,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         });
       } else {
         const roomDetailsResponse = await axiosInstance.get(`chat/rooms/${roomId}`);
-        const otherUser = roomDetailsResponse.data.userRooms.find(ur => ur.user.id !== currentUser.id)?.user;
+        const otherUser = roomDetailsResponse.data.userRooms.find((ur: UserRoom) => ur.user.id !== currentUser.id)?.user;
         set({
           chatPartner: otherUser 
             ? { id: otherUser.id, username: otherUser.username, profileImageUrl: otherUser.profileImageUrl }

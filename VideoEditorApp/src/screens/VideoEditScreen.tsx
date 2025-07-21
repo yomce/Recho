@@ -35,6 +35,7 @@ import {
 } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { CameraRoll } from '@react-native-camera-roll/camera-roll';
+import Slider from '@react-native-community/slider';
 import RNFS from 'react-native-fs';
 import { FFmpegKit, ReturnCode } from 'ffmpeg-kit-react-native';
 import { OnLoadData, OnProgressData } from 'react-native-video';
@@ -1145,7 +1146,7 @@ const VideoEditScreen: React.FC<{
     handleToggleGlobalPlay,
   ]);
 
-  const handleMoveTrackRight = useCallback(() => {
+  const handleAlignTrackRight = useCallback(() => {
     if (!selectedTrack) return;
 
     if (
@@ -1168,7 +1169,7 @@ const VideoEditScreen: React.FC<{
     handleTrimmerUpdate,
   ]);
 
-  const handleAlignTrackRight = useCallback(() => {
+  const handleMoveTrackRight = useCallback(() => {
     if (!selectedTrack) return;
     const newPosition = selectedTrack.timelinePosition + 0.033;
     handleTrimmerUpdate(selectedTrack.id, { timelinePosition: newPosition });
@@ -1267,6 +1268,16 @@ const VideoEditScreen: React.FC<{
     });
     setPlayRequest(false);
   }, [playRequest, trimmers, handlePlaybackUpdate]);
+
+  // 오디오 볼륨 조절 버튼 클릭 핸들러
+  const handleVolumeChange = useCallback(
+    (value: number) => {
+      if (selectedTrack) {
+        handleTrimmerUpdate(selectedTrack.id, { volume: value });
+      }
+    },
+    [selectedTrack, handleTrimmerUpdate],
+  );
 
   // [추가] 트랙 드래그 종료 핸들러
   const handleTrackDragEnd = useCallback(() => {
@@ -1397,7 +1408,7 @@ const VideoEditScreen: React.FC<{
         {/* 이 아래에 스크롤이 필요한 다른 컨트롤들을 추가할 수 있습니다. */}
         {/* <ControlsScrollView></ControlsScrollView> */}
 
-        {/* 전역 컨트롤 버튼들 */}
+        {/* 지역 컨트롤 버튼들 */}
         <Animated.View
           style={{
             position: 'absolute',

@@ -10,6 +10,7 @@ import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { type StackNavigationProp } from '@react-navigation/stack';
 import RNFS from 'react-native-fs';
+import { useCameraPermission, useMicrophonePermission } from 'react-native-vision-camera';
 import {
   type RootStackParamList,
   type MediaItem,
@@ -33,76 +34,11 @@ const WebScreen: React.FC = () => {
   const route = useRoute<WebScreenRouteProp>();
   const webViewRef = useRef<WebView>(null);
   const [canGoBack, setCanGoBack] = useState<boolean>(false);
-  const [isCheckingPermissions, setIsCheckingPermissions] =
-    useState<boolean>(true);
+  
+  // 권한 훅 사용
+  const { hasPermission: hasCameraPermission, requestPermission: requestCameraPermission } = useCameraPermission();
+  const { hasPermission: hasMicrophonePermission, requestPermission: requestMicrophonePermission } = useMicrophonePermission();
 
-  // 카메라 및 마이크 권한 상태와 요청 훅
-  const {
-    hasPermission: hasCameraPermission,
-    requestPermission: requestCameraPermission,
-  } = useCameraPermission();
-  const {
-    hasPermission: hasMicrophonePermission,
-    requestPermission: requestMicrophonePermission,
-  } = useMicrophonePermission();
-
-  /**
-   * 모든 권한을 확인하고 요청합니다.
-   */
-  const checkAndRequestAllPermissions = async (): Promise<boolean> => {
-    try {
-      const results = await Promise.all([
-        requestCameraPermission(),
-        requestMicrophonePermission(),
-        // Android 13+ (API 33) 이상에서는 READ_MEDIA_* 권한을 사용합니다.
-        // Android 12 (API 32) 이하에서는 READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE를 사용합니다.
-        // iOS에서는 PHOTO_LIBRARY 권한을 사용합니다.
-        Platform.OS === 'android' && Platform.Version >= 33
-          ? Promise.all([
-              request(PERMISSIONS.ANDROID.READ_MEDIA_VIDEO),
-              request(PERMISSIONS.ANDROID.READ_MEDIA_IMAGES),
-              request(PERMISSIONS.ANDROID.READ_MEDIA_AUDIO),
-            ])
-          : Platform.OS === 'android'
-          ? Promise.all([
-              request(PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE),
-              request(PERMISSIONS.ANDROID.WRITE_EXTERNAL_STORAGE),
-            ])
-          : request(PERMISSIONS.IOS.PHOTO_LIBRARY),
-      ]);
-
-      // Promise.all의 결과를 평탄화하고 모든 권한이 'granted'인지 확인
-      const allGranted = results
-        .flat()
-        .every(
-          result =>
-            result === RESULTS.GRANTED ||
-            (typeof result === 'boolean' && result),
-        );
-
-      if (!allGranted) {
-        Alert.alert(
-          '권한 필요',
-          '앱 사용을 위해 카메라, 마이크, 저장 공간 권한이 모두 필요합니다. 앱 설정에서 권한을 허용해주세요.',
-        );
-        return false;
-      }
-      return true;
-    } catch (error) {
-      console.error('권한 요청 중 오류 발생:', error);
-      return false;
-    } finally {
-      setIsCheckingPermissions(false);
-    }
-  };
-
-  // 컴포넌트 마운트 시 권한 확인 및 요청
-  useEffect(() => {
-    const initialize = async () => {
-      await checkAndRequestAllPermissions();
-    };
-    initialize();
-  }, []);
 
   const onNavigationStateChange = (event: WebViewNavigationEvent) => {
     setCanGoBack(event.canGoBack);
@@ -126,6 +62,35 @@ const WebScreen: React.FC = () => {
     // 컴포넌트가 언마운트될 때 리스너를 제거합니다.
     return () => backHandler.remove();
   }, [canGoBack]);
+
+  // Web 화면 진입 시 모든 권한 요청
+  useEffect(() => {
+    const requestAllPermissions = async () => {
+      console.log('[WebScreen] Web 화면 진입 - 모든 권한 요청 시작');
+      
+      // 카메라 권한 요청
+      if (!hasCameraPermission) {
+        console.log('[WebScreen] 카메라 권한 요청 중...');
+        const cameraResult = await requestCameraPermission();
+        console.log('[WebScreen] 카메라 권한 요청 결과:', cameraResult);
+      } else {
+        console.log('[WebScreen] 카메라 권한 이미 허용됨');
+      }
+      
+      // 마이크 권한 요청
+      if (!hasMicrophonePermission) {
+        console.log('[WebScreen] 마이크 권한 요청 중...');
+        const micResult = await requestMicrophonePermission();
+        console.log('[WebScreen] 마이크 권한 요청 결과:', micResult);
+      } else {
+        console.log('[WebScreen] 마이크 권한 이미 허용됨');
+      }
+      
+      console.log('[WebScreen] 모든 권한 요청 완료');
+    };
+    
+    requestAllPermissions();
+  }, [hasCameraPermission, hasMicrophonePermission, requestCameraPermission, requestMicrophonePermission]);
 
   const webFrontendUrl = route.params?.url ?? WEB_FRONTEND_URL;
 

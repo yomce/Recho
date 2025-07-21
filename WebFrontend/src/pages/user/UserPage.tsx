@@ -54,7 +54,7 @@ const UserPage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [newUsername, setNewUsername] = useState("");
   const [newUserInfo, setNewUserInfo] = useState("");
-  const [newUserImage, setNewUserImage] = useState("");
+  const [, setNewUserImage] = useState("");
   const [newProfileImageFile, setNewProfileImageFile] = useState<File | null>(null);
 
   const [usedProducts, setUsedProducts] = useState<ContentDataType[]>([]);

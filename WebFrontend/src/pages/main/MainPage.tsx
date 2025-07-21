@@ -86,7 +86,6 @@ const MainPage: React.FC = () => {
   const handleGoToUsedProducts = () => navigate("/used-products");
   const handleGoToEnsemble = () => navigate("/ensembles");
   const handleGoToPracticeRoom = () => navigate("/practice-room");
-  const handleGoToPromotions = () => navigate("/promotions");
 
   const handleSelectVideoFromGallery = () => {
     if (!accessToken) {
@@ -186,14 +185,6 @@ const MainPage: React.FC = () => {
           label="합주실 예약"
           description="합주실을 예약하고 연습해보세요"
           onClick={handleGoToPracticeRoom}
-        />
-        <CategoryCard
-          icon={
-            <Icon name="megaphone" size={24} className="text-brand-primary" />
-          }
-          label="공연홍보"
-          description="공연 정보를 홍보해보세요"
-          onClick={handleGoToPromotions}
         />
       </div>
       <button

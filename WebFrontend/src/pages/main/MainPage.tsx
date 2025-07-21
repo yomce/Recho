@@ -67,6 +67,7 @@ const CategoryCard: React.FC<{
 );
 
 const MainPage: React.FC = () => {
+  const devMode = false;
   const { totalUnreadCount } = useChatStore();
   const navigate = useNavigate();
   const location = useLocation();
@@ -187,13 +188,13 @@ const MainPage: React.FC = () => {
           onClick={handleGoToPracticeRoom}
         />
       </div>
-      <button
+      {devMode && <button
         onClick={handleOpenActionModal} // ✅ 플로팅 버튼은 이제 '선택' 모달을 엽니다. (To Be deleted)
         className="fixed bottom-5 right-5 z-50 h-12 w-12 rounded-full bg-brand-primary p-2 text-white shadow-lg transition-all hover:scale-110"
         aria-label="새 작업"
       >
         <Icon name="plus" size={28} />
-      </button>
+      </button>}
 
       <Modal
         isOpen={isVinylCreateModalOpen}

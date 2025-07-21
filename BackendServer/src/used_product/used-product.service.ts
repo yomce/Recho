@@ -364,14 +364,16 @@ export class UsedProductService {
       .createQueryBuilder('image')
       .where('image.refPostId IN (:...productIds)', { productIds })
       .andWhere('image.isThumbnail = true')
+      .andWhere("image.imageKey LIKE :pattern", { pattern: '%/thumbnail/%' })
       .getMany();
 
     const imageMap = new Map<number, string>();
-    thumbnails.forEach((img) => {
-      if (img.refPostId !== null && !imageMap.has(img.refPostId)) {
-        imageMap.set(Number(img.refPostId), img.imageKey);
+    for (const img of thumbnails) {
+      if (img.refPostId !== null && !imageMap.has(Number(img.refPostId))) {
+        const signedUrl = await this.imageService.getDownloadUrl(img.imageKey); // presigned URL 생성
+        imageMap.set(Number(img.refPostId), signedUrl); // 상품 ID → 썸네일 URL 매핑
       }
-    });
+    }
 
     const dataWithThumbnails = data.map((product) => ({
       ...product,

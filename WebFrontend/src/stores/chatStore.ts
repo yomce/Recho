@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import axiosInstance from '../services/axiosInstance';
 import { socket } from '../services/socket';
-import { useAuthStore } from './authStore';
+import { useAuthStore, type User } from './authStore';
 import { type Socket } from 'socket.io-client';
 
 // --- 타입 정의 ---
@@ -17,6 +17,24 @@ export interface Message {
     profileImageUrl: string | null;
   };
   isSystem?: boolean;
+}
+
+interface ChatRoom {
+  id: string;
+  name?: string;
+  type: 'PRIVATE' | 'GROUP';
+  createdAt: Date;
+  lastMessageAt: Date;
+  messages: Message[];
+  userRooms: UserRoom[];
+}
+
+interface UserRoom {
+  id: string;
+  roomId: string;
+  joinedAt: Date;
+  user: User;
+  room: ChatRoom;
 }
 
 interface MyRoom { id: string; }
@@ -52,8 +70,6 @@ interface ChatState {
   fetchTotalUnreadCount: () => Promise<void>;
 }
 
-let isSocketInitialized = false;
-
 export const useChatStore = create<ChatState>((set, get) => ({
   socket: socket,
   isConnected: false,
@@ -78,25 +94,41 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   initializeSocketListeners: () => {
-    if (isSocketInitialized) return;
+    // 이미 리스너가 설정되었으면 중복 실행 방지
     const currentSocket = get().socket;
-    currentSocket.on('connect', async () => {
+    if (currentSocket.listeners('connect').length > 0) {
+      console.log('Socket listeners already initialized.');
+      // 만약 연결이 끊겼을 수 있으니 재연결 시도
+      if (!currentSocket.connected) {
+        currentSocket.connect();
+      }
+      return;
+    }
+
+    console.log('Initializing socket listeners...');
+
+    currentSocket.on('connect', () => {
       console.log('✅ 소켓 연결 성공!');
       set({ isConnected: true });
+
+      // ✨ 중요: 연결 성공 후, 내가 속한 모든 방에 다시 조인합니다.
+      // 이렇게 하면 페이지 이동 시에도 항상 방에 참여한 상태가 유지됩니다.
       const { user } = useAuthStore.getState();
       if (user) {
-        try {
-          const response = await axiosInstance.get<MyRoom[]>('chat/my-rooms');
-          const myRooms = response.data;
-          if (myRooms && myRooms.length > 0) {
-            console.log('Joining all my rooms:', myRooms.map(r => r.id));
-            myRooms.forEach(room => {
-              currentSocket.emit('joinRoom', { id: user.id, roomId: room.id });
-            });
-          }
-        } catch (error) {
-          console.error("Failed to fetch and join my rooms on connect", error);
-        }
+        // App.tsx에서 이관된 로직
+        axiosInstance.get<MyRoom[]>('chat/my-rooms')
+          .then(response => {
+            const myRooms = response.data;
+            if (myRooms && myRooms.length > 0) {
+              console.log('Re-joining all my rooms:', myRooms.map(r => r.id));
+              myRooms.forEach(room => {
+                currentSocket.emit('joinRoom', { id: user.id, roomId: room.id });
+              });
+            }
+          })
+          .catch(error => {
+            console.error("Failed to fetch and join my rooms on connect", error);
+          });
       }
     });
     currentSocket.on('disconnect', () => {
@@ -137,7 +169,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
       }
     });
     currentSocket.connect();
-    isSocketInitialized = true;
   },
   
   disconnectSocket: () => {
@@ -149,6 +180,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
   initializeRoom: async (roomId) => {
     const { user: currentUser } = useAuthStore.getState();
     if (!currentUser) return;
+
+    // ✨ 중요: 여기서 joinRoom 이벤트를 보내지 않습니다.
+    // 소켓이 연결될 때 App.tsx나 리스너에서 모든 방에 미리 join하기 때문입니다.
+    // get().socket.emit('joinRoom', { id: currentUser.id, roomId });
+
     set({
       roomId,
       messages: [],
@@ -157,7 +193,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
       hasMore: true,
       isLoadingMore: false,
     });
+
     try {
+      // 이제 이 API는 사용자가 방에 참여한 것이 보장된 상태에서 호출됩니다.
       const response = await axiosInstance.get(`chat/rooms/${roomId}/history?page=1&limit=20`);
       console.log('history data', response.data);
 
@@ -176,7 +214,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         });
       } else {
         const roomDetailsResponse = await axiosInstance.get(`chat/rooms/${roomId}`);
-        const otherUser = roomDetailsResponse.data.userRooms.find(ur => ur.user.id !== currentUser.id)?.user;
+        const otherUser = roomDetailsResponse.data.userRooms.find((ur: UserRoom) => ur.user.id !== currentUser.id)?.user;
         set({
           chatPartner: otherUser 
             ? { id: otherUser.id, username: otherUser.username, profileImageUrl: otherUser.profileImageUrl }

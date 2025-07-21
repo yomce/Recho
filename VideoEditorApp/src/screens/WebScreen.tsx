@@ -1,11 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  SafeAreaView,
-  StyleSheet,
-  Alert,
-  BackHandler,
-  Platform,
-} from 'react-native';
+import { SafeAreaView, StyleSheet, Alert, BackHandler } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { type StackNavigationProp } from '@react-navigation/stack';
@@ -21,11 +15,6 @@ import { isErrorWithCode, pick, types } from '@react-native-documents/picker';
 import axiosInstance from '../api/axiosInstance';
 import { WEB_FRONTEND_URL } from '@env';
 import { WebViewNavigationEvent } from 'react-native-webview/lib/RNCWebViewNativeComponent';
-import {
-  useCameraPermission,
-  useMicrophonePermission,
-} from 'react-native-vision-camera';
-import { request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 
 type WebScreenRouteProp = RouteProp<RootStackParamList, 'Web'>;
 
@@ -39,7 +28,6 @@ const WebScreen: React.FC = () => {
   const { hasPermission: hasCameraPermission, requestPermission: requestCameraPermission } = useCameraPermission();
   const { hasPermission: hasMicrophonePermission, requestPermission: requestMicrophonePermission } = useMicrophonePermission();
 
-
   const onNavigationStateChange = (event: WebViewNavigationEvent) => {
     setCanGoBack(event.canGoBack);
   };
@@ -48,17 +36,14 @@ const WebScreen: React.FC = () => {
     const handleBackPress = () => {
       if (canGoBack && webViewRef.current) {
         webViewRef.current.goBack();
-        return true;
+        return true; 
       }
       return false;
     };
-
+    
     // BackHandler 이벤트 리스너를 등록합니다.
-    const backHandler = BackHandler.addEventListener(
-      'hardwareBackPress',
-      handleBackPress,
-    );
-
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', handleBackPress);
+    
     // 컴포넌트가 언마운트될 때 리스너를 제거합니다.
     return () => backHandler.remove();
   }, [canGoBack]);
@@ -288,8 +273,8 @@ const WebScreen: React.FC = () => {
           break;
         }
         case 'CREATE_VIDEO':
-          // '새 비디오 만들기' 버튼 클릭 시 - 무시
-          console.log('CREATE_VIDEO 메시지 무시됨');
+          // '새 비디오 만들기' 버튼 클릭 시
+          navigation.navigate('Home');
           break;
         case 'CREATE_VIDEO_FROM_GALLERY':
           // '갤러리에서 영상 선택' 버튼 클릭 시

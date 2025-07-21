@@ -33,7 +33,6 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
-import Slider from '@react-native-community/slider';
 import { CameraRoll } from '@react-native-camera-roll/camera-roll';
 import Slider from '@react-native-community/slider';
 import RNFS from 'react-native-fs';
@@ -1284,16 +1283,6 @@ const VideoEditScreen: React.FC<{
     // 현재는 아무 작업도 하지 않지만, 나중에 필요할 경우를 위해 안정적인 함수로 정의
   }, []);
 
-  // 볼륨 변경 핸들러
-  const handleVolumeChange = useCallback(
-    (value: number) => {
-      if (selectedTrack) {
-        handleTrimmerUpdate(selectedTrack.id, { volume: value });
-      }
-    },
-    [selectedTrack, handleTrimmerUpdate],
-  );
-
   const memoizedPreviewPanel = useMemo(() => {
     return (
       <Animated.View style={{ height: previewHeightAnim }}>
@@ -1517,6 +1506,7 @@ const VideoEditScreen: React.FC<{
             />
             {isSettingsButtonVisible && (
               <TouchableOpacity
+                // onPress={() => setSheetVisible(true)}
                 onPress={() => setIsVolumeMenuVisible(v => !v)}
                 style={{
                   backgroundColor: '#000',

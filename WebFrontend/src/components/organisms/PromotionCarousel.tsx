@@ -1,6 +1,7 @@
 // src/components/organisms/PromotionCarousel.tsx
 import React from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
+import { Autoplay } from 'swiper/modules';
 import 'swiper/css'; // Swiper 스타일 임포트
 
 // 캐러셀에 들어갈 아이템의 데이터 타입을 정의합니다.
@@ -19,6 +20,12 @@ interface PromotionCarouselProps {
 const PromotionCarousel: React.FC<PromotionCarouselProps> = ({ items }) => {
   return (
     <Swiper
+      modules={[Autoplay]} // 사용할 모듈에 Autoplay를 추가합니다.
+      loop={true} // 슬라이드를 무한 루프로 설정합니다.
+      autoplay={{
+        delay: 5000, // 5초마다 슬라이드를 넘깁니다.
+        disableOnInteraction: false, // 사용자가 조작한 후에도 자동 재생을 유지합니다.
+      }}
       slidesPerView={'auto'} // 슬라이드가 콘텐츠 너비만큼 차지하도록 설정
       spaceBetween={16}      // 슬라이드 사이의 간격 (16px)
       slidesOffsetBefore={0} // 첫 슬라이드 시작 전 여백

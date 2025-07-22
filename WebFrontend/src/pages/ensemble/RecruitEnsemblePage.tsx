@@ -147,7 +147,7 @@ const RecruitEnsembleListPage: React.FC = () => {
       </div>
       <FloatingWriteButton />
 
-      <Modal title='필터' isOpen={isFilterModalOpen} onClose={() => setIsFilterModalOpen(false)}>
+      <Modal title='필터' isOpen={isFilterModalOpen} iconName='exit' onClose={() => setIsFilterModalOpen(false)}>
         <FilterToast
           activeTab={activeFilterTab}
           onApplyFilter={handleFilterApply}

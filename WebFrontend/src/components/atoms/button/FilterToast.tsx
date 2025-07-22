@@ -38,7 +38,7 @@ const radioCircleStyle = (selected: boolean) =>
 
 const radioDotStyle = `w-2 h-2 rounded-full bg-brand-primary`;
 
-const FilterToast: React.FC<FilterToastProps> = ({ activeTab, onApplyFilter, onClose }) => {
+const FilterToast: React.FC<FilterToastProps> = ({ activeTab, onApplyFilter }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);

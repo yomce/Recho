@@ -2,6 +2,7 @@ import React from "react";
 import Avatar from "../avatar/Avatar";
 import type { User } from '@/stores/authStore';
 import DEFAULT_IMAGES from '@/constants/images';
+import ProfileWithName from '../button/ProfileWithName';
 
 interface UserProfileCardProps {
   imageUrl?: string | string[];
@@ -47,28 +48,21 @@ export const statusStyleMap = {
 
 const UserProfileCard: React.FC<UserProfileCardProps> = ({
   user,
-  name,
   location,
   status,
   statusSlot,
   onClick,
 }) => {
   const style = status ? statusStyleMap[status] : { bg: "", text: "", hover: "" };
-  
+
   return (
     <div className="flex items-center justify-between mt-[16px] w-full">
       <div className="flex items-center gap-4">
-        {/* 프로필 이미지 */}
-        <Avatar
-          src={user.profileImageUrl || DEFAULT_IMAGES.PROFILE}
-          size={40} 
-          alt="프로필 이미지" 
-        />
+        <ProfileWithName user={user} />
         {/* 텍스트 정보 */}
-        <div className="flex flex-col">
-          <p className="text-base text-left font-semibold text-gray-900">{name}</p>
+        {/* <div className="flex flex-col">
           <p className="text-sm text-left text-gray-500">{location}</p>
-        </div>
+        </div> */}
       </div>
       { statusSlot !== undefined ? (
         <>{statusSlot}</>

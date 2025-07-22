@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -62,7 +63,7 @@ export class VideosService {
     }
 
     const videos = await this.videoRepository.find({
-      where: { user: { id: id } },
+      where: { user: { id: id }, isActivate: true },
       select: ['thumbnail_key'],
     });
 
@@ -88,7 +89,7 @@ export class VideosService {
     }
 
     const videos = await this.videoRepository.find({
-      where: { user: { id: id } },
+      where: { user: { id: id }, isActivate: true },
       order: { created_at: 'DESC' },
     });
 
@@ -130,6 +131,7 @@ export class VideosService {
   ): Promise<any[]> {
     const videos = await this.videoRepository.find({
       relations: ['user'],
+      where: { isActivate: true },
       order: { [sortBy === 'likes' ? 'like_count' : 'created_at']: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
@@ -208,7 +210,7 @@ export class VideosService {
 
   async getVideoDetails(id: string, user: User | undefined): Promise<any> {
     const video = await this.videoRepository.findOne({
-      where: { id },
+      where: { id, isActivate: true },
       relations: ['user', 'parent'],
     });
 
@@ -300,5 +302,24 @@ export class VideosService {
       }),
       { expiresIn: 3600 },
     );
+  }
+
+  async deactivateVideo(id: string, user: User): Promise<{ message: string }> {
+    const video = await this.videoRepository.findOne({
+      where: { id, isActivate: true },
+      relations: ['user'],
+    });
+
+    if (!video) {
+      throw new NotFoundException('삭제하려는 바이닐을 찾을 수 없습니다.');
+    }
+    if (video.user.id !== user.id) {
+      throw new ForbiddenException('게시물을 삭제할 권한이 없습니다.');
+    }
+
+    video.isActivate = false;
+    await this.videoRepository.save(video);
+
+    return { message: '비디오가 성공적으로 비활성화되었습니다.' };
   }
 }

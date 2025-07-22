@@ -6,11 +6,12 @@ import { useAuthStore } from "@/stores/authStore";
 import VinylRightLayout from "@/components/layout/pages/vinyl/VinylRightLayout";
 import ProfileWithName from "@/components/atoms/button/ProfileWithName";
 import IconButton from "@/components/atoms/button/IconButton";
-import { createCommentForVideo, getCommentsForVideo, toggleStringPostLike } from '@/api';
+import { createCommentForVideo, deactivateVideo, getCommentsForVideo, toggleStringPostLike } from '@/api';
 import { CONTENT_TYPE } from '@/types/likes';
 import type { Video } from '@/types/video';
 import CommentsModal from './CommentModal';
 import type { Comment } from '@/types/comment';
+import { useVinylStore } from '@/stores/vinylStore';
 
 interface VinylContentsProps {
   currentVideo: Video;
@@ -24,6 +25,7 @@ interface VinylContentsProps {
 }
 
 const VinylContents: React.FC<VinylContentsProps> = (props) => {
+  const { currentIndex, setCurrentIndex } = useVinylStore();
   const currentUser = useAuthStore((state) => state.user);
   const videoRef = useRef<HTMLVideoElement>(null);
   const controls = useAnimation();
@@ -36,6 +38,8 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [, setIsLoadingComments] = useState(false);
+
+  const isCurrentUserVideoOwner = currentUser && props.currentVideo.user.id === currentUser.id;
 
   const fetchComments = async () => {
     if (!props.currentVideo.id) return;
@@ -192,7 +196,33 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
     } catch (error) {
         alert('오류가 발생했습니다.');
     }
-};
+  };
+
+    const handleDeactivateVideo = async () => {
+    if (!currentUser || !isCurrentUserVideoOwner) {
+      alert('비디오를 비활성화할 권한이 없습니다.');
+      return;
+    }
+
+    if (window.confirm('정말로 이 비디오를 비활성화하시겠습니까? 다른 영상에 사용된 비디오는 지워지지 않습니다.')) {
+      try {
+        await deactivateVideo(props.currentVideo.id);
+        alert('비디오가 성공적으로 비활성화되었습니다.');
+        // 비디오 비활성화 후, 해당 비디오를 리스트에서 제거하거나 상태 업데이트
+        props.setVideos(currentVideos =>
+          currentVideos.filter(v => v.id !== props.currentVideo.id)
+        );
+        // 비디오 리스트가 변경되었으므로, 적절한 페이지로 이동 (예: 홈 또는 내 비디오 목록)
+        setCurrentIndex(currentIndex - 1);
+        // navigate(-1);
+      } catch (error: any) {
+        console.error("Failed to deactivate video:", error);
+        // 에러 메시지 표시 (백엔드에서 상세 에러 메시지가 온다면 활용)
+        const errorMessage = error.response?.data?.message || '비디오 비활성화에 실패했습니다.';
+        alert(errorMessage);
+      }
+    }
+  };
 
   useEffect(() => {
     if (videoRef.current) {
@@ -273,6 +303,33 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
           }}
           aria-label="Go back"
         />
+
+        {isCurrentUserVideoOwner && (
+          <IconButton
+            iconName="delete" // 적절한 아이콘 이름으로 변경 (예: 'ellipsis' 또는 'more-vertical', 'trash' 등)
+            iconSize={24}
+            onClick={handleDeactivateVideo}
+            style={{
+              position: "absolute",
+              top: "16px",
+              right: "16px", // 오른쪽 위에 위치
+              zIndex: 10,
+              background: "rgba(0, 0, 0, 0.4)",
+              border: "none",
+              borderRadius: "50%",
+              width: "40px",
+              height: "40px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "white",
+              fontSize: "24px",
+              cursor: "pointer",
+              paddingBottom: "4px",
+            }}
+            aria-label="Deactivate Video"
+          />
+        )}
 
         <video
           ref={videoRef}

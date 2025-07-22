@@ -56,11 +56,14 @@ export class Video {
   @Column({ name: 'like_count', default: 0 })
   likeCount: number;
 
-  @Column({ default: 0 })
+  @Column({ name: 'comment_count', default: 0 })
   commentCount: number;
 
   @CreateDateColumn()
   created_at: Date;
+
+  @Column({ name: 'is_activate', default: true })
+  isActivate: boolean;
 
   // These are not columns in the database
   video_url?: string;

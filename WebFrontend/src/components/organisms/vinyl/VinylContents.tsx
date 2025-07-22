@@ -204,7 +204,7 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
       return;
     }
 
-    if (window.confirm('정말로 이 비디오를 비활성화하시겠습니까? 비활성화된 비디오는 다른 사용자에게 표시되지 않습니다.')) {
+    if (window.confirm('정말로 이 비디오를 비활성화하시겠습니까? 다른 영상에 사용된 비디오는 지워지지 않습니다.')) {
       try {
         await deactivateVideo(props.currentVideo.id);
         alert('비디오가 성공적으로 비활성화되었습니다.');

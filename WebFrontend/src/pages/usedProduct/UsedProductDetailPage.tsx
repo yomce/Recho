@@ -36,7 +36,6 @@ const UsedProductDetailPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const isOwner = product && user && product.user.id === user.id;
-  console.log(isOwner);
 
   if(id) {
     useViewCounter({ type: 'used-products', id });
@@ -192,7 +191,6 @@ const UsedProductDetailPage: React.FC = () => {
           location={product.location.address}
           status={STATUS_TEXT[product.status] as "판매중" | "예약중" | "판매완료"}
           onClick={() => {
-            console.log('UserProfileCard clicked', { isOwner, product });
             if(isOwner) {
             StatusToastMenu({
               onChangeStatus: handleStatusChange,

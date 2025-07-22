@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { useAuthStore } from "../../stores/authStore";
+import { useAuthStore, type User } from "../../stores/authStore";
 import { useChatStore } from '../../stores/chatStore';
 import axiosInstance from "../../services/axiosInstance";
 
@@ -15,6 +15,8 @@ import type { Comment } from '@/types/comment';
 import { CONTENT_TYPE } from '@/types/likes';
 
 import VideoPreviewSection from '@/components/atoms/card/VideoPreviewCard';
+import DEFAULT_IMAGES from '@/constants/images';
+import ProfileWithName from '@/components/atoms/button/ProfileWithName';
 
 // --- 타입 정의 ---
 
@@ -24,8 +26,6 @@ interface CreateCommentData {
   postId: number;
   content: string;
 }
-
-// --- API 통신 함수 ---
 
 /**
  * ID로 단일 게시물을 조회합니다. (댓글이 포함되어 반환됩니다)
@@ -66,7 +66,8 @@ const PostDetailPage: React.FC = () => {
   const { totalUnreadCount } = useChatStore();
   const { id } = useParams<{ id: string }>();
   const currentUser = useAuthStore((state) => state.user);
-
+  
+  const [ postUser, setPostUser ] = useState<User | null>(null);
   const [post, setPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -86,6 +87,13 @@ const PostDetailPage: React.FC = () => {
         setIsLoading(true);
         // fetchPostById 호출 한 번으로 게시물과 댓글 데이터를 모두 가져옵니다.
         const postData = await fetchPostById(id);
+
+        setPostUser({
+          id: postData.userId,
+          username: postData.author,
+          profileImageUrl: postData.authorProfileUrl || DEFAULT_IMAGES.PROFILE,
+        })
+
         setPost(postData);
         setComments(postData.comments || []); // postData에 포함된 댓글을 상태로 설정
       } catch (err) {
@@ -159,7 +167,7 @@ const PostDetailPage: React.FC = () => {
             {post.title}
           </h1>
           <div className="flex justify-between items-center text-brand-gray">
-            <span className="text-caption-bold">{post.author}</span>
+            {postUser && <ProfileWithName user={postUser}/>}
             <span className="text-caption">{formatDate(post.createdAt)}</span>
           </div>
         </header>

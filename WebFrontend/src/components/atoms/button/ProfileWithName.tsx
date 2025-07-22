@@ -24,6 +24,8 @@ const ProfileWithName: React.FC<ProfileWithNameProps> = ({ user }) => {
     return null; // user 정보가 없으면 아무것도 렌더링하지 않음
   }
 
+  console.log('profile with name', user);
+
   return (
     <div
       style={{
@@ -36,7 +38,7 @@ const ProfileWithName: React.FC<ProfileWithNameProps> = ({ user }) => {
     >
       <Avatar src={user.profileImageUrl || DEFAULT_IMAGES.PROFILE} size={40} alt={user.username} />
       {/* 버튼 대신 텍스트로 표시하여 스타일링 유연성 확보 */}
-      <span style={{ color: "white", fontSize: "0.9rem", fontWeight: "bold" }}>
+      <span style={{ color: "grey", fontSize: "0.9rem", fontWeight: "bold" }}>
         {user.username}
       </span>
     </div>

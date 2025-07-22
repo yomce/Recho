@@ -66,25 +66,35 @@ Recho는 다음과 같은 핵심 기능들을 제공합니다.
 
 ```mermaid
 graph TD
-    subgraph Client
-        A[React Native App]
+    subgraph "User"
+        A[Client Browser]
     end
 
-    subgraph Server
-        B[REST API - NestJS]
+    subgraph "AWS Cloud"
+        B[AWS CloudFront]
+
+        subgraph "Frontend"
+            C[S3 Bucket - Static Website Hosting]
+        end
+
+        subgraph "Backend"
+            D[Application Load Balancer]
+            E[NestJS App]
+            F[RDS - PostgreSQL]
+        end
+
+        subgraph "Storage"
+            G[S3 Bucket - Media Uploads]
+        end
     end
 
-    subgraph Database
-        C[PostgreSQL]
-    end
-
-    subgraph Cloud Storage
-        D[AWS S3]
-    end
-
-    A -- API Request --> B
-    B <--> C
-    B -- Media Upload/Download --> D
+    A -- Request --> B
+    B -- Static Content (e.g., index.html, JS, CSS) --> C
+    B -- API Request (/api/*) --> D
+    D -- Host --> E
+    E <--> F
+    E <--> G
+    G <--Presigned URL--> A
 ```
 
 ## 🤝 팀원 (Contributors)

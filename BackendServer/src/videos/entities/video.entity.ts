@@ -62,6 +62,9 @@ export class Video {
   @CreateDateColumn()
   created_at: Date;
 
+  @Column({ name: 'is_activate', default: true })
+  isActivate: boolean;
+
   // These are not columns in the database
   video_url?: string;
   thumbnail_url?: string;

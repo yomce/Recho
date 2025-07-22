@@ -144,7 +144,6 @@ export const useVideoProcessor = () => {
         throw new Error('FFmpeg process failed');
       }
 
-      Alert.alert('성공', '비디오 콜라주가 성공적으로 생성되었습니다.');
       console.log(
         `[useVideoProcessor] Collage video saved to: ${collageOutputPath}`,
       );
@@ -208,7 +207,6 @@ export const useVideoProcessor = () => {
         await CameraRoll.save(`file://${optimizedSourceOutputPath}`, {
           type: 'video',
         });
-        Alert.alert('저장 완료', '생성된 파일들이 갤러리에 저장되었습니다.');
       } catch (saveError) {
         console.error(
           '[useVideoProcessor] Failed to save files to device:',

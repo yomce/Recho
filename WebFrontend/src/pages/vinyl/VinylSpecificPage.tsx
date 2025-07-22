@@ -161,6 +161,34 @@ const VinylPage: React.FC = () => {
     }
   };
 
+  const handleStartRecording = () => {
+    if (!selectedVideoId) {
+      alert("촬영할 비디오를 선택해주세요.");
+      return;
+    }
+
+    const video = videos.find((v) => v.id === selectedVideoId);
+    if (!video) {
+      alert("선택된 비디오 정보를 찾을 수 없습니다.");
+      closeModal();
+      return;
+    }
+
+    if (window.ReactNativeWebView) {
+      window.ReactNativeWebView.postMessage(
+        JSON.stringify({
+          type: "startRecording",
+          data: {
+            video: video,
+          },
+        })
+      );
+      closeModal();
+    } else {
+      alert("React Native 환경에서만 촬영하기가 가능합니다.");
+    }
+  };
+
   const handlePan = (
     _e: MouseEvent | TouchEvent | PointerEvent,
     info: PanInfo
@@ -295,9 +323,7 @@ const VinylPage: React.FC = () => {
           <PrimaryButton onClick={handleStartEnsemble}>
             갤러리에서 선택
           </PrimaryButton>
-          <PrimaryButton onClick={() => alert("촬영하기")}>
-            촬영하기
-          </PrimaryButton>
+          <PrimaryButton onClick={handleStartRecording}>촬영하기</PrimaryButton>
           <SecondaryButton onClick={closeModal}>닫기</SecondaryButton>
         </div>
       </Modal>

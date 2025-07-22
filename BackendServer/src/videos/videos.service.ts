@@ -304,7 +304,7 @@ export class VideosService {
     );
   }
 
-  async deactivateVideo(id: string, user: User) {
+  async deactivateVideo(id: string, user: User): Promise<{ message: string }> {
     const video = await this.videoRepository.findOne({
       where: { id, isActivate: true },
       relations: ['user'],
@@ -319,5 +319,7 @@ export class VideosService {
 
     video.isActivate = false;
     await this.videoRepository.save(video);
+
+    return { message: '비디오가 성공적으로 비활성화되었습니다.' };
   }
 }

@@ -102,3 +102,21 @@ export const postPromotionByUrl = async (url: string): Promise<Promotion> => {
     throw error;
   }
 };
+
+
+export const deactivateVideo = async (videoId: string): Promise<{ message: string }> => {
+  try {
+    const response = await axiosInstance.patch<{ message: string }>(`videos/${videoId}/deactivate`, {});
+    return response.data;
+
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      const errorMessage = error.response.data.message || '비디오 비활성화 요청에 실패했습니다.';
+      console.error("Error in deactivateVideo API:", errorMessage);
+      throw new Error(errorMessage);
+    }
+    // Axios 에러가 아닌 다른 종류의 에러 처리
+    console.error("Unexpected error in deactivateVideo API:", error);
+    throw error;
+  }
+};

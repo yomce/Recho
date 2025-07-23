@@ -24,8 +24,6 @@ const ProfileWithName: React.FC<ProfileWithNameProps> = ({ user }) => {
     return null; // user 정보가 없으면 아무것도 렌더링하지 않음
   }
 
-  console.log('profile with name', user);
-
   return (
     <div
       style={{

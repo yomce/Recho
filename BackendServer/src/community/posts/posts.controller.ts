@@ -85,9 +85,7 @@ export class PostsController {
 
   @Get('user/:id')
   @UseGuards(AuthGuard('jwt'))
-  async getMyPosts(@Req() req: Request): Promise<any[]> {
-    const userId = (req.user as any).id;
-    return this.postsService.findPostsByUser(userId);
+  async getMyPosts(@Param('id') id: string): Promise<any[]> {
+    return this.postsService.findPostsByUser(id);
   }
-
 }

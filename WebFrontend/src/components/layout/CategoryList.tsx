@@ -21,6 +21,14 @@ const CategoryList: React.FC<CategoryListProps> = ({
     베이스기타: 'https://recho-img.s3.ap-northeast-2.amazonaws.com/default-img/base.png', // public 폴더에 파일을 두고 이렇게 경로 지정
     통기타: 'https://recho-img.s3.ap-northeast-2.amazonaws.com/default-img/acoustic.png',
     클래식기타: 'https://recho-img.s3.ap-northeast-2.amazonaws.com/default-img/classical.png',
+    
+    드럼: 'https://recho-img.s3.ap-northeast-2.amazonaws.com/default-img/drum.webp',
+    
+    키보드: 'https://recho-img.s3.ap-northeast-2.amazonaws.com/default-img/keyboard.jpeg',
+
+    이펙터: 'https://recho-img.s3.ap-northeast-2.amazonaws.com/default-img/effector.webp',
+    
+    앰프: 'https://recho-img.s3.ap-northeast-2.amazonaws.com/default-img/amplifier.jpg',
   };
 
   return (

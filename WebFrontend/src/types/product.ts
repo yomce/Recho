@@ -21,11 +21,20 @@ export enum TRADE_TYPE {
 }
 
 // 프론트 ENUM - 백엔드 Number 타입
+// 0번대 기타, 10번대 드럼, 20번대 키보드, 30번대 이펙터, 40번대 앰프
 export enum ProductCategory {
   BASS = 1,
   ELECTRIC = 2,
   CLASSIC = 3,
   ACOUSTIC = 4,
+  
+  DRUM = 11,
+
+  KEYBOARD = 21,
+
+  EFFECTOR = 31,
+
+  AMP = 41,
 }
 
 // 프론트 TEXT 필터 렌더링을 위한 이름
@@ -34,6 +43,14 @@ export const PRODUCT_CATEGORY_LABELS: Record<ProductCategory, string> = {
   [ProductCategory.ELECTRIC]: '일렉기타',
   [ProductCategory.CLASSIC]: '클래식기타',
   [ProductCategory.ACOUSTIC]: '통기타',
+
+  [ProductCategory.DRUM]: '드럼',
+
+  [ProductCategory.KEYBOARD]: '키보드',
+
+  [ProductCategory.EFFECTOR]: '이펙터',
+
+  [ProductCategory.AMP]: '앰프',
 };
 
 // 카테고리 id to label 역매핑 (필요시)

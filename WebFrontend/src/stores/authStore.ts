@@ -120,6 +120,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         );
       } finally {
         get().actions.setToken(null);
+
+        if (window.location.pathname !== '/login') {
+        window.location.href = '/login'; 
+    }
       }
     },
   },

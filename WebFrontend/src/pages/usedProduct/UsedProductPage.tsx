@@ -87,7 +87,6 @@ const UsedProductPage: React.FC = () => {
       <div>
         <div className="relative w-full max-w-[410px] mx-auto min-h-screen bg-brand-frame">
           <div className="py-4 px-4">
-            <ImageCard src={DEFAULT_IMAGES.PLACEHOLDER} />
             {/* 카테고리 */}
             <CategoryList
               selectedCategory={selected}

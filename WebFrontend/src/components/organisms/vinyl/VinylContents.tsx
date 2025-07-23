@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
-import { useNavigate } from "react-router-dom"; // react-router-dom에서 useNavigate를 가져옵니다.
+import { useNavigate, useParams } from "react-router-dom"; // react-router-dom에서 useNavigate를 가져옵니다.
 import PrimaryButton from "@/components/atoms/button/PrimaryButton";
 import { useAuthStore } from "@/stores/authStore";
 import VinylRightLayout from "@/components/layout/pages/vinyl/VinylRightLayout";
@@ -25,6 +25,7 @@ interface VinylContentsProps {
 }
 
 const VinylContents: React.FC<VinylContentsProps> = (props) => {
+  const { lastString } = useParams<{ lastString: string }>();
   const { currentIndex, setCurrentIndex } = useVinylStore();
   const currentUser = useAuthStore((state) => state.user);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -213,7 +214,11 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
           currentVideos.filter(v => v.id !== props.currentVideo.id)
         );
         // 비디오 리스트가 변경되었으므로, 적절한 페이지로 이동 (예: 홈 또는 내 비디오 목록)
-        setCurrentIndex(currentIndex - 1);
+        if (lastString === 'vinyl') {
+          setCurrentIndex(currentIndex - 1);
+        } else {
+          navigate(-1);
+        }
         // navigate(-1);
       } catch (error: any) {
         console.error("Failed to deactivate video:", error);

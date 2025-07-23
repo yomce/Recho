@@ -1,7 +1,5 @@
 import React from "react";
-import Avatar from "../avatar/Avatar";
 import type { User } from '@/stores/authStore';
-import DEFAULT_IMAGES from '@/constants/images';
 import ProfileWithName from '../button/ProfileWithName';
 
 interface UserProfileCardProps {
@@ -48,7 +46,7 @@ export const statusStyleMap = {
 
 const UserProfileCard: React.FC<UserProfileCardProps> = ({
   user,
-  location,
+  // location,
   status,
   statusSlot,
   onClick,

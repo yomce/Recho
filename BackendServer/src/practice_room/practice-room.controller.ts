@@ -23,6 +23,8 @@ import { PaginatedPracticeRoomResponse } from './dto/paginated-practice-room.res
 import { Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import { PracticeRoomResponseDto } from './dto/parctice-room.response.dto';
+import { FilterPracticeRoomDto } from './dto/pagination-query-practice-room.dto';
+import { PracticeRoom } from './entities/practice-room.entity';
 
 @Controller('practice-room')
 export class PracticeRoomController {
@@ -31,16 +33,10 @@ export class PracticeRoomController {
 
   @Get()
   async getPracticeRoom(
-    @Query() paginationQuery: PaginationQueryPracticeRoomDto,
+    @Query() filter: FilterPracticeRoomDto,
   ): Promise<PaginatedPracticeRoomResponse> {
     console.log('Pagination query received:', Query);
-    const { limit = 20, lastProductId, lastCreatedAt } = paginationQuery;
-
-    return this.practiceRoomService.findPracticeRoomWithPagination(
-      limit,
-      lastProductId,
-      lastCreatedAt,
-    );
+    return this.practiceRoomService.findPracticeRoomWithPagination(filter);
   }
 
   @Post()
@@ -96,7 +92,7 @@ export class PracticeRoomController {
     @Param('postId', ParseIntPipe) postId: number,
     @Body() UpdatePracticeRoomDto: UpdatePracticeRoomDto,
     @Req() req: Request,
-  ): Promise<PracticeRoomResponseDto> {
+  ): Promise<PracticeRoom> {
     if (!req.user || !req.user.id) {
       this.logger.error(
         'Authentication information missing from request user object.',

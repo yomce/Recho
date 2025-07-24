@@ -20,3 +20,8 @@ export class PaginationQueryPracticeRoomDto {
   @IsDate()
   lastCreatedAt?: Date; // <<< last_create_at -> lastCreatedAt (camelCase로 변경)
 }
+
+export class FilterPracticeRoomDto extends PaginationQueryPracticeRoomDto {
+  @IsOptional()
+  location?: string;
+}

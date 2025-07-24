@@ -20,7 +20,8 @@ export interface PracticeRoom {
   readonly createdAt: string;
   readonly viewCount: number;
   location: Location;
-  imageUrl?: string;
+  imageUrl?: string[];
+  imageIds?: number[];
 }
 
 // -- 합주실 등록 / 수정 폼에서 사용되는 데이터 형태 -- 
@@ -28,14 +29,15 @@ export interface PracticeRoomType {
   title: string;
   description: string;
   locationId: string;
-  image: File[];
+  imageIds?: number[];
 }
 
 // -- 합주실 게시글 생성을 위한 API 전송 데이터의 형태 (Payload/DTO) --
 export interface CreatePracticeRoomPayload {
   title: string;
   description: string;
-  locationId: string;
+  locationId: number;
+  imageIds: number[];
 }
 
 // -- 커서 기반 페이지네이션 API 응답 형태 -- 

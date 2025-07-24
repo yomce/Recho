@@ -19,11 +19,12 @@ const UpdatePracticeRoomPage: React.FC = () => {
     title: '',
     description: '',
     locationId: '',
-    image: [],
   })
   const location = useLocationStore((state) => state.location);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [imageIds, setImageIds] = useState<{ id: number; url: string }[]>([]);
+  const [originalImages, setOriginalImages] = useState<{ id: number; url: string }[]>([]);
 
   // -- 기존 게시글 데이터 불러오기 -- 
   useEffect(() => {
@@ -39,12 +40,17 @@ const UpdatePracticeRoomPage: React.FC = () => {
       try {
         const response = await axiosInstance.get<PracticeRoom>(`practice-room/${id}`);
         const post = response.data;
-
+        const originalImageData = (post.imageIds || []).map((id, idx) => ({
+          id,
+          url: post.imageUrl?.[idx] ?? '',
+        }));
+        setOriginalImages(originalImageData);
+        setImageIds(originalImageData);
         setForm({
           title: post.title,
           description: post.description,
-          locationId: String(post.location.locationId),
-          image: post.imageUrl ? [] : [],
+          locationId: post.location.locationId,
+          imageIds: originalImageData.map((img) => img.id),
         })
       } catch (err: any) {
         console.error('Failed to fetch post for update:', err);
@@ -65,10 +71,15 @@ const UpdatePracticeRoomPage: React.FC = () => {
     }));
   };
 
+  const handleImageChange = (updateImage: { id: number; url: string }[]) => {
+    setOriginalImages(updateImage);   // ImageUploadPreview의 미리보기 상태 유지
+    setImageIds(updateImage);         // 실제 이미지 ID 상태 유지 (submit 때 사용됨)
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!location) {
+    if (!location && !form.locationId) {
       setError('지역을 선택해주세요.');
       return;
     }
@@ -78,11 +89,14 @@ const UpdatePracticeRoomPage: React.FC = () => {
     
     try{
       // 1. locationId 먼저 저장
-      const locationId = await saveLocationToDB(location);
+      const locationId = location 
+      ? await saveLocationToDB(location) 
+      : Number(form.locationId);
 
       const payload: CreatePracticeRoomPayload = {
         ...form,
-        locationId: String(locationId),
+        locationId: locationId,
+        imageIds: imageIds.map((img) => img.id),
       };
       await axiosInstance.patch(`practice-room/${id}`, payload,);
       alert('게시글이 성공적으로 수정되었습니다!');
@@ -117,6 +131,9 @@ const UpdatePracticeRoomPage: React.FC = () => {
           errorMessage={error}
           submitButtonText="상품 등록하기"
           loadingButtonText="등록 중..."
+          setImageIds={setImageIds}
+          originalImages={originalImages}
+          onImageChange={handleImageChange}
         />
       </div>
     </PostLayout>

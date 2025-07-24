@@ -16,6 +16,10 @@ interface PracticeRoomFormProps {
   submitButtonText: string;
   loadingButtonText: string;
   totalUnreadCount?: number;
+  setImageIds: React.Dispatch<React.SetStateAction<{ id: number; url: string }[]>>;   // 이미지 ID 배열을 관리하는 함수 (최초 생성 시 빈 배열로 시작)
+  originalImages?: { id: number; url: string }[]; // 서버에서 받아온 기존 이미지
+  onImageChange?: (images: { id: number; url: string }[]) => void; // 새로 추가된 이미지
+  videoId?: string;
 }
 
 // 공통 입력 필드 스타일
@@ -29,12 +33,23 @@ export const PracticeRoomForm: React.FC<PracticeRoomFormProps> = ({
   errorMessage,
   submitButtonText,
   loadingButtonText,
+  setImageIds,
+  originalImages = [],
+  onImageChange,
 }) => {
   return (
     <form onSubmit={onFormSubmit}>
       <div className="mb-6">
         <ImageUploadPreview
           refIn="PRACTICE-ROOM"
+          onUploadComplete={(newIds) => {
+            setImageIds((prev) => [...prev, ...newIds]);
+          }}
+          originalImages={originalImages}
+          onImageChange={(updated) => {
+            setImageIds(updated); // 이미지 삭제 시 imageIds도 갱신
+            onImageChange?.(updated); // 상위 상태도 동기화
+          }}
         />
       </div>
       <div className="mb-6">

@@ -20,11 +20,11 @@ const CreatePracticeRoom: React.FC = () => {
     title: "",
     description: "",
     locationId: "",
-    image: [],
   });
   const location = useLocationStore((state) => state.location);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [imageIds, setImageIds] = useState<{ id: number; url: string }[]>([]);
 
   useEffect(() => {
     if (!user) {
@@ -72,7 +72,8 @@ const CreatePracticeRoom: React.FC = () => {
       const payload: CreatePracticeRoomPayload = {
         title: form.title,
         description: form.description,
-        locationId: String(locationId),
+        locationId: locationId,
+        imageIds: imageIds.map((img) => img.id),
       };
 
       // 단계 3: API 요청
@@ -111,6 +112,7 @@ const CreatePracticeRoom: React.FC = () => {
           errorMessage={error}
           submitButtonText="상품 등록하기"
           loadingButtonText="등록 중..."
+          setImageIds={setImageIds}
         />
       </div>
     </PostLayout>

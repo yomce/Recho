@@ -6,11 +6,12 @@ import { PracticeRoom } from './entities/practice-room.entity';
 import { LocationModule } from 'src/map/location.module';
 import { UserModule } from 'src/auth/user/user.module';
 import { User } from 'src/auth/user/user.entity';
+import { Image } from 'src/image/entities/image.entity';
 import { ImageModule } from 'src/image/image.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([PracticeRoom, User]),
+    TypeOrmModule.forFeature([PracticeRoom, User, Image]),
     forwardRef(() => LocationModule),
     UserModule,
     ImageModule,

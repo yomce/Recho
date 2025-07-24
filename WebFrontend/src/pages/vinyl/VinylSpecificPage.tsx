@@ -25,6 +25,10 @@ const VinylPage: React.FC = () => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+ // 안드로이드 터치 이벤트를 위한 상태
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
@@ -76,9 +80,6 @@ const VinylPage: React.FC = () => {
       try {
         const videoData = await getVideoById(videoId);
 
-        console.log('vinyl specific page video')
-        console.log(videoData);
-
         if (!videoData) {
           // 비디오가 없으면 바로 로딩 종료 및 타임아웃 해제
           if (loadingTimeoutRef.current)
@@ -88,7 +89,9 @@ const VinylPage: React.FC = () => {
         setVideos([videoData]);
       } catch (error) {
         console.error("비디오 로딩 중 오류 발생:", error);
-        if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
+        if (loadingTimeoutRef.current) {
+          clearTimeout(loadingTimeoutRef.current);
+        }
         setIsLoading(false); // 에러 발생 시에도 로딩 종료 및 타임아웃 해제
       }
     };
@@ -146,15 +149,43 @@ const VinylPage: React.FC = () => {
       window.ReactNativeWebView.postMessage(
         JSON.stringify({
           type: "startEnsemble",
-          payload: {
+          data: {
             token,
-            childVideoId: selectedVideoId,
+            selectedVideoId: selectedVideoId,
           },
         })
       );
       closeModal();
     } else {
       alert("React Native 환경에서만 합주하기가 가능합니다.");
+    }
+  };
+
+  const handleStartRecording = () => {
+    if (!selectedVideoId) {
+      alert("촬영할 비디오를 선택해주세요.");
+      return;
+    }
+
+    const video = videos.find((v) => v.id === selectedVideoId);
+    if (!video) {
+      alert("선택된 비디오 정보를 찾을 수 없습니다.");
+      closeModal();
+      return;
+    }
+
+    if (window.ReactNativeWebView) {
+      window.ReactNativeWebView.postMessage(
+        JSON.stringify({
+          type: "startRecording",
+          data: {
+            video: video,
+          },
+        })
+      );
+      closeModal();
+    } else {
+      alert("React Native 환경에서만 촬영하기가 가능합니다.");
     }
   };
 
@@ -200,6 +231,32 @@ const VinylPage: React.FC = () => {
     setCurrentIndex(nextIndex);
   };
 
+    // 안드로이드용 네이티브 터치 이벤트 핸들러
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > DRAG_THRESHOLD;
+    const isRightSwipe = distance < -DRAG_THRESHOLD;
+
+    if (isLeftSwipe && currentIndex < videos.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    } else if (isRightSwipe && currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+    }
+
+    setTouchStart(null);
+    setTouchEnd(null);
+  };
+
   const isCurrentlyVisible = (index: number) => index === currentIndex;
 
   const getRotationAngle = (index: number) => {
@@ -225,6 +282,10 @@ const VinylPage: React.FC = () => {
         <motion.div
           onPan={handlePan}
           onPanEnd={handlePanEnd}
+          onPanStart={() => setIsDragging(true)}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           animate={controls}
           style={{ display: "flex", cursor: "grab" }}
         >
@@ -238,18 +299,14 @@ const VinylPage: React.FC = () => {
                 }}
               >
                 <VinylContents
-                  videoOwner={video.user}
-                  videoId={video.id}
+                  currentVideo={video}
                   size={globalSize}
-                  likes={video.likeCount}
-                  comments={video.commentCount}
-                  videoInfo={video.id}
-                  videoSrc={video.videoUrl}
                   isVisible={isCurrentlyVisible(index)}
                   rotationAngle={getRotationAngle(index)}
                   depth={video.depth}
                   onStartEnsemble={() => openModal(video.id)}
                   onVideoReady={index === 0 ? handleFirstVideoReady : undefined}
+                  setVideos={setVideos}
                 />
               </div>
             );
@@ -266,9 +323,7 @@ const VinylPage: React.FC = () => {
           <PrimaryButton onClick={handleStartEnsemble}>
             갤러리에서 선택
           </PrimaryButton>
-          <PrimaryButton onClick={() => alert("촬영하기")}>
-            촬영하기
-          </PrimaryButton>
+          <PrimaryButton onClick={handleStartRecording}>촬영하기</PrimaryButton>
           <SecondaryButton onClick={closeModal}>닫기</SecondaryButton>
         </div>
       </Modal>

@@ -54,7 +54,7 @@ export class RecruitEnsemble {
   @JoinColumn({ name: 'location' })
   location: Location;
 
-  @Column()
+  @Column({ default: 0 })
   totalRecruitCnt: number;
 
   @Column({ default: RECRUIT_STATUS.RECRUITING })

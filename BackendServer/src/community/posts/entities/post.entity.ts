@@ -5,13 +5,12 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToMany,
   ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
-import { Comment } from './comment.entity';
-import { NumberIdLike } from '../../stringIdLikes/entities/numberIdLike.entity';
-import { User } from '../../auth/user/user.entity'; // ✅ User 엔티티 임포트
+import { User } from '../../../auth/user/user.entity';
+import { NumberIdComment } from '../../../comment/entities/number-id-comment.entity';
 
 @Entity('posts')
 export class Post {
@@ -57,6 +56,6 @@ export class Post {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @OneToMany(() => Comment, (comment) => comment.post)
-  comments: Comment[];
+  @OneToMany(() => NumberIdComment, (comment) => comment.post)
+  comments: NumberIdComment[];
 }

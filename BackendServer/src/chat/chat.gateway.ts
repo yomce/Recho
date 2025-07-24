@@ -66,7 +66,6 @@ export class ChatGateway {
 
   @SubscribeMessage('sendMessage')
   async handleSendMessage(
-    // 클라이언트가 보낸 payload. senderName을 추가로 받습니다.
     @MessageBody()
     payload: {
       roomId: string;
@@ -77,14 +76,17 @@ export class ChatGateway {
     // 1. 받은 메시지를 DB에 저장합니다.
     const savedMessage = await this.chatService.saveMessage(payload);
 
-    // 2. [수정] 저장된 메시지를 id로 다시 조회하여 sender 관계를 포함시킵니다.
+    // 2. 저장된 메시지를 id로 다시 조회하여 sender 관계를 포함시킵니다.
     const messageWithSender = await this.msgRepo.findOne({
       where: { id: savedMessage.id },
-      relations: ['sender'], // 'sender' 관계(User 정보)를 함께 로드
+      relations: ['sender'],
     });
 
-    // 3. 해당 방의 모든 클라이언트에게 'sender' 정보가 포함된 메시지 객체를 보냅니다.
+    // 3. 해당 방의 모든 클라이언트에게 새 메시지를 보냅니다.
     this.server.to(payload.roomId).emit('newMessage', messageWithSender);
+
+    // 4. ✨(신규) 해당 방의 클라이언트들에게 안 읽은 카운트를 갱신하라는 신호를 보냅니다.
+    this.server.to(payload.roomId).emit('unreadCountUpdated');
   }
 
   @SubscribeMessage('getHistory')
@@ -115,7 +117,7 @@ export class ChatGateway {
     @ConnectedSocket() client: Socket,
   ) {
     // 1. DB에서 사용자 정보를 조회하여 이름을 가져옵니다.
-    const user = await this.userService.findById(payload.id);
+    const user = await this.userService.internalFindById(payload.id);
 
     // 2. ChatService를 통해 사용자를 방에서 내보냅니다.
     await this.chatService.leaveRoom(payload.id, payload.roomId);

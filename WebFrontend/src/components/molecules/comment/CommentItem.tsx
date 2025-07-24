@@ -1,54 +1,75 @@
 // src/components/molecules/comment/CommentItem.tsx
 
-import React from 'react';
-import Icon from '@/components/atoms/icon/Icon';
-import Avatar from '@/components/atoms/avatar/Avatar'; 
+import React from "react";
+import Icon from "@/components/atoms/icon/Icon";
+import Avatar from "@/components/atoms/avatar/Avatar";
 
-// --- 타입 정의 ---
-interface User {
-  id: string;
-  username: string;
-}
+import { DEFAULT_IMAGES } from "@/constants/images";
+import type { Comment } from "@/types/comment"; // 👈 전역 Comment 타입 임포트
+import type { User } from '@/stores/authStore';
+import { useNavigate } from 'react-router-dom';
 
-interface Comment {
-  id: number;
-  content: string;
-  createdAt: string;
-  author: User;
-}
 
 interface CommentItemProps {
   comment: Comment;
   currentUser: User | null;
-  onDelete: (id: number) => void;
+  onDelete: (id: number | string) => void;
   formatDate: (dateString: string) => string;
 }
 
-const CommentItem: React.FC<CommentItemProps> = ({ comment, currentUser, onDelete, formatDate }) => {
+const CommentItem: React.FC<CommentItemProps> = ({
+  comment,
+  currentUser,
+  onDelete,
+  formatDate,
+}) => {
+  const authorName = comment.user ? comment.user.username : '알 수 없는 사용자';
+  const authorProfileUrl = comment.user ? comment.user.profileImageUrl : DEFAULT_IMAGES.PROFILE;
+
+  const navigate = useNavigate();
+
+  // 프로필 클릭 시 페이지 이동하는 함수
+  const handleProfileClick = () => {
+    if (comment.user && comment.user.id) {
+      navigate(`/users/${comment.user.id}`);
+    }
+  };
+
   return (
-    <div className="flex items-start gap-3 p-4 bg-brand-default rounded-card">
-      {/* 프로필 이미지 (임시) */}
+    <div className="flex items-start py-2 gap-2 bg-brand-default border-brand-frame border-top-1">
+      {/* 프로필 이미지 */}
       <Avatar
-        src={`https://i.pravatar.cc/40?u=${comment.author.id}`}
-        alt={comment.author.username}
+        src={authorProfileUrl || DEFAULT_IMAGES.PROFILE}
+        alt={authorName}
         size={40}
+        onClick={handleProfileClick}
       />
       <div className="flex-1">
         <div className="flex items-center justify-between mb-1">
-          {/* 작성자 정보 */}
-          <span className="text-caption-bold text-brand-text-primary">{comment.author.username}</span>
-          {/* 댓글 작성 시간 및 삭제 버튼 */}
+          {/* 작성자 이름 표시 */}
+          <span onClick={handleProfileClick} className="text-caption-bold text-brand-text-primary">
+            {authorName}
+          </span>
           <div className="flex items-center gap-2">
-            <span className="text-footnote text-brand-gray">{formatDate(comment.createdAt)}</span>
-            {currentUser && currentUser.id === comment.author.id && (
-              <button onClick={() => onDelete(comment.id)}>
-                <Icon name="delete" size={16} className="text-brand-disabled hover:text-brand-error-text" />
+            <span className="text-footnote text-brand-gray">
+              {formatDate(comment.createdAt)}
+            </span>
+            {/* 삭제 버튼 권한 확인 */}
+            {currentUser && currentUser.id === comment.userId && (
+              // 삭제 시 comment.commentId를 전달하도록 수정
+              <button onClick={() => onDelete(comment.commentId)}>
+                <Icon
+                  name="delete"
+                  size={16}
+                  className="text-brand-disabled hover:text-brand-error-text"
+                />
               </button>
             )}
           </div>
         </div>
-        {/* 댓글 내용 */}
-        <p className="text-body text-brand-text-secondary whitespace-pre-wrap text-left">{comment.content}</p>
+        <p className="text-body text-brand-text-secondary whitespace-pre-wrap text-left">
+          {comment.content}
+        </p>
       </div>
     </div>
   );

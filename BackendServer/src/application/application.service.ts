@@ -10,16 +10,15 @@ import {
   ApplierEnsemble,
 } from './entities/applier-ensemble.entity';
 import { DataSource, Repository } from 'typeorm';
-import { EnsembleService } from 'src/ensemble/ensemble.service';
-import { UserService } from 'src/auth/user/user.service';
 import { ApplierEnsembleResponseDto } from './dto/applier-ensemble.response.dto';
-import { UserResponseDto } from 'src/auth/user/dto/user.response.dto';
 import {
   RECRUIT_STATUS,
   RecruitEnsemble,
 } from 'src/ensemble/entities/recruit-ensemble.entity';
 import { User } from 'src/auth/user/user.entity';
 import { SessionEnsemble } from 'src/ensemble/session/entities/session-ensemble.entity';
+import { UserResponseDto } from 'src/auth/user/dto/user.response.dto';
+import { ImageService } from 'src/image/image.service';
 
 @Injectable()
 export class ApplicationService {
@@ -27,9 +26,8 @@ export class ApplicationService {
     @InjectRepository(ApplierEnsemble)
     private readonly applierEnsembleRepo: Repository<ApplierEnsemble>,
 
-    private readonly ensembleService: EnsembleService,
+    private readonly imageService: ImageService,
     private readonly dataSource: DataSource,
-    private readonly userService: UserService,
   ) {}
   private readonly logger = new Logger(ApplicationService.name);
 
@@ -44,17 +42,27 @@ export class ApplicationService {
       .where('recruitEnsemble.postId = :postId', { postId })
       .getMany();
 
-    const appliersDto = savedAppliers.map((applier) => {
-      const userDto = UserResponseDto.from(applier.user);
-      const tmpApplier = ApplierEnsembleResponseDto.from(
-        applier,
-        userDto,
-        applier.sessionEnsemble,
-      );
-      return tmpApplier;
-    });
+    const appliersDtos = await Promise.all(
+      savedAppliers.map(async (applier) => {
+        const userResponse = UserResponseDto.from(applier.user);
+        const newApplierResponse = ApplierEnsembleResponseDto.from(
+          applier,
+          applier.sessionEnsemble,
+          userResponse,
+        );
 
-    return appliersDto;
+        if (applier.user && applier.user.profileUrl) {
+          const signedUrl = await this.imageService.getDownloadUrl(
+            applier.user.profileUrl,
+          );
+          newApplierResponse.user.profileImageUrl = signedUrl;
+        }
+
+        return newApplierResponse;
+      }),
+    );
+
+    return appliersDtos;
   }
 
   async detailApplication(applicationId: number): Promise<ApplierEnsemble> {
@@ -68,6 +76,36 @@ export class ApplicationService {
       );
     }
     return newApplierEnsemble;
+  }
+
+  async publicDetailApplication(
+    applicationId: number,
+  ): Promise<ApplierEnsembleResponseDto> {
+    const newApplierEnsemble = await this.applierEnsembleRepo.findOne({
+      where: { applicationId },
+      relations: ['user', 'sessionEnsemble'],
+    });
+    if (!newApplierEnsemble) {
+      throw new NotFoundException(
+        `application with ID #${applicationId} not found.`,
+      );
+    }
+
+    const userResponse = UserResponseDto.from(newApplierEnsemble.user);
+    const newApplierResponse = ApplierEnsembleResponseDto.from(
+      newApplierEnsemble,
+      newApplierEnsemble.sessionEnsemble,
+      userResponse,
+    );
+
+    if (newApplierEnsemble.user && newApplierEnsemble.user.profileUrl) {
+      const signedUrl = await this.imageService.getDownloadUrl(
+        newApplierEnsemble.user.profileUrl,
+      );
+      newApplierResponse.user.profileImageUrl = signedUrl;
+    }
+
+    return newApplierResponse;
   }
 
   async enrollApplication(
@@ -143,6 +181,11 @@ export class ApplicationService {
           );
         }
 
+        // ✅ 6.5 정원이 찼는지 확인
+        if (sessionEnsemble.nowRecruitCount >= sessionEnsemble.recruitCount) {
+          throw new ForbiddenException('해당 세션은 이미 모집이 완료되었습니다.');
+        }
+
         // 7. 새로운 지원자 생성 (여기서 관계형 엔티티를 직접 할당)
         const newApplier = transactionalEntityManager.create(ApplierEnsemble, {
           recruitEnsemble: recruitEnsemblePost, // 로드된 RecruitEnsemble 엔티티 객체를 직접 할당
@@ -153,24 +196,61 @@ export class ApplicationService {
 
         const savedApplier = await transactionalEntityManager.save(newApplier);
 
-        // 8. totalRecruitCnt 증가 (increment 메서드 사용)
-        // recruitEnsemblePost.totalRecruitCnt = (recruitEnsemblePost.totalRecruitCnt || 0) + 1;
-        // await transactionalEntityManager.save(recruitEnsemblePost); // 이 부분을 increment로 대체
+
+        // 8. nowRecruitCount를 증가시킴
         await transactionalEntityManager.increment(
-          RecruitEnsemble, // 업데이트할 엔티티 클래스
-          { postId: recruitEnsemblePost.postId }, // 업데이트할 레코드를 찾는 조건
-          'totalRecruitCnt', // 증가시킬 컬럼 이름
-          1, // 증가량
+          SessionEnsemble,
+          { sessionId: sessionEnsemble.sessionId },
+          'nowRecruitCount',
+          1,
         );
 
-        // 9. DTO 변환 및 반환
-        const userDto = UserResponseDto.from(savedApplier.user);
+        // 8.5 증가 이후에 다시 조회해서 실제 최신 nowRecruitCount로 비교
+        const sessionEnsembleAfterUpdate = await transactionalEntityManager.findOne(
+          SessionEnsemble,
+          { where: { sessionId: sessionId } }
+        );
+
+        if (
+          !sessionEnsembleAfterUpdate ||
+          sessionEnsembleAfterUpdate.nowRecruitCount > sessionEnsembleAfterUpdate.recruitCount
+        ) {
+          throw new ForbiddenException('정원이 초과되었습니다.');
+        }
+
+        // 9. 세션 전체 조회 (같은 recruitEnsemble에 속한 것들)
+        const allSessions = await transactionalEntityManager.find(SessionEnsemble, {
+          where: { recruitEnsemble: { postId: recruitEnsemblePost.postId } },
+        });
+
+        const newTotalCount = allSessions.reduce((sum, session) => {
+          return sum + (session.sessionId === sessionEnsemble.sessionId
+            ? session.nowRecruitCount + 1 // 방금 증가시킨 세션은 +1 추가
+            : session.nowRecruitCount);
+        }, 0);
+
+        // 10. totalRecruitCnt를 해당 값으로 갱신
+        await transactionalEntityManager.update(
+          RecruitEnsemble,
+          { postId: recruitEnsemblePost.postId },
+          { totalRecruitCnt: newTotalCount },
+        );
+
+        const responseApplierDto = UserResponseDto.from(savedApplier.user);
 
         const applierDto = ApplierEnsembleResponseDto.from(
           savedApplier,
-          userDto,
           savedApplier.sessionEnsemble,
+          responseApplierDto,
         );
+
+        if (savedApplier.user && savedApplier.user.profileUrl) {
+          const signedUrl = await this.imageService.getDownloadUrl(
+            savedApplier.user.profileUrl,
+          );
+          applierDto.user.profileImageUrl = signedUrl;
+        }
+
         return applierDto;
       },
     ); // 트랜잭션 끝
@@ -201,7 +281,7 @@ export class ApplicationService {
           ApplierEnsemble,
           {
             where: { applicationId: applicationId },
-            relations: ['user'], // 사용자 정보가 필요하므로 relations 추가
+            relations: ['user', 'sessionEnsemble'], // 사용자 정보가 필요하므로 relations 추가
           },
         );
 
@@ -243,15 +323,41 @@ export class ApplicationService {
 
         // 6. totalRecruitCnt 감소 (decrement 메서드 사용)
         // totalRecruitCnt가 0보다 클 때만 감소하도록 조건을 추가합니다.
+        // if (
+        //   recruitEnsemblePost.totalRecruitCnt &&
+        //   recruitEnsemblePost.totalRecruitCnt > 0
+        // ) {
+        //   await transactionalEntityManager.decrement(
+        //     RecruitEnsemble, // 업데이트할 엔티티 클래스
+        //     { postId: recruitEnsemblePost.postId }, // 업데이트할 레코드를 찾는 조건
+        //     'totalRecruitCnt', // 감소시킬 컬럼 이름
+        //     1, // 감소량
+        //   );
+        // }
+
+        // 6. SessionEnsemble.nowRecruitCount 감소
+        if (
+          application.sessionEnsemble &&
+          application.sessionEnsemble.nowRecruitCount > 0
+        ) {
+          await transactionalEntityManager.decrement(
+            SessionEnsemble,
+            { sessionId: application.sessionEnsemble.sessionId },
+            'nowRecruitCount',
+            1,
+          );
+        }
+
+        // 7. totalRecruitCnt 감소 (최소 0 이상 유지)
         if (
           recruitEnsemblePost.totalRecruitCnt &&
           recruitEnsemblePost.totalRecruitCnt > 0
         ) {
           await transactionalEntityManager.decrement(
-            RecruitEnsemble, // 업데이트할 엔티티 클래스
-            { postId: recruitEnsemblePost.postId }, // 업데이트할 레코드를 찾는 조건
-            'totalRecruitCnt', // 감소시킬 컬럼 이름
-            1, // 감소량
+            RecruitEnsemble,
+            { postId: recruitEnsemblePost.postId },
+            'totalRecruitCnt',
+            1,
           );
         }
       },

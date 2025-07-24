@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '@/services/axiosInstance';
 import { useAuthStore } from '@/stores/authStore';
+import { useChatStore } from '../../stores/chatStore';
 // 1. 공통 폼과 관련 타입들을 components 폴더에서 가져옵니다.
 import { EnsembleForm, type RecruitEnsembleFormState } from '@/pages/ensemble/components/EnsembleForm';
 import axios from 'axios';
@@ -30,6 +31,7 @@ interface CreateRecruitEnsemblePayload {
 }
 
 const CreateRecruitEnsemblePage: React.FC = () => {
+  const { totalUnreadCount } = useChatStore();
   const navigate = useNavigate();
   const { user } = useAuthStore();
 
@@ -47,7 +49,7 @@ const CreateRecruitEnsemblePage: React.FC = () => {
     eventDate: new Date().toISOString().split('T')[0],
     skillLevel: SKILL_LEVEL.BEGINNER,
     locationId: '',
-    totalRecruitCnt: '1',
+    totalRecruitCnt: '',
     sessionEnsemble: sessionFormList,
   });
 
@@ -159,7 +161,7 @@ const CreateRecruitEnsemblePage: React.FC = () => {
   }
 
   return (
-    <PostLayout>
+    <PostLayout totalUnreadCount={totalUnreadCount}>
       <div className="bg-brand-frame p-4">
         <EnsembleForm
           formState={form}

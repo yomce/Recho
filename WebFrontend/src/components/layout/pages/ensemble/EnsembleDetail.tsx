@@ -19,6 +19,8 @@ interface RecruitEnsembleProps {
   onDelete?: () => void;
   applicationEnsembleList: ApplicationEnsemble[];
   isApplied: boolean;
+  totalUnreadCount?: number;
+  fetchApplicationList: () => Promise<void>;
 }
 
 const skillLevelColorMap: Record<number, string> = {
@@ -36,9 +38,11 @@ export const RecruitEnsembleDetail: React.FC<RecruitEnsembleProps> = ({
   onDelete,
   applicationEnsembleList,
   isApplied,
+  totalUnreadCount,
+  fetchApplicationList,
 }) => {
   return (
-    <PostLayout bgClassName="bg-brand-inverse">
+    <PostLayout totalUnreadCount={totalUnreadCount} bgClassName="bg-brand-inverse">
       <div className="relative mx-auto px-4 w-full">
         {isOwner && (
           <div className="absolute top-1 right-4 z-10">
@@ -67,8 +71,7 @@ export const RecruitEnsembleDetail: React.FC<RecruitEnsembleProps> = ({
           </div>
         )}
         <ProfileBubble
-          imageUrl="https://placehold.co/60x60"
-          name={post.user.username}
+          user={post.user}
           title={post.title}
         />
       </div>
@@ -104,6 +107,7 @@ export const RecruitEnsembleDetail: React.FC<RecruitEnsembleProps> = ({
                 ensemble={post}
                 applicationEnsembleList={applicationEnsembleList}
                 isApplied={isApplied}
+                fetchApplicationList={fetchApplicationList}
               />
             ))
         }

@@ -31,6 +31,7 @@ export interface SessionEnsemble {
   sessionId: number;
   instrument: string;
   recruitCount: number;
+  nowRecruitCount: number;
 }
 
 export interface RecruitEnsemble {
@@ -47,6 +48,7 @@ export interface RecruitEnsemble {
   createdAt: string;
   viewCount: number;
   sessionEnsemble: SessionEnsemble[]
+  totalUnreadCount?: number;
 }
 
 export enum SKILL_LEVEL {

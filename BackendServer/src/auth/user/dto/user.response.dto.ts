@@ -1,19 +1,36 @@
+import { Expose } from 'class-transformer';
 import { User } from '../user.entity';
 
 export class UserResponseDto {
+  @Expose()
   id: string;
-  username: string;
-  // 필요 시 추가 가능한 필드들 예시
-  // nickname?: string;
-  // profileImage?: string;
 
-  static from(user: User): UserResponseDto {
-    const dto = new UserResponseDto();
-    dto.id = user.id;
-    dto.username = user.username;
-    // 추가 필드가 있다면 여기에 맵핑
-    // dto.nickname = user.nickname;
-    // dto.profileImage = user.profileImage;
-    return dto;
+  @Expose()
+  username: string;
+
+  @Expose()
+  intro: string | null;
+
+  @Expose()
+  createdAt: string;
+
+  // S3의 파일 키가 아닌, 완전한 이미지 URL을 담을 필드입니다.
+  @Expose()
+  profileImageUrl: string | null;
+
+  static from(user: User, profileImageUrl?: string) {
+    const newUser = new UserResponseDto();
+
+    newUser.id = user.id;
+    newUser.username = user.username;
+    newUser.intro = user.intro;
+    newUser.createdAt = user.createdAt.toString();
+    if (profileImageUrl) {
+      newUser.profileImageUrl = profileImageUrl;
+    } else {
+      newUser.profileImageUrl = null;
+    }
+
+    return newUser;
   }
 }

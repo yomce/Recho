@@ -1,11 +1,7 @@
 import { Type } from 'class-transformer';
-import { IsString, IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsOptional, IsArray, IsInt } from 'class-validator';
 
 export class CreatePracticeRoomDto {
-  @IsNumber()
-  @IsNotEmpty()
-  post_id: number;
-
   @IsString()
   @IsNotEmpty()
   title: string;
@@ -14,13 +10,11 @@ export class CreatePracticeRoomDto {
   @IsNotEmpty()
   description: string;
 
-  @IsString()
-  @IsOptional()
-  user_name: string;
-
-  @IsString()
-  @IsOptional()
-  iamges?: string;
+  @IsOptional() // 이미지는 선택 사항일 수 있으므로 Optional 처리
+  @IsArray()
+  @Type(() => Number)
+  @IsInt({ each: true })
+  imageIds?: number[];
 
   @Type(() => Number)
   @IsNumber()

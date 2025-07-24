@@ -23,6 +23,10 @@ const VinylPage: React.FC = () => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // 안드로이드 터치 이벤트를 위한 상태
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
@@ -62,23 +66,44 @@ const VinylPage: React.FC = () => {
   }, [isLoading]);
 
   useEffect(() => {
-    const fetchInitialVideos = async () => {
-      setIsLoading(true);
-      try {
-        const videoData = await getVideos(1, 5); // 초기에 5개만 로드
+  const fetchVideosUpToIndex = async () => {
+    setIsLoading(true);
+    try {
+      // 1. Zustand 스토어에서 저장된 currentIndex를 직접 가져옵니다.
+      const initialIndex = useVinylStore.getState().currentIndex;
+
+      // 2. 해당 인덱스를 포함하기 위해 몇 페이지를 로드해야 하는지 계산합니다. (최소 1페이지)
+      const pagesToLoad = Math.max(1, Math.ceil((initialIndex + 1) / 5));
+      
+      const allVideos: Video[] = [];
+
+      // 3. 필요한 모든 페이지의 비디오를 순차적으로 불러옵니다.
+      for (let i = 1; i <= pagesToLoad; i++) {
+        const videoData = await getVideos(i, 5);
+        if (videoData.length > 0) {
+          allVideos.push(...videoData);
+        }
+        // 만약 비디오를 5개 미만으로 받아왔다면, 더 이상 데이터가 없는 것이므로 중단합니다.
         if (videoData.length < 5) {
           setHasMore(false);
+          break;
         }
-        setVideos(videoData);
-      } catch (error) {
-        console.error("비디오 로딩 중 오류 발생:", error);
-      } finally {
-        setIsLoading(false);
       }
-    };
 
-    fetchInitialVideos();
-  }, []);
+      // 4. 불러온 모든 비디오로 상태를 설정하고, 현재 페이지 번호도 업데이트합니다.
+      setVideos(allVideos);
+      setPage(pagesToLoad);
+
+    } catch (error) {
+      console.error("비디오 로딩 중 오류 발생:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  fetchVideosUpToIndex();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, []); // 이 로직은 페이지가 마운트될 때 한 번만 실행되어야 합니다.
 
   const loadMoreVideos = async () => {
     if (isFetchingMore || !hasMore) return;
@@ -235,6 +260,32 @@ const VinylPage: React.FC = () => {
     setCurrentIndex(nextIndex);
   };
 
+  // 안드로이드용 네이티브 터치 이벤트 핸들러
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > DRAG_THRESHOLD;
+    const isRightSwipe = distance < -DRAG_THRESHOLD;
+
+    if (isLeftSwipe && currentIndex < videos.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    } else if (isRightSwipe && currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+    }
+
+    setTouchStart(null);
+    setTouchEnd(null);
+  };
+
   const isCurrentlyVisible = (index: number) => index === currentIndex;
 
   const getRotationAngle = (index: number) => {
@@ -260,6 +311,10 @@ const VinylPage: React.FC = () => {
         <motion.div
           onPan={handlePan}
           onPanEnd={handlePanEnd}
+          onPanStart={() => setIsDragging(true)}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           animate={controls}
           style={{ display: "flex", cursor: "grab" }}
         >

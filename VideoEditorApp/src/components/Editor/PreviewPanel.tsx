@@ -178,7 +178,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
         }}
         pointerEvents={isCollapsed ? 'auto' : 'none'} // 보일 때만 터치 가능
       >
-        <Text style={{ fontSize: 24 }}>🐙</Text>
+        <Text style={{ fontSize: 24 }}>💿</Text>
       </OverlappingContainer>
     </PreviewArea>
   );

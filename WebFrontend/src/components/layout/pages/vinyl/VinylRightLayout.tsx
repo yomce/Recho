@@ -28,7 +28,7 @@ const VinylRightLayout: React.FC<VideoActionPanelProps> = ({ video, divHeight, o
       }}
     >
 
-      <IconWithCount iconName="vinyl" iconSecondColor='pink' count={video.likeCount} onClick={onClickLike} video={video}/>
+      <IconWithCount iconName="vinyl" iconSecondName='fullVinyl' iconSecondColor='white' count={video.likeCount} onClick={onClickLike} video={video}/>
       <IconWithCount iconName="chat" count={video.commentCount} onClick={onClickComments}/>
       <IconWithNoCount iconName="share" onClick={onClickShare}/>
     </div>

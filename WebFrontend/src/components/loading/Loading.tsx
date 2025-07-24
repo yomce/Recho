@@ -14,7 +14,7 @@ const Loading: React.FC = () => {
         left: 0,
         fontSize: "20px",
         color: "white",
-        backgroundColor: "#1E293B", // 다크 테마 배경색
+        backgroundColor: "#000000", // 다크 테마 배경색
         zIndex: 999, // 다른 요소들 위에 표시되도록 z-index 추가
       }}
     >

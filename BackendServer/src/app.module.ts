@@ -27,9 +27,11 @@ import { searchVideoModule } from './search_video/search-video.module';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PostsModule } from './community/posts/posts.module';
-import { CommentsModule } from './community/comments/comments.module';
 import { SearchModule } from './search/search.module';
 import { PromotionModule } from './scraping/promotion.module';
+import { CommentsModule } from './comment/comments.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { ImageModule } from './image/image.module';
 
 @Module({
   imports: [
@@ -88,22 +90,24 @@ import { PromotionModule } from './scraping/promotion.module';
       },
     }),
 
+    ApplicationModule,
     AuthModule,
+    ChatModule,
+    CommentsModule,
+    EnsembleModule,
+    ImageModule,
+    LocationModule,
+    NotificationsModule,
+    PostsModule,
+    PracticeRoomModule,
+    PromotionModule,
+    SearchModule,
+    searchVideoModule,
+    UsedProductModule,
     UserModule,
     VideosModule,
     VideoInsertModule,
-    ChatModule,
-    UsedProductModule,
-    PracticeRoomModule,
-    EnsembleModule,
-    LocationModule,
-    ApplicationModule,
     ViewCountModule,
-    PostsModule,
-    CommentsModule,
-    SearchModule,
-    searchVideoModule,
-    PromotionModule,
   ],
   controllers: [AppController, ConfigController],
   providers: [AppService],

@@ -22,6 +22,7 @@ import { CreateRecruitEnsembleDto } from './dto/create-recruit-ensemble.dto';
 import { Request } from 'express';
 import { UpdateRecruitEnsembleDto } from './dto/update-recruit-ensemble.dto';
 import { RecruitEnsembleResponseDto } from './dto/recruit-ensemble.response.dto';
+import { RecruitEnsemble } from './entities/recruit-ensemble.entity';
 
 @Controller('ensembles')
 export class EnsembleController {
@@ -33,9 +34,7 @@ export class EnsembleController {
     @Query() filter: FilterRecruitEnsembleDto,
   ): Promise<PaginatedRecruitEnsembleResponse> {
     this.logger.log('Fetching ensemble with pagination');
-
-    // const { limit = 20, lastPostId, lastCreatedAt } = paginationQuery;
-
+    
     return this.ensembleService.findEnsembleWithPagination(filter);
   }
 
@@ -44,7 +43,7 @@ export class EnsembleController {
   async enrollEnsemble(
     @Body() createRecruitEnsembleDto: CreateRecruitEnsembleDto,
     @Req() req: Request,
-  ): Promise<RecruitEnsembleResponseDto> {
+  ): Promise<RecruitEnsemble> {
     if (!req.user || !req.user.id) {
       this.logger.error(
         'Authentication information missing from request user object.',
@@ -65,7 +64,7 @@ export class EnsembleController {
   async closeRecruitment(
     @Param('postId', ParseIntPipe) postId: number,
     @Req() req: Request,
-  ): Promise<RecruitEnsembleResponseDto> {
+  ): Promise<RecruitEnsemble> {
     if (!req.user || !req.user.id) {
       this.logger.error(
         'Authentication information missing from request user object.',
@@ -85,7 +84,7 @@ export class EnsembleController {
     @Param('postId', ParseIntPipe) postId: number,
   ): Promise<RecruitEnsembleResponseDto> {
     this.logger.log(`Fetching detail for post ID: ${postId}`);
-    return await this.ensembleService.detailEnsemble(postId);
+    return await this.ensembleService.publicDetailEnsemble(postId);
   }
 
   @Delete(':postId')
@@ -123,7 +122,6 @@ export class EnsembleController {
       throw new ForbiddenException('사용자 인증 정보가 없습니다.');
     }
     const id = req.user.id; // JwtStrategy에서 반환된 user.id 사용 가능
-    console.log('patch user', req.user);
     this.logger.log(
       `Received patch request for post ID: ${postId} from user ID: ${id}`,
     );

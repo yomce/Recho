@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useChatStore } from '../../stores/chatStore';
 import axios from 'axios';
 import { TRADE_TYPE, type UsedProductForm, type CreateUsedProductPayload } from '../../types/product';
 import { ProductForm } from '../../components/layout/pages/usedProduct/ProductForm';
@@ -10,6 +11,7 @@ import { saveLocationToDB } from '@/components/map/LocationSaveHandler';
 import PostLayout from '@/components/layout/PostLayout';
 
 const CreateUsedProductPage: React.FC = () => {
+  const { totalUnreadCount } = useChatStore();
   const navigate = useNavigate();
   const { user } = useAuthStore(); // 스토어에서 user 정보 가져오기
   const [form, setForm] = useState<UsedProductForm>({
@@ -90,7 +92,6 @@ const CreateUsedProductPage: React.FC = () => {
         imageIds: imageIds.map((img) => img.id),
         videoId: form.videoId,
       };
-      console.log(payload);
       const response = await axiosInstance.post('used-products', payload);
       const productId = response.data.productId;
 
@@ -123,7 +124,7 @@ const CreateUsedProductPage: React.FC = () => {
   }
 
   return (
-    <PostLayout>
+    <PostLayout totalUnreadCount={totalUnreadCount}>
       <div className="bg-brand-frame p-4">
         <ProductForm
           formState={form}

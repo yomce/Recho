@@ -59,8 +59,8 @@ export class AuthController {
     return this.authService.refreshAccessToken(user);
   }
 
-  @UseGuards(AuthGuard('jwt')) // 액세스 토큰으로 사용자를 식별해야 하므로 'jwt' 가드 사용
   @Post('logout')
+  @UseGuards(AuthGuard('jwt')) // 액세스 토큰으로 사용자를 식별해야 하므로 'jwt' 가드 사용
   @HttpCode(HttpStatus.OK)
   async logout(
     @Req()
@@ -113,8 +113,6 @@ export class AuthController {
       'FRONTEND_CALLBACK_URL',
     );
     res.redirect(`${frontendCallbackUrl}?token=${accessToken}`);
-
-    
   }
 
   @Get('google')

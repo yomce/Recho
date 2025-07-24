@@ -6,6 +6,7 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+import { NotificationsProvider } from "@/stores/NotificationsProvider";
 import Navigation from "@/components/layout/Navigation";
 import LoginPage from "../pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
@@ -37,85 +38,91 @@ import CreatePostPage from "@/pages/community/CreatePostPage";
 import PostDetailPage from '@/pages/community/PostDetailPage';
 import SearchPage from '../pages/search/SearchPage';
 import VinylSpecificPage from '@/pages/vinyl/VinylSpecificPage';
+import NotificationsPage from '@/pages/notification/NotificationsPage';
 
 
 
 const AppRouter: React.FC = () => {
   return ( 
-    <Router>
-      <Routes>
-        <Route path="/" element={<Navigate to="/main" replace />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/auth/callback" element={<AuthCallbackPage />} />
+    <NotificationsProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Navigate to="/main" replace />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
-        {/* 인증이 필요한 페이지들 */}
-        <Route element={<ProtectedRoute />}>
-          {/* 사용자가 직접 / 로 접근했을 때, 로그인 여부에 따라 적절한 페이지를 보여주기 위해
-              MainPage를 / 와 /main 두 경로에 연결할 수 있습니다. */}
-          <Route path="/" element={<MainPage />} />
-          <Route path="/main" element={<MainPage />} />
+          {/* 인증이 필요한 페이지들 */}
+          <Route element={<ProtectedRoute />}>
+            {/* 사용자가 직접 / 로 접근했을 때, 로그인 여부에 따라 적절한 페이지를 보여주기 위해
+                MainPage를 / 와 /main 두 경로에 연결할 수 있습니다. */}
+            <Route path="/" element={<MainPage />} />
+            <Route path="/main" element={<MainPage />} />
 
-          <Route path="/community" element={<CommunityFeedPage />} />
-          <Route path="/community/create" element={<CreatePostPage />} /> 
-          <Route path="/community/:id" element={<PostDetailPage />} /> 
+            <Route path="/community" element={<CommunityFeedPage />} />
+            <Route path="/community/create" element={<CreatePostPage />} /> 
+            <Route path="/community/:id" element={<PostDetailPage />} /> 
 
-          <Route path="/chat" element={<ChatListPage />} />
-          <Route path="/chat/:roomId" element={<ChatRoomPage />} />
-          <Route path="/users/:id" element={<UserPage />} />
-          <Route path="/main" element={<MainPage />} />
-          <Route path="/category" element={<CategoryPage />} />
-          <Route path="/vinyl" element={<VinylPage />} />
-          <Route path="/vinyl/:videoId" element={<VinylSpecificPage />} />
-          <Route path="/used-products" element={<UsedProductPage />} />
-          <Route
-            path="/used-products/create"
-            element={<CreateUsedProductPage />}
-          />
-          <Route
-            path="/used-products/:id"
-            element={<UsedProductDetailPage />}
-          />
-          <Route
-            path="/used-products/edit/:id"
-            element={<UpdateUsedProductPage />}
-          />
-          <Route path="/ensembles" element={<RecruitEnsembleListPage />} />
-          <Route
-            path="/ensembles/create"
-            element={<CreateRecruitEnsemblePage />}
-          />
-          <Route
-            path="/ensembles/edit/:id"
-            element={<UpdateRecruitEnsemblePage />}
-          />
-          <Route
-            path="/ensembles/:id"
-            element={<RecruitEnsembleDetailPage />}
-          />
-          <Route path="/practice-room" element={<PracticeRoomPage />} />
-          <Route
-            path="/practice-room/create"
-            element={<CreatePracticeRoom />}
-          />
-          <Route
-            path="/practice-room/:id"
-            element={<PracticeRoomDetailPage />}
-          />
-          <Route
-            path="/practice-room/edit/:id"
-            element={<UpdatePracticeRoomPage />}
-          />
-          <Route path="/map-view" element={<MapViewPage />} />
-          <Route path="/style-guide" element={<StyleGuideTest />} />
+            <Route path="/chat" element={<ChatListPage />} />
+            <Route path="/chat/:roomId" element={<ChatRoomPage />} />
+            <Route path="/users/:id" element={<UserPage />} />
+            <Route path="/main" element={<MainPage />} />
+            <Route path="/category" element={<CategoryPage />} />
+            <Route path="/vinyl" element={<VinylPage />} />
+            <Route path="/vinyl/:videoId" element={<VinylSpecificPage />} />
+            <Route path="/used-products" element={<UsedProductPage />} />
+            <Route
+              path="/used-products/create"
+              element={<CreateUsedProductPage />}
+            />
+            <Route
+              path="/used-products/:id"
+              element={<UsedProductDetailPage />}
+            />
+            <Route
+              path="/used-products/edit/:id"
+              element={<UpdateUsedProductPage />}
+            />
+            <Route path="/ensembles" element={<RecruitEnsembleListPage />} />
+            <Route
+              path="/ensembles/create"
+              element={<CreateRecruitEnsemblePage />}
+            />
+            <Route
+              path="/ensembles/edit/:id"
+              element={<UpdateRecruitEnsemblePage />}
+            />
+            <Route
+              path="/ensembles/:id"
+              element={<RecruitEnsembleDetailPage />}
+            />
+            <Route path="/practice-room" element={<PracticeRoomPage />} />
+            <Route
+              path="/practice-room/create"
+              element={<CreatePracticeRoom />}
+            />
+            <Route
+              path="/practice-room/:id"
+              element={<PracticeRoomDetailPage />}
+            />
+            <Route
+              path="/practice-room/edit/:id"
+              element={<UpdatePracticeRoomPage />}
+            />
+            <Route path="/map-view" element={<MapViewPage />} />
+            <Route path="/style-guide" element={<StyleGuideTest />} />
 
-          <Route path="/search" element={<SearchPage />} />
-        </Route>
-      </Routes>
-      <Navigation />
-    </Router>
+            <Route path="/search" element={<SearchPage />} />
+
+            <Route path="/notifications" element={<NotificationsPage />} />
+          </Route>
+        </Routes>
+        <Navigation />
+      </Router>
+    </NotificationsProvider>
   );
 };
 
 export default AppRouter;
+

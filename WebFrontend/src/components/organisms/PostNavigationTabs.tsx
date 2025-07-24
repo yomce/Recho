@@ -55,7 +55,7 @@ function SwiperTabs<T>({
       >
         {contents && contents.map((items, idx) => (
           <SwiperSlide key={idx}>
-            <div className="grid grid-cols-1 gap-4 p-4">
+            <div className="grid grid-cols-1 gap-4 px-6 py-4">
               {loading ? (
                 <div className="text-center py-8">로딩 중...</div>
               ) : items.length > 0 ? (

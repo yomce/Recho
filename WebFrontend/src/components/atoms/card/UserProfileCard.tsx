@@ -1,8 +1,10 @@
 import React from "react";
-import Avatar from "../avatar/Avatar";
+import type { User } from '@/stores/authStore';
+import ProfileWithName from '../button/ProfileWithName';
 
 interface UserProfileCardProps {
   imageUrl?: string | string[];
+  user: User;
   name: string;
   location: string;
   status?: "판매중" | "예약중" | "판매완료";
@@ -33,39 +35,32 @@ export const statusStyleMap = {
   }
 };
 
-// 유효한 이미지 URL을 반환하는 헬퍼 함수
-// 만약 URL이 유효하지 않으면 기본 프로필 이미지를 반환
-const getValidImage = (url?: string | string[]): string => {
-  const resolvedUrl = Array.isArray(url) ? url[0] : url;
-  return (typeof resolvedUrl === 'string' && resolvedUrl.trim().length > 0)
-    ? resolvedUrl
-    : defaultProfileImage;
-};
+// // 유효한 이미지 URL을 반환하는 헬퍼 함수
+// // 만약 URL이 유효하지 않으면 기본 프로필 이미지를 반환
+// const getValidImage = (url?: string | string[]): string => {
+//   const resolvedUrl = Array.isArray(url) ? url[0] : url;
+//   return (typeof resolvedUrl === 'string' && resolvedUrl.trim().length > 0)
+//     ? resolvedUrl
+//     : defaultProfileImage;
+// };
 
 const UserProfileCard: React.FC<UserProfileCardProps> = ({
-  imageUrl,
-  name,
-  location,
+  user,
+  // location,
   status,
   statusSlot,
   onClick,
 }) => {
   const style = status ? statusStyleMap[status] : { bg: "", text: "", hover: "" };
-  
+
   return (
     <div className="flex items-center justify-between mt-[16px] w-full">
       <div className="flex items-center gap-4">
-        {/* 프로필 이미지 */}
-        <Avatar
-          src={getValidImage(imageUrl)}
-          size={40} 
-          alt="프로필 이미지" 
-        />
+        <ProfileWithName user={user} />
         {/* 텍스트 정보 */}
-        <div className="flex flex-col">
-          <p className="text-base text-left font-semibold text-gray-900">{name}</p>
+        {/* <div className="flex flex-col">
           <p className="text-sm text-left text-gray-500">{location}</p>
-        </div>
+        </div> */}
       </div>
       { statusSlot !== undefined ? (
         <>{statusSlot}</>

@@ -1,14 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion, useAnimation } from "framer-motion";
-import { useNavigate } from "react-router-dom"; // react-router-dom에서 useNavigate를 가져옵니다.
+import { useNavigate, useParams } from "react-router-dom"; // react-router-dom에서 useNavigate를 가져옵니다.
 import PrimaryButton from "@/components/atoms/button/PrimaryButton";
 import { useAuthStore } from "@/stores/authStore";
 import VinylRightLayout from "@/components/layout/pages/vinyl/VinylRightLayout";
 import ProfileWithName from "@/components/atoms/button/ProfileWithName";
 import IconButton from "@/components/atoms/button/IconButton";
-import { toggleStringPostLike } from '@/api';
+import { createCommentForVideo, deactivateVideo, getCommentsForVideo, toggleStringPostLike } from '@/api';
 import { CONTENT_TYPE } from '@/types/likes';
 import type { Video } from '@/types/video';
+import CommentsModal from './CommentModal';
+import type { Comment } from '@/types/comment';
+import { useVinylStore } from '@/stores/vinylStore';
 
 interface VinylContentsProps {
   currentVideo: Video;
@@ -22,6 +25,8 @@ interface VinylContentsProps {
 }
 
 const VinylContents: React.FC<VinylContentsProps> = (props) => {
+  const { lastString } = useParams<{ lastString: string }>();
+  const { currentIndex, setCurrentIndex } = useVinylStore();
   const currentUser = useAuthStore((state) => state.user);
   const videoRef = useRef<HTMLVideoElement>(null);
   const controls = useAnimation();
@@ -30,8 +35,60 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
     props.rotationAngle
   );
   const [isPlaying, setIsPlaying] = useState(false); // 비디오 재생 상태 관리
-
   const [divHeight, setDivHeight] = useState(0);
+  const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [, setIsLoadingComments] = useState(false);
+
+  const isCurrentUserVideoOwner = currentUser && props.currentVideo.user.id === currentUser.id;
+
+  const fetchComments = async () => {
+    if (!props.currentVideo.id) return;
+    setIsLoadingComments(true);
+    try {
+      const fetchedComments = await getCommentsForVideo(props.currentVideo.id);
+      setComments(fetchedComments);
+    } catch (error) {
+      console.error("Failed to fetch comments:", error);
+      alert('댓글을 불러오는데 실패했습니다.');
+    } finally {
+      setIsLoadingComments(false);
+    }
+  };
+  
+  const handleOpenComments = () => {
+    fetchComments(); // Fetch fresh comments every time the modal is opened
+    setIsCommentsOpen(true);
+  };
+
+  const handleCloseComments = () => {
+    setIsCommentsOpen(false);
+  };
+  
+  const handleAddComment = async (content: string) => {
+    if (!currentUser) {
+      alert('댓글을 작성하려면 로그인이 필요합니다.');
+      return;
+    }
+    try {
+      await createCommentForVideo(props.currentVideo.id, content);
+      
+      // Update comment count in the main video list state
+      props.setVideos(currentVideos =>
+        currentVideos.map(v => 
+          v.id === props.currentVideo.id
+            ? { ...v, commentCount: (v.commentCount || 0) + 1 }
+            : v
+        )
+      );
+
+      // Refresh the comments list in the modal
+      await fetchComments(); 
+    } catch (error) {
+      console.error("Failed to add comment:", error);
+      throw error; // Re-throw to be caught by the modal's handler
+    }
+  };
 
   useEffect(() => {
     const updateHeight = () => {
@@ -140,7 +197,37 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
     } catch (error) {
         alert('오류가 발생했습니다.');
     }
-};
+  };
+
+    const handleDeactivateVideo = async () => {
+    if (!currentUser || !isCurrentUserVideoOwner) {
+      alert('비디오를 비활성화할 권한이 없습니다.');
+      return;
+    }
+
+    if (window.confirm('정말로 이 비디오를 비활성화하시겠습니까? 다른 영상에 사용된 비디오는 지워지지 않습니다.')) {
+      try {
+        await deactivateVideo(props.currentVideo.id);
+        alert('비디오가 성공적으로 비활성화되었습니다.');
+        // 비디오 비활성화 후, 해당 비디오를 리스트에서 제거하거나 상태 업데이트
+        props.setVideos(currentVideos =>
+          currentVideos.filter(v => v.id !== props.currentVideo.id)
+        );
+        // 비디오 리스트가 변경되었으므로, 적절한 페이지로 이동 (예: 홈 또는 내 비디오 목록)
+        if (lastString === 'vinyl') {
+          setCurrentIndex(currentIndex - 1);
+        } else {
+          navigate(-1);
+        }
+        // navigate(-1);
+      } catch (error: any) {
+        console.error("Failed to deactivate video:", error);
+        // 에러 메시지 표시 (백엔드에서 상세 에러 메시지가 온다면 활용)
+        const errorMessage = error.response?.data?.message || '비디오 비활성화에 실패했습니다.';
+        alert(errorMessage);
+      }
+    }
+  };
 
   useEffect(() => {
     if (videoRef.current) {
@@ -186,95 +273,133 @@ const VinylContents: React.FC<VinylContentsProps> = (props) => {
   }, [props.rotationAngle, prevRotationAngle, controls]);
 
   return (
-    <motion.div
-      style={{
-        position: "relative",
-        transformOrigin: "50% 300%", // 회전 축을 하단으로 설정
-        width: "100%",
-        height: `${divHeight}px`,
-      }}
-      animate={controls}
-    >
-      {/* --- 뒤로가기 버튼 추가 --- */}
-      <IconButton
-        iconName="back"
-        iconSize={24}
-        onClick={() => navigate(-1)}
+    <>
+      <motion.div
         style={{
-          position: "absolute",
-          top: "16px",
-          left: "16px",
-          zIndex: 10,
-          background: "rgba(0, 0, 0, 0.4)",
-          border: "none",
-          borderRadius: "50%",
-          width: "40px",
-          height: "40px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "white",
-          fontSize: "24px",
-          cursor: "pointer",
-          paddingBottom: "4px", // 아이콘 수직 정렬을 위한 미세 조정
+          position: "relative",
+          transformOrigin: "50% 300%", // 회전 축을 하단으로 설정
+          width: "100%",
+          height: `${divHeight}px`,
         }}
-        aria-label="Go back"
-      />
-
-      <video
-        ref={videoRef}
-        src={props.currentVideo.videoUrl}
-        width="100%"
-        controls={false}
-        playsInline
-        crossOrigin="anonymous"
-        style={{
-          display: "block",
-        }}
-        onCanPlay={handleVideoCanPlay}
-        onClick={handleVideoClick}
-      />
-
-      {/* --- 왼쪽 위 프로필 및 구독 버튼 추가 --- */}
-      <div
-        style={{
-          position: "absolute",
-          top: `${divHeight * 0.84}px`,
-          left: "24px",
-          display: "flex",
-          alignItems: "center",
-          gap: "8px", // 아이콘과 버튼 사이 간격
-          zIndex: 10,
-        }}
+        animate={controls}
       >
-        <ProfileWithName user={props.currentVideo.user} />
-      </div>
-
-      <VinylRightLayout
-        video={props.currentVideo}
-        divHeight={divHeight}
-        onClickLike={() => handleToggleLike(props.currentVideo.id)}
-        onClickShare={() => handleShare(props.currentVideo.id)}
-      />
-
-      {/* 버튼은 비디오 위에, 중앙에 위치 */}
-      {!isPlaying && props.depth < 6 && (
-        <PrimaryButton
-          onClick={() => props.onStartEnsemble(props.currentVideo.id)}
+        {/* --- 뒤로가기 버튼 추가 --- */}
+        <IconButton
+          iconName="back"
+          iconSize={24}
+          onClick={() => navigate(-1)}
           style={{
-            width: "50%",
             position: "absolute",
-            bottom: "8px",
-            boxShadow: "0 0 5px 0 rgba(0, 0, 0, 0.3)",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            zIndex: 10, // 다른 요소 위에 오도록 z-index 설정
+            top: "16px",
+            left: "16px",
+            zIndex: 10,
+            background: "rgba(0, 0, 0, 0.4)",
+            border: "none",
+            borderRadius: "50%",
+            width: "40px",
+            height: "40px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "white",
+            fontSize: "24px",
+            cursor: "pointer",
+            paddingBottom: "4px", // 아이콘 수직 정렬을 위한 미세 조정
+          }}
+          aria-label="Go back"
+        />
+
+        {isCurrentUserVideoOwner && (
+          <IconButton
+            iconName="delete" // 적절한 아이콘 이름으로 변경 (예: 'ellipsis' 또는 'more-vertical', 'trash' 등)
+            iconSize={24}
+            onClick={handleDeactivateVideo}
+            style={{
+              position: "absolute",
+              top: "16px",
+              right: "16px", // 오른쪽 위에 위치
+              zIndex: 10,
+              background: "rgba(0, 0, 0, 0.4)",
+              border: "none",
+              borderRadius: "50%",
+              width: "40px",
+              height: "40px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "white",
+              fontSize: "24px",
+              cursor: "pointer",
+              paddingBottom: "4px",
+            }}
+            aria-label="Deactivate Video"
+          />
+        )}
+
+        <video
+          ref={videoRef}
+          src={props.currentVideo.videoUrl}
+          width="100%"
+          controls={false}
+          playsInline
+          crossOrigin="anonymous"
+          style={{
+            display: "block",
+          }}
+          onCanPlay={handleVideoCanPlay}
+          onClick={handleVideoClick}
+        />
+
+        {/* --- 왼쪽 위 프로필 및 구독 버튼 추가 --- */}
+        <div
+          style={{
+            position: "absolute",
+            top: `${divHeight * 0.84}px`,
+            left: "24px",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px", // 아이콘과 버튼 사이 간격
+            zIndex: 10,
           }}
         >
-          합주하기
-        </PrimaryButton>
-      )}
-    </motion.div>
+          <ProfileWithName user={props.currentVideo.user} />
+        </div>
+
+        <VinylRightLayout
+          video={props.currentVideo}
+          divHeight={divHeight}
+          onClickLike={() => handleToggleLike(props.currentVideo.id)}
+          onClickShare={() => handleShare(props.currentVideo.id)}
+          onClickComments={handleOpenComments}
+        />
+
+        {/* 버튼은 비디오 위에, 중앙에 위치 */}
+        {!isPlaying && props.depth < 6 && (
+          <PrimaryButton
+            onClick={() => props.onStartEnsemble(props.currentVideo.id)}
+            style={{
+              width: "50%",
+              position: "absolute",
+              bottom: "8px",
+              boxShadow: "0 0 5px 0 rgba(0, 0, 0, 0.3)",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              zIndex: 10, // 다른 요소 위에 오도록 z-index 설정
+            }}
+          >
+            합주하기
+          </PrimaryButton>
+        )}
+      </motion.div>
+
+      {/* --- Render the Comment Modal --- */}
+      <CommentsModal
+        isOpen={isCommentsOpen}
+        onClose={handleCloseComments}
+        comments={comments}
+        onAddComment={handleAddComment}
+      />
+    </>
   );
 };
 

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useChatStore } from '../../stores/chatStore';
 import axios from 'axios';
 import { TRADE_TYPE, type UsedProductForm, type UsedProduct } from '../../types/product';
 import { ProductForm } from '../../components/layout/pages/usedProduct/ProductForm'; // 재사용 폼 컴포넌트 import
@@ -12,6 +13,7 @@ import { saveLocationToDB } from '@/components/map/LocationSaveHandler';
 import PostLayout from '@/components/layout/PostLayout';
 
 const UpdateUsedProductPage: React.FC = () => {
+  const { totalUnreadCount } = useChatStore();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const location = useLocationStore((state) => state.location);
@@ -122,7 +124,7 @@ const UpdateUsedProductPage: React.FC = () => {
   };
 
   return (
-    <PostLayout>
+    <PostLayout totalUnreadCount={totalUnreadCount}>
       <div className="bg-brand-frame p-4">
         <ProductForm
           formState={form}

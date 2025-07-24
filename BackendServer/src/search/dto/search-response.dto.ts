@@ -1,4 +1,4 @@
-import { Post } from '../../community/entities/post.entity';
+import { Post } from '../../community/posts/entities/post.entity';
 import { UsedProduct } from '../../used_product/entities/used-product.entity';
 import { RecruitEnsemble } from '../../ensemble/entities/recruit-ensemble.entity';
 

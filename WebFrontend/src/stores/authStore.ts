@@ -11,6 +11,7 @@ import axios from "axios";
 export interface User {
   id: string;
   username: string;
+  profileImageUrl: string | null;
 }
 
 /**
@@ -119,6 +120,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         );
       } finally {
         get().actions.setToken(null);
+
+        if (window.location.pathname !== '/login') {
+        window.location.href = '/login'; 
+    }
       }
     },
   },

@@ -1,9 +1,10 @@
-import React, { useRef } from 'react';
-import { SafeAreaView, StyleSheet, Alert } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { SafeAreaView, StyleSheet, Alert, BackHandler } from 'react-native';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { type StackNavigationProp } from '@react-navigation/stack';
 import RNFS from 'react-native-fs';
+import { useCameraPermission, useMicrophonePermission } from 'react-native-vision-camera';
 import {
   type RootStackParamList,
   type MediaItem,
@@ -13,15 +14,77 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isErrorWithCode, pick, types } from '@react-native-documents/picker';
 import axiosInstance from '../api/axiosInstance';
 import { WEB_FRONTEND_URL } from '@env';
+import { WebViewNavigationEvent } from 'react-native-webview/lib/RNCWebViewNativeComponent';
 
 type WebScreenRouteProp = RouteProp<RootStackParamList, 'Web'>;
 
 const WebScreen: React.FC = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const route = useRoute<WebScreenRouteProp>();
-  const webviewRef = useRef<WebView>(null);
+  const webViewRef = useRef<WebView>(null);
+  const [canGoBack, setCanGoBack] = useState<boolean>(false);
+  
+  // 권한 훅 사용
+  const { hasPermission: hasCameraPermission, requestPermission: requestCameraPermission } = useCameraPermission();
+  const { hasPermission: hasMicrophonePermission, requestPermission: requestMicrophonePermission } = useMicrophonePermission();
+
+  const onNavigationStateChange = (event: WebViewNavigationEvent) => {
+    setCanGoBack(event.canGoBack);
+  };
+
+  useEffect(() => {
+    const handleBackPress = () => {
+      if (canGoBack && webViewRef.current) {
+        webViewRef.current.goBack();
+        return true; 
+      }
+      return false;
+    };
+    
+    // BackHandler 이벤트 리스너를 등록합니다.
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', handleBackPress);
+    
+    // 컴포넌트가 언마운트될 때 리스너를 제거합니다.
+    return () => backHandler.remove();
+  }, [canGoBack]);
+
+  // Web 화면 진입 시 모든 권한 요청
+  useEffect(() => {
+    const requestAllPermissions = async () => {
+      console.log('[WebScreen] Web 화면 진입 - 모든 권한 요청 시작');
+      
+      // 카메라 권한 요청
+      if (!hasCameraPermission) {
+        console.log('[WebScreen] 카메라 권한 요청 중...');
+        const cameraResult = await requestCameraPermission();
+        console.log('[WebScreen] 카메라 권한 요청 결과:', cameraResult);
+      } else {
+        console.log('[WebScreen] 카메라 권한 이미 허용됨');
+      }
+      
+      // 마이크 권한 요청
+      if (!hasMicrophonePermission) {
+        console.log('[WebScreen] 마이크 권한 요청 중...');
+        const micResult = await requestMicrophonePermission();
+        console.log('[WebScreen] 마이크 권한 요청 결과:', micResult);
+      } else {
+        console.log('[WebScreen] 마이크 권한 이미 허용됨');
+      }
+      
+      console.log('[WebScreen] 모든 권한 요청 완료');
+    };
+    
+    requestAllPermissions();
+  }, [hasCameraPermission, hasMicrophonePermission, requestCameraPermission, requestMicrophonePermission]);
 
   const webFrontendUrl = route.params?.url ?? WEB_FRONTEND_URL;
+
+  const meta = `
+    const meta = document.createElement('meta'); 
+    meta.setAttribute('name', 'viewport'); 
+    meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'); 
+    document.head.appendChild(meta);
+  `;
 
   const injectedJavaScriptForLogs = `
     const originalConsoleLog = console.log;
@@ -79,9 +142,9 @@ const WebScreen: React.FC = () => {
 
   const sendTokenToWebView = async () => {
     const token = await AsyncStorage.getItem('accessToken');
-    if (token && webviewRef.current) {
+    if (token && webViewRef.current) {
       const message = JSON.stringify({ type: 'SET_TOKEN', token });
-      webviewRef.current.postMessage(message);
+      webViewRef.current.postMessage(message);
     }
   };
 
@@ -250,18 +313,22 @@ const WebScreen: React.FC = () => {
     }
   };
 
+  const userAgent = "Mozilla/5.0 (Linux; Android 10; Android SDK built for x86 Build/LMY48X) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/81.0.4044.117 Mobile Safari/608.2.11";
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: '#FFFFFF' }]}>
       <WebView
-        ref={webviewRef}
+        ref={webViewRef}
+        userAgent={userAgent}
         source={{ uri: webFrontendUrl }}
+        onNavigationStateChange={onNavigationStateChange}
         style={styles.webview}
         javaScriptEnabled={true}
         domStorageEnabled={true}
         startInLoadingState={true}
-        scalesPageToFit={true}
+        scalesPageToFit={false}
         allowsInlineMediaPlayback={true}
-        injectedJavaScript={injectedJavaScriptForLogs}
+        injectedJavaScript={`${meta}; ${injectedJavaScriptForLogs}`}
         // onMessage 핸들러를 연결하여 웹과 앱의 통신 활성화
         onMessage={handleWebViewMessage}
         onLoadEnd={sendTokenToWebView}

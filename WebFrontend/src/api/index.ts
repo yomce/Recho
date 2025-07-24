@@ -1,8 +1,9 @@
-import type { CONTENT_TYPE, LikePayload } from '@/types/likes';
+import { CONTENT_TYPE, type LikePayload } from '@/types/likes';
 import axiosInstance from "../services/axiosInstance";
 import type { Video } from "../types/video";
 import type { Promotion } from '@/types/promotion';
 import axios from 'axios';
+import type { Comment } from '@/types/comment';
 
 // likes나 createdAt으로 정렬 할 듯
 // 무한 스크롤과 간단한 추천 시스템 추가 필요
@@ -16,7 +17,6 @@ export const getVideos = async (page = 1, limit = 10): Promise<Video[]> => {
         limit,
       },
     });
-    console.log("video response");
     console.log(response.data);
     return response.data;
   } catch (error) {
@@ -32,8 +32,6 @@ export const getVideos = async (page = 1, limit = 10): Promise<Video[]> => {
  */
 export const getVideoById = async (videoId: string): Promise<Video> => {
   const response = await axiosInstance.get<Video>(`videos/${videoId}`);
-  console.log('get video by id');
-  console.log(response.data);
   return response.data;
 };
 
@@ -57,10 +55,32 @@ export const toggleStringPostLike = async (contentType: CONTENT_TYPE, postId: st
   return response.data;
 };
 
+/**
+ * Fetches all comments for a specific video.
+ * [수정됨] API 경로를 Controller에 맞게 '/comments/:contentType/:postId' 형식으로 변경합니다.
+ */
+export const getCommentsForVideo = async (videoId: string): Promise<Comment[]> => {
+  // 요청 URL을 '/comments/vinyl/VIDEO_ID' 와 같은 형태로 만듭니다.
+  const response = await axiosInstance.get(`/comments/${CONTENT_TYPE.VINYL}/${videoId}`);
+  return response.data;
+};
+
+/**
+ * Posts a new comment for a specific video.
+ * (이 함수는 수정할 필요가 없습니다.)
+ */
+export const createCommentForVideo = async (videoId: string, content: string): Promise<Comment> => {
+  const response = await axiosInstance.post('/comments', {
+    contentType: CONTENT_TYPE.VINYL,
+    postId: videoId,
+    content: content,
+  });
+  return response.data;
+};
+
 export const fetchPromotions = async (): Promise<Promotion[]> => {
   try {
     const response = await axiosInstance.get<Promotion[]>(`promotions`);
-    // axios는 응답 데이터를 data 속성에 담아 반환합니다.
     return response.data;
   } catch (error) {
     // 에러를 콘솔에 출력하고, 호출한 쪽에서 처리할 수 있도록 다시 던집니다.
@@ -79,6 +99,24 @@ export const postPromotionByUrl = async (url: string): Promise<Promotion> => {
     if (axios.isAxiosError(error) && error.response) {
       throw new Error(error.response.data.message || '서버 요청에 실패했습니다.');
     }
+    throw error;
+  }
+};
+
+
+export const deactivateVideo = async (videoId: string): Promise<{ message: string }> => {
+  try {
+    const response = await axiosInstance.patch<{ message: string }>(`videos/${videoId}/deactivate`, {});
+    return response.data;
+
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      const errorMessage = error.response.data.message || '비디오 비활성화 요청에 실패했습니다.';
+      console.error("Error in deactivateVideo API:", errorMessage);
+      throw new Error(errorMessage);
+    }
+    // Axios 에러가 아닌 다른 종류의 에러 처리
+    console.error("Unexpected error in deactivateVideo API:", error);
     throw error;
   }
 };

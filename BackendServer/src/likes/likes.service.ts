@@ -2,11 +2,14 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { Post } from 'src/community/entities/post.entity';
-import { NumberIdLike } from './entities/numberIdLike.entity';
-import { StringIdLike } from './entities/stringIdLike.entity';
-import { CONTENT_TYPE, ToggleLikeDto } from './dto/toggleLike.dto';
+import { Post } from 'src/community/posts/entities/post.entity';
+import { NumberIdLike } from './entities/number-id-like.entity';
+import { StringIdLike } from './entities/string-id-like.entity';
+import { CONTENT_TYPE, ToggleLikeDto } from './dto/toggle-like.dto';
 import { Video } from 'src/videos/entities';
+import { NotificationsService } from 'src/notifications/notifications.service';
+import { NotificationType } from 'src/notifications/entities/notification.entity';
+import { User } from 'src/auth/user/user.entity';
 
 @Injectable()
 export class LikesService {
@@ -19,13 +22,16 @@ export class LikesService {
     private readonly postsRepository: Repository<Post>,
     @InjectRepository(Video)
     private readonly videoRepository: Repository<Video>,
+    private readonly notificationsService: NotificationsService,
+    @InjectRepository(User)
+    private readonly usersRepository: Repository<User>,
   ) {}
 
   /**
    * [Public] 클라이언트가 호출하는 유일한 '좋아요' 토글 엔드포인트입니다.
    * postId의 타입에 따라 적절한 내부 토글 메서드를 호출합니다.
    * @param userId - 좋아요를 누른 사용자의 ID
-   * @param toggleLikeDto - 좋아요 대상 정보 (contentType, postId)
+   * @param toggleLikeDto - 좋아요 대상 정보 (contentType, postId)/
    * @returns 좋아요가 추가되면 true, 삭제되면 false를 반환합니다.
    */
   async toggleLike(
@@ -75,6 +81,23 @@ export class LikesService {
       });
       await this.numberLikesRepository.save(newLike);
       isLiked = true;
+
+      if (contentType === CONTENT_TYPE.COMMUNITY) {
+        const post = await this.postsRepository.findOne({
+          where: { postId },
+          relations: ['user'],
+        });
+        const sender = await this.usersRepository.findOneBy({ id: userId });
+        if (post?.user && sender && post.user.id !== userId) {
+          await this.notificationsService.createAndSendNotification(
+            post.user,
+            sender,
+            NotificationType.LIKE,
+            `${sender.username}님이 회원님의 게시물을 좋아합니다.`,
+            `/community/${post.postId}`,
+          );
+        }
+      }
     }
 
     // 해당 콘텐츠의 좋아요 카운트 업데이트
@@ -107,6 +130,23 @@ export class LikesService {
       });
       await this.stringLikesRepository.save(newLike);
       isLiked = true;
+
+      if (contentType === CONTENT_TYPE.VINYL) {
+        const video = await this.videoRepository.findOne({
+          where: { id: postId },
+          relations: ['user'],
+        });
+        const sender = await this.usersRepository.findOneBy({ id: userId });
+        if (video?.user && sender && video.user.id !== userId) {
+          await this.notificationsService.createAndSendNotification(
+            video.user,
+            sender,
+            NotificationType.LIKE,
+            `${sender.username}님이 회원님의 영상을 좋아합니다.`,
+            `/vinyl/${video.id}`,
+          );
+        }
+      }
     }
 
     await this.updateContentLikesCount(contentType, postId, isLiked ? 1 : -1);

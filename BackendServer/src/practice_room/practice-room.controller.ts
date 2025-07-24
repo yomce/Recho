@@ -17,12 +17,12 @@ import {
 
 import { CreatePracticeRoomDto } from './dto/create-practice-room.dto';
 import { UpdatePracticeRoomDto } from './dto/update-practice-room.dto';
-import { PracticeRoom } from './entities/practice-room.entity';
 import { PracticeRoomService } from './practice-room.service';
 import { PaginationQueryPracticeRoomDto } from './dto/pagination-query-practice-room.dto';
 import { PaginatedPracticeRoomResponse } from './dto/paginated-practice-room.response.dto';
 import { Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
+import { PracticeRoomResponseDto } from './dto/parctice-room.response.dto';
 
 @Controller('practice-room')
 export class PracticeRoomController {
@@ -48,7 +48,7 @@ export class PracticeRoomController {
   async enrollPracticeRoom(
     @Body() CreatePracticeRoomDto: CreatePracticeRoomDto,
     @Req() req: Request,
-  ): Promise<PracticeRoom> {
+  ): Promise<PracticeRoomResponseDto> {
     if (!req.user || !req.user.id) {
       this.logger.log(
         `Enrolling a new practice room: ${CreatePracticeRoomDto.title}`,
@@ -62,29 +62,52 @@ export class PracticeRoomController {
     );
   }
 
-  @Get(':id')
+  @Get(':postId')
   async detailPracticeRoom(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<PracticeRoom> {
-    this.logger.log(`Fetching detail for post ID: ${id}`);
-    return await this.practiceRoomService.detailPracticeRoom(id);
+    @Param('postId', ParseIntPipe) postId: number,
+  ): Promise<PracticeRoomResponseDto> {
+    this.logger.log(`Fetching detail for post ID: ${postId}`);
+    return await this.practiceRoomService.publicDetailPracticeRoom(postId);
   }
 
-  @Delete(':id')
+  @Delete(':postId')
+  @UseGuards(AuthGuard('jwt'))
   @HttpCode(204)
   async deletePracticeRoom(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('postId', ParseIntPipe) postId: number,
+    @Req() req: Request,
   ): Promise<void> {
-    this.logger.log(`Delete Post ID: ${id}`);
-    await this.practiceRoomService.deletePracticeRoom(id);
+    if (!req.user || !req.user.id) {
+      this.logger.error(
+        'Authentication information missing from request user object.',
+      );
+      throw new ForbiddenException('사용자 인증 정보가 없습니다.');
+    }
+    const id = req.user.id;
+    this.logger.log(
+      `Received delete request for product ID: ${postId} from user ID: ${id}`,
+    );
+    await this.practiceRoomService.deletePracticeRoom(postId, id);
   }
 
-  @Patch(':id')
+  @Patch(':postId')
+  @UseGuards(AuthGuard('jwt'))
   async pathPracticeRoom(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('postId', ParseIntPipe) postId: number,
     @Body() UpdatePracticeRoomDto: UpdatePracticeRoomDto,
-  ): Promise<PracticeRoom> {
-    this.logger.log(`Patching Post Id: ${id}`);
-    return this.practiceRoomService.pathPracticeRoom(id, UpdatePracticeRoomDto);
+    @Req() req: Request,
+  ): Promise<PracticeRoomResponseDto> {
+    if (!req.user || !req.user.id) {
+      this.logger.error(
+        'Authentication information missing from request user object.',
+      );
+      throw new ForbiddenException('사용자 인증 정보가 없습니다.');
+    }
+    const id = req.user.id; // JwtStrategy에서 반환된 user.id 사용 가능
+    this.logger.log(
+      `Received patch request for product ID: ${postId} from user ID: ${id}`,
+    );
+
+    return this.practiceRoomService.pathPracticeRoom(postId, UpdatePracticeRoomDto, id);
   }
 }

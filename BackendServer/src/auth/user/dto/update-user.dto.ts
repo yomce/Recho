@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, MaxLength } from 'class-validator';
+import { IsString, IsNotEmpty, MaxLength, IsOptional } from 'class-validator';
 
 export class UpdateUserDto {
   /**
@@ -10,4 +10,11 @@ export class UpdateUserDto {
   @IsNotEmpty({ message: '닉네임은 비워둘 수 없습니다.' })
   @MaxLength(50, { message: '닉네임은 50자를 초과할 수 없습니다.' })
   username: string;
+
+  @IsString()
+  intro?: string;
+
+  @IsOptional()
+  @IsString()
+  profileUrl?: string;
 }

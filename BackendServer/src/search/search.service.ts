@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
 import { SearchResponseDto } from './dto/search-response.dto';
 
-import { Post } from '../community/entities/post.entity';
+import { Post } from '../community/posts/entities/post.entity';
 import { UsedProduct } from '../used_product/entities/used-product.entity';
 import { RecruitEnsemble } from '../ensemble/entities/recruit-ensemble.entity';
 

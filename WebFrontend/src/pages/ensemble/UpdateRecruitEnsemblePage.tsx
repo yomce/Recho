@@ -3,10 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from '@/services/axiosInstance';
+import axios from 'axios';
 import { useAuthStore } from '@/stores/authStore';
+import { useChatStore } from '../../stores/chatStore';
 import { EnsembleForm, type RecruitEnsembleFormState } from '@/pages/ensemble/components/EnsembleForm';
 import type { SessionEnsembleFormState } from './components/SessionForm';
 import { SKILL_LEVEL, type RecruitEnsemble } from './types';
+import PostLayout from '@/components/layout/PostLayout';
 
 // API 응답 타입 (상세 페이지와 동일)
 interface UpdateSessionEnsemblePayload {
@@ -26,6 +29,7 @@ interface UpdateRecruitEnsemblePayload {
 }
 
 const UpdateRecruitEnsemblePage: React.FC = () => {
+  const { totalUnreadCount } = useChatStore();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { user } = useAuthStore();
@@ -42,7 +46,7 @@ const UpdateRecruitEnsemblePage: React.FC = () => {
     eventDate: '',
     skillLevel: SKILL_LEVEL.BEGINNER,
     locationId: '',
-    totalRecruitCnt: '1',
+    totalRecruitCnt: '',
     sessionEnsemble: sessionFormList,
   });
 
@@ -160,30 +164,42 @@ const UpdateRecruitEnsemblePage: React.FC = () => {
       navigate(`/ensembles/${id}`);
 
     } catch (err) {
-      setError('수정 중 오류가 발생했습니다.');
-      console.error(err);
+      if (axios.isAxiosError(err)){
+        const rawMessage = err.response?.data?.message;
+        console.log(err.response?.data);
+        const finalMessage = Array.isArray(rawMessage)
+          ? rawMessage.join('\n')
+          : typeof rawMessage === 'string'
+            ? rawMessage
+            : '알 수 없는 오류입니다.';
+
+        setError(finalMessage);
+      }else {
+        setError('예기치 못한 오류가 발생했습니다.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-3xl mx-auto my-8 p-10 bg-white rounded-lg shadow-xl">
-      <h2 className="text-center mt-0 mb-8 text-2xl font-bold text-gray-800">모집 공고 수정</h2>
-      <EnsembleForm
-        formState={form}
-        onFormChange={handleRecruitChange}
-        onFormSubmit={handleSubmit}
-        isLoading={loading}
-        errorMessage={error}
-        submitButtonText="수정 완료"
-        loadingButtonText="수정 중..."
-        sessionFormList={sessionFormList}
-        onSessionFormListChange={handleSessionChange}
-        onSessionFormAdd={handleSessionAdd}
-        onSessionFormRemove={handleSessionRemove}
-      />
-    </div>
+    <PostLayout totalUnreadCount={totalUnreadCount}>
+      <div className="bg-brand-frame p-4 rounded-card">
+        <EnsembleForm
+          formState={form}
+          onFormChange={handleRecruitChange}
+          onFormSubmit={handleSubmit}
+          isLoading={loading}
+          errorMessage={error}
+          submitButtonText="수정 완료"
+          loadingButtonText="수정 중..."
+          sessionFormList={sessionFormList}
+          onSessionFormListChange={handleSessionChange}
+          onSessionFormAdd={handleSessionAdd}
+          onSessionFormRemove={handleSessionRemove}
+        />
+      </div>
+    </PostLayout>
   );
 };
 

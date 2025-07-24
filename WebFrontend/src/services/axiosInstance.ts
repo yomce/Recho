@@ -64,7 +64,8 @@ axiosInstance.interceptors.response.use(
     };
 
     // 401 에러이고, 재시도한 요청이 아닌 경우에만 토큰 갱신 로직을 실행합니다.
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry && 
+            originalRequest.url !== "/auth/refresh") {
       if (isRefreshing) {
         return new Promise(function (resolve, reject) {
           failedQueue.push({ resolve, reject });
@@ -79,6 +80,11 @@ axiosInstance.interceptors.response.use(
             return Promise.reject(err);
           });
       }
+
+    if (originalRequest.url === "auth/login") {
+      console.log("로그인 실패로 인한 401 에러입니다. 토큰 재발급을 시도하지 않습니다.");
+      return Promise.reject(error);
+    }
 
       originalRequest._retry = true;
       isRefreshing = true;

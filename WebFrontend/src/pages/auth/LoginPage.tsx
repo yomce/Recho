@@ -43,12 +43,13 @@ const LoginPage: React.FC = () => {
       <div className="w-full max-w-md">
         <div className="sm:mx-auto sm:w-full">
           <img
-            className="mx-auto h-12 w-[300px] h-[300px]"
-            src="/RechoLogo.png"
-            alt="Recho"
+            className="mx-auto w-[150px] h-[150px]"
+            src="/vite.svg"
+            alt="Recho Logo"
           />
-          <h2 className="mt-6 text-center text-body text-[var(--color-brand-text-primary)]">
+          <h2 className="mt-6 text-center text-subheadline text-[var(--color-brand-text-primary)]">
             음악으로 나를 알리는 플랫폼
+            <br /> Recho
           </h2>
         </div>
 

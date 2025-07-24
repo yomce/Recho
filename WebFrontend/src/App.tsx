@@ -1,3 +1,5 @@
+// WebFrontend/src/App.tsx 
+
 import { useEffect } from "react";
 import AppRouter from "./routes/AppRouter";
 import "./App.css";
@@ -9,7 +11,8 @@ import { useConfigStore } from './stores/useConfigStore';
 
 function App() {
   const fetchConfig = useConfigStore((state) => state.fetchConfig);
-  const setToken = useAuthStore((state) => state.actions.setToken);
+  const { user, actions: { setToken } } = useAuthStore(); // ✨ user 상태 가져오기
+  const { initializeSocketListeners, disconnectSocket, fetchTotalUnreadCount } = useChatStore(); // ✨ chatStore 함수 가져오기
 
   // 환경변수 설정
   useEffect(() => {
@@ -18,7 +21,7 @@ function App() {
 
   // 1. React Native 등 외부로부터 토큰을 받기 위한 useEffect (유지)
   useEffect(() => {
-    const handleMessage = (event: any) => {
+    const handleMessage = (event: MessageEvent) => {
       try {
         const message = JSON.parse(event.data);
         if (message.type === "SET_TOKEN" && message.token) {
@@ -30,33 +33,34 @@ function App() {
     };
 
     window.addEventListener("message", handleMessage);
-    document.addEventListener("message", handleMessage);
+    // document.addEventListener("message", handleMessage);
 
     return () => {
       window.removeEventListener("message", handleMessage);
-      document.removeEventListener("message", handleMessage);
+      // document.removeEventListener("message", handleMessage);
     };
   }, [setToken]);
 
-  // 2. 채팅 소켓 연결 및 해제를 위한 useEffect (이 블록 하나만 사용)
+  // ✨ 로그인 상태에 따라 소켓을 관리하는 useEffect (단순화)
   useEffect(() => {
-    // chatStore에서 필요한 함수들을 가져옵니다.
-    const { initializeSocketListeners, disconnectSocket } = useChatStore.getState();
-    
-    // 소켓 연결 및 리스너 등록
-    initializeSocketListeners();
-
-    // 컴포넌트가 사라질 때(cleanup) 소켓 연결을 끊습니다.
-    return () => {
-      disconnectSocket();
-    };
-  }, []); // 빈 배열[]: 앱이 처음 실행될 때 딱 한 번만 실행되도록 보장
+    if (user) {
+      // 소켓 리스너를 설정하고 연결을 시작합니다.
+      initializeSocketListeners();
+      // 앱이 로드될 때 전체 안 읽은 개수를 가져옵니다.
+      fetchTotalUnreadCount();
+      
+      // 컴포넌트가 언마운트되거나 user가 변경될 때 소켓 연결을 끊습니다.
+      return () => {
+        disconnectSocket();
+      };
+    }
+  // ✨ 의존성 배열에서 fetchTotalUnreadCount 제거 (함수 자체가 바뀌지 않으므로)
+}, [user, initializeSocketListeners, disconnectSocket, fetchTotalUnreadCount]);
 
   return (
     <div className=""> 
-    <Toaster position="top-center" />
-    
-    <AppRouter /> 
+      <Toaster position="top-center" />
+      <AppRouter /> 
     </div>
   );
 }

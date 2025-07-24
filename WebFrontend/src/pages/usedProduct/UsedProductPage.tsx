@@ -3,11 +3,9 @@ import { useChatStore } from '../../stores/chatStore';
 import { type UsedProduct, type PaginatedUsedProductResponse, CATEGORY_LABEL_TO_ID } from '../../types/product';
 import axiosInstance from '@/services/axiosInstance';
 import CategoryList from '@/components/layout/CategoryList';
-import ImageCard from '@/components/atoms/card/ImageCard';
 import FloatingWriteButton from '@/components/atoms/button/FloatingWriteButton';
 import PostLayout from '@/components/layout/PostLayout';
 import PostCard from '@/components/atoms/card/PostCard';
-import { DEFAULT_IMAGES } from "@/constants/images";
 
 interface Cursor {
   lastProductId: number;

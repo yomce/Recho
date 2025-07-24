@@ -6,19 +6,13 @@
 
 <br>
 
-> ## 📸 스크린샷 (Screenshot)
->
-> *(이곳에 앱의 주요 화면 스크린샷이나 GIF를 추가하여 프로젝트를 시각적으로 보여주세요.)*
->
 > | 메인 | 커뮤니티 | 합주자 모집 | 바이닐 (숏폼) |
 > | :---: | :---: | :---: | :---: |
 > | <img src="https://github.com/user-attachments/assets/e8aa33fa-342c-48d6-814a-42e392f39b7b" width="200"> | <img src="https://github.com/user-attachments/assets/572d4cd0-fbaf-4690-b273-2cdb03e8738f" width="200"> | <img src="https://github.com/user-attachments/assets/3a8bbc5f-1a1b-4651-adf3-59a6b26d708a" width="200"> | <img src="https://github.com/user-attachments/assets/b8483ca5-0723-43a0-b576-5556eff11111" width="200"> |
 
 <br>
 
-## ✨ 주요 기능 (Features)
-
-Recho는 다음과 같은 핵심 기능들을 제공합니다.
+## 주요 기능 (Features)
 
 * **🎸 음악 커뮤니티**
     * 자유 게시판: 음악에 대한 잡담, 질문, 팁 등 자유롭게 소통하는 공간
@@ -42,7 +36,7 @@ Recho는 다음과 같은 핵심 기능들을 제공합니다.
 
 <br>
 
-## 🚀 프로젝트 목표 및 기획 의도
+## 프로젝트 목표 및 기획 의도
 
 * **파편화된 정보 통합**: 여기저기 흩어져 있는 합주 멤버 구인, 악기 거래, 커뮤니티 정보를 한곳에 모아 정보 탐색 비용을 줄입니다.
 * **음악적 교류의 장**: 온라인에서 쉽게 만나기 어려운 다른 연주자들과 교류하고, 음악적 영감을 주고받을 수 있는 소셜 허브를 제공합니다.
@@ -51,7 +45,7 @@ Recho는 다음과 같은 핵심 기능들을 제공합니다.
 
 <br>
 
-## 🛠️ 기술 스택 (Tech Stack)
+## 기술 스택 (Tech Stack)
 
 | 구분 | 기술 |
 | :--- | :--- |
@@ -62,7 +56,7 @@ Recho는 다음과 같은 핵심 기능들을 제공합니다.
 
 <br>
 
-## 🏗️ 시스템 아키텍처 (Architecture)
+## 시스템 아키텍처 (Architecture)
 
 ```mermaid
 graph TD
@@ -97,15 +91,15 @@ graph TD
     G <--Presigned URL--> A
 ```
 
-## 🤝 팀원 (Contributors)
+## 팀원 (Contributors)
 
 | 이름 | 역할 | GitHub |
 | :---: | :---: | :---: |
-| 이시우 | **Full-Stack / Team Lead** | **[GitHub Profile](https://github.com/dltldn333)** |
-| 김경연 | Frontend | [GitHub Profile](https://github.com/teammate2) |
-| 노기윤 | Backend | [GitHub Profile](https://github.com/teammate3) |
-| 신동주 | Backend | [GitHub Profile](https://github.com/teammate3) |
-| 장예지 | Backend | [GitHub Profile](https://github.com/teammate3) |
+| 이시우 | **FullStack / Team Lead** | **[GitHub Profile](https://github.com/dltldn333)** |
+| 김경연 | Full Stack | [GitHub Profile](https://github.com/yomce) |
+| 노기윤 | Full Stack | [GitHub Profile](https://github.com/mogiyoon) |
+| 신동주 | Full Stack | [GitHub Profile](https://github.com/StrongDeutan) |
+| 장예지 | Full Stack | [GitHub Profile](https://github.com/jyjww) |
 
 ## 📜 라이선스 (License)
 

@@ -6,14 +6,15 @@ import {
 } from "@/types/practiceRoom";
 import PostLayout from "@/components/layout/PostLayout";
 import FloatingWriteButton from "@/components/atoms/button/FloatingWriteButton";
-import ImageCard from "@/components/atoms/card/ImageCard";
-import Icon from '@/components/atoms/icon/Icon'
-import SecondaryButton from "@/components/atoms/button/SecondaryButton";
 import PostCard from "@/components/atoms/card/PostCard";
 import SwiperTabs from "@/components/organisms/PostNavigationTabs";
 import axiosInstance from "@/services/axiosInstance";
-import { DEFAULT_IMAGES } from "@/constants/images";
+import FilterButton from "@/components/atoms/button/FilterButton";
+import { usePracticeRoomFilter, type PracticeRoomFilterParams } from "@/pages/ensemble/hooks/fetchFilteredPracticeRoomList";
+import FilterToast from '@/components/atoms/button/FilterToast';
+import Modal from '@/components/molecules/modal/Modal';
 
+// 커서 타입
 interface Cursor {
   lastProductId: number;
   lastCreatedAt: string;
@@ -29,6 +30,18 @@ const PracticeRoomPage: React.FC = () => {
   const [nextCursor, setNextCursor] = useState<Cursor | null>(null);
   const [hasNextPage, setHasNextPage] = useState(true);
 
+  const [isFiltered, setIsFiltered] = useState(false);
+  const { filteredData, fetchFilteredPracticeRoomList } = usePracticeRoomFilter();
+
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [activeFilterTab, setActiveFilterTab] = useState('날짜'); // 어떤 필터를 눌렀는지 기억
+
+  // --- 👇 2. 필터 적용 함수 수정 ---
+  const handleFilterApply = (filters: PracticeRoomFilterParams) => {
+    fetchFilteredPracticeRoomList(filters);
+    setIsFiltered(true);
+    setIsFilterModalOpen(false); // 필터 적용 후 Modal 닫기
+  };
   // --- 탭 전환 ---
   const tabs = ['추천공간', '즐겨찾기', '검색결과'];
   // const tabContents: PracticeRoom[][] = [recommendations, bookmark, searchResults];
@@ -93,52 +106,49 @@ const PracticeRoomPage: React.FC = () => {
     fetchItems(false); // isInitialFetch = false
   };
 
+  const handleFilterClick = (tab: string) => {
+    setActiveFilterTab(tab); // 클릭한 탭 정보 저장
+    setIsFilterModalOpen(true); // Modal 열기
+  }
+
   return (
     <PostLayout totalUnreadCount={totalUnreadCount}>
-      <div className="relative">
-        <ImageCard 
-          src={DEFAULT_IMAGES.PLACEHOLDER}
-          width={430}
-          className="rounded-b-[20px] border-1 border-white"
-        />
-        {/* Text Overlay */}
-        <div className="absolute inset-0 w-full p-4 ml-4 flex flex-col gap-2 items-start justify-center">
-          <div className="flex flex-row gap-2 items-center">
-            <Icon name="mapPin" size={24} className="text-brand-gray"/>
-            <span className="text-caption-bold text-brand-gray">4km</span>
-          </div>
-          <h2 className="text-headline text-brand-gray mb-1">정글합주실 용인 동백점</h2>
-          <SecondaryButton
-          style={{ backgroundColor: "#aaaaaa" }}
-          >
-            바로 이용하기
-          </SecondaryButton>
-        </div>
-      </div>
       <div className="grid grid-cols-1 mb-[52px]">
         {error && (
           <div className="button-brand-gray mb-4">
             <p className="text-brand-error-text">{error}</p>
           </div>
         )}
+
+        <div className="flex gap-2 p-4">
+          <FilterButton 
+            iconName="options" 
+            iconClassName="rotate-90 text-brand-gray"
+            onClick={() => handleFilterClick("지역")}
+          />
+          <FilterButton label="지역" onClick={() => handleFilterClick("지역")}/>
+        </div>
+
         {/* SwiperTabs 내부에서 게시글을 렌더링합니다 */}
         <SwiperTabs
-        tabs={tabs}
-        contents={[post, [], []]}
-        loading={loading}
-        renderItem={(item) => (
-          <PostCard
-            key={item.postId}
-            id={item.postId}
-            title={item.title}
-            address={item.location?.place_name || "주소 미제공"}
-            textWrapperClassName="flex flex-col items-start justify-center w-full h-full gap-2 pl-16"
-            imagePosition="left"
-            imageWrapperClassName="min-w-[120px] rounded-l-[10px]"
-            containerClassName="py-1 mt-2"
-          />
-        )}
+          tabs={tabs}
+          contents={[isFiltered ? filteredData : post, [], []]}
+          loading={loading}
+          renderItem={(item) => (
+            <PostCard
+              key={item.postId}
+              id={item.postId}
+              title={item.title}
+              address={item.location?.place_name || "주소 미제공"}
+              imageUrl={item.imageUrl}
+              textWrapperClassName="flex flex-col items-start justify-center w-full h-full gap-2 pl-16"
+              imagePosition="left"
+              imageWrapperClassName="min-w-[120px] rounded-l-[10px]"
+              containerClassName="py-1 mt-2"
+            />
+          )}
         />
+
         {loading && (
           <div className="message-container">
             <div className="spinner"></div>
@@ -154,6 +164,14 @@ const PracticeRoomPage: React.FC = () => {
         )}
       </div>
       <FloatingWriteButton />
+      <Modal title='필터' isOpen={isFilterModalOpen} iconName='exit' onClose={() => setIsFilterModalOpen(false)}>
+        <FilterToast
+          activeTab={activeFilterTab}
+          onApplyFilter={handleFilterApply}
+          onClose={() => setIsFilterModalOpen(false)} // 닫기 버튼을 위한 prop
+          showFilterSections={["지역"]}
+        />
+      </Modal>
     </PostLayout>
   );
 };

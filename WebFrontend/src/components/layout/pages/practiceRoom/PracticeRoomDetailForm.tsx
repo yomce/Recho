@@ -34,7 +34,13 @@ export const PracticeRoomDetail: React.FC<PracticeRoomDetailProps> = ({
         <div className="relative">
         {/* 이미지 섹션 */}
           <SwiperImageCard
-            images={[DEFAULT_IMAGES.PLACEHOLDER]}
+            images={
+              Array.isArray(post.imageUrl)
+              ? post.imageUrl
+              : post.imageUrl
+                ? [post.imageUrl] // string인 경우 배열로 변환
+                : []
+            }
             slideClassName="rounded-[var(--radius-card)]"
             showPagination={true}
           />

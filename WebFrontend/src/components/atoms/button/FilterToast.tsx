@@ -12,6 +12,7 @@ interface FilterToastProps {
     skillLevel?: string,
   }) => void;
   onClose: () => void;
+  showFilterSections?: string[];
 }
 
 const REGIONS = [
@@ -38,7 +39,7 @@ const radioCircleStyle = (selected: boolean) =>
 
 const radioDotStyle = `w-2 h-2 rounded-full bg-brand-primary`;
 
-const FilterToast: React.FC<FilterToastProps> = ({ activeTab, onApplyFilter }) => {
+const FilterToast: React.FC<FilterToastProps> = ({ activeTab, onApplyFilter, showFilterSections }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -65,85 +66,94 @@ const FilterToast: React.FC<FilterToastProps> = ({ activeTab, onApplyFilter }) =
     <div className="p-4">
       <div className="flex flex-col gap-4 mt-4">
         {/* 날짜 필터 */}
-        <div id="filter-section-날짜" className="mb-8">
-          <p className="text-caption text-brand-gray">날짜</p>
-          {/* 날짜 필터 컴포넌트 또는 내용 */}
-          <CustomDatePicker
-            selectedDate={selectedDate}
-            onChange={setSelectedDate}
-          />
-        </div>
+        {(!showFilterSections || showFilterSections.includes("날짜")) && (
+          <div id="filter-section-날짜" className="mb-8">
+            <p className="text-caption text-brand-gray">날짜</p>
+            {/* 날짜 필터 컴포넌트 또는 내용 */}
+            <CustomDatePicker
+              selectedDate={selectedDate}
+              onChange={setSelectedDate}
+            />
+          </div>
+        )}
 
         {/* 지역 필터 */}
-        <div id="filter-section-지역" className="mb-8">
-          <p className="text-caption text-brand-gray">지역</p>
-          {/* 지역 필터 컴포넌트 또는 내용 */}
-          <div className="grid grid-cols-4 gap-1 border border-brand-frame rounded-[20px] p-2 mt-4">
-            {REGIONS.map((region) => (
-              <button
-                key={region}
-                onClick={() => {
-                  setSelectedRegion(region);
-                  handleRegionSelect(region);
-                  // setSelectedRegion((prev) => (prev === region ? null : region))
-                }}
-                className={`text-sm px-3 py-2 border border-white rounded-[10px] ${
-                  selectedRegion === region
-                    ? "bg-[#8E4DF6] text-white border-[#8E4DF6]"
-                    : "bg-white text-brand-gray border-gray-300"
-                }`}
-              >
-                {region}
-              </button>
-            ))}
+        {(!showFilterSections || showFilterSections.includes("지역")) && (
+          <div id="filter-section-지역" className="mb-8">
+            <p className="text-caption text-brand-gray">지역</p>
+            {/* 지역 필터 컴포넌트 또는 내용 */}
+            <div className="grid grid-cols-4 gap-1 border border-brand-frame rounded-[20px] p-2 mt-4">
+              {REGIONS.map((region) => (
+                <button
+                  key={region}
+                  onClick={() => {
+                    setSelectedRegion(region);
+                    handleRegionSelect(region);
+                    // setSelectedRegion((prev) => (prev === region ? null : region))
+                  }}
+                  className={`text-sm px-3 py-2 border border-white rounded-[10px] ${
+                    selectedRegion === region
+                      ? "bg-[#8E4DF6] text-white border-[#8E4DF6]"
+                      : "bg-white text-brand-gray border-gray-300"
+                  }`}
+                >
+                  {region}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* 악기 필터 */}
-        <div id="filter-section-악기" className="mb-8">
-          <p className="text-caption text-brand-gray">악기</p>
-          {/* 악기 필터 컴포넌트 또는 내용 */}
-          <div className="grid grid-cols-2 gap-4 mt-4">
-            {INSTRUMENT_OPTIONS.map((item) => {
-              const selected = selectedInstrument === item;
-              return (
-                <button
-                  key={item}
-                  onClick={() => setSelectedInstrument(item)}
-                  className={radioButtonStyle(selected)}
-                >
-                  <div className={radioCircleStyle(selected)}>
-                    {selected && <div className={radioDotStyle} />}
-                  </div>
-                  <span>{item}</span>
-                </button>
-              );
-            })}
+        {(!showFilterSections || showFilterSections.includes("악기")) && (
+          <div id="filter-section-악기" className="mb-8">
+            <p className="text-caption text-brand-gray">악기</p>
+            {/* 악기 필터 컴포넌트 또는 내용 */}
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              {INSTRUMENT_OPTIONS.map((item) => {
+                const selected = selectedInstrument === item;
+                return (
+                  <button
+                    key={item}
+                    onClick={() => setSelectedInstrument(item)}
+                    className={radioButtonStyle(selected)}
+                  >
+                    <div className={radioCircleStyle(selected)}>
+                      {selected && <div className={radioDotStyle} />}
+                    </div>
+                    <span>{item}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
+
 
         {/* 실력 필터 */}
-        <div id="filter-section-실력" className="mb-8">
-          <p className="text-caption text-brand-gray">실력</p>
-          {/* 실력 필터 컴포넌트 또는 내용 */}
-          <div className="grid grid-cols-2 gap-4 mt-4">
-            {skillLevel.map((item) => {
-              const selected = selectedSkill === item;
-              return (
-                <button
-                  key={item}
-                  onClick={() => setSelectedSkill(item)}
-                  className={radioButtonStyle(selected)}
-                >
-                  <div className={radioCircleStyle(selected)}>
-                    {selected && <div className={radioDotStyle} />}
-                  </div>
-                  <span>{item}</span>
-                </button>
-              );
-            })}
+        {(!showFilterSections || showFilterSections.includes("실력")) && (
+          <div id="filter-section-실력" className="mb-8">
+            <p className="text-caption text-brand-gray">실력</p>
+            {/* 실력 필터 컴포넌트 또는 내용 */}
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              {skillLevel.map((item) => {
+                const selected = selectedSkill === item;
+                return (
+                  <button
+                    key={item}
+                    onClick={() => setSelectedSkill(item)}
+                    className={radioButtonStyle(selected)}
+                  >
+                    <div className={radioCircleStyle(selected)}>
+                      {selected && <div className={radioDotStyle} />}
+                    </div>
+                    <span>{item}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
     <PrimaryButton

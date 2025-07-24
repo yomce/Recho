@@ -10,9 +10,9 @@
 >
 > *(이곳에 앱의 주요 화면 스크린샷이나 GIF를 추가하여 프로젝트를 시각적으로 보여주세요.)*
 >
-> | 커뮤니티 | 악기 거래 | 합주자 모집 | 바이닐 (숏폼) |
+> | 커뮤니티 | 커뮤니티 | 합주자 모집 | 바이닐 (숏폼) |
 > | :---: | :---: | :---: | :---: |
-> | <img src="URL_TO_SCREENSHOT" width="200"> | <img src="URL_TO_SCREENSHOT" width="200"> | <img src="URL_TO_SCREENSHOT" width="200"> | <img src="URL_TO_SCREENSHOT" width="200"> |
+> | <img src="https://github.com/user-attachments/assets/e8aa33fa-342c-48d6-814a-42e392f39b7b" width="200"> | <img src="https://github.com/user-attachments/assets/572d4cd0-fbaf-4690-b273-2cdb03e8738f" width="200"> | <img src="https://github.com/user-attachments/assets/3a8bbc5f-1a1b-4651-adf3-59a6b26d708a" width="200"> | <img src="https://github.com/user-attachments/assets/b8483ca5-0723-43a0-b576-5556eff11111" width="200"> |
 
 <br>
 
